@@ -46,7 +46,10 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
   }));
   const focusSelectedOption = (element: HTMLElement): void => {
     const group = element.parentElement;
-    requestAnimationFrame(() => group?.querySelector<HTMLElement>('[tabindex="0"]')?.focus());
+    requestAnimationFrame(() => {
+      if (!group?.contains(document.activeElement)) return;
+      group.querySelector<HTMLElement>('[tabindex="0"]')?.focus();
+    });
   };
   const cycleDifficulty = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
     const offset = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1

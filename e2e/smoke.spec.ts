@@ -1,4 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function completeInitialDraft(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: '选择初始模块' });
+  for (let round = 0; round < 3; round += 1) {
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.reward-card')).toHaveCount(4);
+    await dialog.locator('.reward-card').first().click();
+  }
+  await expect(dialog).toHaveCount(0);
+}
 
 test('setup and battlefield work in a real browser', async ({ page }) => {
   const pageErrors: string[] = [];
@@ -18,6 +28,7 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   expect(size?.height ?? 0).toBeGreaterThan(300);
   await expect(page.getByRole('alert')).toHaveCount(0);
 
+  await completeInitialDraft(page);
   await page.getByText('键盘战场控制').click();
   await page.getByRole('button', { name: '部署节点 2' }).click();
   await expect(page.getByRole('button', { name: '选择节点 T02' })).toBeVisible();
@@ -63,6 +74,7 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   await page.getByRole('radio', { name: /启航折线/ }).click();
   await page.getByRole('button', { name: /部署至/ }).click();
   await expect(page.getByRole('heading', { name: /启航折线/ })).toBeVisible();
+  await completeInitialDraft(page);
   await page.getByText('键盘战场控制').click();
   await expect(page.getByRole('button', { name: '部署节点 2' })).toBeVisible();
   await expect(page.getByRole('button', { name: '部署节点 3' })).toHaveCount(0);
