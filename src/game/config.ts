@@ -130,7 +130,7 @@ export const LEVELS = [
     id: 'starter-elbow',
     name: '启航折线',
     sector: 'SECTOR T-0',
-    description: '只有两个转角节点与两波基础信号，用最短路线熟悉部署、射程和施法顺序。',
+    description: '固定模块与两波基础信号，通过手把手引导学习修正、弹射物、触发器和静态载荷。',
     difficulty: 1,
     accent: '#168aad',
     path: [

@@ -2,6 +2,39 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game/engine';
 
 describe('engine command and view boundary', () => {
+  it('starts the beginner level with a fixed four-module tutorial loadout', () => {
+    const engine = new GameEngine({ mode: 'standard', levelId: 'starter-elbow', seed: 5 });
+
+    expect(engine.tutorialEnabled).toBe(true);
+    expect(engine.getSnapshot()).toMatchObject({ status: 'planning', wave: 0, draft: null });
+    expect(engine.towers[0]?.slots).toEqual([null, null, null, null]);
+    expect(engine.getLibraryModules().map((module) => module.id)).toEqual([
+      'pulse',
+      'frost',
+      'proximity-mine',
+      'impact-trigger',
+    ]);
+    expect(engine.getModuleCount('pulse')).toBe(2);
+    expect(engine.getModuleCount('frost')).toBe(1);
+    expect(engine.getModuleCount('impact-trigger')).toBe(1);
+    expect(engine.getModuleCount('proximity-mine')).toBe(1);
+
+    const firstTower = engine.towers[0];
+    if (!firstTower) throw new Error('Expected the tutorial tower');
+    engine.selectTower(firstTower.id);
+    engine.installModule(0, 'frost');
+    engine.installModule(1, 'pulse');
+    engine.selectTower(null);
+    engine.placeTower(1);
+    engine.installModule(0, 'pulse');
+    engine.selectTower(null);
+    engine.startWave();
+    for (let step = 0; step < 6_000 && engine.status === 'wave'; step += 1) {
+      engine.update(FIXED_SIMULATION_STEP);
+    }
+    expect(engine.getSnapshot()).toMatchObject({ status: 'planning', wave: 1, draft: null, core: 20 });
+  });
+
   it('starts standard levels with three rounds of four-choice module drafts', () => {
     const engine = new GameEngine({ mode: 'standard', seed: 5 });
 

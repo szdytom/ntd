@@ -46,6 +46,13 @@ export interface GameEngineOptions {
 }
 
 const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const TUTORIAL_LEVEL_ID = 'starter-elbow';
+const TUTORIAL_MODULES: Readonly<Record<ModuleId, number>> = {
+  frost: 1,
+  pulse: 2,
+  'impact-trigger': 1,
+  'proximity-mine': 1,
+};
 const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = {
   spark: 8,
   kite: 5,
@@ -89,6 +96,7 @@ export class GameEngine {
   readonly level: LevelDefinition;
   readonly difficulty: DifficultyDefinition;
   readonly path: PathSampler;
+  readonly tutorialEnabled: boolean;
 
   status: GameSnapshot['status'] = 'planning';
   wave = 0;
@@ -141,6 +149,7 @@ export class GameEngine {
     const normalized = typeof options === 'number' ? { seed: options } : options;
     this.mode = normalized.mode ?? 'creative';
     this.level = getLevel(normalized.levelId ?? DEFAULT_LEVEL_ID);
+    this.tutorialEnabled = this.mode === 'standard' && this.level.id === TUTORIAL_LEVEL_ID;
     this.difficulty = getDifficulty(normalized.difficultyId ?? DEFAULT_DIFFICULTY_ID);
     this.path = createPathSampler(this.level.path);
     this.maxWaves = this.level.waves.length;
@@ -158,16 +167,22 @@ export class GameEngine {
     this.towerRandom = createSeededRandom(normalized.seed ?? Math.floor(Math.random() * 0x1_0000_0000));
     this.effects.registerMany(gameEffects);
     this.modules.registerEffects(this.effects);
-    if (this.mode === 'standard') {
+    if (this.tutorialEnabled) {
+      for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) this.moduleInventory.set(moduleId, count);
+    } else if (this.mode === 'standard') {
       this.moduleInventory.set('pulse', 3);
       this.moduleInventory.set('frost', 2);
     }
     const first = this.buildTower(0);
-    first.slots[0] = 'frost';
-    first.slots[1] = 'pulse';
+    if (this.tutorialEnabled) {
+      first.slots = Array.from({ length: 4 }, () => null);
+    } else {
+      first.slots[0] = 'frost';
+      first.slots[1] = 'pulse';
+    }
     this.towers.push(first);
     this.selectedTowerId = null;
-    if (this.mode === 'standard') this.beginModuleDraft();
+    if (this.mode === 'standard' && !this.tutorialEnabled) this.beginModuleDraft();
     this.refreshViewSnapshot();
   }
 
@@ -570,16 +585,22 @@ export class GameEngine {
     this.previousDraftChoices.clear();
     this.draftsWithoutRare = 0;
     this.moduleInventory.clear();
-    if (this.mode === 'standard') {
+    if (this.tutorialEnabled) {
+      for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) this.moduleInventory.set(moduleId, count);
+    } else if (this.mode === 'standard') {
       this.moduleInventory.set('pulse', 3);
       this.moduleInventory.set('frost', 2);
     }
     const first = this.buildTower(0);
-    first.slots[0] = 'frost';
-    first.slots[1] = 'pulse';
+    if (this.tutorialEnabled) {
+      first.slots = Array.from({ length: 4 }, () => null);
+    } else {
+      first.slots[0] = 'frost';
+      first.slots[1] = 'pulse';
+    }
     this.towers.push(first);
     this.selectedTowerId = null;
-    if (this.mode === 'standard') this.beginModuleDraft();
+    if (this.mode === 'standard' && !this.tutorialEnabled) this.beginModuleDraft();
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -1296,7 +1317,7 @@ export class GameEngine {
     if (this.wave >= this.maxWaves) {
       this.status = 'won';
       this.emit({ type: 'toast', message: '所有信号已净化，棱镜核心稳定！', tone: 'good' });
-    } else if (this.mode === 'standard') {
+    } else if (this.mode === 'standard' && !this.tutorialEnabled) {
       this.beginModuleDraft();
       this.emit({ type: 'toast', message: `波次完成 · +${bonus} 晶片 · 选择模块奖励`, tone: 'good' });
     } else {

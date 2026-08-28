@@ -57,7 +57,7 @@ export function GameHeader({
         <button className={`icon-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label="暂停游戏">
           <span className="pause-glyph">{snapshot.paused ? '▶' : 'Ⅱ'}</span>
         </button>
-        <button className="launch-button" onClick={() => engine.startWave()} disabled={waveDisabled}>
+        <button className="launch-button" data-tutorial-launch onClick={() => engine.startWave()} disabled={waveDisabled}>
           <span className="launch-icon">▶</span>
           <span><small>{launchLabel}</small><strong>{launchWave}</strong></span>
         </button>

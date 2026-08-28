@@ -32,7 +32,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
   return (
     <div className="slot-wrap">
       {!definition ? (
-        <button className="module-slot empty" data-slot={index}
+        <button className="module-slot empty" data-slot={index} data-tutorial-slot={index}
           onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
           onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
           onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')}
@@ -41,7 +41,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
         </button>
       ) : (
         <div className="filled-slot">
-          <button className={`module-slot filled ${definition.kind}`} style={moduleVariableStyle(definition)} draggable
+          <button className={`module-slot filled ${definition.kind}`} data-tutorial-slot={index} style={moduleVariableStyle(definition)} draggable
             onDragStart={dragStart} onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
             onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')} onDrop={drop} onKeyDown={keyDown}
             onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}

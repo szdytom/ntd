@@ -44,7 +44,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
         <h2>ARC WORKSHOP <span>弧光工作台</span></h2>
         <div className="workshop-head-actions">
           <div className="tower-id">NODE T{String(tower.id).padStart(2, '0')}</div>
-          <button className="workshop-close" onClick={() => engine.selectTower(null)} aria-label="关闭工作台">×</button>
+          <button className="workshop-close" data-tutorial-workshop-close onClick={() => engine.selectTower(null)} aria-label="关闭工作台">×</button>
         </div>
       </div>
 
@@ -101,6 +101,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                   <ModuleCard
                     key={definition.id}
                     definition={definition}
+                    tutorialId={definition.id}
                     selected={definition.id === selectedModule}
                     exhausted={exhausted}
                     inventoryLabel={engine.mode === 'standard'

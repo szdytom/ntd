@@ -9,7 +9,7 @@ export function ProgramReadout({ program, engine, maxEnergy }: { program: TowerP
   const warning = program.warnings[0] ?? capacityWarning;
   const hasTrigger = program.shots.some((shot) => shot.trigger);
   return (
-    <div className="program-output">
+    <div className="program-output" data-tutorial-program>
       <div className={`program-readout ${warning ? 'warning' : ''}`}>
         <span className="readout-icon" aria-hidden="true"><i /></span>
         <div><strong>{program.summary}</strong><small>{warning ?? (program.wraps > 0
