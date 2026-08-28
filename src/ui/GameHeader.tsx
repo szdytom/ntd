@@ -39,7 +39,7 @@ export function GameHeader({
         </div>
         <div className="metric shard-metric">
           <span className="metric-icon shard-icon">◇</span>
-          <div><small>晶片</small><strong>{snapshot.shards}</strong></div>
+          <div><small>晶片</small><strong>{snapshot.mode === 'creative' ? '∞' : snapshot.shards}</strong></div>
         </div>
         <div className="metric wave-metric">
           <span className="metric-icon wave-icon">≋</span>

@@ -1,4 +1,5 @@
 .battle-card {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -55,13 +56,50 @@
   text-align: right;
 }
 
-.incoming > small {
-  display: block;
+.incoming-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
   margin-bottom: 6px;
+}
+
+.incoming-title > small {
+  display: block;
   color: #9995a5;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.creative-signal-toggle {
+  padding: 4px 8px;
+  border: 1px solid #bfe7dc;
+  border-radius: 7px;
+  color: #008e70;
+  background: #effcf8;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.creative-signal-toggle[aria-expanded='true'] {
+  color: #fff;
+  background: #00a982;
+}
+
+.creative-signal-panel {
+  position: absolute;
+  z-index: 24;
+  top: 72px;
+  right: 18px;
+  width: min(720px, calc(100% - 36px));
+  padding-top: 8px;
+}
+
+.creative-signal-panel .creative-lab {
+  margin: 0;
+  box-shadow: 0 18px 42px rgba(43, 61, 57, 0.18);
 }
 
 .enemy-preview {
@@ -293,16 +331,33 @@
 }
 
 .tip-key {
-  display: grid;
+  position: relative;
+  display: block;
   width: 29px;
   height: 29px;
   flex: 0 0 auto;
-  place-items: center;
   border: 1px dashed #8f83ec;
   border-radius: 50%;
   color: #6c5ce7;
   background: #f2efff;
-  font-size: 17px;
+  font-size: 0;
+}
+
+.tip-key::before,
+.tip-key::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.tip-key::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .battle-tip strong,

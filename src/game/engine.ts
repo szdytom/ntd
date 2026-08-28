@@ -123,7 +123,9 @@ export class GameEngine {
     this.difficulty = getDifficulty(normalized.difficultyId ?? DEFAULT_DIFFICULTY_ID);
     this.path = createPathSampler(this.level.path);
     this.maxWaves = this.level.waves.length;
-    this.shards = Math.round(this.level.startingShards * this.difficulty.economy);
+    this.shards = this.mode === 'creative'
+      ? Number.POSITIVE_INFINITY
+      : Math.round(this.level.startingShards * this.difficulty.economy);
     this.creativeSetup = {
       wave: Object.fromEntries(ENEMY_TYPES.map((type) => [
         type,
@@ -536,7 +538,9 @@ export class GameEngine {
     this.status = 'planning';
     this.wave = 0;
     this.core = this.maxCore;
-    this.shards = Math.round(this.level.startingShards * this.difficulty.economy);
+    this.shards = this.mode === 'creative'
+      ? Number.POSITIVE_INFINITY
+      : Math.round(this.level.startingShards * this.difficulty.economy);
     this.score = 0;
     this.elapsed = 0;
     this.visualElapsed = 0;

@@ -31,3 +31,20 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await expect(page.getByRole('button', { name: /创造模式/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /部署至/ })).toBeVisible();
 });
+
+test('creative economy and signal controls are independent from the workshop', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /创造模式/ }).click();
+  await page.getByRole('button', { name: /部署至/ }).click();
+
+  await expect(page.getByText('∞', { exact: true })).toBeVisible();
+  const signalButton = page.getByRole('button', { name: '信号台' });
+  await expect(signalButton).toBeVisible();
+  await signalButton.click();
+  await expect(page.getByRole('heading', { name: '创造模式信号台' })).toBeVisible();
+  await signalButton.click();
+
+  await page.getByText('键盘战场控制').click();
+  await page.getByRole('button', { name: '选择节点 T01' }).click();
+  await expect(page.getByLabel('炮塔模块工作台').locator('.creative-lab')).toHaveCount(0);
+});

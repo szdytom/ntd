@@ -304,8 +304,7 @@
 .workshop .tower-controls,
 .workshop .program-section,
 .workshop .library-section,
-.workshop .module-inspector,
-.workshop .creative-lab {
+.workshop .module-inspector {
   margin: 0;
   border: 1px solid rgba(224, 221, 232, 0.88);
   border-radius: 12px;
@@ -514,31 +513,4 @@
 
 .workshop .rarity-mark {
   display: none;
-}
-
-.workshop-body > .creative-lab {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 300px;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 9px;
-}
-
-.workshop .creative-lab .section-title {
-  margin: 0;
-}
-
-.workshop .creative-enemy-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.workshop .creative-enemy-grid input {
-  height: 32px;
-}
-
-.workshop .creative-scales {
-  grid-template-columns: 1fr;
-  margin: 0;
 }

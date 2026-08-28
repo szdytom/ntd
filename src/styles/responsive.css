@@ -33,14 +33,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .workshop-body > .creative-lab {
-    grid-template-columns: 200px minmax(0, 1fr);
-  }
-
-  .workshop .creative-scales {
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 @media (max-width: 900px) {
@@ -65,11 +57,6 @@
   }
 
   .workspace:has(.workshop) {
-    height: calc(100dvh - 94px);
-    min-height: 0;
-  }
-
-  .workspace:has(.workshop[data-mode='creative']) {
     height: calc(100dvh - 94px);
     min-height: 0;
   }
@@ -131,7 +118,10 @@
   .battle-card { min-height: 0; height: 100%; border-radius: 15px; }
   .battle-head { min-height: 82px; padding: 0 13px; }
   .battle-head h1 { font-size: 15px; }
-  .incoming { display: none; }
+  .incoming > .enemy-preview,
+  .incoming-title > small { display: none; }
+  .incoming-title { margin: 0; }
+  .creative-signal-panel { top: 74px; right: 9px; width: calc(100% - 18px); }
   .battle-footer { padding: 0 12px; }
   .legend { display: none; }
   .workshop { border-radius: 15px; }
@@ -143,15 +133,10 @@
   .module-grid { grid-template-columns: 1fr; }
   .module-inspector { margin-right: 13px; margin-left: 13px; }
   .tower-controls { margin-right: 13px; margin-left: 13px; grid-template-columns: 1fr; }
-  .creative-lab { margin-right: 13px; margin-left: 13px; }
+  .creative-signal-panel .creative-lab { margin: 0; }
   .creative-enemy-grid { grid-template-columns: repeat(2, 1fr); }
 
   .workspace:has(.workshop) {
-    height: calc(100dvh - 90px);
-    min-height: 0;
-  }
-
-  .workspace:has(.workshop[data-mode='creative']) {
     height: calc(100dvh - 90px);
     min-height: 0;
   }
@@ -199,12 +184,6 @@
   }
 
   .workshop-side { overflow: visible; }
-
-  .workshop-body > .creative-lab {
-    grid-column: 1;
-    grid-row: 3;
-    grid-template-columns: 1fr;
-  }
 
   .workshop .slot-flow {
     grid-template-columns: repeat(3, minmax(0, 1fr));

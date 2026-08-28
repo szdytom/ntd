@@ -363,28 +363,37 @@ export class GameRenderer {
       ctx.arc(0, 0, 29, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = hovered ? '#6c5ce7' : '#aaa7b8';
-      ctx.font = '700 18px Manrope, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('+', 0, -2);
+      ctx.strokeStyle = hovered ? '#6c5ce7' : '#aaa7b8';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(6, 0);
+      ctx.moveTo(0, -6);
+      ctx.lineTo(0, 6);
+      ctx.stroke();
       if (hovered) {
         ctx.fillStyle = '#332f48';
         ctx.font = '700 11px Manrope, sans-serif';
-        ctx.fillText(`${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.engine.mode === 'creative' ? '无限晶片' : `${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
       }
       ctx.restore();
     }
   }
 
   private drawSelectionRange(): void {
-    const tower = this.engine.getSelectedTower();
+    const hoveredTower = this.engine.pointer
+      ? this.engine.towers.find((tower) => distance(tower.position, this.engine.pointer!) < 35) ?? null
+      : null;
+    const tower = hoveredTower ?? this.engine.getSelectedTower();
     if (!tower) return;
     const ctx = this.ctx;
     const pulse = Math.sin(this.engine.visualElapsed * 3) * 2;
     ctx.save();
-    ctx.fillStyle = 'rgba(108, 92, 231, 0.025)';
-    ctx.strokeStyle = 'rgba(108, 92, 231, 0.28)';
+    ctx.fillStyle = hoveredTower ? 'rgba(108, 92, 231, 0.045)' : 'rgba(108, 92, 231, 0.025)';
+    ctx.strokeStyle = hoveredTower ? 'rgba(108, 92, 231, 0.48)' : 'rgba(108, 92, 231, 0.28)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([7, 7]);
     ctx.beginPath();

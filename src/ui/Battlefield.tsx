@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { ECONOMY_BALANCE } from '../game/balance';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot } from '../game/types';
 import { GameCanvas } from './GameCanvas';
 import { EnemyPreview } from './EnemyPreview';
+import { CreativeLab } from './CreativeLab';
 import './Battlefield.css';
 
 export function Battlefield({ engine, view }: { engine: GameEngine; view: GameViewSnapshot }) {
+  const [creativePanelOpen, setCreativePanelOpen] = useState(false);
   const { game: snapshot } = view;
   const phase = snapshot.status === 'wave'
     ? '信号接触中'
@@ -23,8 +26,27 @@ export function Battlefield({ engine, view }: { engine: GameEngine; view: GameVi
           <div className="eyebrow"><i className={`live-dot ${snapshot.status === 'wave' && !snapshot.paused ? 'combat' : ''}`} /><span>{phase}</span></div>
           <h1>{engine.level.name} <span>/ {engine.level.sector}</span></h1>
         </div>
-        <div className="incoming"><small>下一波信号</small><EnemyPreview engine={engine} wave={snapshot.wave} /></div>
+        <div className="incoming">
+          <div className="incoming-title">
+            <small>下一波信号</small>
+            {engine.mode === 'creative' ? (
+              <button
+                className="creative-signal-toggle"
+                aria-expanded={creativePanelOpen}
+                aria-controls="creative-signal-panel"
+                onClick={() => setCreativePanelOpen((open) => !open)}
+              >信号台</button>
+            ) : null}
+          </div>
+          <EnemyPreview engine={engine} wave={snapshot.wave} />
+        </div>
       </div>
+
+      {engine.mode === 'creative' && creativePanelOpen ? (
+        <div id="creative-signal-panel" className="creative-signal-panel">
+          <CreativeLab engine={engine} setup={view.creativeSetup} />
+        </div>
+      ) : null}
 
       <div className="canvas-wrap">
         <GameCanvas engine={engine} />
@@ -46,8 +68,8 @@ export function Battlefield({ engine, view }: { engine: GameEngine; view: GameVi
         <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>信号入口</span></div>
         <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>棱镜核心</span><i /></div>
         <div className="battle-tip">
-          <span className="tip-key">+</span>
-          <div><strong>部署新节点</strong><small>点击虚线圆环 · 消耗 {ECONOMY_BALANCE.towerCost} ◇</small></div>
+          <span className="tip-key" aria-hidden="true">+</span>
+          <div><strong>部署新节点</strong><small>{engine.mode === 'creative' ? '点击虚线圆环 · 无限晶片' : `点击虚线圆环 · 消耗 ${ECONOMY_BALANCE.towerCost} ◇`}</small></div>
         </div>
         {!terminal ? null : (
           <div className="status-overlay" data-tone={snapshot.status}>

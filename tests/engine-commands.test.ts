@@ -41,4 +41,18 @@ describe('engine command and view boundary', () => {
     engine.spawnCreativeEnemy('crown');
     expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(1);
   });
+
+  it('keeps creative-mode shards infinite across spending and reset', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
+    expect(engine.shards).toBe(Number.POSITIVE_INFINITY);
+
+    engine.placeTower(1);
+    engine.selectTower(engine.towers[0].id);
+    engine.upgradeSelectedTower();
+    expect(engine.shards).toBe(Number.POSITIVE_INFINITY);
+    expect(engine.getSnapshot().shards).toBe(Number.POSITIVE_INFINITY);
+
+    engine.reset();
+    expect(engine.shards).toBe(Number.POSITIVE_INFINITY);
+  });
 });

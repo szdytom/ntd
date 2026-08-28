@@ -4,7 +4,6 @@ import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot, ModuleId, Tower } from '../game/types';
 import type { ModuleKind } from '../modules';
 import { KIND_LABEL } from './modulePresentation';
-import { CreativeLab } from './CreativeLab';
 import { ModuleCard } from './ModuleCard';
 import { ModuleInspector } from './ModuleInspector';
 import { ModuleSlot } from './ModuleSlot';
@@ -40,7 +39,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
   };
 
   return (
-    <aside className="workshop" data-mode={engine.mode} aria-label="炮塔模块工作台">
+    <aside className="workshop" aria-label="炮塔模块工作台">
       <div className="workshop-head">
         <h2>ARC WORKSHOP <span>弧光工作台</span></h2>
         <div className="workshop-head-actions">
@@ -119,7 +118,6 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
           </section>
         </div>
 
-        {engine.mode === 'creative' ? <CreativeLab engine={engine} setup={view.creativeSetup} /> : null}
       </div>
     </aside>
   );
