@@ -1,14 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameEngine } from '../game/engine';
 import { GameRenderer } from '../game/renderer';
 
 export function GameCanvas({ engine }: { engine: GameEngine }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rendererError, setRendererError] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const renderer = new GameRenderer(canvas, engine);
+    let renderer: GameRenderer;
+    try {
+      renderer = new GameRenderer(canvas, engine);
+    } catch (error) {
+      setRendererError(error instanceof Error ? error.message : 'Renderer initialization failed');
+      return;
+    }
     const pointerMove = (event: PointerEvent) => engine.setPointer(renderer.toWorld(event.clientX, event.clientY));
     const pointerLeave = () => engine.setPointer(null);
     const click = (event: MouseEvent) => engine.handleWorldClick(renderer.toWorld(event.clientX, event.clientY));
@@ -19,7 +26,7 @@ export function GameCanvas({ engine }: { engine: GameEngine }) {
     let frameId = 0;
     let previous = performance.now();
     const frame = (now: number): void => {
-      const delta = Math.min((now - previous) / 1000, 0.05);
+      const delta = (now - previous) / 1000;
       previous = now;
       engine.update(delta);
       renderer.render();
@@ -36,5 +43,8 @@ export function GameCanvas({ engine }: { engine: GameEngine }) {
     };
   }, [engine]);
 
+  if (rendererError) {
+    return <div className="renderer-error" role="alert">图形渲染器无法启动：{rendererError}</div>;
+  }
   return <canvas ref={canvasRef} id="game-canvas" aria-label="塔防游戏战场" />;
 }

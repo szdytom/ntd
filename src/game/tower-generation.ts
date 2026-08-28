@@ -63,6 +63,7 @@ export function rollTowerStats(random: () => number): TowerStatRoll {
     const totalWeight = available.reduce((sum, rule) => sum + rule.weight, 0);
     let roll = random() * totalWeight;
     let selected = available[available.length - 1];
+    if (!selected) break;
     for (const rule of available) {
       roll -= rule.weight;
       if (roll <= 0) {

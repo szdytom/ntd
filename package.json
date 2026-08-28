@@ -5,18 +5,28 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "balance:report": "node --import tsx scripts/balance-report.ts",
     "dev": "node dev.mjs",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "esbuild": "^0.28.2",
-    "typescript": "^5.9.2"
+    "eslint": "^10.9.1",
+    "globals": "^17.11.0",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11"
   }
 }

@@ -12,6 +12,7 @@ export interface EnemyConfig {
   color: string;
   sides: number;
   name: string;
+  unique?: boolean;
   shield?: EnemyShieldConfig;
 }
 
@@ -40,6 +41,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#ff774d',
     sides: 8,
     name: '棱镜领主',
+    unique: true,
     shield: { capacity: 240, regen: 4, cooldown: 9, radius: 72, sides: 6, rotation: Math.PI / 6, color: '#45b7ff' },
   },
 };
@@ -62,7 +64,7 @@ export interface LevelDefinition {
 const group = (type: EnemyType, count: number): EnemyType[] => Array.from({ length: count }, () => type);
 const wave = (...groups: Array<[EnemyType, number]>): EnemyType[] => groups.flatMap(([type, count]) => group(type, count));
 
-export const LEVELS: readonly LevelDefinition[] = [
+export const LEVELS = [
   {
     id: 'white-prism',
     name: '白棱镜区',
@@ -149,7 +151,7 @@ export const LEVELS: readonly LevelDefinition[] = [
     enemyHealthScale: 1.16,
     enemySpeedScale: 1.08,
   },
-];
+] as const satisfies readonly [LevelDefinition, ...LevelDefinition[]];
 
 export const DEFAULT_LEVEL_ID = LEVELS[0].id;
 

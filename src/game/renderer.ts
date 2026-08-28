@@ -1,4 +1,4 @@
-import { WebGLBloomPipeline, type ShieldDistortion } from '../effects/bloom';
+import { createBloomWebGLContext, WebGLBloomPipeline, type ShieldDistortion } from '../effects/bloom';
 import { ECONOMY_BALANCE } from './balance';
 import { ENEMIES, WORLD } from './config';
 import { clamp, distance } from './math';
@@ -26,7 +26,8 @@ export class GameRenderer {
   private offsetX = 0;
   private offsetY = 0;
   private dpr = 1;
-  private readonly bloom: WebGLBloomPipeline;
+  private readonly bloom: WebGLBloomPipeline | null;
+  private readonly fallbackCtx: CanvasRenderingContext2D | null;
   private readonly resizeObserver: ResizeObserver;
 
   constructor(private canvas: HTMLCanvasElement, private engine: GameEngine) {
@@ -36,7 +37,10 @@ export class GameRenderer {
     if (!backgroundContext) throw new Error('Background Canvas 2D context is unavailable');
     this.ctx = context;
     this.backgroundCtx = backgroundContext;
-    this.bloom = new WebGLBloomPipeline(canvas);
+    const gl = createBloomWebGLContext(canvas);
+    this.bloom = gl ? new WebGLBloomPipeline(canvas, gl) : null;
+    this.fallbackCtx = this.bloom ? null : canvas.getContext('2d', { alpha: false });
+    if (!this.bloom && !this.fallbackCtx) throw new Error('Neither WebGL nor Canvas 2D output is available');
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -61,7 +65,11 @@ export class GameRenderer {
     this.offsetX = (this.cssWidth - WORLD.width * this.scale) / 2;
     this.offsetY = (this.cssHeight - WORLD.height * this.scale) / 2;
     this.rebuildBackground();
-    this.bloom.resize(this.cssWidth, this.cssHeight, this.dpr);
+    if (this.bloom) this.bloom.resize(this.cssWidth, this.cssHeight, this.dpr);
+    else {
+      this.canvas.width = pixelWidth;
+      this.canvas.height = pixelHeight;
+    }
   }
 
   toWorld(clientX: number, clientY: number): Point {
@@ -74,7 +82,7 @@ export class GameRenderer {
 
   render(): void {
     const ctx = this.ctx;
-    const bloomCtx = this.bloom.beginFrame(this.offsetX, this.offsetY, this.scale);
+    const bloomCtx = this.bloom?.beginFrame(this.offsetX, this.offsetY, this.scale);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
     ctx.drawImage(
@@ -108,13 +116,18 @@ export class GameRenderer {
 
     ctx.restore();
 
-    this.drawBloomSources(bloomCtx);
-    this.bloom.render(this.scene, this.getShieldDistortion());
+    if (bloomCtx && this.bloom) {
+      this.drawBloomSources(bloomCtx);
+      this.bloom.render(this.scene, this.getShieldDistortion());
+    } else if (this.fallbackCtx) {
+      this.fallbackCtx.setTransform(1, 0, 0, 1, 0, 0);
+      this.fallbackCtx.drawImage(this.scene, 0, 0);
+    }
   }
 
   dispose(): void {
     this.resizeObserver.disconnect();
-    this.bloom.dispose();
+    this.bloom?.dispose();
   }
 
   private rebuildBackground(): void {
@@ -135,7 +148,7 @@ export class GameRenderer {
     if (!enemy) return null;
     const shield = ENEMIES[enemy.type].shield;
     if (!shield || (enemy.shield <= 0 && enemy.shieldRippleAge >= 0.72)) return null;
-    const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
+    const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
     const screenX = this.offsetX + enemy.position.x * this.scale;
     const screenY = this.offsetY + (enemy.position.y + bob) * this.scale;
     return {
@@ -150,7 +163,7 @@ export class GameRenderer {
       hitStrength: enemy.shieldHitFlash,
       color: hexToRgb(shield.color),
       rippleAge: enemy.shieldRippleAge,
-      time: this.engine.elapsed,
+      time: this.engine.visualElapsed,
     };
   }
 
@@ -180,6 +193,7 @@ export class GameRenderer {
         : 1;
       for (let index = projectile.trail.length - 1; index >= 0; index -= 1) {
         const trail = projectile.trail[index];
+        if (!trail) continue;
         const fade = 1 - index / Math.max(1, projectile.trail.length);
         ctx.globalAlpha = fade * 0.28;
         ctx.fillStyle = projectile.color;
@@ -212,14 +226,14 @@ export class GameRenderer {
       const shield = ENEMIES[enemy.type].shield;
       if (!shield || enemy.shield <= 0 || enemy.dead) continue;
       const radius = shield.radius * enemy.shieldRadiusScale;
-      const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
+      const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
       ctx.globalAlpha = 0.045 + enemy.shieldHitFlash * 0.34;
       ctx.fillStyle = shield.color;
       this.tracePolygon(ctx, enemy.position.x, enemy.position.y + bob, radius, shield.sides, shield.rotation);
       ctx.fill();
     }
 
-    ctx.globalAlpha = 0.3 + Math.sin(this.engine.elapsed * 3) * 0.08;
+    ctx.globalAlpha = 0.3 + Math.sin(this.engine.visualElapsed * 3) * 0.08;
     ctx.fillStyle = '#6c5ce7';
     ctx.beginPath();
     const core = this.engine.path.pointAtDistance(this.engine.path.length - 54).position;
@@ -254,8 +268,13 @@ export class GameRenderer {
   private tracePath(ctx: CanvasRenderingContext2D): void {
     ctx.beginPath();
     const path = this.engine.level.path;
-    ctx.moveTo(path[0].x, path[0].y);
-    for (let index = 1; index < path.length; index += 1) ctx.lineTo(path[index].x, path[index].y);
+    const first = path[0];
+    if (!first) return;
+    ctx.moveTo(first.x, first.y);
+    for (let index = 1; index < path.length; index += 1) {
+      const point = path[index];
+      if (point) ctx.lineTo(point.x, point.y);
+    }
   }
 
   private drawPath(ctx: CanvasRenderingContext2D): void {
@@ -311,7 +330,7 @@ export class GameRenderer {
     for (const bit of bits) {
       ctx.save();
       ctx.translate(bit.x, bit.y);
-      ctx.rotate(this.engine.elapsed * 0.25 + bit.x);
+      ctx.rotate(this.engine.visualElapsed * 0.25 + bit.x);
       ctx.strokeStyle = bit.color;
       ctx.lineWidth = 2;
       ctx.globalAlpha = 0.55;
@@ -327,6 +346,7 @@ export class GameRenderer {
     for (let index = 0; index < this.engine.level.towerPads.length; index += 1) {
       if (this.engine.towers.some((tower) => tower.padIndex === index)) continue;
       const pad = this.engine.level.towerPads[index];
+      if (!pad) continue;
       const hovered = this.engine.pointer ? distance(this.engine.pointer, pad) < 38 : false;
       ctx.save();
       ctx.translate(pad.x, pad.y);
@@ -361,7 +381,7 @@ export class GameRenderer {
     const tower = this.engine.getSelectedTower();
     if (!tower) return;
     const ctx = this.ctx;
-    const pulse = Math.sin(this.engine.elapsed * 3) * 2;
+    const pulse = Math.sin(this.engine.visualElapsed * 3) * 2;
     ctx.save();
     ctx.fillStyle = 'rgba(108, 92, 231, 0.025)';
     ctx.strokeStyle = 'rgba(108, 92, 231, 0.28)';
@@ -476,6 +496,7 @@ export class GameRenderer {
     for (const projectile of this.engine.projectiles) {
       for (let index = projectile.trail.length - 1; index >= 0; index -= 1) {
         const trail = projectile.trail[index];
+        if (!trail) continue;
         ctx.globalAlpha = (1 - index / projectile.trail.length) * 0.16;
         ctx.fillStyle = projectile.color;
         ctx.beginPath();

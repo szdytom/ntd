@@ -5,12 +5,14 @@ import type { ModuleDefinition, ModuleEffectContext, ProjectileRenderContext } f
 
 export class ModuleRegistry {
   private definitions = new Map<ModuleId, ModuleDefinition>();
+  private compileCache = new Map<string, TowerProgram>();
 
   register(definition: ModuleDefinition): this {
     if (this.definitions.has(definition.id)) {
       throw new Error(`Module already registered: ${definition.id}`);
     }
     this.definitions.set(definition.id, definition);
+    this.compileCache.clear();
     return this;
   }
 
@@ -29,7 +31,16 @@ export class ModuleRegistry {
   }
 
   compile(slots: Array<ModuleId | null>): TowerProgram {
-    return compileProgram(slots, this);
+    const key = JSON.stringify(slots);
+    const cached = this.compileCache.get(key);
+    if (cached) return cached;
+    const program = compileProgram(slots, this);
+    if (this.compileCache.size >= 512) {
+      const oldest = this.compileCache.keys().next().value;
+      if (oldest !== undefined) this.compileCache.delete(oldest);
+    }
+    this.compileCache.set(key, program);
+    return program;
   }
 
   registerEffects(engine: EffectEngine): void {

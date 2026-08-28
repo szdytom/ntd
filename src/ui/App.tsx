@@ -1,8 +1,8 @@
-import type { CSSProperties, DragEvent, MouseEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import { ENEMIES, LEVELS, WORLD, type LevelDefinition } from '../game/config';
+import type { CSSProperties, DragEvent, KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS, WORLD, type LevelDefinition } from '../game/config';
 import { ECONOMY_BALANCE } from '../game/balance';
-import { DIFFICULTIES } from '../game/difficulty';
+import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
 import { GameEngine } from '../game/engine';
 import type {
   CreativeSetup,
@@ -10,6 +10,7 @@ import type {
   EnemyType,
   GameMode,
   GameSnapshot,
+  GameViewSnapshot,
   ModuleId,
   ShotBlueprint,
   TargetingMode,
@@ -124,7 +125,8 @@ function EnemyPreview({ engine, wave }: { engine: GameEngine; wave: number }) {
   );
 }
 
-function Battlefield({ engine, snapshot }: { engine: GameEngine; snapshot: GameSnapshot }) {
+function Battlefield({ engine, view }: { engine: GameEngine; view: GameViewSnapshot }) {
+  const { game: snapshot } = view;
   const phase = snapshot.status === 'wave'
     ? '信号接触中'
     : snapshot.status === 'reward'
@@ -189,6 +191,19 @@ function Battlefield({ engine, snapshot }: { engine: GameEngine; snapshot: GameS
           <span className="difficulty-chip">{engine.difficulty.name}</span>
           净化值 <strong>{String(snapshot.score).padStart(5, '0')}</strong>
         </div>
+        <details className="battle-access-controls">
+          <summary>键盘战场控制</summary>
+          <div>
+            {view.towers.map((tower) => (
+              <button key={tower.id} onClick={() => engine.selectTower(tower.id)}>选择节点 T{String(tower.id).padStart(2, '0')}</button>
+            ))}
+            {engine.level.towerPads.map((_, padIndex) => (
+              view.towers.some((tower) => tower.padIndex === padIndex)
+                ? null
+                : <button key={`pad-${padIndex}`} onClick={() => engine.placeTower(padIndex)}>部署节点 {padIndex + 1}</button>
+            ))}
+          </div>
+        </details>
       </footer>
     </section>
   );
@@ -203,7 +218,7 @@ function ModuleSlot({
 }: {
   index: number;
   isLast: boolean;
-  definition?: ModuleDefinition;
+  definition: ModuleDefinition | undefined;
   selectedModule: ModuleId | null;
   engine: GameEngine;
 }) {
@@ -219,9 +234,10 @@ function ModuleSlot({
     if (incoming) engine.installModule(index, incoming);
     else if (source !== '') engine.swapModules(Number(source), index);
   };
-  const remove = (event: MouseEvent<HTMLElement>): void => {
-    event.stopPropagation();
-    engine.installModule(index, null);
+  const keyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+    event.preventDefault();
+    engine.swapModules(index, index + (event.key === 'ArrowLeft' ? -1 : 1));
   };
 
   return (
@@ -239,22 +255,27 @@ function ModuleSlot({
           <span>+</span><small>槽 {index + 1}</small>
         </button>
       ) : (
-        <button
-          className={`module-slot filled ${definition.kind}`}
-          style={variableStyle(definition)}
-          draggable
-          onDragStart={dragStart}
-          onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
-          onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')}
-          onDrop={drop}
-          onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
-          title={`${definition.meta.name}：${definition.meta.description}`}
-        >
-          <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span>
-          <strong>{definition.meta.symbol}</strong>
-          <small>{definition.meta.shortName}</small>
-          <i onClick={remove} title="移除">×</i>
-        </button>
+        <div className="filled-slot">
+          <button
+            className={`module-slot filled ${definition.kind}`}
+            style={variableStyle(definition)}
+            draggable
+            onDragStart={dragStart}
+            onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
+            onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')}
+            onDrop={drop}
+            onKeyDown={keyDown}
+            onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
+            aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+            aria-label={`槽位 ${index + 1}：${definition.meta.name}。按 Alt 加左右方向键移动`}
+            title={`${definition.meta.name}：${definition.meta.description}；Alt+方向键调整顺序`}
+          >
+            <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span>
+            <strong>{definition.meta.symbol}</strong>
+            <small>{definition.meta.shortName}</small>
+          </button>
+          <button className="slot-remove" onClick={() => engine.installModule(index, null)} aria-label={`从槽位 ${index + 1} 移除${definition.meta.name}`}>×</button>
+        </div>
       )}
       {!isLast ? <span className="flow-arrow">›</span> : null}
     </div>
@@ -272,7 +293,7 @@ function ModuleCard({
   definition: ModuleDefinition;
   selected: boolean;
   exhausted: boolean;
-  inventoryLabel?: string;
+  inventoryLabel: string | undefined;
   onSelect: () => void;
   onQuickInstall: () => void;
 }) {
@@ -356,7 +377,7 @@ function ModuleInspector({ definition }: { definition: ModuleDefinition }) {
       <div className="inspector-copy">
         <span><i>{KIND_LABEL[definition.kind]}</i><b style={{ color: MODULE_RARITIES[definition.meta.rarity].color }}>{MODULE_RARITIES[definition.meta.rarity].label}</b></span>
         <strong>{definition.meta.name}</strong>
-        <small>{definition.meta.description}</small>
+        <small>{definition.meta.description} · {definition.meta.detail}</small>
       </div>
       <div className="inspector-cost"><small>耗能</small><strong>{definition.meta.energy}</strong></div>
     </div>
@@ -418,8 +439,7 @@ function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEngine }) 
   );
 }
 
-function CreativeLab({ engine }: { engine: GameEngine }) {
-  const setup = engine.getCreativeSetup();
+function CreativeLab({ engine, setup }: { engine: GameEngine; setup: CreativeSetup }) {
   return (
     <section className="creative-lab">
       <div className="section-title">
@@ -434,7 +454,7 @@ function CreativeLab({ engine }: { engine: GameEngine }) {
               <input
                 type="number"
                 min="0"
-                max="40"
+                max={enemy.unique ? 1 : 40}
                 value={setup.wave[type]}
                 onChange={(event) => engine.configureCreativeEnemy(type, Number(event.target.value))}
                 aria-label={`${enemy.name}下一波数量`}
@@ -452,7 +472,8 @@ function CreativeLab({ engine }: { engine: GameEngine }) {
   );
 }
 
-function Workshop({ engine, tower, revision }: { engine: GameEngine; tower: Tower; revision: number }) {
+function Workshop({ engine, tower, view }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot }) {
+  const { revision } = view;
   const definitions = useMemo(() => engine.getLibraryModules(), [engine, revision]);
   const [selectedModule, setSelectedModule] = useState<ModuleId | null>(() => definitions[0]?.id ?? null);
   const [kindFilter, setKindFilter] = useState<'all' | ModuleKind>('all');
@@ -471,7 +492,7 @@ function Workshop({ engine, tower, revision }: { engine: GameEngine; tower: Towe
     ? definitions.find((definition) => definition.id === selectedModule)
     : undefined;
   const filterLabel = kindFilter === 'all' ? '全部模块' : KIND_LABEL[kindFilter];
-  const program = engine.modules.compile(tower.slots);
+  const program = view.selectedProgram ?? engine.modules.compile(tower.slots);
 
   const quickInstall = (id: ModuleId): void => {
     const empty = tower.slots.findIndex((slot) => slot === null);
@@ -533,8 +554,9 @@ function Workshop({ engine, tower, revision }: { engine: GameEngine; tower: Towe
             </div>
             <div className={`module-grid ${kindFilter === 'all' ? 'all-modules' : ''}`}>
               {visibleDefinitions.map((definition) => {
-                const available = engine.getAvailableModuleCount(definition.id);
-                const total = engine.getModuleCount(definition.id);
+                const counts = view.moduleInventory[definition.id];
+                const available = counts?.available ?? 0;
+                const total = counts?.total ?? 0;
                 const exhausted = engine.mode === 'standard' && available === 0;
                 return (
                   <ModuleCard
@@ -557,7 +579,7 @@ function Workshop({ engine, tower, revision }: { engine: GameEngine; tower: Towe
           </section>
         </div>
 
-        {engine.mode === 'creative' ? <CreativeLab engine={engine} /> : null}
+        {engine.mode === 'creative' ? <CreativeLab engine={engine} setup={view.creativeSetup} /> : null}
       </div>
     </aside>
   );
@@ -574,12 +596,33 @@ function Toast({ toast }: { toast: ToastState | null }) {
   return <div className={`toast ${visible ? 'visible' : ''}`} data-tone={toast?.tone ?? 'info'} role="status" aria-live="polite">{toast?.message}</div>;
 }
 
-function RewardDraft({ engine, snapshot }: { engine: GameEngine; snapshot: GameSnapshot }) {
+function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngine; snapshot: GameSnapshot; inventory: GameViewSnapshot['moduleInventory'] }) {
   const draft = snapshot.draft;
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!draft) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => previousFocus?.focus();
+  }, [draft?.round]);
+  const trapFocus = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? []);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  };
   if (!draft) return null;
   return (
     <div className="reward-backdrop" role="dialog" aria-modal="true" aria-label="选择模块奖励">
-      <div className="reward-panel">
+      <div className="reward-panel" ref={panelRef} onKeyDown={trapFocus}>
         <div className="reward-kicker">WAVE {String(snapshot.wave).padStart(2, '0')} CLEARED</div>
         <h2>截获模块信号</h2>
         <p>四选一，选择一枚加入库存。</p>
@@ -596,7 +639,7 @@ function RewardDraft({ engine, snapshot }: { engine: GameEngine; snapshot: GameS
                 <b>{definition.meta.symbol}</b>
                 <strong>{definition.meta.name}</strong>
                 <small>{definition.meta.description}</small>
-                <em>{definition.meta.energy} ⚡ · 已有 {engine.getModuleCount(moduleId)}</em>
+                <em>{definition.meta.energy} ⚡ · 已有 {inventory[moduleId]?.total ?? 0}</em>
               </button>
             );
           })}
@@ -623,12 +666,12 @@ function LevelMap({ level }: { level: LevelDefinition }) {
 }
 
 function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, creative: CreativeSetup, difficultyId: DifficultyId) => void }) {
-  const [levelId, setLevelId] = useState(LEVELS[0].id);
+  const [levelId, setLevelId] = useState<string>(DEFAULT_LEVEL_ID);
   const [mode, setMode] = useState<GameMode>('standard');
-  const [difficultyId, setDifficultyId] = useState<DifficultyId>('normal');
+  const [difficultyId, setDifficultyId] = useState<DifficultyId>(DEFAULT_DIFFICULTY_ID);
   const [creative, setCreative] = useState<CreativeSetup>(initialCreativeSetup);
-  const selectedLevel = LEVELS.find((level) => level.id === levelId) ?? LEVELS[0];
-  const selectedDifficulty = DIFFICULTIES.find((difficulty) => difficulty.id === difficultyId) ?? DIFFICULTIES[2];
+  const selectedLevel = getLevel(levelId);
+  const selectedDifficulty = getDifficulty(difficultyId);
   const setEnemyCount = (type: EnemyType, count: number): void => setCreative((current) => ({
     ...current,
     wave: { ...current.wave, [type]: Math.max(0, Math.min(40, Math.round(count))) },
@@ -703,7 +746,7 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
         <section className="creative-setup-card">
           <div><span>CREATIVE SIGNAL MIXER</span><h2>自定义重复波次</h2><p>这些参数仍可在游戏中随时修改。</p></div>
           <div className="setup-enemies">
-            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i />{ENEMIES[type].name}</span><input type="number" min="0" max="40" value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
+            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i />{ENEMIES[type].name}</span><input type="number" min="0" max={ENEMIES[type].unique ? 1 : 40} value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
           </div>
           <div className="setup-scales">
             <label><span>生命倍率</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>
@@ -716,16 +759,16 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
 }
 
 function GameSession({ engine, onExit }: { engine: GameEngine; onExit: () => void }) {
-  const { snapshot, revision, toast } = useGameState(engine);
-  const tower = engine.getSelectedTower();
+  const { view, toast } = useGameState(engine);
+  const { game: snapshot, selectedTower: tower } = view;
   return (
     <div className="app-shell">
       <Header engine={engine} snapshot={snapshot} onExit={onExit} />
       <div className="workspace">
-        <Battlefield engine={engine} snapshot={snapshot} />
-        {tower ? <Workshop engine={engine} tower={tower} revision={revision} /> : null}
+        <Battlefield engine={engine} view={view} />
+        {tower ? <Workshop engine={engine} tower={tower} view={view} /> : null}
       </div>
-      <RewardDraft engine={engine} snapshot={snapshot} />
+      <RewardDraft engine={engine} snapshot={snapshot} inventory={view.moduleInventory} />
       <Toast toast={toast} />
     </div>
   );

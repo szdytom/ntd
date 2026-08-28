@@ -17,7 +17,7 @@ export function coneSparks(options: SparkEffectOptions): EffectDefinition {
     id: options.id,
     lifetime: options.lifetime ?? 0.32,
     layer: options.layer ?? 'air',
-    bloom: options.bloom,
+    ...(options.bloom !== undefined ? { bloom: options.bloom } : {}),
     render: (frame, painter) => {
       for (let index = 0; index < options.count; index += 1) {
         const angle = frame.rotation + frame.random(index, -(options.cone ?? Math.PI), options.cone ?? Math.PI);
@@ -53,7 +53,7 @@ export function shockwave(options: ShockwaveOptions): EffectDefinition {
     id: options.id,
     lifetime: options.lifetime ?? 0.4,
     layer: options.layer ?? 'air',
-    bloom: options.bloom,
+    ...(options.bloom !== undefined ? { bloom: options.bloom } : {}),
     render: (frame, painter) => {
       const radius = 3 + frame.easeOut(3) * options.radius;
       const stroke = (options.stroke ?? 3) * frame.fout + 0.25;

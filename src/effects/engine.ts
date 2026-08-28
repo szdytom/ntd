@@ -37,10 +37,6 @@ export class EffectEngine {
     return this;
   }
 
-  has(id: string): boolean {
-    return this.definitions.has(id);
-  }
-
   spawn<TData>(id: string, options: EffectSpawnOptions<TData>): void {
     const definition = this.definitions.get(id);
     if (!definition) throw new Error(`Unknown effect: ${id}`);
@@ -114,10 +110,6 @@ export class EffectEngine {
       random: (index, min = 0, max = 1) => min + hash(instance.id * 4099 + index * 131) * (max - min),
       randomSign: (index) => hash(instance.id * 4099 + index * 131) < 0.5 ? -1 : 1,
     };
-  }
-
-  get activeCount(): number {
-    return this.instances.length;
   }
 
   static readonly layers = LAYERS;

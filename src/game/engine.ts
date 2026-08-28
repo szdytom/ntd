@@ -3,6 +3,7 @@ import { gameEffects } from '../effects/game-effects';
 import { createModuleRegistry, DRAFT_BALANCE, MODULE_RARITIES } from '../modules';
 import type { ModuleCombatApi, StatusApplication } from '../modules/types';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
+import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, WORLD, type LevelDefinition } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
@@ -18,6 +19,7 @@ import type {
   GameEvent,
   GameMode,
   GameSnapshot,
+  GameViewSnapshot,
   ModuleId,
   Point,
   Projectile,
@@ -28,6 +30,7 @@ import type {
 } from './types';
 
 type Listener = (event: GameEvent) => void;
+type ViewListener = () => void;
 
 export interface GameEngineOptions {
   seed?: number;
@@ -40,6 +43,15 @@ export interface GameEngineOptions {
 const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown'];
 const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = { spark: 8, kite: 5, block: 2, hex: 1, crown: 0 };
 const MAX_TOWER_LEVEL = 5;
+export const FIXED_SIMULATION_STEP = 1 / 120;
+const MAX_FRAME_DELTA = 0.1;
+const MAX_SIMULATION_STEPS = 24;
+
+const normalizeCreativeEnemyCount = (type: EnemyType, value: number): number => {
+  const maximum = ENEMIES[type].unique ? 1 : 40;
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(maximum, Math.round(value)));
+};
 
 export class GameEngine {
   readonly towers: Tower[] = [];
@@ -64,14 +76,19 @@ export class GameEngine {
   speed = 1;
   paused = false;
   elapsed = 0;
+  visualElapsed = 0;
   pointer: Point | null = null;
 
   private listeners = new Set<Listener>();
+  private viewListeners = new Set<ViewListener>();
   private spawnQueue: EnemyType[] = [];
   private spawnTimer = 0;
   private scheduledCasts: ScheduledCast[] = [];
   private nextId = 1;
   private dirtyStateTimer = 0;
+  private simulationAccumulator = 0;
+  private configurationRevision = 0;
+  private viewSnapshot!: GameViewSnapshot;
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
   private draft: GameSnapshot['draft'] = null;
@@ -103,7 +120,10 @@ export class GameEngine {
     this.maxWaves = this.level.waves.length;
     this.shards = Math.round(this.level.startingShards * this.difficulty.economy);
     this.creativeSetup = {
-      wave: Object.fromEntries(ENEMY_TYPES.map((type) => [type, Math.max(0, Math.round(normalized.creative?.wave?.[type] ?? DEFAULT_CREATIVE_WAVE[type]))])) as Record<EnemyType, number>,
+      wave: Object.fromEntries(ENEMY_TYPES.map((type) => [
+        type,
+        normalizeCreativeEnemyCount(type, normalized.creative?.wave?.[type] ?? DEFAULT_CREATIVE_WAVE[type]),
+      ])) as Record<EnemyType, number>,
       healthScale: Math.max(0.25, Math.min(5, normalized.creative?.healthScale ?? 1)),
       speedScale: Math.max(0.25, Math.min(3, normalized.creative?.speedScale ?? 1)),
     };
@@ -119,6 +139,7 @@ export class GameEngine {
     first.slots[1] = 'pulse';
     this.towers.push(first);
     this.selectedTowerId = null;
+    this.refreshViewSnapshot();
   }
 
   subscribe(listener: Listener): () => void {
@@ -126,16 +147,22 @@ export class GameEngine {
     return () => this.listeners.delete(listener);
   }
 
-  emitInitialState(): void {
-    this.emitState();
-    this.emitSelection();
-  }
+  subscribeView = (listener: ViewListener): (() => void) => {
+    this.viewListeners.add(listener);
+    return () => this.viewListeners.delete(listener);
+  };
+
+  getViewSnapshot = (): GameViewSnapshot => this.viewSnapshot;
 
   private emit(event: GameEvent): void {
     this.listeners.forEach((listener) => listener(event));
   }
 
   getSnapshot(): GameSnapshot {
+    return this.viewSnapshot?.game ?? this.createGameSnapshot();
+  }
+
+  private createGameSnapshot(): GameSnapshot {
     const boss = this.enemies.find((enemy) => enemy.type === 'crown' && !enemy.dead);
     return {
       status: this.status,
@@ -165,21 +192,57 @@ export class GameEngine {
   }
 
   private emitState(): void {
-    this.emit({ type: 'state', snapshot: this.getSnapshot() });
+    this.refreshViewSnapshot();
+    this.emit({ type: 'state', snapshot: this.viewSnapshot.game });
+    this.viewListeners.forEach((listener) => listener());
   }
 
-  private emitSelection(): void {
-    const tower = this.getSelectedTower();
-    this.emit({ type: 'tower-selected', tower });
-    if (tower) this.emit({ type: 'program', towerId: tower.id, program: this.modules.compile(tower.slots) });
+  private cloneTower(tower: Tower): Tower {
+    return Object.freeze({
+      ...tower,
+      position: Object.freeze({ ...tower.position }),
+      slots: Object.freeze([...tower.slots]) as Array<ModuleId | null>,
+    });
+  }
+
+  private refreshViewSnapshot(): void {
+    const selected = this.getSelectedTower();
+    const towers = this.towers.map((tower) => this.cloneTower(tower));
+    const moduleInventory = Object.fromEntries(this.modules.list().map((definition) => [
+      definition.id,
+      Object.freeze({
+        total: this.getModuleCount(definition.id),
+        installed: this.getInstalledModuleCount(definition.id),
+        available: this.getAvailableModuleCount(definition.id),
+      }),
+    ]));
+    const game = Object.freeze(this.createGameSnapshot());
+    this.viewSnapshot = Object.freeze({
+      revision: this.configurationRevision,
+      game,
+      towers: Object.freeze(towers),
+      selectedTower: selected ? towers.find((tower) => tower.id === selected.id) ?? null : null,
+      selectedProgram: selected ? this.modules.compile(selected.slots) : null,
+      creativeSetup: Object.freeze({
+        ...this.creativeSetup,
+        wave: Object.freeze({ ...this.creativeSetup.wave }),
+      }) as CreativeSetup,
+      moduleInventory: Object.freeze(moduleInventory),
+    });
+  }
+
+  private markConfigurationChanged(): void {
+    this.configurationRevision += 1;
   }
 
   private buildTower(padIndex: number): Tower {
+    const pad = this.level.towerPads[padIndex];
+    if (!pad) throw new RangeError(`Invalid tower pad index: ${padIndex}`);
     const stats = rollTowerStats(this.towerRandom);
     return {
       id: this.nextId++,
       padIndex,
-      position: { ...this.level.towerPads[padIndex] },
+      position: { ...pad },
       rotation: -Math.PI / 2,
       energy: stats.maxEnergy,
       maxEnergy: stats.maxEnergy,
@@ -190,7 +253,6 @@ export class GameEngine {
       targeting: 'core-nearest',
       level: 1,
       slots: Array.from({ length: stats.slotCount }, () => null),
-      allocation: stats.allocation,
       flash: 0,
       targetId: null,
     };
@@ -201,7 +263,7 @@ export class GameEngine {
   }
 
   getTowerColor(tower: Tower): string {
-    return TOWER_COLORS[tower.id % TOWER_COLORS.length];
+    return TOWER_COLORS[tower.id % TOWER_COLORS.length] ?? TOWER_COLORS[0] ?? '#6c5ce7';
   }
 
   getWaveBlueprint(index: number): readonly EnemyType[] {
@@ -243,11 +305,12 @@ export class GameEngine {
     const tower = this.getSelectedTower();
     if (!tower) return;
     tower.targeting = mode;
-    this.emitSelection();
+    this.markConfigurationChanged();
+    this.emitState();
   }
 
   getTowerUpgradeCost(tower: Tower): number {
-    return tower.level >= MAX_TOWER_LEVEL ? 0 : ECONOMY_BALANCE.upgradeCosts[tower.level];
+    return tower.level >= MAX_TOWER_LEVEL ? 0 : ECONOMY_BALANCE.upgradeCosts[tower.level] ?? 0;
   }
 
   upgradeSelectedTower(): void {
@@ -276,7 +339,7 @@ export class GameEngine {
       lifetimeScale: 1.25,
     });
     this.emit({ type: 'toast', message: `节点升级至 Lv.${tower.level}`, tone: 'good' });
-    this.emitSelection();
+    this.markConfigurationChanged();
     this.emitState();
   }
 
@@ -285,13 +348,13 @@ export class GameEngine {
   }
 
   configureCreativeEnemy(type: EnemyType, count: number): void {
-    if (this.mode !== 'creative') return;
-    this.creativeSetup.wave[type] = Math.max(0, Math.min(40, Math.round(count)));
+    if (this.mode !== 'creative' || !Number.isFinite(count)) return;
+    this.creativeSetup.wave[type] = normalizeCreativeEnemyCount(type, count);
     this.emitState();
   }
 
   configureCreativeScales(healthScale: number, speedScale: number): void {
-    if (this.mode !== 'creative') return;
+    if (this.mode !== 'creative' || !Number.isFinite(healthScale) || !Number.isFinite(speedScale)) return;
     this.creativeSetup.healthScale = Math.max(0.25, Math.min(5, healthScale));
     this.creativeSetup.speedScale = Math.max(0.25, Math.min(3, speedScale));
     this.emitState();
@@ -299,16 +362,18 @@ export class GameEngine {
 
   spawnCreativeEnemy(type: EnemyType): void {
     if (this.mode !== 'creative' || this.status === 'won' || this.status === 'lost') return;
-    this.spawnEnemy(type);
+    if (!this.spawnEnemy(type)) {
+      this.emit({ type: 'toast', message: `${ENEMIES[type].name} 已在战场中`, tone: 'warn' });
+    }
     this.emitState();
   }
 
   chooseDraftModule(moduleId: ModuleId): void {
     if (this.status !== 'reward' || !this.draft?.choices.includes(moduleId)) return;
     this.moduleInventory.set(moduleId, (this.moduleInventory.get(moduleId) ?? 0) + 1);
+    this.configurationRevision += 1;
     const definition = this.modules.require(moduleId);
     this.emit({ type: 'toast', message: `获得模块：${definition.meta.name}`, tone: 'good' });
-    this.emit({ type: 'inventory' });
     if (this.draft.round >= this.draft.totalRounds) {
       this.draft = null;
       this.status = 'planning';
@@ -327,8 +392,9 @@ export class GameEngine {
   }
 
   selectTower(id: number | null): void {
+    if (id !== null && !this.towers.some((tower) => tower.id === id)) return;
     this.selectedTowerId = id;
-    this.emitSelection();
+    this.markConfigurationChanged();
     this.emitState();
   }
 
@@ -358,6 +424,10 @@ export class GameEngine {
   }
 
   placeTower(padIndex: number): void {
+    if (!Number.isInteger(padIndex) || padIndex < 0 || padIndex >= this.level.towerPads.length) {
+      this.emit({ type: 'toast', message: '无效的炮塔节点', tone: 'warn' });
+      return;
+    }
     if (this.towers.some((tower) => tower.padIndex === padIndex)) return;
     if (this.shards < ECONOMY_BALANCE.towerCost) {
       this.emit({ type: 'toast', message: `晶片不足：建造需要 ${ECONOMY_BALANCE.towerCost}`, tone: 'warn' });
@@ -374,13 +444,17 @@ export class GameEngine {
       message: `新节点构型完成：${tower.slots.length} 槽 · ${tower.maxEnergy} 能量上限`,
       tone: 'good',
     });
-    this.emitSelection();
+    this.markConfigurationChanged();
     this.emitState();
   }
 
   installModule(slotIndex: number, moduleId: ModuleId | null): void {
     const tower = this.getSelectedTower();
-    if (!tower || slotIndex < 0 || slotIndex >= tower.slots.length) return;
+    if (!tower || !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= tower.slots.length) return;
+    if (moduleId && !this.modules.get(moduleId)) {
+      this.emit({ type: 'toast', message: `未知模块：${moduleId}`, tone: 'warn' });
+      return;
+    }
     if (moduleId && this.mode === 'standard') {
       const installedElsewhere = this.towers.reduce((sum, item) => sum + item.slots.reduce(
         (slotSum, installed, index) => slotSum + (installed === moduleId && !(item.id === tower.id && index === slotIndex) ? 1 : 0),
@@ -392,22 +466,36 @@ export class GameEngine {
       }
     }
     tower.slots[slotIndex] = moduleId;
-    this.emitSelection();
+    this.markConfigurationChanged();
     this.emitState();
   }
 
   swapModules(from: number, to: number): void {
     const tower = this.getSelectedTower();
-    if (!tower || from === to) return;
-    [tower.slots[from], tower.slots[to]] = [tower.slots[to], tower.slots[from]];
-    this.emitSelection();
+    if (
+      !tower
+      || !Number.isInteger(from)
+      || !Number.isInteger(to)
+      || from < 0
+      || to < 0
+      || from >= tower.slots.length
+      || to >= tower.slots.length
+      || from === to
+    ) return;
+    const fromModule = tower.slots[from] ?? null;
+    const toModule = tower.slots[to] ?? null;
+    tower.slots[from] = toModule;
+    tower.slots[to] = fromModule;
+    this.markConfigurationChanged();
+    this.emitState();
   }
 
   clearLoadout(): void {
     const tower = this.getSelectedTower();
     if (!tower) return;
     tower.slots.fill(null);
-    this.emitSelection();
+    this.markConfigurationChanged();
+    this.emitState();
   }
 
   startWave(): void {
@@ -427,6 +515,7 @@ export class GameEngine {
   }
 
   setSpeed(speed: number): void {
+    if (speed !== 1 && speed !== 2) return;
     this.speed = speed;
     this.emitState();
   }
@@ -444,6 +533,9 @@ export class GameEngine {
     this.core = this.maxCore;
     this.shards = Math.round(this.level.startingShards * this.difficulty.economy);
     this.score = 0;
+    this.elapsed = 0;
+    this.visualElapsed = 0;
+    this.simulationAccumulator = 0;
     this.paused = false;
     this.draft = null;
     this.previousDraftChoices.clear();
@@ -458,17 +550,30 @@ export class GameEngine {
     first.slots[1] = 'pulse';
     this.towers.push(first);
     this.selectedTowerId = null;
-    this.emitSelection();
+    this.markConfigurationChanged();
     this.emitState();
   }
 
   update(realDelta: number): void {
-    const visualDelta = Math.min(realDelta, 0.04);
-    this.elapsed += visualDelta;
-    this.updateVisuals(visualDelta);
-    if (!this.paused) this.effects.update(visualDelta * (this.status === 'wave' ? this.speed : 1));
+    const frameDelta = Math.min(Math.max(0, realDelta), MAX_FRAME_DELTA);
+    this.visualElapsed += frameDelta;
     if (this.paused || this.status === 'won' || this.status === 'lost') return;
-    const delta = visualDelta * this.speed;
+    this.simulationAccumulator += frameDelta * this.speed;
+    let steps = 0;
+    while (this.simulationAccumulator + Number.EPSILON >= FIXED_SIMULATION_STEP && steps < MAX_SIMULATION_STEPS) {
+      this.simulationAccumulator -= FIXED_SIMULATION_STEP;
+      this.stepSimulation(FIXED_SIMULATION_STEP);
+      steps += 1;
+    }
+    if (steps >= MAX_SIMULATION_STEPS) {
+      this.simulationAccumulator = Math.min(this.simulationAccumulator, FIXED_SIMULATION_STEP);
+    }
+  }
+
+  private stepSimulation(delta: number): void {
+    this.elapsed += delta;
+    this.updateVisuals(delta);
+    this.effects.update(delta);
 
     this.spawnEnemies(delta);
     this.updateEnemies(delta);
@@ -495,8 +600,9 @@ export class GameEngine {
     this.spawnTimer = ENEMIES[type].spawnDelay;
   }
 
-  private spawnEnemy(type: EnemyType): void {
+  private spawnEnemy(type: EnemyType): boolean {
     const config = ENEMIES[type];
+    if (config.unique && this.enemies.some((enemy) => !enemy.dead && enemy.type === type)) return false;
     const creativeHealthScale = this.mode === 'creative' ? this.creativeSetup.healthScale : 1;
     const creativeSpeedScale = this.mode === 'creative' ? this.creativeSetup.speedScale : 1;
     const scale = Math.pow(COMBAT_BALANCE.waveHealthGrowth, Math.max(0, this.wave - 1))
@@ -523,6 +629,7 @@ export class GameEngine {
       statuses: [],
       dead: false,
     });
+    return true;
   }
 
   private updateEnemies(delta: number): void {
@@ -576,7 +683,7 @@ export class GameEngine {
       tower.targetId = target?.id ?? null;
       if (target) {
         const desired = angleBetween(tower.position, target.position);
-        let diff = ((desired - tower.rotation + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+        const diff = ((desired - tower.rotation + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
         tower.rotation += diff * Math.min(1, delta * 11);
       }
 
@@ -768,8 +875,12 @@ export class GameEngine {
         }
       }
 
-      projectile.position.x += projectile.velocity.x * delta;
-      projectile.position.y += projectile.velocity.y * delta;
+      const movementStart = { ...projectile.position };
+      const movementEnd = {
+        x: projectile.position.x + projectile.velocity.x * delta,
+        y: projectile.position.y + projectile.velocity.y * delta,
+      };
+      projectile.position = movementEnd;
       projectile.trailTimer -= delta;
       if (projectile.trailTimer <= 0) {
         projectile.trailTimer = 0.065;
@@ -784,8 +895,14 @@ export class GameEngine {
         });
       }
 
-      const hit = this.enemies.find((enemy) => !enemy.dead && this.projectileTouchesEnemy(enemy, projectile));
-      if (hit) this.hitEnemy(projectile, hit);
+      const hit = this.findFirstProjectileHit(projectile, movementStart, movementEnd);
+      if (hit) {
+        projectile.position = {
+          x: movementStart.x + (movementEnd.x - movementStart.x) * hit.time,
+          y: movementStart.y + (movementEnd.y - movementStart.y) * hit.time,
+        };
+        this.hitEnemy(projectile, hit.enemy);
+      }
 
       if (
         projectile.position.x < -60 || projectile.position.x > WORLD.width + 60 ||
@@ -842,21 +959,44 @@ export class GameEngine {
       .sort((a, b) => b.progress - a.progress)[0] ?? null;
   }
 
-  private projectileTouchesEnemy(enemy: Enemy, projectile: Projectile): boolean {
+  private findFirstProjectileHit(
+    projectile: Projectile,
+    start: Point,
+    end: Point,
+  ): { enemy: Enemy; time: number } | null {
+    let first: { enemy: Enemy; time: number } | null = null;
+    for (const enemy of this.enemies) {
+      if (enemy.dead) continue;
+      const time = this.projectileHitTime(enemy, projectile, start, end);
+      if (time !== null && (!first || time < first.time)) first = { enemy, time };
+    }
+    return first;
+  }
+
+  private projectileHitTime(enemy: Enemy, projectile: Projectile, start: Point, end: Point): number | null {
     const shield = ENEMIES[enemy.type].shield;
     if (!shield || enemy.shield <= 0) {
-      return distance(enemy.position, projectile.position) <= enemy.radius + projectile.radius;
+      return segmentCircleHitTime(start, end, enemy.position, enemy.radius + projectile.radius);
     }
-    return isInsideRegularShield(
-      enemy.position.x,
-      enemy.position.y,
-      projectile.position.x,
-      projectile.position.y,
-      shield.radius * enemy.shieldRadiusScale,
-      shield.sides,
-      shield.rotation,
+    const shieldTime = segmentRegularPolygonHitTime(
+      start,
+      end,
+      (point) => isInsideRegularShield(
+        enemy.position.x,
+        enemy.position.y,
+        point.x,
+        point.y,
+        shield.radius * enemy.shieldRadiusScale,
+        shield.sides,
+        shield.rotation,
+        projectile.radius,
+      ),
       projectile.radius,
-    ) || distance(enemy.position, projectile.position) <= enemy.radius + projectile.radius;
+    );
+    const bodyTime = segmentCircleHitTime(start, end, enemy.position, enemy.radius + projectile.radius);
+    if (shieldTime === null) return bodyTime;
+    if (bodyTime === null) return shieldTime;
+    return Math.min(shieldTime, bodyTime);
   }
 
   private triggerProjectile(projectile: Projectile, target: Enemy | null): void {
@@ -867,7 +1007,7 @@ export class GameEngine {
       color: projectile.color,
       shot: projectile.shot,
       projectile,
-      triggerTarget: target ?? undefined,
+      ...(target ? { triggerTarget: target } : {}),
       combat: this.combatApi,
     });
     this.firePayload(projectile, target);
@@ -996,9 +1136,9 @@ export class GameEngine {
       (definition) => definition.kind === 'logic' || definition.kind === 'static',
     );
     const selected: ModuleId[] = [];
-    const pick = (pool: typeof definitions): void => {
+    const pick = (pool: typeof definitions): boolean => {
       const candidates = pool.filter((definition) => !selected.includes(definition.id));
-      if (candidates.length === 0) return;
+      if (candidates.length === 0) return false;
       const weights = candidates.map((definition) => {
         const novelty = this.previousDraftChoices.has(definition.id) ? 0.22 : 1;
         const ownership = 1 / (1 + this.getModuleCount(definition.id) * 0.45);
@@ -1006,22 +1146,26 @@ export class GameEngine {
         return novelty * ownership * rarity;
       });
       let roll = this.towerRandom() * weights.reduce((sum, weight) => sum + weight, 0);
-      let choice = candidates[candidates.length - 1];
+      let choice = candidates.at(-1);
+      if (!choice) return false;
       for (let index = 0; index < candidates.length; index += 1) {
-        roll -= weights[index];
+        roll -= weights[index] ?? 0;
         if (roll <= 0) {
-          choice = candidates[index];
+          choice = candidates[index] ?? choice;
           break;
         }
       }
       selected.push(choice.id);
+      return true;
     };
 
     const projectileCount = 1 + (this.towerRandom() < 0.5 ? 1 : 0);
     const modifierCount = 1 + (this.towerRandom() < 0.5 ? 1 : 0);
     for (let index = 0; index < projectileCount; index += 1) pick(projectilePool);
     for (let index = 0; index < modifierCount; index += 1) pick(modifierPool);
-    while (selected.length < DRAFT_BALANCE.choicesPerOffer) pick(utilityPool);
+    while (selected.length < DRAFT_BALANCE.choicesPerOffer && pick(utilityPool)) {
+      // Continue until the offer is full or the unique utility pool is exhausted.
+    }
 
     const highRarity = (moduleId: ModuleId): boolean => {
       const rarity = this.modules.require(moduleId).meta.rarity;
@@ -1029,7 +1173,9 @@ export class GameEngine {
     };
     if (!selected.some(highRarity) && this.draftsWithoutRare >= DRAFT_BALANCE.dryOffersBeforePity) {
       const replaceIndex = selected.length - 1;
-      const replaced = this.modules.require(selected[replaceIndex]);
+      const replacedId = selected[replaceIndex];
+      if (!replacedId) return selected;
+      const replaced = this.modules.require(replacedId);
       const sameDraftGroup = (definition: (typeof definitions)[number]): boolean => {
         if (replaced.kind === 'projectile') return definition.kind === 'projectile';
         if (replaced.kind === 'modifier' || replaced.kind === 'trail') {
@@ -1041,7 +1187,8 @@ export class GameEngine {
         (definition) => sameDraftGroup(definition) && highRarity(definition.id) && !selected.includes(definition.id),
       );
       if (pityPool.length > 0) {
-        selected[replaceIndex] = pityPool[Math.floor(this.towerRandom() * pityPool.length)].id;
+        const pityChoice = pityPool[Math.floor(this.towerRandom() * pityPool.length)];
+        if (pityChoice) selected[replaceIndex] = pityChoice.id;
       }
     }
     if (selected.some(highRarity)) this.draftsWithoutRare = 0;

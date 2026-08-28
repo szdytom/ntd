@@ -8,14 +8,20 @@ export interface PathSampler {
 
 export function createPathSampler(path: readonly Point[]): PathSampler {
   if (path.length < 2) throw new Error('A level path requires at least two points');
-  const segments = path.slice(0, -1).map((point, index) => {
+  const segments: Array<{ start: Point; end: Point; length: number }> = [];
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const point = path[index];
     const end = path[index + 1];
-    return {
+    if (!point || !end) continue;
+    const segmentLength = Math.hypot(end.x - point.x, end.y - point.y);
+    if (segmentLength <= Number.EPSILON) continue;
+    segments.push({
       start: point,
       end,
-      length: Math.hypot(end.x - point.x, end.y - point.y),
-    };
-  });
+      length: segmentLength,
+    });
+  }
+  if (segments.length === 0) throw new Error('A level path requires at least one non-zero segment');
   const length = segments.reduce((sum, segment) => sum + segment.length, 0);
   return {
     length,
@@ -31,6 +37,7 @@ export function createPathSampler(path: readonly Point[]): PathSampler {
         remaining -= segment.length;
       }
       const last = segments[segments.length - 1];
+      if (!last) throw new Error('Path sampler has no segments');
       return {
         position: { ...last.end },
         angle: Math.atan2(last.end.y - last.start.y, last.end.x - last.start.x),

@@ -62,6 +62,22 @@ export interface TowerProgram {
   wraps: number;
   summary: string;
   warnings: string[];
+  diagnostics: ProgramDiagnostic[];
+}
+
+export type ProgramDiagnosticCode =
+  | 'unknown-module'
+  | 'static-at-root'
+  | 'trigger-conflict'
+  | 'missing-projectile'
+  | 'unresolved-modifier'
+  | 'missing-payload';
+
+export interface ProgramDiagnostic {
+  code: ProgramDiagnosticCode;
+  severity: 'warning' | 'error';
+  message: string;
+  moduleId?: ModuleId;
 }
 
 export interface TowerStatAllocation {
@@ -87,7 +103,6 @@ export interface Tower {
   targeting: TargetingMode;
   level: number;
   slots: Array<ModuleId | null>;
-  allocation: TowerStatAllocation;
   flash: number;
   targetId: number | null;
 }
@@ -212,9 +227,22 @@ export interface GameSnapshot {
   draft: ModuleDraftSnapshot | null;
 }
 
+export interface ModuleInventorySnapshot {
+  total: number;
+  installed: number;
+  available: number;
+}
+
+export interface GameViewSnapshot {
+  revision: number;
+  game: GameSnapshot;
+  towers: readonly Tower[];
+  selectedTower: Tower | null;
+  selectedProgram: TowerProgram | null;
+  creativeSetup: CreativeSetup;
+  moduleInventory: Readonly<Record<ModuleId, ModuleInventorySnapshot>>;
+}
+
 export type GameEvent =
   | { type: 'state'; snapshot: GameSnapshot }
-  | { type: 'tower-selected'; tower: Tower | null }
-  | { type: 'toast'; message: string; tone?: 'info' | 'good' | 'warn' }
-  | { type: 'program'; towerId: number; program: TowerProgram }
-  | { type: 'inventory' };
+  | { type: 'toast'; message: string; tone?: 'info' | 'good' | 'warn' };

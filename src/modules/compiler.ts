@@ -1,4 +1,10 @@
-import type { ModuleId, ShotBlueprint, TowerProgram, TriggerSpec } from '../game/types';
+import type {
+  ModuleId,
+  ProgramDiagnostic,
+  ShotBlueprint,
+  TowerProgram,
+  TriggerSpec,
+} from '../game/types';
 import type { ModuleRegistry } from './registry';
 import type { NextShotPatch, ProjectileSpec } from './types';
 
@@ -20,6 +26,9 @@ interface PendingState {
   moduleIds: ModuleId[];
   moduleNames: string[];
   trigger?: TriggerSpec;
+  triggerModuleId?: ModuleId;
+  triggerModuleName?: string;
+  triggerEnergy: number;
 }
 
 interface PayloadCapture {
@@ -44,11 +53,15 @@ const freshPending = (): PendingState => ({
   energy: 0,
   moduleIds: [],
   moduleNames: [],
+  triggerEnergy: 0,
 });
 
 export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRegistry): TowerProgram {
   const shots: ShotBlueprint[] = [];
-  const warnings: string[] = [];
+  const diagnostics: ProgramDiagnostic[] = [];
+  const diagnose = (diagnostic: ProgramDiagnostic): void => {
+    diagnostics.push(diagnostic);
+  };
   let pending = freshPending();
   const captureStack: PayloadCapture[] = [];
   let wraps = 0;
@@ -57,7 +70,12 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     if (!moduleId) return;
     const definition = registry.get(moduleId);
     if (!definition) {
-      warnings.push(`未注册模块 ${moduleId}`);
+      diagnose({
+        code: 'unknown-module',
+        severity: 'error',
+        message: `未注册模块 ${moduleId}`,
+        moduleId,
+      });
       return;
     }
 
@@ -96,14 +114,19 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         repeatDelay: pending.repeatDelay,
         energyCost: Math.max(1, Math.round((definition.meta.energy + pending.energy) * pending.energyMultiplier)),
         lifetime: spec.lifetime ?? 1.7,
-        static: spec.static,
-        trigger: pending.trigger,
+        ...(spec.static ? { static: spec.static } : {}),
+        ...(pending.trigger ? { trigger: pending.trigger } : {}),
         payload: [],
       };
 
       const parent = captureStack[captureStack.length - 1];
       if (definition.kind === 'static' && !parent) {
-        warnings.push(`静态投射物“${definition.meta.shortName}”必须作为触发载荷，不能直接施放`);
+        diagnose({
+          code: 'static-at-root',
+          severity: 'error',
+          message: `静态投射物“${definition.meta.shortName}”必须作为触发载荷，不能直接施放`,
+          moduleId,
+        });
         pending = freshPending();
         return;
       }
@@ -121,7 +144,21 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     };
 
     const wrapNext = (trigger: TriggerSpec): void => {
+      if (pending.trigger && pending.triggerModuleId) {
+        diagnose({
+          code: 'trigger-conflict',
+          severity: 'error',
+          message: `${pending.triggerModuleName ?? pending.triggerModuleId} 与 ${definition.meta.shortName} 不能同时包裹同一枚弹射物；采用更靠近弹射物的 ${definition.meta.shortName}`,
+          moduleId,
+        });
+        pending.energy -= pending.triggerEnergy;
+        pending.moduleIds = pending.moduleIds.filter((id) => id !== pending.triggerModuleId);
+        pending.moduleNames = pending.moduleNames.filter((name) => name !== pending.triggerModuleName);
+      }
       pending.trigger = { ...trigger };
+      pending.triggerModuleId = moduleId;
+      pending.triggerModuleName = definition.meta.shortName;
+      pending.triggerEnergy = definition.meta.energy;
     };
 
     if (definition.kind === 'modifier' || definition.kind === 'trail' || definition.kind === 'logic') {
@@ -146,29 +183,71 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
   }
 
   if (pending.moduleNames.length > 0) {
-    warnings.push(wraps > 0
-      ? `${pending.moduleNames.join(' + ')} 回绕一周后仍没有弹射物，暂时不会生效`
-      : `${pending.moduleNames.join(' + ')} 后没有弹射物，暂时不会生效`);
+    diagnose({
+      code: 'unresolved-modifier',
+      severity: 'error',
+      message: wraps > 0
+        ? `${pending.moduleNames.join(' + ')} 回绕一周后仍没有弹射物，暂时不会生效`
+        : `${pending.moduleNames.join(' + ')} 后没有弹射物，暂时不会生效`,
+    });
   }
-  if (shots.length === 0) warnings.push('缺少可直接施放的弹射物模块：这座塔不会攻击');
+  if (shots.length === 0) {
+    diagnose({
+      code: 'missing-projectile',
+      severity: 'error',
+      message: '缺少可直接施放的弹射物模块：这座塔不会攻击',
+    });
+  }
   for (const capture of captureStack) {
     const carrier = registry.get(capture.shot.source)?.meta.shortName ?? capture.shot.source;
-    warnings.push(`${carrier} 的触发器${wraps > 0 ? '回绕后仍' : ''}缺少 ${capture.remaining} 个载荷`);
+    diagnose({
+      code: 'missing-payload',
+      severity: 'error',
+      message: `${carrier} 的触发器${wraps > 0 ? '回绕后仍' : ''}缺少 ${capture.remaining} 个载荷`,
+      moduleId: capture.shot.source,
+    });
   }
 
   const energyOf = (shot: ShotBlueprint): number => shot.energyCost + shot.payload.reduce((sum, payload) => sum + energyOf(payload), 0);
-  const countOf = (shot: ShotBlueprint): number => shot.count * shot.repeats + shot.payload.reduce((sum, payload) => sum + countOf(payload), 0);
-  const triggerCount = (shot: ShotBlueprint): number => (shot.trigger ? 1 : 0) + shot.payload.reduce((sum, payload) => sum + triggerCount(payload), 0);
+  const countOf = (shot: ShotBlueprint): number => {
+    const ownInstances = shot.count * shot.repeats;
+    const payloadInstances = shot.payload.reduce((sum, payload) => sum + countOf(payload), 0);
+    const payloadReleases = shot.static && shot.trigger?.type === 'proximity'
+      ? shot.static.maxTriggers
+      : shot.trigger ? 1 : 0;
+    return ownInstances + ownInstances * payloadReleases * payloadInstances;
+  };
+  const triggerCount = (shot: ShotBlueprint): number => {
+    const ownInstances = shot.count * shot.repeats;
+    const ownTriggers = shot.trigger
+      ? ownInstances * (shot.static && shot.trigger.type === 'proximity' ? shot.static.maxTriggers : 1)
+      : 0;
+    return ownTriggers + ownTriggers * shot.payload.reduce((sum, payload) => sum + triggerCount(payload), 0);
+  };
   const energyCost = shots.reduce((sum, shot) => sum + energyOf(shot), 0);
   const projectileCount = shots.reduce((sum, shot) => sum + countOf(shot), 0);
   const triggers = shots.reduce((sum, shot) => sum + triggerCount(shot), 0);
-  return {
+  const program: TowerProgram = {
     shots,
     energyCost,
     wraps,
     summary: shots.length === 0
       ? '空程序'
       : `${shots.length} 段施法 · ${energyCost}⚡/轮 · ${projectileCount} 弹体${triggers > 0 ? ` · ${triggers} 触发` : ''}${wraps > 0 ? ' · ↻ 回绕' : ''}`,
-    warnings,
+    warnings: diagnostics.map((diagnostic) => diagnostic.message),
+    diagnostics,
   };
+  const freezeShot = (shot: ShotBlueprint): void => {
+    shot.payload.forEach(freezeShot);
+    Object.freeze(shot.modules);
+    Object.freeze(shot.payload);
+    Object.freeze(shot.trigger);
+    Object.freeze(shot.static);
+    Object.freeze(shot);
+  };
+  shots.forEach(freezeShot);
+  Object.freeze(program.shots);
+  Object.freeze(program.warnings);
+  Object.freeze(program.diagnostics);
+  return Object.freeze(program);
 }

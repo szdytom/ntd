@@ -73,7 +73,7 @@ export interface ModuleEffectContext {
   combat: ModuleCombatApi;
 }
 
-export interface StatusApplication extends Omit<EnemyStatus, 'remaining' | 'tickTimer'> {}
+export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer'>;
 
 export interface ModuleCombatApi {
   nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Enemy[];

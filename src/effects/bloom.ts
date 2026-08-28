@@ -159,6 +159,18 @@ export interface ShieldDistortion {
   time: number;
 }
 
+export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderingContext | null {
+  return output.getContext('webgl', {
+    alpha: false,
+    antialias: false,
+    depth: false,
+    stencil: false,
+    premultipliedAlpha: false,
+    preserveDrawingBuffer: false,
+    powerPreference: 'high-performance',
+  });
+}
+
 /**
  * GPU 后处理器。游戏主体仍可使用 Canvas 2D 绘制，但最终场景、模块特效的
  * emissive 层都会作为纹理上传，由 WebGL 完成两次高斯模糊和白底友好的合成。
@@ -185,20 +197,15 @@ export class WebGLBloomPipeline {
   private readonly emissiveScale = 0.5;
   private readonly blurScale = 0.25;
 
-  constructor(private readonly output: HTMLCanvasElement) {
+  constructor(
+    private readonly output: HTMLCanvasElement,
+    context?: WebGLRenderingContext,
+  ) {
     const emissiveCtx = this.emissive.getContext('2d', { alpha: true });
     if (!emissiveCtx) throw new Error('Emissive Canvas 2D context is unavailable');
     this.emissiveCtx = emissiveCtx;
 
-    const gl = output.getContext('webgl', {
-      alpha: false,
-      antialias: false,
-      depth: false,
-      stencil: false,
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'high-performance',
-    });
+    const gl = context ?? createBloomWebGLContext(output);
     if (!gl) throw new Error('WebGL is required for the game renderer');
     this.gl = gl;
     this.initialize();
