@@ -8,7 +8,7 @@ const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'cro
 
 export function CreativeLab({ engine, setup }: { engine: GameEngine; setup: CreativeSetup }) {
   return <section className="creative-lab">
-    <div className="section-title"><div><span className="step-number">03</span><div><h3>创造模式信号台</h3><small>调整后续波次，或立即投放单个敌人</small></div></div></div>
+    <div className="section-title"><div><h3>创造模式信号台</h3><small>调整后续波次，或立即投放单个敌人</small></div></div>
     <div className="creative-enemy-grid">{ENEMY_TYPES.map((type) => {
       const enemy = ENEMIES[type];
       return <div key={type}><span style={{ '--enemy-color': enemy.color } as CSSProperties}><i />{enemy.name}</span>
