@@ -1,7 +1,12 @@
-import { createBloomWebGLContext, WebGLBloomPipeline, type ShieldDistortion } from '../effects/bloom';
+import {
+  createBloomWebGLContext,
+  WebGLBloomPipeline,
+  type ShieldDistortion,
+  type SplitDistortion,
+} from '../effects/bloom';
 import { ECONOMY_BALANCE } from './balance';
 import { ENEMIES, WORLD } from './config';
-import { clamp, distance } from './math';
+import { clamp, distance, seededNoise } from './math';
 import type { GameEngine } from './engine';
 import type { Enemy, Point, Tower } from './types';
 
@@ -102,6 +107,7 @@ export class GameRenderer {
 
     this.drawDecorations();
     this.engine.effects.render(ctx, 'ground', bloomCtx);
+    this.drawEnemyAuras(bloomCtx ?? null);
     this.drawTowerPads();
     this.drawSelectionRange();
     this.drawTowers();
@@ -118,7 +124,7 @@ export class GameRenderer {
 
     if (bloomCtx && this.bloom) {
       this.drawBloomSources(bloomCtx);
-      this.bloom.render(this.scene, this.getShieldDistortion());
+      this.bloom.render(this.scene, this.getShieldDistortion(), this.getSplitDistortion());
     } else if (this.fallbackCtx) {
       this.fallbackCtx.setTransform(1, 0, 0, 1, 0, 0);
       this.fallbackCtx.drawImage(this.scene, 0, 0);
@@ -164,6 +170,21 @@ export class GameRenderer {
       color: hexToRgb(shield.color),
       rippleAge: enemy.shieldRippleAge,
       time: this.engine.visualElapsed,
+    };
+  }
+
+  private getSplitDistortion(): SplitDistortion | null {
+    const rifts = this.engine.getSplitRifts();
+    const rift = rifts[rifts.length - 1];
+    if (!rift) return null;
+    const screenX = this.offsetX + rift.position.x * this.scale;
+    const screenY = this.offsetY + rift.position.y * this.scale;
+    return {
+      centerX: screenX * this.dpr,
+      centerY: (this.cssHeight - screenY) * this.dpr,
+      radius: 120 * this.scale * this.dpr,
+      phase: clamp(rift.age / rift.duration, 0, 1),
+      color: hexToRgb('#73e7f2'),
     };
   }
 
@@ -403,6 +424,183 @@ export class GameRenderer {
     ctx.restore();
   }
 
+  private drawEnemyAuras(bloomCtx: CanvasRenderingContext2D | null): void {
+    const sources = this.engine.enemies.filter((enemy) => !enemy.dead && ENEMIES[enemy.type].aura);
+    if (sources.length === 0) return;
+    const ctx = this.ctx;
+    const flickerFrame = Math.floor(this.engine.visualElapsed * 22);
+
+    for (const source of sources) {
+      const aura = ENEMIES[source.type].aura;
+      if (!aura) continue;
+      const pulse = 0.62 + Math.sin(this.engine.visualElapsed * 5 + source.id) * 0.18;
+      ctx.save();
+      ctx.globalAlpha = pulse * 0.26;
+      ctx.fillStyle = aura.color;
+      ctx.beginPath();
+      ctx.arc(source.position.x, source.position.y, source.radius + 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      if (bloomCtx) {
+        bloomCtx.save();
+        bloomCtx.globalAlpha = pulse * 0.72;
+        bloomCtx.fillStyle = aura.color;
+        bloomCtx.beginPath();
+        bloomCtx.arc(source.position.x, source.position.y, source.radius + 5, 0, Math.PI * 2);
+        bloomCtx.fill();
+        bloomCtx.restore();
+      }
+    }
+
+    for (const tower of this.engine.towers) {
+      let source: Enemy | null = null;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const candidate of sources) {
+        const aura = ENEMIES[candidate.type].aura;
+        if (!aura) continue;
+        const candidateDistance = distance(tower.position, candidate.position);
+        if (candidateDistance > aura.radius || candidateDistance >= nearestDistance) continue;
+        source = candidate;
+        nearestDistance = candidateDistance;
+      }
+      if (!source) continue;
+      const aura = ENEMIES[source.type].aura;
+      if (!aura) continue;
+      const points = this.createLightningPoints(source.position, tower.position, source.id, tower.id, flickerFrame);
+      this.strokeLightning(ctx, points, aura.lightningColor, 7, 0.2);
+      this.strokeLightning(ctx, points, aura.lightningColor, 2.8, 0.94);
+      this.strokeLightning(ctx, points, aura.lightningCoreColor, 1, 1);
+      this.drawSuppressionCollapse(ctx, tower.position, tower.id, false);
+      if (bloomCtx) {
+        this.strokeLightning(bloomCtx, points, aura.lightningColor, 5, 0.86);
+        this.strokeLightning(bloomCtx, points, aura.lightningCoreColor, 1.5, 0.96);
+        this.drawSuppressionCollapse(bloomCtx, tower.position, tower.id, true);
+      }
+    }
+  }
+
+  private drawSuppressionCollapse(
+    ctx: CanvasRenderingContext2D,
+    position: Point,
+    towerId: number,
+    emissive: boolean,
+  ): void {
+    const phase = (this.engine.visualElapsed * 0.72 + towerId * 0.071) % 1;
+    const radius = 8 + (1 - phase * phase * phase) * 70;
+    const alpha = phase * (emissive ? 0.82 : 0.76);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = '#ff5c5c';
+    ctx.lineWidth = emissive ? 5 : 0.4 + phase * 4.6;
+    ctx.beginPath();
+    ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    if (!emissive) {
+      ctx.globalAlpha = alpha * 0.78;
+      ctx.strokeStyle = '#fff2f2';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      const angle = index * Math.PI * 2 / 10 + (seededNoise(towerId * 101 + index) - 0.5) * 0.24;
+      const travel = 15 + (1 - phase * phase) * (35 + seededNoise(towerId * 211 + index * 13) * 35);
+      const length = 15 * phase;
+      const x = position.x + Math.cos(angle) * travel;
+      const y = position.y + Math.sin(angle) * travel;
+      ctx.globalAlpha = phase * (emissive ? 0.76 : 0.82);
+      ctx.strokeStyle = index % 2 === 0 ? '#ffffff' : '#ff5c5c';
+      ctx.lineWidth = emissive ? 3 : 0.5 + phase * 1.7;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+      ctx.stroke();
+    }
+    if (!emissive) {
+      for (let index = 0; index < 6; index += 1) {
+        const seed = towerId * 307 + index * 53;
+        const shapePhase = (this.engine.visualElapsed * 0.58 + seededNoise(seed)) % 1;
+        const fade = Math.sin(shapePhase * Math.PI);
+        const startRadius = 82 + seededNoise(seed + 7) * 34;
+        const travelRadius = 18 + (1 - shapePhase * shapePhase) * (startRadius - 18);
+        const baseAngle = seededNoise(seed + 13) * Math.PI * 2;
+        const curve = (seededNoise(seed + 19) - 0.5) * 0.8 * Math.sin(shapePhase * Math.PI);
+        const angle = baseAngle + curve;
+        const size = 6 + seededNoise(seed + 23) * 2;
+        const sides = seededNoise(seed + 29) < 0.5 ? 3 : 4;
+        const rotationDirection = seededNoise(seed + 31) < 0.5 ? -1 : 1;
+        const rotation = seededNoise(seed + 37) * Math.PI * 2
+          + this.engine.visualElapsed * rotationDirection * (0.65 + seededNoise(seed + 41) * 0.55);
+        ctx.globalAlpha = fade * 0.64;
+        ctx.strokeStyle = '#292534';
+        ctx.lineWidth = 1.25;
+        this.tracePolygon(
+          ctx,
+          position.x + Math.cos(angle) * travelRadius,
+          position.y + Math.sin(angle) * travelRadius,
+          size,
+          sides,
+          rotation,
+        );
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  private createLightningPoints(
+    from: Point,
+    to: Point,
+    sourceId: number,
+    towerId: number,
+    flickerFrame: number,
+  ): Point[] {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const segments = Math.max(4, Math.min(9, Math.ceil(length / 42)));
+    const points: Point[] = [];
+    for (let index = 0; index <= segments; index += 1) {
+      const progress = index / segments;
+      const envelope = Math.sin(progress * Math.PI);
+      const seed = sourceId * 997 + towerId * 67 + flickerFrame * 13 + index * 31;
+      const offset = (seededNoise(seed) - 0.5) * (22 + length * 0.035) * envelope;
+      points.push({
+        x: from.x + dx * progress + normalX * offset,
+        y: from.y + dy * progress + normalY * offset,
+      });
+    }
+    return points;
+  }
+
+  private strokeLightning(
+    ctx: CanvasRenderingContext2D,
+    points: readonly Point[],
+    color: string,
+    width: number,
+    alpha: number,
+  ): void {
+    const first = points[0];
+    if (!first) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    for (let index = 1; index < points.length; index += 1) {
+      const point = points[index];
+      if (point) ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
   private drawTowers(): void {
     for (const tower of this.engine.towers) this.drawTower(tower);
   }
@@ -528,17 +726,27 @@ export class GameRenderer {
     const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
     ctx.save();
     ctx.translate(enemy.position.x, enemy.position.y + bob);
-    ctx.rotate(enemy.angle + (enemy.type === 'kite' ? Math.PI / 4 : 0));
+    ctx.rotate(enemy.type === 'fracture' || enemy.type === 'radiant'
+      ? this.engine.elapsed * (enemy.type === 'fracture' ? 0.55 : -0.38) + enemy.id * 0.17
+      : enemy.angle + (enemy.type === 'kite' ? Math.PI / 4 : 0));
     ctx.shadowColor = 'rgba(37, 31, 65, 0.18)';
     ctx.shadowBlur = 9;
     ctx.shadowOffsetY = 4;
-    ctx.fillStyle = enemy.hitFlash > 0 ? '#ffffff' : config.color;
-    this.polygon(0, 0, enemy.radius, config.sides, enemy.type === 'spark' ? Math.PI / 2 : 0);
-    ctx.fill();
+    const fillColor = enemy.hitFlash > 0 ? '#ffffff' : config.color;
+    if (enemy.type === 'fracture') {
+      this.drawFractureBody(enemy.radius, fillColor);
+    } else {
+      ctx.fillStyle = fillColor;
+      if (config.shape === 'star') this.star(0, 0, enemy.radius, enemy.radius * 0.34, config.sides, -Math.PI / 2);
+      else if (config.shape === 'ring') this.ring(0, 0, enemy.radius, enemy.radius * 0.48);
+      else this.polygon(0, 0, enemy.radius, config.sides, enemy.type === 'spark' ? Math.PI / 2 : 0);
+      ctx.fill(config.shape === 'ring' ? 'evenodd' : 'nonzero');
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = enemy.type === 'crown' ? 4 : 3;
+      ctx.stroke();
+    }
     ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = enemy.type === 'crown' ? 4 : 3;
-    ctx.stroke();
 
     if (enemy.type === 'hex' || enemy.type === 'crown') {
       ctx.strokeStyle = 'rgba(255,255,255,0.75)';
@@ -552,6 +760,27 @@ export class GameRenderer {
       ctx.lineWidth = 3;
       this.polygon(0, 0, enemy.radius + 7, 8, this.engine.elapsed * 0.9);
       ctx.stroke();
+    }
+    if (enemy.type === 'fracture') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.88)';
+      ctx.lineWidth = Math.max(1.4, enemy.radius * 0.075);
+      ctx.beginPath();
+      ctx.arc(0, 0, enemy.radius * 0.38, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#d8fbff';
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(2.5, enemy.radius * 0.12), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (enemy.type === 'radiant') {
+      for (let index = 0; index < 3; index += 1) {
+        const angle = index * Math.PI * 2 / 3;
+        const orbit = enemy.radius * 0.72;
+        ctx.fillStyle = '#f4ffc2';
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, enemy.radius * 0.13, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
 
@@ -702,6 +931,83 @@ export class GameRenderer {
 
   private polygon(x: number, y: number, radius: number, sides: number, rotation: number): void {
     this.tracePolygon(this.ctx, x, y, radius, sides, rotation);
+  }
+
+  private star(
+    x: number,
+    y: number,
+    outerRadius: number,
+    innerRadius: number,
+    points: number,
+    rotation: number,
+  ): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    for (let index = 0; index < points * 2; index += 1) {
+      const radius = index % 2 === 0 ? outerRadius : innerRadius;
+      const angle = rotation + index * Math.PI / points;
+      const px = x + Math.cos(angle) * radius;
+      const py = y + Math.sin(angle) * radius;
+      if (index === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  private drawFractureBody(radius: number, fillColor: string): void {
+    const ctx = this.ctx;
+    const coreRadius = radius * 0.72;
+    const spikeBaseRadius = radius * 0.56;
+    const spikeHalfWidth = radius * 0.17;
+
+    const traceSpike = (angle: number): void => {
+      const radialX = Math.cos(angle);
+      const radialY = Math.sin(angle);
+      const tangentX = -radialY;
+      const tangentY = radialX;
+      ctx.beginPath();
+      ctx.moveTo(radialX * radius, radialY * radius);
+      ctx.lineTo(
+        radialX * spikeBaseRadius + tangentX * spikeHalfWidth,
+        radialY * spikeBaseRadius + tangentY * spikeHalfWidth,
+      );
+      ctx.lineTo(
+        radialX * spikeBaseRadius - tangentX * spikeHalfWidth,
+        radialY * spikeBaseRadius - tangentY * spikeHalfWidth,
+      );
+      ctx.closePath();
+    };
+
+    ctx.fillStyle = fillColor;
+    for (let index = 0; index < 4; index += 1) {
+      traceSpike(-Math.PI / 2 + index * Math.PI / 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    for (let index = 0; index < 4; index += 1) {
+      traceSpike(-Math.PI / 2 + index * Math.PI / 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = fillColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  private ring(x: number, y: number, outerRadius: number, innerRadius: number): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+    ctx.moveTo(x + innerRadius, y);
+    ctx.arc(x, y, innerRadius, 0, Math.PI * 2, true);
+    ctx.closePath();
   }
 
   private tracePolygon(

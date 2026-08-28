@@ -6,7 +6,7 @@ import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/t
 import { LevelMap } from './LevelMap';
 import './LevelSelect.css';
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown'];
+const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
 const VISIBLE_LEVEL_COUNT = 3;
 const DIFFICULTY_TONE: Record<DifficultyId, string> = {
   relaxed: '最轻松',
@@ -17,7 +17,7 @@ const DIFFICULTY_TONE: Record<DifficultyId, string> = {
 };
 
 const initialCreativeSetup = (): CreativeSetup => ({
-  wave: { spark: 8, kite: 5, block: 2, hex: 1, crown: 0 },
+  wave: { spark: 8, kite: 5, block: 2, hex: 1, crown: 0, fracture: 0, radiant: 0 },
   healthScale: 1,
   speedScale: 1,
 });
@@ -174,7 +174,7 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
         <section className="creative-setup-card">
           <div><span>CREATIVE SIGNAL MIXER</span><h2>自定义重复波次</h2><p>这些参数仍可在游戏中随时修改。</p></div>
           <div className="setup-enemies">
-            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i />{ENEMIES[type].name}</span><input type="number" min="0" max={ENEMIES[type].unique ? 1 : 40} value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
+            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i className={ENEMIES[type].shape === 'star' ? 'star' : ENEMIES[type].shape === 'ring' ? 'ring' : ''} />{ENEMIES[type].name}</span><input type="number" min="0" max="40" value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
           </div>
           <div className="setup-scales">
             <label><span>生命倍率</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>

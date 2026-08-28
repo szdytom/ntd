@@ -12,8 +12,29 @@ export interface EnemyConfig {
   color: string;
   sides: number;
   name: string;
-  unique?: boolean;
+  shape?: 'polygon' | 'star' | 'ring';
   shield?: EnemyShieldConfig;
+  split?: EnemySplitConfig;
+  aura?: EnemyAuraConfig;
+}
+
+export interface EnemyAuraConfig {
+  radius: number;
+  cooldownMultiplier: number;
+  energyRegenMultiplier: number;
+  color: string;
+  lightningColor: string;
+  lightningCoreColor: string;
+}
+
+export interface EnemySplitConfig {
+  count: number;
+  healthScale: number;
+  speedScale: number;
+  rewardScale: number;
+  coreDamageScale: number;
+  radiusScale: number;
+  spacing: number;
 }
 
 export interface EnemyShieldConfig {
@@ -41,8 +62,48 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#ff774d',
     sides: 8,
     name: '棱镜领主',
-    unique: true,
     shield: { capacity: 240, regen: 4, cooldown: 9, radius: 72, sides: 6, rotation: Math.PI / 6, color: '#45b7ff' },
+  },
+  fracture: {
+    hp: 360,
+    speed: 35,
+    spawnDelay: 1.35,
+    reward: 32,
+    coreDamage: 7,
+    radius: 32,
+    color: '#00a8cc',
+    sides: 4,
+    name: '裂变星核',
+    shape: 'star',
+    split: {
+      count: 3,
+      healthScale: 0.3,
+      speedScale: 1.35,
+      rewardScale: 0.25,
+      coreDamageScale: 0.34,
+      radiusScale: 0.58,
+      spacing: 25,
+    },
+  },
+  radiant: {
+    hp: 390,
+    speed: 30,
+    spawnDelay: 1.4,
+    reward: 46,
+    coreDamage: 7,
+    radius: 31,
+    color: '#9aae18',
+    sides: 3,
+    name: '迟滞辐环',
+    shape: 'ring',
+    aura: {
+      radius: 290,
+      cooldownMultiplier: 2,
+      energyRegenMultiplier: 0.5,
+      color: '#b7cc35',
+      lightningColor: '#382347',
+      lightningCoreColor: '#a78bfa',
+    },
   },
 };
 
@@ -92,7 +153,7 @@ export const LEVELS = [
     id: 'white-prism',
     name: '白棱镜区',
     sector: 'SECTOR A-7',
-    description: '折线路径与均衡节点，适合熟悉模块编排；首波包含护盾领主用于构筑检验。',
+    description: '折线路径与均衡节点，适合熟悉模块编排；首波检验护盾破坏，末波引入死亡分裂。',
     difficulty: 1,
     accent: '#6c5ce7',
     path: [
@@ -109,7 +170,7 @@ export const LEVELS = [
       wave(['spark', 12], ['kite', 8], ['block', 2]),
       wave(['kite', 8], ['block', 6], ['hex', 2]),
       wave(['spark', 10], ['block', 8], ['hex', 4]),
-      wave(['kite', 6], ['hex', 7], ['crown', 1]),
+      wave(['kite', 4], ['block', 3], ['hex', 5], ['fracture', 1]),
     ],
     startingShards: 240,
     enemyHealthScale: 1,
@@ -119,7 +180,7 @@ export const LEVELS = [
     id: 'rose-circuit',
     name: '玫红回路',
     sector: 'SECTOR C-3',
-    description: '长距离蛇形通道聚集出密集敌群，范围、尾迹与触发载荷会得到更大发挥空间。',
+    description: '长距离蛇形通道聚集出密集敌群，末波辐射压制要求分散节点并及时转移火力。',
     difficulty: 2,
     accent: '#ff5c8a',
     path: [
@@ -138,7 +199,7 @@ export const LEVELS = [
       wave(['spark', 8], ['block', 7], ['hex', 2]),
       wave(['kite', 10], ['block', 7], ['hex', 2]),
       wave(['spark', 12], ['block', 8], ['hex', 5]),
-      wave(['kite', 6], ['hex', 8], ['crown', 1]),
+      wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1]),
     ],
     startingShards: 250,
     enemyHealthScale: 1.08,
@@ -148,7 +209,7 @@ export const LEVELS = [
     id: 'verdant-fold',
     name: '翠光折返',
     sector: 'SECTOR E-9',
-    description: '高速信号沿大幅纵向折返逼近核心，节点位置更苛刻，要求主动升级射程与目标策略。',
+    description: '高速信号沿大幅纵向折返逼近核心，最终信号会同时施加死亡分裂与局部冷却压制。',
     difficulty: 3,
     accent: '#00b894',
     path: [
@@ -168,7 +229,7 @@ export const LEVELS = [
       wave(['spark', 12], ['block', 8], ['hex', 3]),
       wave(['kite', 10], ['block', 8], ['hex', 4]),
       wave(['spark', 12], ['block', 6], ['hex', 5], ['crown', 1]),
-      wave(['block', 10], ['hex', 7], ['crown', 1]),
+      wave(['block', 8], ['hex', 5], ['fracture', 1], ['radiant', 1]),
     ],
     startingShards: 260,
     enemyHealthScale: 1.16,

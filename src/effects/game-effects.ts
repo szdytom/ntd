@@ -20,6 +20,30 @@ export const gameEffects: readonly EffectDefinition[] = [
   shockwave({ id: 'game:enemy-pop-ring', lifetime: 0.28, radius: 32, stroke: 2.5, sides: 6 }),
   coneSparks({ id: 'game:enemy-pop-sparks', lifetime: 0.42, count: 12, distance: 54, length: 9, stroke: 2 }),
   {
+    id: 'game:fracture-split-ripple',
+    lifetime: 0.46,
+    layer: 'overlay',
+    bloom: 1,
+    render: (frame, painter) => {
+      const radius = 8 + frame.easeOut(3) * 112;
+      painter.light(frame.x, frame.y, 42 + frame.slope * 92, '#dffcff', frame.slope * 0.42);
+      painter.ring(frame.x, frame.y, radius, 1 + frame.slope * 5, frame.color, frame.slope * 0.94);
+      painter.ring(frame.x, frame.y, radius * 0.72, 0.8 + frame.slope * 2.8, '#ffffff', frame.slope * 0.72);
+      for (let index = 0; index < 8; index += 1) {
+        const angle = index * Math.PI / 4 + frame.random(index, -0.18, 0.18);
+        painter.lineAngle(
+          frame.x + Math.cos(angle) * radius * 0.86,
+          frame.y + Math.sin(angle) * radius * 0.86,
+          angle,
+          7 + frame.slope * 14,
+          0.6 + frame.slope * 2.2,
+          index % 2 === 0 ? '#ffffff' : frame.color,
+          frame.slope,
+        );
+      }
+    },
+  },
+  {
     id: 'game:shield-hit',
     lifetime: 0.2,
     layer: 'air',

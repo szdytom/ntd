@@ -29,6 +29,7 @@ import type {
   Projectile,
   ScheduledCast,
   ShotBlueprint,
+  SplitRift,
   TargetingMode,
   Tower,
 } from './types';
@@ -44,11 +45,21 @@ export interface GameEngineOptions {
   creative?: Partial<Omit<CreativeSetup, 'wave'>> & { wave?: Partial<Record<EnemyType, number>> };
 }
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown'];
-const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = { spark: 8, kite: 5, block: 2, hex: 1, crown: 0 };
+const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = {
+  spark: 8,
+  kite: 5,
+  block: 2,
+  hex: 1,
+  crown: 0,
+  fracture: 0,
+  radiant: 0,
+};
 const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
 export const WAVE_CLEAR_DELAY = 2;
+export const FRACTURE_SPLIT_DELAY = 0.14;
+export const FRACTURE_RIPPLE_DURATION = 0.46;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
@@ -57,11 +68,15 @@ const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
 
-const normalizeCreativeEnemyCount = (type: EnemyType, value: number): number => {
-  const maximum = ENEMIES[type].unique ? 1 : 40;
+const normalizeCreativeEnemyCount = (value: number): number => {
   if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(maximum, Math.round(value)));
+  return Math.max(0, Math.min(40, Math.round(value)));
 };
+
+interface PendingEnemySplit extends SplitRift {
+  parent: Enemy;
+  spawned: boolean;
+}
 
 export class GameEngine {
   readonly towers: Tower[] = [];
@@ -95,6 +110,7 @@ export class GameEngine {
   private spawnTimer = 0;
   private waveClearDelayLeft: number | null = null;
   private scheduledCasts: ScheduledCast[] = [];
+  private pendingEnemySplits: PendingEnemySplit[] = [];
   private nextId = 1;
   private dirtyStateTimer = 0;
   private simulationAccumulator = 0;
@@ -134,7 +150,7 @@ export class GameEngine {
     this.creativeSetup = {
       wave: Object.fromEntries(ENEMY_TYPES.map((type) => [
         type,
-        normalizeCreativeEnemyCount(type, normalized.creative?.wave?.[type] ?? DEFAULT_CREATIVE_WAVE[type]),
+        normalizeCreativeEnemyCount(normalized.creative?.wave?.[type] ?? DEFAULT_CREATIVE_WAVE[type]),
       ])) as Record<EnemyType, number>,
       healthScale: Math.max(0.25, Math.min(5, normalized.creative?.healthScale ?? 1)),
       speedScale: Math.max(0.25, Math.min(3, normalized.creative?.speedScale ?? 1)),
@@ -167,6 +183,10 @@ export class GameEngine {
 
   getViewSnapshot = (): GameViewSnapshot => this.viewSnapshot;
 
+  getSplitRifts(): readonly SplitRift[] {
+    return this.pendingEnemySplits;
+  }
+
   private emit(event: GameEvent): void {
     this.listeners.forEach((listener) => listener(event));
   }
@@ -176,7 +196,6 @@ export class GameEngine {
   }
 
   private createGameSnapshot(): GameSnapshot {
-    const boss = this.enemies.find((enemy) => enemy.type === 'crown' && !enemy.dead);
     return {
       status: this.status,
       mode: this.mode,
@@ -188,19 +207,13 @@ export class GameEngine {
       maxCore: this.maxCore,
       shards: this.shards,
       score: this.score,
-      enemiesAlive: this.enemies.length,
+      enemiesAlive: this.enemies.filter((enemy) => !enemy.dead).length
+        + this.pendingEnemySplits.filter((split) => !split.spawned).length,
       waveQueue: this.spawnQueue.length,
       selectedTowerId: this.selectedTowerId,
       speed: this.speed,
       paused: this.paused,
       draft: this.draft ? { ...this.draft, choices: [...this.draft.choices] } : null,
-      boss: boss ? {
-        name: ENEMIES[boss.type].name,
-        hp: Math.max(0, Math.round(boss.hp)),
-        maxHp: boss.maxHp,
-        shield: Math.max(0, Math.round(boss.shield)),
-        maxShield: boss.maxShield,
-      } : null,
     };
   }
 
@@ -362,7 +375,7 @@ export class GameEngine {
 
   configureCreativeEnemy(type: EnemyType, count: number): void {
     if (this.mode !== 'creative' || !Number.isFinite(count)) return;
-    this.creativeSetup.wave[type] = normalizeCreativeEnemyCount(type, count);
+    this.creativeSetup.wave[type] = normalizeCreativeEnemyCount(count);
     this.emitState();
   }
 
@@ -375,9 +388,7 @@ export class GameEngine {
 
   spawnCreativeEnemy(type: EnemyType): void {
     if (this.mode !== 'creative' || this.status === 'won' || this.status === 'lost') return;
-    if (!this.spawnEnemy(type)) {
-      this.emit({ type: 'toast', message: `${ENEMIES[type].name} 已在战场中`, tone: 'warn' });
-    }
+    this.spawnEnemy(type);
     this.emitState();
   }
 
@@ -541,6 +552,7 @@ export class GameEngine {
     this.effects.clear();
     this.floatingTexts.length = 0;
     this.scheduledCasts.length = 0;
+    this.pendingEnemySplits.length = 0;
     this.spawnQueue.length = 0;
     this.waveClearDelayLeft = null;
     this.status = 'planning';
@@ -595,6 +607,7 @@ export class GameEngine {
 
     this.spawnEnemies(delta);
     this.updateEnemies(delta);
+    this.updatePendingEnemySplits(delta);
     this.enemyIndex.rebuild(this.enemies);
     this.updateTowers(delta);
     this.updateScheduledCasts(delta);
@@ -619,9 +632,8 @@ export class GameEngine {
     this.spawnTimer = ENEMIES[type].spawnDelay;
   }
 
-  private spawnEnemy(type: EnemyType): boolean {
+  private spawnEnemy(type: EnemyType): void {
     const config = ENEMIES[type];
-    if (config.unique && this.enemies.some((enemy) => !enemy.dead && enemy.type === type)) return false;
     const creativeHealthScale = this.mode === 'creative' ? this.creativeSetup.healthScale : 1;
     const creativeSpeedScale = this.mode === 'creative' ? this.creativeSetup.speedScale : 1;
     const scale = Math.pow(COMBAT_BALANCE.waveHealthGrowth, Math.max(0, this.wave - 1))
@@ -640,7 +652,9 @@ export class GameEngine {
       maxHp: Math.round(config.hp * scale),
       speed: config.speed * this.level.enemySpeedScale * this.difficulty.enemySpeed * creativeSpeedScale,
       reward: Math.max(1, Math.round(config.reward * this.difficulty.economy)),
+      coreDamage: config.coreDamage,
       radius: config.radius,
+      splitGeneration: 0,
       slowFactor: 0,
       slowTime: 0,
       hitFlash: 0,
@@ -648,7 +662,6 @@ export class GameEngine {
       statuses: [],
       dead: false,
     });
-    return true;
   }
 
   private updateEnemies(delta: number): void {
@@ -677,7 +690,7 @@ export class GameEngine {
       enemy.angle = at.angle;
       if (enemy.distance >= this.path.length) {
         enemy.dead = true;
-        const damage = ENEMIES[enemy.type].coreDamage;
+        const damage = enemy.coreDamage;
         this.core = Math.max(0, this.core - damage);
         this.effects.spawn('game:core-hit', {
           position: this.path.pointAtDistance(this.path.length - 54).position,
@@ -694,8 +707,12 @@ export class GameEngine {
 
   private updateTowers(delta: number): void {
     for (const tower of this.towers) {
-      tower.energy = Math.min(tower.maxEnergy, tower.energy + tower.energyRegen * delta);
-      tower.cooldownLeft = Math.max(0, tower.cooldownLeft - delta);
+      const auraModifiers = this.getTowerAuraModifiers(tower);
+      tower.energy = Math.min(
+        tower.maxEnergy,
+        tower.energy + tower.energyRegen * auraModifiers.energyRegen * delta,
+      );
+      tower.cooldownLeft = Math.max(0, tower.cooldownLeft - delta / auraModifiers.cooldown);
       tower.flash = Math.max(0, tower.flash - delta * 5);
 
       const target = this.findTarget(tower);
@@ -721,6 +738,19 @@ export class GameEngine {
         }
       });
     }
+  }
+
+  private getTowerAuraModifiers(tower: Tower): { cooldown: number; energyRegen: number } {
+    let cooldown = 1;
+    let energyRegen = 1;
+    for (const enemy of this.enemies) {
+      if (enemy.dead) continue;
+      const aura = ENEMIES[enemy.type].aura;
+      if (!aura || distance(tower.position, enemy.position) > aura.radius) continue;
+      cooldown = Math.max(cooldown, aura.cooldownMultiplier);
+      energyRegen = Math.min(energyRegen, aura.energyRegenMultiplier);
+    }
+    return { cooldown, energyRegen };
   }
 
   private findTarget(tower: Tower): Enemy | null {
@@ -1105,10 +1135,70 @@ export class GameEngine {
       this.effects.spawnMany(['game:enemy-pop-ring', 'game:enemy-pop-sparks'], {
         position: enemy.position,
         color: ENEMIES[enemy.type].color,
-        lifetimeScale: enemy.type === 'crown' ? 1.8 : 1,
+        lifetimeScale: enemy.type === 'crown' || (enemy.type === 'fracture' && enemy.splitGeneration === 0) ? 1.8 : 1,
       });
+      this.queueEnemySplit(enemy);
     }
     return result;
+  }
+
+  private queueEnemySplit(parent: Enemy): void {
+    const split = ENEMIES[parent.type].split;
+    if (!split || parent.splitGeneration > 0) return;
+    this.pendingEnemySplits.push({
+      parent,
+      position: { ...parent.position },
+      age: 0,
+      duration: FRACTURE_RIPPLE_DURATION,
+      spawned: false,
+    });
+    this.effects.spawn('game:fracture-split-ripple', {
+      position: parent.position,
+      color: '#73e7f2',
+    });
+  }
+
+  private updatePendingEnemySplits(delta: number): void {
+    for (const pending of this.pendingEnemySplits) {
+      pending.age += delta;
+      if (pending.spawned || pending.age + SIMULATION_TIME_EPSILON < FRACTURE_SPLIT_DELAY) continue;
+      pending.spawned = true;
+      this.spawnSplitChildren(pending.parent);
+    }
+    this.pendingEnemySplits = this.pendingEnemySplits.filter((pending) => pending.age < pending.duration);
+  }
+
+  private spawnSplitChildren(parent: Enemy): void {
+    const split = ENEMIES[parent.type].split;
+    if (!split || parent.splitGeneration > 0) return;
+    const lastSafeDistance = Math.max(0, this.path.length - 1);
+    for (let index = 0; index < split.count; index += 1) {
+      const offset = (index - (split.count - 1) / 2) * split.spacing;
+      const childDistance = Math.max(0, Math.min(lastSafeDistance, parent.distance + offset));
+      const at = this.path.pointAtDistance(childDistance);
+      const maxHp = Math.max(1, Math.round(parent.maxHp * split.healthScale));
+      this.enemies.push({
+        id: this.nextId++,
+        type: parent.type,
+        progress: childDistance / this.path.length,
+        distance: childDistance,
+        position: at.position,
+        angle: at.angle,
+        hp: maxHp,
+        maxHp,
+        speed: parent.speed * split.speedScale,
+        reward: Math.max(1, Math.round(parent.reward * split.rewardScale)),
+        coreDamage: Math.max(1, Math.round(parent.coreDamage * split.coreDamageScale)),
+        radius: parent.radius * split.radiusScale,
+        splitGeneration: parent.splitGeneration + 1,
+        slowFactor: 0,
+        slowTime: 0,
+        hitFlash: 0,
+        ...createEnemyShield(undefined, 1),
+        statuses: [],
+        dead: false,
+      });
+    }
   }
 
   private applyStatus(enemy: Enemy, status: StatusApplication): void {
@@ -1155,7 +1245,14 @@ export class GameEngine {
   }
 
   private cleanEntities(): void {
-    this.enemies.splice(0, this.enemies.length, ...this.enemies.filter((enemy) => !enemy.dead));
+    const splittingParentIds = new Set(
+      this.pendingEnemySplits.filter((split) => !split.spawned).map((split) => split.parent.id),
+    );
+    this.enemies.splice(
+      0,
+      this.enemies.length,
+      ...this.enemies.filter((enemy) => !enemy.dead || splittingParentIds.has(enemy.id)),
+    );
     this.projectiles.splice(0, this.projectiles.length, ...this.projectiles.filter((projectile) => projectile.life > 0));
   }
 
@@ -1179,7 +1276,8 @@ export class GameEngine {
   }
 
   private checkWaveEnd(delta: number): void {
-    if (this.status !== 'wave' || this.spawnQueue.length > 0 || this.enemies.length > 0) {
+    const splitPending = this.pendingEnemySplits.some((split) => !split.spawned);
+    if (this.status !== 'wave' || this.spawnQueue.length > 0 || this.enemies.length > 0 || splitPending) {
       this.waveClearDelayLeft = null;
       return;
     }

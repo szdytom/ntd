@@ -50,21 +50,6 @@ export function Battlefield({ engine, view }: { engine: GameEngine; view: GameVi
 
       <div className="canvas-wrap">
         <GameCanvas engine={engine} />
-        {!snapshot.boss ? null : (
-          <div className="boss-status" aria-label={`${snapshot.boss.name} Boss 状态`}>
-            <div className="boss-status-head">
-              <span><i />GUARDIAN</span>
-              <strong>{snapshot.boss.name}</strong>
-              <b>{snapshot.boss.hp}/{snapshot.boss.maxHp}</b>
-            </div>
-            <div className="boss-shield-readout">
-              <small>◇ SHIELD</small>
-              <div><i style={{ width: `${snapshot.boss.shield / snapshot.boss.maxShield * 100}%` }} /></div>
-              <b>{snapshot.boss.shield}/{snapshot.boss.maxShield}</b>
-            </div>
-            <div className="boss-health-bar"><i style={{ width: `${snapshot.boss.hp / snapshot.boss.maxHp * 100}%` }} /></div>
-          </div>
-        )}
         <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>信号入口</span></div>
         <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>棱镜核心</span><i /></div>
         <div className="battle-tip">

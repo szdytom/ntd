@@ -107,7 +107,7 @@ export interface Tower {
   targetId: number | null;
 }
 
-export type EnemyType = 'spark' | 'kite' | 'block' | 'hex' | 'crown';
+export type EnemyType = 'spark' | 'kite' | 'block' | 'hex' | 'crown' | 'fracture' | 'radiant';
 
 export interface Enemy {
   id: number;
@@ -120,7 +120,9 @@ export interface Enemy {
   maxHp: number;
   speed: number;
   reward: number;
+  coreDamage: number;
   radius: number;
+  splitGeneration: number;
   slowFactor: number;
   slowTime: number;
   hitFlash: number;
@@ -141,6 +143,12 @@ export interface EnemyStatus {
   tickTimer: number;
   damage: number;
   color: string;
+}
+
+export interface SplitRift {
+  position: Point;
+  age: number;
+  duration: number;
 }
 
 export interface Projectile {
@@ -199,14 +207,6 @@ export interface CreativeSetup {
   speedScale: number;
 }
 
-export interface BossSnapshot {
-  name: string;
-  hp: number;
-  maxHp: number;
-  shield: number;
-  maxShield: number;
-}
-
 export interface GameSnapshot {
   status: GameStatus;
   mode: GameMode;
@@ -223,7 +223,6 @@ export interface GameSnapshot {
   selectedTowerId: number | null;
   speed: number;
   paused: boolean;
-  boss: BossSnapshot | null;
   draft: ModuleDraftSnapshot | null;
 }
 

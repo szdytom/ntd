@@ -41,6 +41,11 @@ uniform float u_shieldRotation;
 uniform float u_shieldHit;
 uniform vec3 u_shieldColor;
 uniform float u_rippleAge;
+uniform vec2 u_splitCenter;
+uniform float u_splitRadius;
+uniform float u_splitPhase;
+uniform float u_splitActive;
+uniform vec3 u_splitColor;
 uniform float u_time;
 uniform float u_pixelRatio;
 varying vec2 v_uv;
@@ -113,11 +118,44 @@ vec2 shieldDistortion(vec2 uv, out float surfaceMask, out float brightStripe) {
   );
 }
 
+vec2 splitRippleDistortion(vec2 uv, out float blurMask) {
+  blurMask = 0.0;
+  if (u_splitActive < 0.5 || u_splitRadius <= 0.0) return uv;
+  vec2 delta = uv * u_resolution - u_splitCenter;
+  float distanceToCenter = length(delta);
+  vec2 direction = delta / max(distanceToCenter, 0.001);
+  float phase = clamp(u_splitPhase, 0.0, 1.0);
+  float eased = 1.0 - pow(1.0 - phase, 3.0);
+  float waveFront = mix(8.0 * u_pixelRatio, u_splitRadius, eased);
+  float waveWidth = mix(7.0, 16.0, phase) * u_pixelRatio;
+  float waveDelta = (distanceToCenter - waveFront) / waveWidth;
+  float waveBand = exp(-waveDelta * waveDelta);
+  float interior = (1.0 - smoothstep(max(0.0, waveFront - 24.0 * u_pixelRatio), waveFront + 5.0 * u_pixelRatio, distanceToCenter))
+    * sin(phase * 3.14159265);
+  blurMask = max(waveBand, interior * 0.48);
+  float ripple = waveBand * sin(waveDelta * 4.2 - phase * 9.0);
+  vec2 displacement = direction * ripple * mix(11.0, 2.0, phase) * u_pixelRatio;
+  return clamp(uv + displacement / u_resolution, vec2(0.001), vec2(0.999));
+}
+
 void main() {
   float shieldSurface;
   float shieldStripe;
   vec2 sceneUv = shieldDistortion(v_uv, shieldSurface, shieldStripe);
+  float splitBlur;
+  sceneUv = splitRippleDistortion(sceneUv, splitBlur);
   vec3 scene = texture2D(u_scene, sceneUv).rgb;
+  if (u_splitActive > 0.5 && splitBlur > 0.001) {
+    vec2 delta = sceneUv * u_resolution - u_splitCenter;
+    vec2 tangent = normalize(vec2(-delta.y, delta.x) + vec2(0.001));
+    vec2 blurStep = tangent * (1.5 + splitBlur * 4.5) * u_pixelRatio / u_resolution;
+    vec3 softened = (
+      texture2D(u_scene, clamp(sceneUv - blurStep, vec2(0.001), vec2(0.999))).rgb
+      + scene
+      + texture2D(u_scene, clamp(sceneUv + blurStep, vec2(0.001), vec2(0.999))).rgb
+    ) / 3.0;
+    scene = mix(scene, softened, clamp(splitBlur * 0.78, 0.0, 0.78));
+  }
   vec4 wideGlow = texture2D(u_bloom, v_uv);
   vec4 hotGlow = texture2D(u_emissive, v_uv);
 
@@ -135,6 +173,7 @@ void main() {
   // 白底下为持续折射面补一层低强度色彩，并让移动亮纹保持可读性。
   float surfaceTint = shieldSurface * 0.018 + shieldStripe * (0.085 + u_shieldHit * 0.035);
   result = mix(result, u_shieldColor, clamp(surfaceTint, 0.0, 0.14));
+  result = mix(result, u_splitColor, clamp(splitBlur * 0.075, 0.0, 0.075));
   gl_FragColor = vec4(result, 1.0);
 }
 `;
@@ -157,6 +196,14 @@ export interface ShieldDistortion {
   color: readonly [number, number, number];
   rippleAge: number;
   time: number;
+}
+
+export interface SplitDistortion {
+  centerX: number;
+  centerY: number;
+  radius: number;
+  phase: number;
+  color: readonly [number, number, number];
 }
 
 export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderingContext | null {
@@ -249,7 +296,11 @@ export class WebGLBloomPipeline {
     return ctx;
   }
 
-  render(scene: HTMLCanvasElement, shield: ShieldDistortion | null = null): void {
+  render(
+    scene: HTMLCanvasElement,
+    shield: ShieldDistortion | null = null,
+    split: SplitDistortion | null = null,
+  ): void {
     if (this.contextLost) return;
     const gl = this.gl;
     gl.disable(gl.BLEND);
@@ -261,7 +312,7 @@ export class WebGLBloomPipeline {
 
     this.blur(this.emissiveTexture, this.pingFramebuffer, 1 / this.blurWidth, 0);
     this.blur(this.pingTexture, this.pongFramebuffer, 0, 1 / this.blurHeight);
-    this.composite(shield);
+    this.composite(shield, split);
   }
 
   dispose(): void {
@@ -320,7 +371,7 @@ export class WebGLBloomPipeline {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  private composite(shield: ShieldDistortion | null): void {
+  private composite(shield: ShieldDistortion | null, split: SplitDistortion | null): void {
     const gl = this.gl;
     const program = this.compositeProgram.program;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -352,6 +403,20 @@ export class WebGLBloomPipeline {
       shield?.color[2] ?? 1,
     );
     gl.uniform1f(this.uniform(program, 'u_rippleAge'), shield?.rippleAge ?? 2);
+    gl.uniform2f(
+      this.uniform(program, 'u_splitCenter'),
+      split?.centerX ?? 0,
+      split?.centerY ?? 0,
+    );
+    gl.uniform1f(this.uniform(program, 'u_splitRadius'), split?.radius ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_splitPhase'), split?.phase ?? 1);
+    gl.uniform1f(this.uniform(program, 'u_splitActive'), split ? 1 : 0);
+    gl.uniform3f(
+      this.uniform(program, 'u_splitColor'),
+      split?.color[0] ?? 0.45,
+      split?.color[1] ?? 0.91,
+      split?.color[2] ?? 0.95,
+    );
     gl.uniform1f(this.uniform(program, 'u_time'), shield?.time ?? 0);
     gl.uniform1f(this.uniform(program, 'u_pixelRatio'), this.dpr);
     gl.drawArrays(gl.TRIANGLES, 0, 6);

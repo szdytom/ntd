@@ -19,6 +19,6 @@ describe('executable balance documentation', () => {
 
     expect(first).toMatchObject({ units: 7, effectiveHp: 828, income: 108 });
     expect(first?.spawnDuration).toBeCloseTo(3.75, 2);
-    expect(last).toMatchObject({ units: 18, effectiveHp: 8_590, income: 316 });
+    expect(last).toMatchObject({ units: 18, effectiveHp: 7_850, income: 322 });
   });
 });

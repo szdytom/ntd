@@ -44,16 +44,24 @@ export function sampleTowerStatAverages(sampleCount = 100_000): TowerStatAverage
 export function calculateWaveBalanceRows(): WaveBalanceRow[] {
   return LEVELS.flatMap((level) => level.waves.map((wave, waveIndex) => {
     const healthScale = COMBAT_BALANCE.waveHealthGrowth ** waveIndex * level.enemyHealthScale;
+    let units = 0;
     let effectiveHp = 0;
     let speedPressure = 0;
     let killIncome = 0;
     for (const type of wave) {
       const enemy = ENEMIES[type];
-      const durability = Math.round(enemy.hp * healthScale)
-        + Math.round((enemy.shield?.capacity ?? 0) * healthScale);
-      effectiveHp += durability;
+      const bodyHp = Math.round(enemy.hp * healthScale);
+      const durability = bodyHp + Math.round((enemy.shield?.capacity ?? 0) * healthScale);
+      const splitCount = enemy.split?.count ?? 0;
+      const splitHp = enemy.split ? Math.max(1, Math.round(bodyHp * enemy.split.healthScale)) : 0;
+      effectiveHp += durability + splitHp * splitCount;
       speedPressure += durability * enemy.speed * level.enemySpeedScale / 60;
+      if (enemy.split) {
+        speedPressure += splitHp * splitCount * enemy.speed * enemy.split.speedScale * level.enemySpeedScale / 60;
+      }
       killIncome += enemy.reward;
+      if (enemy.split) killIncome += Math.max(1, Math.round(enemy.reward * enemy.split.rewardScale)) * splitCount;
+      units += 1 + splitCount;
     }
     const spawnDuration = 0.25 + wave.slice(0, -1).reduce(
       (sum, type) => sum + ENEMIES[type].spawnDelay,
@@ -64,7 +72,7 @@ export function calculateWaveBalanceRows(): WaveBalanceRow[] {
       levelId: level.id,
       levelName: level.name,
       wave: waveNumber,
-      units: wave.length,
+      units,
       spawnDuration,
       effectiveHp,
       speedPressure,

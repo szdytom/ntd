@@ -45,6 +45,18 @@
   clip-path: polygon(25% 7%, 75% 7%, 100% 50%, 75% 93%, 25% 93%, 0 50%);
 }
 
+.enemy-preview i.star,
+.legend i.star {
+  clip-path: polygon(50% 0, 58% 34%, 66% 42%, 100% 50%, 66% 58%, 58% 66%, 50% 100%, 42% 66%, 34% 58%, 0 50%, 34% 42%, 42% 34%);
+}
+
+.enemy-preview i.ring,
+.legend i.ring {
+  border: 2px solid var(--preview-color, #9aae18);
+  border-radius: 50%;
+  background: transparent;
+}
+
 .enemy-preview b {
   color: #5d586b;
   font-family: var(--font-mono);

@@ -49,17 +49,17 @@ describe('engine command and view boundary', () => {
     expect(engine.towers[0].slots).toEqual(before);
   });
 
-  it('enforces the single-boss invariant in setup and live spawning', () => {
+  it('allows multiple crown enemies in setup and live spawning', () => {
     const engine = new GameEngine({
       mode: 'creative',
       seed: 5,
       creative: { wave: { crown: 40 } },
     });
 
-    expect(engine.getCreativeSetup().wave.crown).toBe(1);
+    expect(engine.getCreativeSetup().wave.crown).toBe(40);
     engine.spawnCreativeEnemy('crown');
     engine.spawnCreativeEnemy('crown');
-    expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(1);
+    expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(2);
   });
 
   it('keeps creative-mode shards infinite across spending and reset', () => {
