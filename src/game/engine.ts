@@ -48,8 +48,10 @@ const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'cro
 const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = { spark: 8, kite: 5, block: 2, hex: 1, crown: 0 };
 const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
+export const WAVE_CLEAR_DELAY = 2;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
+const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
@@ -91,6 +93,7 @@ export class GameEngine {
   private viewListeners = new Set<ViewListener>();
   private spawnQueue: EnemyType[] = [];
   private spawnTimer = 0;
+  private waveClearDelayLeft: number | null = null;
   private scheduledCasts: ScheduledCast[] = [];
   private nextId = 1;
   private dirtyStateTimer = 0;
@@ -513,6 +516,7 @@ export class GameEngine {
     if (this.wave >= this.maxWaves) return;
     this.wave += 1;
     this.status = 'wave';
+    this.waveClearDelayLeft = null;
     this.spawnQueue = [...this.getWaveBlueprint(this.wave - 1)];
     this.spawnTimer = 0.25;
     this.emit({ type: 'toast', message: `波次 ${this.wave} / ${this.maxWaves} 已启动`, tone: 'info' });
@@ -538,6 +542,7 @@ export class GameEngine {
     this.floatingTexts.length = 0;
     this.scheduledCasts.length = 0;
     this.spawnQueue.length = 0;
+    this.waveClearDelayLeft = null;
     this.status = 'planning';
     this.wave = 0;
     this.core = this.maxCore;
@@ -595,7 +600,7 @@ export class GameEngine {
     this.updateScheduledCasts(delta);
     this.updateProjectiles(delta);
     this.cleanEntities();
-    this.checkWaveEnd();
+    this.checkWaveEnd(delta);
 
     this.dirtyStateTimer -= delta;
     if (this.dirtyStateTimer <= 0) {
@@ -1173,8 +1178,19 @@ export class GameEngine {
     this.status = 'reward';
   }
 
-  private checkWaveEnd(): void {
-    if (this.status !== 'wave' || this.spawnQueue.length > 0 || this.enemies.length > 0) return;
+  private checkWaveEnd(delta: number): void {
+    if (this.status !== 'wave' || this.spawnQueue.length > 0 || this.enemies.length > 0) {
+      this.waveClearDelayLeft = null;
+      return;
+    }
+    if (this.waveClearDelayLeft === null) {
+      this.waveClearDelayLeft = WAVE_CLEAR_DELAY;
+      return;
+    }
+    this.waveClearDelayLeft = Math.max(0, this.waveClearDelayLeft - delta);
+    if (this.waveClearDelayLeft > SIMULATION_TIME_EPSILON) return;
+    this.waveClearDelayLeft = null;
+
     const bonus = Math.round(
       (ECONOMY_BALANCE.waveBonusBase + this.wave * ECONOMY_BALANCE.waveBonusPerWave) * this.difficulty.economy,
     );

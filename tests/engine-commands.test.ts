@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameEngine } from '../src/game/engine';
+import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game/engine';
 
 describe('engine command and view boundary', () => {
   it('starts standard levels with three rounds of four-choice module drafts', () => {
@@ -74,5 +74,29 @@ describe('engine command and view boundary', () => {
 
     engine.reset();
     expect(engine.shards).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('waits two seconds after the battlefield clears before advancing', () => {
+    const engine = new GameEngine({
+      mode: 'creative',
+      levelId: 'starter-elbow',
+      seed: 5,
+      creative: { wave: { spark: 1, kite: 0, block: 0, hex: 0, crown: 0 } },
+    });
+    engine.startWave();
+    while (engine.enemies.length === 0) engine.update(FIXED_SIMULATION_STEP);
+    const enemy = engine.enemies[0];
+    if (!enemy) throw new Error('Expected the wave enemy to spawn');
+    enemy.dead = true;
+
+    engine.update(FIXED_SIMULATION_STEP);
+    expect(engine.status).toBe('wave');
+
+    const delaySteps = Math.ceil(WAVE_CLEAR_DELAY / FIXED_SIMULATION_STEP);
+    for (let step = 0; step < delaySteps - 1; step += 1) engine.update(FIXED_SIMULATION_STEP);
+    expect(engine.status).toBe('wave');
+
+    engine.update(FIXED_SIMULATION_STEP);
+    expect(engine.status).toBe('planning');
   });
 });
