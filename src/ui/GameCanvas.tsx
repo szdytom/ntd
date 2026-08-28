@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameEngine } from '../game/engine';
 import { GameRenderer } from '../game/renderer';
+import './GameCanvas.css';
 
 export function GameCanvas({ engine }: { engine: GameEngine }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

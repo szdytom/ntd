@@ -1,0 +1,9 @@
+.renderer-error {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  padding: 24px;
+  color: #e04f67;
+  background: #fff5f6;
+  text-align: center;
+}

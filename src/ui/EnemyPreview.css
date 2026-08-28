@@ -1,0 +1,52 @@
+.enemy-preview {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.enemy-preview span {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid #e9e7ed;
+  border-radius: 7px;
+  background: #faf9fc;
+}
+
+.enemy-preview i,
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  background: var(--preview-color, #6c5ce7);
+}
+
+.enemy-preview i.tri,
+.legend i.tri {
+  width: 0;
+  height: 0;
+  border-right: 6px solid transparent;
+  border-bottom: 11px solid var(--preview-color, #ffcf4a);
+  border-left: 6px solid transparent;
+  background: transparent;
+}
+
+.enemy-preview i.square,
+.legend i.square {
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.enemy-preview i.hex,
+.legend i.hex {
+  clip-path: polygon(25% 7%, 75% 7%, 100% 50%, 75% 93%, 25% 93%, 0 50%);
+}
+
+.enemy-preview b {
+  color: #5d586b;
+  font-family: var(--font-mono);
+  font-size: 15px;
+}

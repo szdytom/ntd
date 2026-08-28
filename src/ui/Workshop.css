@@ -1,0 +1,544 @@
+.workshop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.workshop-head {
+  min-height: 96px;
+  justify-content: space-between;
+  padding: 0 21px;
+  border-bottom: 1px solid #eceaf0;
+}
+
+.workshop-head .eyebrow {
+  margin-bottom: 4px;
+  color: #6c5ce7;
+  font-size: 11px;
+}
+
+.workshop-head h2 {
+  margin: 0;
+  color: #2f2b41;
+  font-size: 17px;
+}
+
+.tower-id {
+  padding: 6px 8px;
+  border: 1px solid #e3e0ea;
+  border-radius: 7px;
+  color: #767181;
+  background: #f9f8fb;
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+
+.program-section,
+.library-section {
+  padding: 18px 20px 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 11px;
+}
+
+.section-title > div {
+  gap: 8px;
+}
+
+.step-number {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #e0ddec;
+  border-radius: 7px;
+  color: #6c5ce7;
+  background: #f5f3ff;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.section-title h3,
+.section-title small {
+  display: block;
+  margin: 0;
+}
+
+.section-title h3 {
+  margin-bottom: 2px;
+  color: #464153;
+  font-size: 15px;
+}
+
+.section-title small {
+  color: #aaa6b3;
+  font-size: 15px;
+}
+
+.section-title > button {
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 5px;
+  color: #aaa6b4;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.section-title > button:hover {
+  color: #ff5c75;
+  background: #fff0f2;
+}
+
+.library-section {
+  padding-top: 16px;
+}
+
+.library-title {
+  margin-bottom: 9px;
+}
+
+.kind-legend {
+  display: flex !important;
+  gap: 3px !important;
+}
+
+.kind-legend i,
+.kind-badge {
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.kind-legend i {
+  width: 16px;
+  height: 16px;
+}
+
+.kind-legend .p,
+.kind-badge.projectile { background: #6c5ce7; }
+.kind-legend .s,
+.kind-badge.static { background: #e8590c; }
+.kind-legend .m,
+.kind-badge.modifier { background: #00b894; }
+.kind-legend .t,
+.kind-badge.trail { background: #168aad; }
+.kind-legend .l,
+.kind-badge.logic { background: #8e44ad; }
+
+.module-filters {
+  display: flex !important;
+  gap: 3px !important;
+  padding: 2px;
+  border: 1px solid #e3e0e9;
+  border-radius: 6px;
+  background: #faf9fc;
+}
+
+.module-filters button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  color: #9e99a7;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.module-filters button.active {
+  color: #fff;
+  background: #575163;
+}
+
+.module-filters button.active.projectile { background: #6c5ce7; }
+.module-filters button.active.static { background: #e8590c; }
+.module-filters button.active.modifier { background: #00b894; }
+.module-filters button.active.trail { background: #168aad; }
+.module-filters button.active.logic { background: #8e44ad; }
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.module-library-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  border: 1px dashed #d9d5e1;
+  border-radius: 11px;
+  color: #9a95a3;
+  background: #faf9fc;
+  font-size: 15px;
+}
+
+/* Map overlay workshop */
+.workspace {
+  position: relative;
+  display: block;
+  min-height: 0;
+}
+
+.battle-card {
+  width: 100%;
+  height: 100%;
+}
+
+.workshop {
+  position: absolute;
+  z-index: 12;
+  top: 12px;
+  right: auto;
+  bottom: 12px;
+  width: min(1320px, calc(100% - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-color: rgba(216, 212, 230, 0.88);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 70px rgba(44, 38, 67, 0.2);
+  backdrop-filter: blur(18px) saturate(1.08);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.workshop-head {
+  min-height: 64px;
+  padding: 0 14px 0 18px;
+  background: rgba(250, 249, 253, 0.76);
+}
+
+.workshop-head h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.workshop-head h2 span {
+  color: #8d8799;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.workshop-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workshop-close {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #dfdbe7;
+  border-radius: 10px;
+  color: #756f80;
+  background: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.workshop-close:hover {
+  color: #fff;
+  border-color: #e95670;
+  background: #e95670;
+}
+
+.workshop-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.workshop-side,
+.workshop-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.workshop-side {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.workshop-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.workshop .tower-overview,
+.workshop .stat-grid,
+.workshop .tower-controls,
+.workshop .program-section,
+.workshop .library-section,
+.workshop .module-inspector,
+.workshop .creative-lab {
+  margin: 0;
+  border: 1px solid rgba(224, 221, 232, 0.88);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.workshop .tower-overview {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 88px;
+  padding: 8px 10px;
+}
+
+.workshop .tower-avatar {
+  width: 54px;
+  height: 54px;
+}
+
+.workshop .tower-title {
+  margin: 0;
+  align-self: center;
+}
+
+.workshop .tower-title h3,
+.workshop .tower-title .online {
+  white-space: nowrap;
+}
+
+.workshop .energy-gauge {
+  min-width: 74px;
+  padding-left: 6px;
+}
+
+.workshop .stat-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+}
+
+.workshop .stat-card {
+  min-height: 58px;
+  padding: 7px 6px 6px 40px;
+}
+
+.workshop .stat-symbol {
+  top: 9px;
+  left: 9px;
+  width: 25px;
+  height: 25px;
+}
+
+.workshop .tower-controls {
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 6px;
+  padding: 6px;
+}
+
+.workshop .tower-controls label {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 2px;
+  padding: 5px 7px;
+}
+
+.workshop .tower-controls label > span {
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.workshop .tower-controls select {
+  width: 100%;
+  height: 31px;
+  padding: 0 5px;
+}
+
+.workshop .tower-controls label,
+.workshop .tower-controls > button {
+  min-height: 52px;
+}
+
+.workshop .module-inspector {
+  min-height: 78px;
+  padding: 8px 10px;
+}
+
+.workshop .inspector-copy > small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.workshop .program-section,
+.workshop .library-section {
+  padding: 8px 10px;
+}
+
+.workshop .program-section {
+  flex: 0 0 auto;
+}
+
+.workshop .library-section {
+  min-height: 0;
+  flex: 1;
+}
+
+.workshop .section-title {
+  min-height: 36px;
+  margin-bottom: 8px;
+}
+
+.workshop .slot-flow {
+  grid-template-columns: repeat(var(--slot-count, 5), minmax(64px, 1fr));
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+.workshop .module-slot {
+  height: 64px;
+}
+
+.workshop .flow-arrow {
+  top: 27px;
+}
+
+.workshop .program-readout {
+  min-height: 54px;
+  margin-top: 6px;
+  padding: 6px 9px;
+}
+
+.workshop .program-readout strong,
+.workshop .program-readout small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workshop .trigger-trace {
+  min-height: 38px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.workshop .module-filters {
+  gap: 4px !important;
+  padding: 3px;
+}
+
+.workshop .module-filters button {
+  min-width: auto;
+  height: 34px;
+  padding: 0 8px;
+}
+
+.workshop .module-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.workshop .module-grid.all-modules {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.workshop .module-card {
+  min-height: 66px;
+  gap: 7px;
+  padding: 8px 32px 8px 8px;
+}
+
+.workshop .all-modules .module-card {
+  min-height: 58px;
+  gap: 6px;
+  padding: 6px 29px 6px 7px;
+}
+
+.workshop .module-symbol {
+  width: 34px;
+  height: 40px;
+  font-size: 22px;
+}
+
+.workshop .all-modules .module-symbol {
+  width: 30px;
+  height: 36px;
+  font-size: 20px;
+}
+
+.workshop .kind-badge {
+  top: 7px;
+  right: 7px;
+  width: 21px;
+  height: 21px;
+}
+
+.workshop .all-modules .kind-badge {
+  top: 5px;
+  right: 5px;
+  width: 19px;
+  height: 19px;
+}
+
+.workshop .rarity-mark {
+  display: none;
+}
+
+.workshop-body > .creative-lab {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 300px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+}
+
+.workshop .creative-lab .section-title {
+  margin: 0;
+}
+
+.workshop .creative-enemy-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.workshop .creative-enemy-grid input {
+  height: 32px;
+}
+
+.workshop .creative-scales {
+  grid-template-columns: 1fr;
+  margin: 0;
+}

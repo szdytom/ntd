@@ -1,3 +1,70 @@
+.brand-block {
+  gap: 13px;
+}
+
+.brand-mark {
+  position: relative;
+  width: 42px;
+  height: 45px;
+  flex: 0 0 auto;
+}
+
+.brand-mark i,
+.brand-mark b,
+.brand-mark span {
+  position: absolute;
+  display: block;
+  width: 27px;
+  height: 27px;
+  transform: rotate(30deg) skew(-4deg, -4deg);
+  border-radius: 5px;
+}
+
+.brand-mark i {
+  top: 3px;
+  left: 2px;
+  background: #6c5ce7;
+}
+
+.brand-mark b {
+  top: 12px;
+  left: 12px;
+  background: #ff5c8a;
+  opacity: 0.9;
+}
+
+.brand-mark span {
+  top: 6px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 2px solid #fff;
+}
+
+.brand-name {
+  color: #272338;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.brand-name span {
+  color: var(--purple);
+}
+
+.brand-sub,
+.eyebrow {
+  color: #9894a5;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+}
+
+.brand-sub {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
 .level-select-shell {
   width: min(1320px, calc(100% - 36px));
   min-height: 100vh;
@@ -266,60 +333,6 @@
 
 .level-card.selected {
   outline: 3px solid color-mix(in srgb, var(--level-accent) 14%, transparent);
-}
-
-.level-map-wrap {
-  position: relative;
-  height: 158px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--level-accent) 9%, transparent), transparent 62%),
-    #fafafe;
-}
-
-.level-map-wrap::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(#d8d5e0 1px, transparent 1px);
-  background-size: 17px 17px;
-  opacity: 0.45;
-}
-
-.level-map-wrap > span {
-  position: absolute;
-  top: 12px;
-  left: 13px;
-  padding: 4px 6px;
-  border-radius: 5px;
-  color: #fff;
-  background: var(--level-accent);
-  font-family: var(--font-mono);
-  font-size: 15px;
-  letter-spacing: 0.08em;
-}
-
-.level-map {
-  position: absolute;
-  z-index: 1;
-  inset: 12px;
-  width: calc(100% - 24px);
-  height: calc(100% - 24px);
-}
-
-.level-map polyline {
-  fill: none;
-  stroke: var(--level-accent);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 28;
-  opacity: 0.72;
-}
-
-.level-map circle {
-  fill: #fff;
-  stroke: var(--level-accent);
-  stroke-width: 7;
 }
 
 .level-card-copy {

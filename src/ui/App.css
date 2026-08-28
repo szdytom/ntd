@@ -1,0 +1,3 @@
+/* App owns screen selection only; visual layout belongs to the mounted screen component. */
+
+@import '../styles/responsive.css';

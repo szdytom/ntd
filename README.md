@@ -66,7 +66,8 @@ npm run build
 - `src/game/renderer.ts`：Canvas 战场绘制与分层效果合成
 - `src/game/config.ts`：地图、波次和敌人数据
 - `src/game/tower-generation.ts`：固定预算的随机炮塔属性生成器
-- `src/ui/App.tsx`：React 工作台、拖放交互和状态面板
+- `src/ui/App.tsx`：只负责关卡选择与游戏会话的切换
+- `src/ui/*.tsx` / `*.css`：每个 React 组件及其同名独立样式表；战场、工作台、奖励和关卡选择互不混杂
 - `src/styles/`：按基础、战斗、关卡选择和响应式层拆分的样式
 
 添加模块和编写效果的完整约定见 [docs/architecture.md](docs/architecture.md)，完整模块说明见 [docs/modules.md](docs/modules.md)。完整估值公式、稀有度预算、逐波 EHP 与经济计算见 [docs/balance.md](docs/balance.md)。

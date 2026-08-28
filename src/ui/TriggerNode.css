@@ -1,0 +1,51 @@
+.trigger-trace {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 5px 8px;
+  overflow-x: auto;
+  border: 1px solid #e4e1eb;
+  border-radius: 8px;
+  background: #fcfbfe;
+}
+
+.trigger-trace > small {
+  flex: 0 0 auto;
+  color: #aaa6b4;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.trigger-trace > div,
+.trigger-node-group {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.trigger-shot {
+  padding: 3px 5px;
+  border: 1px solid color-mix(in srgb, var(--trace-color) 35%, #ddd);
+  border-radius: 5px;
+  color: var(--trace-color);
+  background: color-mix(in srgb, var(--trace-color) 8%, white);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.trigger-link {
+  color: #9f9aa8;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trigger-link.impact { color: #f15bb5; }
+.trigger-link.timer { color: #d6ac00; }
+.trigger-link.proximity { color: #00a98f; }

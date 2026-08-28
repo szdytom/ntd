@@ -1,0 +1,94 @@
+.module-inspector {
+  min-height: 112px;
+  gap: 9px;
+  margin: 12px 20px 14px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--rarity-color) 45%, #e5e2ea);
+  border-radius: 10px;
+  background: linear-gradient(120deg, var(--module-tint), #fff 72%);
+}
+
+.inspector-symbol {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--module-color) 32%, #ddd);
+  border-radius: 9px;
+  color: var(--module-color);
+  background: #fff;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.inspector-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.inspector-copy > span,
+.inspector-copy > strong,
+.inspector-copy > small {
+  display: block;
+}
+
+.inspector-copy > span {
+  margin-bottom: 2px;
+  color: #aaa5b1;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.inspector-copy > span i {
+  margin-right: 5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #fff;
+  background: var(--module-color);
+  font-family: var(--font-sans);
+  font-style: normal;
+}
+
+.inspector-copy > span b {
+  margin-right: 5px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+}
+
+.inspector-copy > strong {
+  margin-bottom: 2px;
+  color: #4b4658;
+  font-size: 15px;
+}
+
+.inspector-copy > small {
+  color: #9894a1;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.inspector-cost {
+  min-width: 35px;
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--module-color) 22%, #ddd);
+  text-align: center;
+}
+
+.inspector-cost small,
+.inspector-cost strong {
+  display: block;
+}
+
+.inspector-cost small {
+  color: #aaa6b2;
+  font-size: 15px;
+}
+
+.inspector-cost strong {
+  color: var(--module-color);
+  font-family: var(--font-mono);
+  font-size: 15px;
+}

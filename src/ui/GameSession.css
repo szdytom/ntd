@@ -1,0 +1,26 @@
+.app-shell {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 16px 16px;
+  overflow: hidden;
+}
+
+.workspace {
+  width: 100%;
+  max-width: 1800px;
+  min-height: 0;
+  height: calc(100dvh - 112px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 520px;
+  gap: 16px;
+}
+
+.battle-card,
+.workshop {
+  overflow: hidden;
+  border: 1px solid #e2e0e9;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 38px rgba(45, 40, 68, 0.075);
+}

@@ -138,4 +138,4 @@ export const ionModule: ModuleDefinition = {
 
 ## React 边界
 
-React 通过游戏事件订阅快照，负责工作台、槽位拖放、按钮与诊断显示。`GameCanvas` 只在挂载时建立一个 `GameRenderer` 和动画循环；游戏引擎与模块定义不依赖 React，因此仍可独立进行 Node 冒烟测试或迁移到其他界面。
+React 通过游戏事件订阅快照，负责工作台、槽位拖放、按钮与诊断显示。`App` 只切换 `LevelSelect` 与 `GameSession`；战场、工作台、模块槽、奖励弹窗等组件各自位于同名 `.tsx`，并直接导入同名 `.css`。`GameCanvas` 只在挂载时建立一个 `GameRenderer` 和动画循环；游戏引擎与模块定义不依赖 React，因此仍可独立进行 Node 冒烟测试或迁移到其他界面。组件边界测试会阻止重新向单文件塞入多个组件，或遗漏对应样式表。
