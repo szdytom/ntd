@@ -2,6 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { GameEngine } from '../src/game/engine';
 
 describe('engine command and view boundary', () => {
+  it('starts standard levels with three rounds of four-choice module drafts', () => {
+    const engine = new GameEngine({ mode: 'standard', seed: 5 });
+
+    expect(engine.getSnapshot()).toMatchObject({
+      status: 'reward',
+      wave: 0,
+      draft: { round: 1, totalRounds: 3 },
+    });
+    expect(engine.getSnapshot().draft?.choices).toHaveLength(4);
+
+    for (let round = 1; round <= 3; round += 1) {
+      const choice = engine.getSnapshot().draft?.choices[0];
+      if (!choice) throw new Error(`Expected a module choice in draft round ${round}`);
+      engine.chooseDraftModule(choice);
+    }
+
+    expect(engine.getSnapshot().status).toBe('planning');
+    expect(engine.getSnapshot().draft).toBeNull();
+  });
+
   it('publishes an immutable selected-tower snapshot', () => {
     const engine = new GameEngine({ mode: 'standard', seed: 5 });
     const towerId = engine.towers[0].id;

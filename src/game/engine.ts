@@ -8,6 +8,7 @@ import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, WORLD, type LevelDef
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
+import { findPathInterception } from './interception';
 import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
 import { createPathSampler, type PathSampler } from './path';
 import { EnemySpatialIndex } from './spatial-index';
@@ -49,6 +50,7 @@ const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
+const SEEKING_RETARGET_RADIUS = 320;
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
@@ -146,6 +148,7 @@ export class GameEngine {
     first.slots[1] = 'pulse';
     this.towers.push(first);
     this.selectedTowerId = null;
+    if (this.mode === 'standard') this.beginModuleDraft();
     this.refreshViewSnapshot();
   }
 
@@ -559,6 +562,7 @@ export class GameEngine {
     first.slots[1] = 'pulse';
     this.towers.push(first);
     this.selectedTowerId = null;
+    if (this.mode === 'standard') this.beginModuleDraft();
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -741,7 +745,22 @@ export class GameEngine {
     if (!isStatic && !target) return;
     const launchOrigin = origin ?? tower.position;
     const triggeredCast = origin !== undefined;
-    const baseAngle = target ? angleBetween(launchOrigin, target.position) : tower.rotation;
+    const spawnDistance = triggeredCast ? 4 : 27;
+    const interception = target && !isStatic
+      ? findPathInterception({
+        origin: launchOrigin,
+        path: this.path,
+        projectileSpeed: blueprint.speed,
+        projectileLifetime: blueprint.lifetime,
+        launchOffset: spawnDistance,
+        targetDistance: target.distance,
+        targetSpeed: target.speed,
+        targetSlowFactor: target.slowFactor,
+        targetSlowTime: target.slowTime,
+      })
+      : null;
+    const aimPoint = interception?.position ?? target?.position;
+    const baseAngle = aimPoint ? angleBetween(launchOrigin, aimPoint) : tower.rotation;
     const muzzleDistance = triggeredCast ? 3 : 30;
     const muzzlePosition = {
       x: launchOrigin.x + Math.cos(baseAngle) * muzzleDistance,
@@ -761,7 +780,6 @@ export class GameEngine {
     for (let index = 0; index < blueprint.count; index += 1) {
       const offset = (index - (blueprint.count - 1) / 2) * blueprint.spread;
       const direction = rotate({ x: 1, y: 0 }, baseAngle + offset);
-      const spawnDistance = triggeredCast ? 4 : 27;
       const projectile: Projectile = {
         id: this.nextId++,
         towerId: tower.id,
@@ -856,17 +874,18 @@ export class GameEngine {
       projectile.trail.unshift({ ...projectile.position });
       if (projectile.trail.length > 6) projectile.trail.pop();
 
-      if (projectile.seeking > 0 && projectile.targetId !== null) {
-        const target = this.enemies.find((enemy) => enemy.id === projectile.targetId && !enemy.dead);
+      if (projectile.seeking > 0) {
+        const target = this.resolveSeekingTarget(projectile);
         if (target) {
-          const desired = normalize({ x: target.position.x - projectile.position.x, y: target.position.y - projectile.position.y });
-          const current = normalize(projectile.velocity);
-          const blend = Math.min(1, projectile.seeking * delta);
-          const direction = normalize({
-            x: current.x * (1 - blend) + desired.x * blend,
-            y: current.y * (1 - blend) + desired.y * blend,
-          });
-          projectile.velocity = { x: direction.x * projectile.speed, y: direction.y * projectile.speed };
+          const desiredAngle = angleBetween(projectile.position, target.position);
+          const currentAngle = Math.atan2(projectile.velocity.y, projectile.velocity.x);
+          const angleDifference = ((desiredAngle - currentAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+          const maxTurn = projectile.seeking * delta;
+          const nextAngle = currentAngle + Math.max(-maxTurn, Math.min(maxTurn, angleDifference));
+          projectile.velocity = {
+            x: Math.cos(nextAngle) * projectile.speed,
+            y: Math.sin(nextAngle) * projectile.speed,
+          };
         }
       }
 
@@ -941,9 +960,25 @@ export class GameEngine {
     projectile.pierce -= 1;
     if (projectile.pierce < 0) projectile.life = 0;
     else {
-      projectile.position.x += normalize(projectile.velocity).x * (enemy.radius + 8);
-      projectile.position.y += normalize(projectile.velocity).y * (enemy.radius + 8);
+      const exitDistance = (enemy.radius + projectile.radius) * 2 + 2;
+      projectile.position.x += normalize(projectile.velocity).x * exitDistance;
+      projectile.position.y += normalize(projectile.velocity).y * exitDistance;
+      if (projectile.seeking > 0) this.resolveSeekingTarget(projectile);
     }
+  }
+
+  private resolveSeekingTarget(projectile: Projectile): Enemy | null {
+    const current = this.enemies.find((enemy) => enemy.id === projectile.targetId && !enemy.dead);
+    if (current) return current;
+
+    const remainingRange = Math.max(0, projectile.speed * projectile.life);
+    const target = this.enemyIndex.nearestWithinRadius(
+      projectile.position,
+      Math.min(SEEKING_RETARGET_RADIUS, remainingRange),
+    )[0] ?? null;
+    projectile.targetId = target?.id ?? null;
+    if (target) this.combatApi.retarget(projectile, target);
+    return target;
   }
 
   private findTriggerTarget(position: Point): Enemy | null {

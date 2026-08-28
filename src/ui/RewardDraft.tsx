@@ -24,9 +24,12 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
   if (!draft) return null;
-  return <div className="reward-backdrop" role="dialog" aria-modal="true" aria-label="选择模块奖励">
+  const isInitialDraft = snapshot.wave === 0;
+  return <div className="reward-backdrop" role="dialog" aria-modal="true" aria-label={isInitialDraft ? '选择初始模块' : '选择模块奖励'}>
     <div className="reward-panel" ref={panelRef} onKeyDown={trapFocus}>
-      <div className="reward-kicker">WAVE {String(snapshot.wave).padStart(2, '0')} CLEARED</div><h2>截获模块信号</h2><p>四选一，选择一枚加入库存。</p>
+      <div className="reward-kicker">{isInitialDraft ? 'INITIAL MODULE UPLINK' : `WAVE ${String(snapshot.wave).padStart(2, '0')} CLEARED`}</div>
+      <h2>{isInitialDraft ? '选择初始模块' : '截获模块信号'}</h2>
+      <p>{isInitialDraft ? '开局补给：连续三轮四选一，为第一波构筑防线。' : '四选一，选择一枚加入库存。'}</p>
       <div className="reward-progress">{Array.from({ length: draft.totalRounds }, (_, index) => <i key={index} className={index < draft.round ? 'active' : ''} />)}<span>{draft.round} / {draft.totalRounds}</span></div>
       <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);

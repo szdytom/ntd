@@ -164,7 +164,7 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
         <section className="standard-brief">
           <strong>正式模式规则</strong>
           <span>起始仅持有脉冲与冷凝模块</span><i />
-          <span>每波后进行 3 次四选一</span><i />
+          <span>开局及每波后进行 3 次四选一</span><i />
           <span>模块份数限制同时装配数量</span>
         </section>
       ) : (
