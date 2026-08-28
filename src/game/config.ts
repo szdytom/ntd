@@ -66,6 +66,29 @@ const wave = (...groups: Array<[EnemyType, number]>): EnemyType[] => groups.flat
 
 export const LEVELS = [
   {
+    id: 'starter-elbow',
+    name: '启航折线',
+    sector: 'SECTOR T-0',
+    description: '只有两个转角节点与两波基础信号，用最短路线熟悉部署、射程和施法顺序。',
+    difficulty: 1,
+    accent: '#168aad',
+    path: [
+      { x: -40, y: 510 }, { x: 420, y: 510 },
+      { x: 420, y: 145 }, { x: 1120, y: 145 },
+    ],
+    towerPads: [
+      { x: 465, y: 590 },
+      { x: 465, y: 65 },
+    ],
+    waves: [
+      wave(['spark', 5]),
+      wave(['spark', 6], ['kite', 3]),
+    ],
+    startingShards: 180,
+    enemyHealthScale: 0.72,
+    enemySpeedScale: 0.85,
+  },
+  {
     id: 'white-prism',
     name: '白棱镜区',
     sector: 'SECTOR A-7',
@@ -78,8 +101,8 @@ export const LEVELS = [
       { x: 650, y: 392 }, { x: 872, y: 392 }, { x: 872, y: 548 }, { x: 1120, y: 548 },
     ],
     towerPads: [
-      { x: 274, y: 192 }, { x: 292, y: 370 }, { x: 510, y: 224 }, { x: 543, y: 480 },
-      { x: 752, y: 286 }, { x: 778, y: 493 }, { x: 954, y: 458 }, { x: 969, y: 607 },
+      { x: 274, y: 192 }, { x: 292, y: 370 }, { x: 510, y: 224 }, { x: 650, y: 480 },
+      { x: 752, y: 286 }, { x: 778, y: 493 }, { x: 954, y: 458 },
     ],
     waves: [
       wave(['crown', 1], ['spark', 6]),
@@ -153,10 +176,12 @@ export const LEVELS = [
   },
 ] as const satisfies readonly [LevelDefinition, ...LevelDefinition[]];
 
-export const DEFAULT_LEVEL_ID = LEVELS[0].id;
+export const DEFAULT_LEVEL_ID = 'white-prism';
 
 export function getLevel(levelId: string): LevelDefinition {
-  return LEVELS.find((level) => level.id === levelId) ?? LEVELS[0];
+  return LEVELS.find((level) => level.id === levelId)
+    ?? LEVELS.find((level) => level.id === DEFAULT_LEVEL_ID)
+    ?? LEVELS[0];
 }
 
 export const TOWER_COLORS = ['#6c5ce7', '#ff5c8a', '#00b894', '#ff9f43', '#168aad'];

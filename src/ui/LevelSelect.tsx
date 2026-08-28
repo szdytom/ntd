@@ -7,6 +7,7 @@ import { LevelMap } from './LevelMap';
 import './LevelSelect.css';
 
 const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown'];
+const VISIBLE_LEVEL_COUNT = 3;
 const DIFFICULTY_TONE: Record<DifficultyId, string> = {
   relaxed: '最轻松',
   easy: '较轻松',
@@ -33,8 +34,12 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
   const [mode, setMode] = useState<GameMode>('standard');
   const [difficultyId, setDifficultyId] = useState<DifficultyId>(DEFAULT_DIFFICULTY_ID);
   const [creative, setCreative] = useState<CreativeSetup>(initialCreativeSetup);
+  const [carouselStart, setCarouselStart] = useState(0);
+  const [carouselDirection, setCarouselDirection] = useState<'next' | 'previous' | null>(null);
   const selectedLevel = getLevel(levelId);
   const selectedDifficulty = getDifficulty(difficultyId);
+  const maximumCarouselStart = Math.max(0, LEVELS.length - VISIBLE_LEVEL_COUNT);
+  const visibleLevels = LEVELS.slice(carouselStart, carouselStart + VISIBLE_LEVEL_COUNT);
   const setEnemyCount = (type: EnemyType, count: number): void => setCreative((current) => ({
     ...current,
     wave: { ...current.wave, [type]: Math.max(0, Math.min(40, Math.round(count))) },
@@ -61,7 +66,27 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
     const next = LEVELS[(index + offset + LEVELS.length) % LEVELS.length];
     if (!next) return;
     setLevelId(next.id);
+    const nextIndex = LEVELS.indexOf(next);
+    if (nextIndex < carouselStart) {
+      setCarouselDirection('previous');
+      setCarouselStart(nextIndex);
+    }
+    else if (nextIndex >= carouselStart + VISIBLE_LEVEL_COUNT) {
+      setCarouselDirection('next');
+      setCarouselStart(Math.min(maximumCarouselStart, nextIndex - VISIBLE_LEVEL_COUNT + 1));
+    }
     focusSelectedOption(event.currentTarget);
+  };
+  const moveCarousel = (offset: number): void => {
+    const nextStart = Math.max(0, Math.min(maximumCarouselStart, carouselStart + offset));
+    if (nextStart === carouselStart) return;
+    setCarouselDirection(offset > 0 ? 'next' : 'previous');
+    setCarouselStart(nextStart);
+    const selectedIndex = LEVELS.findIndex((level) => level.id === levelId);
+    if (selectedIndex < nextStart || selectedIndex >= nextStart + VISIBLE_LEVEL_COUNT) {
+      const nextSelection = LEVELS[nextStart];
+      if (nextSelection) setLevelId(nextSelection.id);
+    }
   };
 
   return (
@@ -105,8 +130,12 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
         </div>
       </section>
 
-      <section className="level-grid" role="radiogroup" aria-label="选择防御区">
-        {LEVELS.map((level, index) => (
+      <div className="level-carousel">
+        <button className="level-carousel-arrow previous" onClick={() => moveCarousel(-1)} disabled={carouselStart === 0} aria-label="显示上一组关卡" />
+        <section key={carouselStart} className={`level-grid ${carouselDirection ? `slide-${carouselDirection}` : ''}`} role="radiogroup" aria-label="选择防御区">
+        {visibleLevels.map((level, visibleIndex) => {
+          const index = carouselStart + visibleIndex;
+          return (
           <button
             key={level.id}
             className={`level-card ${level.id === levelId ? 'selected' : ''}`}
@@ -125,8 +154,11 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
               <footer><span>{level.towerPads.length} 个炮塔节点</span></footer>
             </div>
           </button>
-        ))}
-      </section>
+          );
+        })}
+        </section>
+        <button className="level-carousel-arrow next" onClick={() => moveCarousel(1)} disabled={carouselStart === maximumCarouselStart} aria-label="显示下一组关卡" />
+      </div>
 
       {mode !== 'creative' ? (
         <section className="standard-brief">

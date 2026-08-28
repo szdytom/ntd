@@ -32,4 +32,21 @@ describe('level selection accessibility', () => {
     await user.keyboard('{ArrowRight}');
     expect(levelGroup.querySelector('[aria-checked="true"]')?.textContent).toContain('玫红回路');
   });
+
+  it('shows three level cards at a time and pages with arrow controls', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    let group = screen.getByRole('radiogroup', { name: '选择防御区' });
+    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(3);
+    expect(group.textContent).toContain('启航折线');
+    expect(group.textContent).not.toContain('翠光折返');
+
+    await user.click(screen.getByRole('button', { name: '显示下一组关卡' }));
+    group = screen.getByRole('radiogroup', { name: '选择防御区' });
+    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(3);
+    expect(group.classList.contains('slide-next')).toBe(true);
+    expect(group.textContent).not.toContain('启航折线');
+    expect(group.textContent).toContain('翠光折返');
+  });
 });

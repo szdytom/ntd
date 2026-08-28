@@ -48,3 +48,22 @@ test('creative economy and signal controls are independent from the workshop', a
   await page.getByRole('button', { name: '选择节点 T01' }).click();
   await expect(page.getByLabel('炮塔模块工作台').locator('.creative-lab')).toHaveCount(0);
 });
+
+test('level carousel keeps three cards visible and launches the beginner map', async ({ page }) => {
+  await page.goto('/');
+  const levelGroup = page.getByRole('radiogroup', { name: '选择防御区' });
+  await expect(levelGroup.getByRole('radio')).toHaveCount(3);
+  await expect(page.getByRole('radio', { name: /启航折线/ })).toBeVisible();
+
+  await page.getByRole('button', { name: '显示下一组关卡' }).click();
+  await expect(levelGroup.getByRole('radio')).toHaveCount(3);
+  await expect(page.getByRole('radio', { name: /翠光折返/ })).toBeVisible();
+  await page.getByRole('button', { name: '显示上一组关卡' }).click();
+
+  await page.getByRole('radio', { name: /启航折线/ }).click();
+  await page.getByRole('button', { name: /部署至/ }).click();
+  await expect(page.getByRole('heading', { name: /启航折线/ })).toBeVisible();
+  await page.getByText('键盘战场控制').click();
+  await expect(page.getByRole('button', { name: '部署节点 2' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '部署节点 3' })).toHaveCount(0);
+});
