@@ -1,0 +1,53 @@
+import { arcboltModule } from './arcbolt';
+import { barrageModule } from './barrage';
+import { colossusModule } from './colossus';
+import { economizerModule } from './economizer';
+import { echoModule } from './echo';
+import { forkModule } from './fork';
+import { frostModule } from './frost';
+import { impactTriggerModule } from './impact-trigger';
+import { needleModule } from './needle';
+import { novaModule } from './nova';
+import { overdriveModule } from './overdrive';
+import { resonantTrailModule } from './resonant-trail';
+import { pulseModule } from './pulse';
+import { proximityMineModule } from './proximity-mine';
+import { proximityTriggerModule } from './proximity-trigger';
+import { razorModule } from './razor';
+import { ricochetModule } from './ricochet';
+import { ModuleRegistry } from './registry';
+import { seekerModule } from './seeker';
+import { teslaNodeModule } from './tesla-node';
+import { timerTriggerModule } from './timer-trigger';
+import { toxicCloudModule } from './toxic-cloud';
+import { toxinModule } from './toxin';
+
+export function createModuleRegistry(): ModuleRegistry {
+  return new ModuleRegistry()
+    .register(pulseModule)
+    .register(needleModule)
+    .register(novaModule)
+    .register(overdriveModule)
+    .register(frostModule)
+    .register(forkModule)
+    .register(echoModule)
+    .register(seekerModule)
+    .register(arcboltModule)
+    .register(resonantTrailModule)
+    .register(razorModule)
+    .register(ricochetModule)
+    .register(toxinModule)
+    .register(colossusModule)
+    .register(barrageModule)
+    .register(economizerModule)
+    .register(proximityMineModule)
+    .register(teslaNodeModule)
+    .register(toxicCloudModule)
+    .register(impactTriggerModule)
+    .register(timerTriggerModule)
+    .register(proximityTriggerModule);
+}
+
+export { ModuleRegistry } from './registry';
+export { DRAFT_BALANCE, MODULE_RARITIES } from './rarity';
+export type { ModuleDefinition, ModuleKind, ModuleRarity } from './types';
