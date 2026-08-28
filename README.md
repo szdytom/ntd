@@ -1,6 +1,6 @@
 # Prism Bastion / 棱镜堡垒
 
-一个使用 React、TypeScript、esbuild 与 Canvas 2D 构建的俯视角模块化塔防原型。视觉只使用白底、亮色和简单几何图形。
+一个使用 React、TypeScript、esbuild、Canvas 2D 与可选 WebGL 后处理构建的俯视角模块化塔防原型。视觉只使用白底、亮色和简单几何图形。
 
 ## 运行
 
@@ -14,6 +14,8 @@ npm run dev
 ```bash
 npm run build
 ```
+
+完整本地验证使用 `npm run check`（ESLint、TypeScript、Vitest、生产构建）。数值模型与空间索引分别可用 `npm run balance:report`、`npm run perf:report` 复核。
 
 ## 核心规则
 
@@ -56,12 +58,15 @@ npm run build
 
 ## 架构
 
-- `src/game/engine.ts`：战斗状态、模块运行时钩子与更新循环
+- `src/game/engine.ts`：战斗编排、命令入口与固定步长更新循环
+- `src/game/collision.ts`、`spatial-index.ts`、`targeting.ts`：连续碰撞、空间查询与纯目标策略
+- `src/game/draft.ts`、`balance-analysis.ts`：可独立测试的选牌与数值模型
 - `src/modules/`：单文件模块定义、注册表和顺序编译器
 - `src/effects/`：统一生命周期效果引擎、Canvas 绘制器与效果工厂
 - `src/game/renderer.ts`：Canvas 战场绘制与分层效果合成
 - `src/game/config.ts`：地图、波次和敌人数据
 - `src/game/tower-generation.ts`：固定预算的随机炮塔属性生成器
 - `src/ui/App.tsx`：React 工作台、拖放交互和状态面板
+- `src/styles/`：按基础、战斗、关卡选择和响应式层拆分的样式
 
 添加模块和编写效果的完整约定见 [docs/architecture.md](docs/architecture.md)，完整模块说明见 [docs/modules.md](docs/modules.md)。完整估值公式、稀有度预算、逐波 EHP 与经济计算见 [docs/balance.md](docs/balance.md)。

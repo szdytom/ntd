@@ -12,6 +12,10 @@ await Promise.all([
     entryNames: 'app',
     assetNames: 'assets/[name]-[hash]',
     loader: { '.css': 'css' },
+    target: ['es2022'],
+    legalComments: 'none',
+    metafile: true,
+    logLevel: 'warning',
   }),
   copyFile('index.html', 'dist/index.html'),
 ]);

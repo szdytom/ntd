@@ -1,14 +1,17 @@
 import { EffectEngine } from '../effects/engine';
 import { gameEffects } from '../effects/game-effects';
-import { createModuleRegistry, DRAFT_BALANCE, MODULE_RARITIES } from '../modules';
+import { createModuleRegistry, DRAFT_BALANCE } from '../modules';
 import type { ModuleCombatApi, StatusApplication } from '../modules/types';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, WORLD, type LevelDefinition } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
+import { rollModuleDraft } from './draft';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
 import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
 import { createPathSampler, type PathSampler } from './path';
+import { EnemySpatialIndex } from './spatial-index';
+import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
 import type {
   CreativeSetup,
@@ -46,6 +49,9 @@ const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
+const MAX_ENEMY_COLLISION_RADIUS = Math.max(
+  ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
+);
 
 const normalizeCreativeEnemyCount = (type: EnemyType, value: number): number => {
   const maximum = ENEMIES[type].unique ? 1 : 40;
@@ -91,14 +97,13 @@ export class GameEngine {
   private viewSnapshot!: GameViewSnapshot;
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
+  private readonly enemyIndex = new EnemySpatialIndex();
   private draft: GameSnapshot['draft'] = null;
   private previousDraftChoices = new Set<ModuleId>();
   private draftsWithoutRare = 0;
   private creativeSetup: CreativeSetup;
   private readonly combatApi: ModuleCombatApi = {
-    nearbyEnemies: (position, radius, excludeIds = []) => this.enemies
-      .filter((enemy) => !enemy.dead && !excludeIds.includes(enemy.id) && distance(enemy.position, position) <= radius)
-      .sort((a, b) => distance(a.position, position) - distance(b.position, position)),
+    nearbyEnemies: (position, radius, excludeIds = []) => this.enemyIndex.nearestWithinRadius(position, radius, excludeIds),
     dealDamage: (enemy, damage, color) => this.applyDamage(enemy, Math.max(1, Math.round(damage)), color),
     applyStatus: (enemy, status) => this.applyStatus(enemy, status),
     retarget: (projectile, enemy) => {
@@ -577,6 +582,7 @@ export class GameEngine {
 
     this.spawnEnemies(delta);
     this.updateEnemies(delta);
+    this.enemyIndex.rebuild(this.enemies);
     this.updateTowers(delta);
     this.updateScheduledCasts(delta);
     this.updateProjectiles(delta);
@@ -705,27 +711,12 @@ export class GameEngine {
   }
 
   private findTarget(tower: Tower): Enemy | null {
-    const candidates = this.enemies.filter(
-      (enemy) => !enemy.dead && distance(enemy.position, tower.position) <= tower.range,
+    const candidates = this.enemyIndex.withinRadius(tower.position, tower.range);
+    return selectTowerTarget(
+      tower,
+      candidates,
+      (enemy) => this.enemyIndex.withinRadius(enemy.position, 92).length,
     );
-    if (candidates.length === 0) return null;
-    const density = tower.targeting.startsWith('density')
-      ? new Map(candidates.map((enemy) => [enemy.id, this.enemies.reduce(
-        (count, other) => count + (!other.dead && distance(enemy.position, other.position) <= 92 ? 1 : 0),
-        0,
-      )]))
-      : new Map<number, number>();
-    const compare: Record<TargetingMode, (a: Enemy, b: Enemy) => number> = {
-      'core-nearest': (a, b) => b.progress - a.progress,
-      'core-farthest': (a, b) => a.progress - b.progress,
-      'hp-lowest': (a, b) => a.hp - b.hp || b.progress - a.progress,
-      'hp-highest': (a, b) => b.hp - a.hp || b.progress - a.progress,
-      'tower-nearest': (a, b) => distance(a.position, tower.position) - distance(b.position, tower.position),
-      'tower-farthest': (a, b) => distance(b.position, tower.position) - distance(a.position, tower.position),
-      'density-highest': (a, b) => (density.get(b.id) ?? 0) - (density.get(a.id) ?? 0) || b.progress - a.progress,
-      'density-lowest': (a, b) => (density.get(a.id) ?? 0) - (density.get(b.id) ?? 0) || b.progress - a.progress,
-    };
-    return candidates.sort(compare[tower.targeting])[0] ?? null;
   }
 
   private updateScheduledCasts(delta: number): void {
@@ -939,10 +930,8 @@ export class GameEngine {
       enemy.slowTime = Math.max(enemy.slowTime, projectile.shot.slowDuration);
     }
     if (projectile.splash > 0) {
-      for (const nearby of this.enemies) {
-        if (nearby.id !== enemy.id && !nearby.dead && distance(nearby.position, enemy.position) <= projectile.splash) {
-          this.applyDamage(nearby, Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor), projectile.color);
-        }
+      for (const nearby of this.enemyIndex.withinRadius(enemy.position, projectile.splash, [enemy.id])) {
+        this.applyDamage(nearby, Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor), projectile.color);
       }
     }
     projectile.pierce -= 1;
@@ -954,9 +943,10 @@ export class GameEngine {
   }
 
   private findTriggerTarget(position: Point): Enemy | null {
-    return this.enemies
-      .filter((enemy) => !enemy.dead && distance(enemy.position, position) <= 280)
-      .sort((a, b) => b.progress - a.progress)[0] ?? null;
+    return this.enemyIndex.withinRadius(position, 280).reduce<Enemy | null>(
+      (best, enemy) => !best || enemy.progress > best.progress ? enemy : best,
+      null,
+    );
   }
 
   private findFirstProjectileHit(
@@ -965,8 +955,7 @@ export class GameEngine {
     end: Point,
   ): { enemy: Enemy; time: number } | null {
     let first: { enemy: Enemy; time: number } | null = null;
-    for (const enemy of this.enemies) {
-      if (enemy.dead) continue;
+    for (const enemy of this.enemyIndex.alongSegment(start, end, MAX_ENEMY_COLLISION_RADIUS + projectile.radius)) {
       const time = this.projectileHitTime(enemy, projectile, start, end);
       if (time !== null && (!first || time < first.time)) first = { enemy, time };
     }
@@ -1127,74 +1116,16 @@ export class GameEngine {
   }
 
   private rollDraftChoices(): ModuleId[] {
-    const definitions = this.modules.list();
-    const projectilePool = definitions.filter((definition) => definition.kind === 'projectile');
-    const modifierPool = definitions.filter(
-      (definition) => definition.kind === 'modifier' || definition.kind === 'trail',
-    );
-    const utilityPool = definitions.filter(
-      (definition) => definition.kind === 'logic' || definition.kind === 'static',
-    );
-    const selected: ModuleId[] = [];
-    const pick = (pool: typeof definitions): boolean => {
-      const candidates = pool.filter((definition) => !selected.includes(definition.id));
-      if (candidates.length === 0) return false;
-      const weights = candidates.map((definition) => {
-        const novelty = this.previousDraftChoices.has(definition.id) ? 0.22 : 1;
-        const ownership = 1 / (1 + this.getModuleCount(definition.id) * 0.45);
-        const rarity = MODULE_RARITIES[definition.meta.rarity].draftWeight;
-        return novelty * ownership * rarity;
-      });
-      let roll = this.towerRandom() * weights.reduce((sum, weight) => sum + weight, 0);
-      let choice = candidates.at(-1);
-      if (!choice) return false;
-      for (let index = 0; index < candidates.length; index += 1) {
-        roll -= weights[index] ?? 0;
-        if (roll <= 0) {
-          choice = candidates[index] ?? choice;
-          break;
-        }
-      }
-      selected.push(choice.id);
-      return true;
-    };
-
-    const projectileCount = 1 + (this.towerRandom() < 0.5 ? 1 : 0);
-    const modifierCount = 1 + (this.towerRandom() < 0.5 ? 1 : 0);
-    for (let index = 0; index < projectileCount; index += 1) pick(projectilePool);
-    for (let index = 0; index < modifierCount; index += 1) pick(modifierPool);
-    while (selected.length < DRAFT_BALANCE.choicesPerOffer && pick(utilityPool)) {
-      // Continue until the offer is full or the unique utility pool is exhausted.
-    }
-
-    const highRarity = (moduleId: ModuleId): boolean => {
-      const rarity = this.modules.require(moduleId).meta.rarity;
-      return rarity === 'rare' || rarity === 'legendary';
-    };
-    if (!selected.some(highRarity) && this.draftsWithoutRare >= DRAFT_BALANCE.dryOffersBeforePity) {
-      const replaceIndex = selected.length - 1;
-      const replacedId = selected[replaceIndex];
-      if (!replacedId) return selected;
-      const replaced = this.modules.require(replacedId);
-      const sameDraftGroup = (definition: (typeof definitions)[number]): boolean => {
-        if (replaced.kind === 'projectile') return definition.kind === 'projectile';
-        if (replaced.kind === 'modifier' || replaced.kind === 'trail') {
-          return definition.kind === 'modifier' || definition.kind === 'trail';
-        }
-        return definition.kind === 'logic' || definition.kind === 'static';
-      };
-      const pityPool = definitions.filter(
-        (definition) => sameDraftGroup(definition) && highRarity(definition.id) && !selected.includes(definition.id),
-      );
-      if (pityPool.length > 0) {
-        const pityChoice = pityPool[Math.floor(this.towerRandom() * pityPool.length)];
-        if (pityChoice) selected[replaceIndex] = pityChoice.id;
-      }
-    }
-    if (selected.some(highRarity)) this.draftsWithoutRare = 0;
-    else this.draftsWithoutRare += 1;
-    this.previousDraftChoices = new Set(selected);
-    return selected;
+    const result = rollModuleDraft({
+      definitions: this.modules.list(),
+      ownedCount: (moduleId) => this.getModuleCount(moduleId),
+      random: this.towerRandom,
+      previousChoices: this.previousDraftChoices,
+      draftsWithoutRare: this.draftsWithoutRare,
+    });
+    this.previousDraftChoices = result.previousChoices;
+    this.draftsWithoutRare = result.draftsWithoutRare;
+    return result.choices;
   }
 
   private beginModuleDraft(): void {

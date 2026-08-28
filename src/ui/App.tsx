@@ -676,6 +676,30 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
     ...current,
     wave: { ...current.wave, [type]: Math.max(0, Math.min(40, Math.round(count))) },
   }));
+  const focusSelectedOption = (element: HTMLElement): void => {
+    const group = element.parentElement;
+    requestAnimationFrame(() => group?.querySelector<HTMLElement>('[tabindex="0"]')?.focus());
+  };
+  const cycleDifficulty = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+    const offset = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+    if (offset === 0) return;
+    event.preventDefault();
+    const next = DIFFICULTIES[(index + offset + DIFFICULTIES.length) % DIFFICULTIES.length];
+    if (!next) return;
+    setDifficultyId(next.id);
+    focusSelectedOption(event.currentTarget);
+  };
+  const cycleLevel = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+    const offset = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1
+      : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+    if (offset === 0) return;
+    event.preventDefault();
+    const next = LEVELS[(index + offset + LEVELS.length) % LEVELS.length];
+    if (!next) return;
+    setLevelId(next.id);
+    focusSelectedOption(event.currentTarget);
+  };
 
   return (
     <main className="level-select-shell">
@@ -688,8 +712,8 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
           <div><span>SELECT SIGNAL SECTOR</span><h1>选择防御区</h1><p>不同路径会改变密度、覆盖范围与目标策略的价值。</p></div>
         </section>
         <div className="mode-selector" role="group" aria-label="游戏模式">
-          <button className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>正式模式</strong><small>选牌 · 库存</small></button>
-          <button className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>创造模式</strong><small>无限模块</small></button>
+          <button aria-pressed={mode === 'standard'} className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>正式模式</strong><small>选牌 · 库存</small></button>
+          <button aria-pressed={mode === 'creative'} className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>创造模式</strong><small>无限模块</small></button>
         </div>
         <button className="begin-run" onClick={() => onStart(levelId, mode, creative, difficultyId)}><span>{selectedDifficulty.name} · 部署至</span><strong>{selectedLevel.name} →</strong></button>
       </header>
@@ -699,13 +723,15 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
           <div><span>NUMERIC DIFFICULTY</span><strong>难度修正</strong></div>
         </div>
         <div className="difficulty-options" role="radiogroup" aria-label="选择难度">
-          {DIFFICULTIES.map((difficulty) => (
+          {DIFFICULTIES.map((difficulty, index) => (
             <button
               key={difficulty.id}
               className={difficulty.id === difficultyId ? 'selected' : ''}
               data-rank={difficulty.rank}
               role="radio"
               aria-checked={difficulty.id === difficultyId}
+              tabIndex={difficulty.id === difficultyId ? 0 : -1}
+              onKeyDown={(event) => cycleDifficulty(event, index)}
               onClick={() => setDifficultyId(difficulty.id)}
             >
               <span>{difficulty.rank < 0 ? '◇'.repeat(-difficulty.rank) : difficulty.rank > 0 ? '◆'.repeat(difficulty.rank) : '—'}</span>
@@ -716,12 +742,16 @@ function LevelSelect({ onStart }: { onStart: (levelId: string, mode: GameMode, c
         </div>
       </section>
 
-      <section className="level-grid">
-        {LEVELS.map((level) => (
+      <section className="level-grid" role="radiogroup" aria-label="选择防御区">
+        {LEVELS.map((level, index) => (
           <button
             key={level.id}
             className={`level-card ${level.id === levelId ? 'selected' : ''}`}
             style={{ '--level-accent': level.accent } as CSSProperties}
+            role="radio"
+            aria-checked={level.id === levelId}
+            tabIndex={level.id === levelId ? 0 : -1}
+            onKeyDown={(event) => cycleLevel(event, index)}
             onClick={() => setLevelId(level.id)}
           >
             <div className="level-map-wrap"><LevelMap level={level} /><span>{level.sector}</span></div>

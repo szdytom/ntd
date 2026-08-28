@@ -194,6 +194,7 @@ export class WebGLBloomPipeline {
   private blurWidth = 1;
   private blurHeight = 1;
   private contextLost = false;
+  private readonly uniformLocations = new WeakMap<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
   private readonly emissiveScale = 0.5;
   private readonly blurScale = 0.25;
 
@@ -314,8 +315,8 @@ export class WebGLBloomPipeline {
     gl.useProgram(this.blurProgram.program);
     this.bindQuad(this.blurProgram);
     this.bindTexture(texture, 0);
-    gl.uniform1i(gl.getUniformLocation(this.blurProgram.program, 'u_texture'), 0);
-    gl.uniform2f(gl.getUniformLocation(this.blurProgram.program, 'u_step'), stepX, stepY);
+    gl.uniform1i(this.uniform(this.blurProgram.program, 'u_texture'), 0);
+    gl.uniform2f(this.uniform(this.blurProgram.program, 'u_step'), stepX, stepY);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -329,30 +330,30 @@ export class WebGLBloomPipeline {
     this.bindTexture(this.sceneTexture, 0);
     this.bindTexture(this.emissiveTexture, 1);
     this.bindTexture(this.pongTexture, 2);
-    gl.uniform1i(gl.getUniformLocation(program, 'u_scene'), 0);
-    gl.uniform1i(gl.getUniformLocation(program, 'u_emissive'), 1);
-    gl.uniform1i(gl.getUniformLocation(program, 'u_bloom'), 2);
-    gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), this.output.width, this.output.height);
+    gl.uniform1i(this.uniform(program, 'u_scene'), 0);
+    gl.uniform1i(this.uniform(program, 'u_emissive'), 1);
+    gl.uniform1i(this.uniform(program, 'u_bloom'), 2);
+    gl.uniform2f(this.uniform(program, 'u_resolution'), this.output.width, this.output.height);
     gl.uniform2f(
-      gl.getUniformLocation(program, 'u_shieldCenter'),
+      this.uniform(program, 'u_shieldCenter'),
       shield?.centerX ?? 0,
       shield?.centerY ?? 0,
     );
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldRadius'), shield?.radius ?? 0);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldScale'), shield?.radiusScale ?? 0);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldActive'), shield?.active ? 1 : 0);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldSides'), shield?.sides ?? 6);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldRotation'), shield?.rotation ?? 0);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_shieldHit'), shield?.hitStrength ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_shieldRadius'), shield?.radius ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_shieldScale'), shield?.radiusScale ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_shieldActive'), shield?.active ? 1 : 0);
+    gl.uniform1f(this.uniform(program, 'u_shieldSides'), shield?.sides ?? 6);
+    gl.uniform1f(this.uniform(program, 'u_shieldRotation'), shield?.rotation ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_shieldHit'), shield?.hitStrength ?? 0);
     gl.uniform3f(
-      gl.getUniformLocation(program, 'u_shieldColor'),
+      this.uniform(program, 'u_shieldColor'),
       shield?.color[0] ?? 0.27,
       shield?.color[1] ?? 0.72,
       shield?.color[2] ?? 1,
     );
-    gl.uniform1f(gl.getUniformLocation(program, 'u_rippleAge'), shield?.rippleAge ?? 2);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_time'), shield?.time ?? 0);
-    gl.uniform1f(gl.getUniformLocation(program, 'u_pixelRatio'), this.dpr);
+    gl.uniform1f(this.uniform(program, 'u_rippleAge'), shield?.rippleAge ?? 2);
+    gl.uniform1f(this.uniform(program, 'u_time'), shield?.time ?? 0);
+    gl.uniform1f(this.uniform(program, 'u_pixelRatio'), this.dpr);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
@@ -392,6 +393,16 @@ export class WebGLBloomPipeline {
       throw new Error(message);
     }
     return { program, position: gl.getAttribLocation(program, 'a_position') };
+  }
+
+  private uniform(program: WebGLProgram, name: string): WebGLUniformLocation | null {
+    let locations = this.uniformLocations.get(program);
+    if (!locations) {
+      locations = new Map();
+      this.uniformLocations.set(program, locations);
+    }
+    if (!locations.has(name)) locations.set(name, this.gl.getUniformLocation(program, name));
+    return locations.get(name) ?? null;
   }
 
   private compileShader(type: number, source: string): WebGLShader {

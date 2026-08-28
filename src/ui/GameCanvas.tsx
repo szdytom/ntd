@@ -46,5 +46,5 @@ export function GameCanvas({ engine }: { engine: GameEngine }) {
   if (rendererError) {
     return <div className="renderer-error" role="alert">图形渲染器无法启动：{rendererError}</div>;
   }
-  return <canvas ref={canvasRef} id="game-canvas" aria-label="塔防游戏战场" />;
+  return <canvas ref={canvasRef} id="game-canvas" role="img" aria-label="塔防游戏战场" />;
 }

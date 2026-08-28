@@ -97,7 +97,7 @@ export const ionModule: ModuleDefinition = {
 
 工作台只在 `selectedTowerId` 指向有效炮塔时挂载，并绝对定位在战场地图之上。内部使用塔身侧栏与法术主区的二维布局；模块库按五种 `ModuleKind` 分页，因此每页都能完整铺开而不依赖工作台内部滚动。点击地图空处、关闭按钮或重置游戏都会把选择清空并卸载叠层。
 
-目标选择是 `Tower.targeting` 的纯数据策略。引擎先过滤射程，再按当前生命、路径进度、塔距或 92 单位邻域密度排序；密度仅在相关策略启用时计算。升级直接强化最终属性，在 3、5 级额外增加槽位，不修改最初的随机构型记录。
+目标选择是 `Tower.targeting` 的纯数据策略。`EnemySpatialIndex` 每个固定步重建一次分桶索引，射程、溅射、触发目标和弹道候选都复用它；`selectTowerTarget()` 再以单次线性扫描比较当前生命、路径进度、塔距或 92 单位邻域密度，不再为每座塔复制并排序完整敌人数组。升级直接强化最终属性，在 3、5 级额外增加槽位，不修改最初的随机构型记录。
 
 ## EffectEngine
 
@@ -132,7 +132,7 @@ export const ionModule: ModuleDefinition = {
 2. 效果引擎把粒子再次绘制到半分辨率透明 emissive 缓冲，移动弹体、静态装置和开火热核也会写入该缓冲；
 3. WebGL 在四分之一分辨率 framebuffer 中执行横向、纵向可分离高斯模糊；
 4. 合成着色器用有上限的色彩侵染让宽光晕在白底可见，再以 screen 混合叠加清晰热核；
-5. 页面 Canvas 只创建 WebGL context，不保留 CPU 后处理或非 WebGL 降级路径。
+5. 支持 WebGL 时页面 Canvas 承载合成结果，并缓存 shader uniform 位置；初始化失败或浏览器不支持 WebGL 时，渲染器自动回退到清晰的 Canvas 2D 场景。
 
 纹理尺寸只在视口变化时重新分配；普通帧使用 `texSubImage2D` 更新内容。GPU 每帧只执行两个低分辨率模糊 pass 和一个全分辨率合成 pass，不再在主线程反复缩放、混合 Canvas。地面点阵和路径预先缓存，效果几何则通过镜像 painter 一次计算、同时写入普通层与 emissive 层，进一步减少主线程的重复工作。
 
