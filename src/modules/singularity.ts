@@ -65,7 +65,7 @@ export const singularityModule: ModuleDefinition = {
     ctx.fill();
     ctx.strokeStyle = armed ? '#cbb8ff' : color;
     ctx.lineWidth = 2.3;
-    for (const radius of [18, 25]) {
+    for (let radius = 18; radius <= 25; radius += 7) {
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0.18, Math.PI * 1.55);
       ctx.stroke();

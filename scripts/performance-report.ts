@@ -43,7 +43,7 @@ const measure = (query: (point: Point) => number): { milliseconds: number; match
 
 const index = new EnemySpatialIndex();
 index.rebuild(enemies);
-const indexed = measure((point) => index.withinRadius(point, QUERY_RADIUS).length);
+const indexed = measure((point) => index.countWithinRadius(point, QUERY_RADIUS));
 const naive = measure((point) => enemies.reduce(
   (count, enemy) => count + (distance(enemy.position, point) <= QUERY_RADIUS ? 1 : 0),
   0,

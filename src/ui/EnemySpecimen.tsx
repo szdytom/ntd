@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import {
   createBloomWebGLContext,
   type ShieldDistortion,
+  type SingularityDistortion,
   type SplitDistortion,
   WebGLBloomPipeline,
 } from '../effects/bloom';
@@ -22,6 +23,9 @@ import {
 import './EnemySpecimen.css';
 
 const PREVIEW_WORLD_SIZE = 280;
+const NO_SINGULARITIES: readonly SingularityDistortion[] = [];
+const SUPPRESSION_SOURCE = { x: -48, y: -18 } as const;
+const SUPPRESSION_TARGET = { x: 58, y: 20 } as const;
 
 function drawArchiveField(
   ctx: CanvasRenderingContext2D,
@@ -112,34 +116,92 @@ export function EnemySpecimen({
   radiantSuppression: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewStateRef = useRef({ type, fractureSplit, radiantSuppression });
+  previewStateRef.current.type = type;
+  previewStateRef.current.fractureSplit = fractureSplit;
+  previewStateRef.current.radiantSuppression = radiantSuppression;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     const scene = document.createElement('canvas');
     const sceneCtx = scene.getContext('2d', { alpha: true });
-    if (!sceneCtx) return undefined;
+    const field = document.createElement('canvas');
+    const fieldCtx = field.getContext('2d', { alpha: false });
+    if (!sceneCtx || !fieldCtx) return undefined;
     const gl = createBloomWebGLContext(canvas);
     const pipeline = gl ? new WebGLBloomPipeline(canvas, gl) : null;
     const fallbackCtx = pipeline ? null : canvas.getContext('2d');
     if (!pipeline && !fallbackCtx) return undefined;
-    const config = ENEMIES[type];
     const effects = new EffectEngine().registerMany(gameEffects);
-    const shield = config.shield;
     let animationFrame = 0;
     let elapsed = 0;
     let lastTime = performance.now();
     let renderWidth = 0;
     let renderHeight = 0;
     let renderScale = 0;
-    const shieldCycle = createArchiveShieldCycle();
+    let fieldColor = '';
+    let activeType = previewStateRef.current.type;
+    let activeFractureSplit = previewStateRef.current.fractureSplit;
+    let activeRadiantSuppression = previewStateRef.current.radiantSuppression;
+    let config = ENEMIES[activeType];
+    let shield = config.shield;
+    let shieldCycle = createArchiveShieldCycle();
+    let shieldColor = shield ? hexToRgb(shield.color) : null;
+    const shieldVisualState = { charge: 1, radiusScale: 1, hitStrength: 0 };
+    const shieldDistortion: ShieldDistortion = {
+      centerX: 0,
+      centerY: 0,
+      radius: 0,
+      radiusScale: 1,
+      active: true,
+      sides: 6,
+      rotation: 0,
+      hitStrength: 0,
+      color: [0.27, 0.72, 1],
+      rippleAge: Number.POSITIVE_INFINITY,
+      time: 0,
+    };
+    const splitDistortion: SplitDistortion = {
+      centerX: 0,
+      centerY: 0,
+      radius: 0,
+      phase: 0,
+      color: hexToRgb('#73e7f2'),
+    };
+    const enemyBodyOptions = { type: activeType, time: 0, radius: config.radius, phase: 0 };
+    const towerVisualOptions = {
+      color: '#6c5ce7',
+      energyRatio: 0.5,
+      level: 1,
+      rotation: 0,
+      programHasProjectile: true,
+    };
 
-    if (type === 'fracture' && fractureSplit) {
+    const spawnFractureEffect = (): void => {
+      if (activeType !== 'fracture' || !activeFractureSplit) return;
       effects.spawn(GAME_EFFECT_IDS.fractureSplitRipple, {
         position: { x: 0, y: 0 },
         color: '#73e7f2',
       });
-    }
+    };
+    spawnFractureEffect();
+
+    const resetPreviewState = (): void => {
+      const next = previewStateRef.current;
+      activeType = next.type;
+      activeFractureSplit = next.fractureSplit;
+      activeRadiantSuppression = next.radiantSuppression;
+      config = ENEMIES[activeType];
+      shield = config.shield;
+      shieldColor = shield ? hexToRgb(shield.color) : null;
+      shieldCycle = createArchiveShieldCycle();
+      elapsed = 0;
+      lastTime = performance.now();
+      fieldColor = '';
+      effects.clear();
+      spawnFractureEffect();
+    };
 
     const spawnShieldEffect = (id: typeof GAME_EFFECT_IDS.shieldHit | typeof GAME_EFFECT_IDS.shieldBreak | typeof GAME_EFFECT_IDS.shieldRestore): void => {
       if (!shield) return;
@@ -160,11 +222,18 @@ export function EnemySpecimen({
     };
 
     const draw = (now: number): void => {
+      const next = previewStateRef.current;
+      if (
+        next.type !== activeType
+        || next.fractureSplit !== activeFractureSplit
+        || next.radiantSuppression !== activeRadiantSuppression
+      ) resetPreviewState();
+
       const delta = Math.min(0.05, Math.max(0, (now - lastTime) / 1000));
       lastTime = now;
       elapsed += delta;
       effects.update(delta);
-      if (type === 'crown') updateCrownShield(delta);
+      if (activeType === 'crown') updateCrownShield(delta);
 
       const cssWidth = canvas.clientWidth;
       const cssHeight = canvas.clientHeight;
@@ -180,12 +249,21 @@ export function EnemySpecimen({
         }
         scene.width = canvas.width;
         scene.height = canvas.height;
+        field.width = scene.width;
+        field.height = scene.height;
+        fieldColor = '';
+      }
+      if (fieldColor !== config.color) {
+        fieldCtx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+        drawArchiveField(fieldCtx, renderWidth, renderHeight, config.color);
+        fieldColor = config.color;
       }
       const centerX = cssWidth / 2;
       const centerY = cssHeight / 2;
       const worldScale = Math.min(cssWidth, cssHeight) / PREVIEW_WORLD_SIZE;
+      sceneCtx.setTransform(1, 0, 0, 1, 0, 0);
+      sceneCtx.drawImage(field, 0, 0);
       sceneCtx.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
-      drawArchiveField(sceneCtx, cssWidth, cssHeight, config.color);
       sceneCtx.save();
       sceneCtx.translate(centerX, centerY);
       sceneCtx.scale(worldScale, worldScale);
@@ -195,66 +273,66 @@ export function EnemySpecimen({
       effects.render(sceneCtx, 'under-projectile', bloomCtx);
       effects.render(sceneCtx, 'projectile', bloomCtx);
 
-      const suppressionSource = { x: -48, y: -18 };
-      const suppressionTarget = { x: 58, y: 20 };
-      const showingSuppression = type === 'radiant' && radiantSuppression && Boolean(config.aura);
+      const showingSuppression = activeType === 'radiant' && activeRadiantSuppression && Boolean(config.aura);
       if (showingSuppression && config.aura) {
-        drawSuppressionSource(sceneCtx, suppressionSource, config.radius, config.aura, elapsed, 7, false);
+        drawSuppressionSource(sceneCtx, SUPPRESSION_SOURCE, config.radius, config.aura, elapsed, 7, false);
         if (bloomCtx) {
-          drawSuppressionSource(bloomCtx, suppressionSource, config.radius, config.aura, elapsed, 7, true);
+          drawSuppressionSource(bloomCtx, SUPPRESSION_SOURCE, config.radius, config.aura, elapsed, 7, true);
         }
         sceneCtx.save();
-        sceneCtx.translate(suppressionTarget.x, suppressionTarget.y);
-        drawTowerBody(sceneCtx, {
-          color: '#6c5ce7',
-          energyRatio: 0.5 + Math.sin(elapsed * 0.7) * 0.035,
-          level: 1,
-          rotation: Math.atan2(
-            suppressionSource.y - suppressionTarget.y,
-            suppressionSource.x - suppressionTarget.x,
-          ),
-          programHasProjectile: true,
-        });
+        sceneCtx.translate(SUPPRESSION_TARGET.x, SUPPRESSION_TARGET.y);
+        towerVisualOptions.energyRatio = 0.5 + Math.sin(elapsed * 0.7) * 0.035;
+        towerVisualOptions.rotation = Math.atan2(
+          SUPPRESSION_SOURCE.y - SUPPRESSION_TARGET.y,
+          SUPPRESSION_SOURCE.x - SUPPRESSION_TARGET.x,
+        );
+        drawTowerBody(sceneCtx, towerVisualOptions);
         sceneCtx.restore();
       }
 
-      const projectileProgress = type === 'crown'
+      const projectileProgress = activeType === 'crown'
         ? archiveShieldProjectileProgress(shieldCycle)
         : null;
-      canvas.dataset.projectileVisible = projectileProgress === null ? 'false' : 'true';
+      const projectileVisible = projectileProgress === null ? 'false' : 'true';
+      if (canvas.dataset.projectileVisible !== projectileVisible) canvas.dataset.projectileVisible = projectileVisible;
       if (projectileProgress !== null && shield) {
         drawShieldProjectile(sceneCtx, bloomCtx, projectileProgress, shield.radius * shieldCycle.radiusScale);
       }
 
-      if (type === 'fracture' && fractureSplit) {
+      enemyBodyOptions.type = activeType;
+      enemyBodyOptions.time = elapsed;
+      if (activeType === 'fracture' && activeFractureSplit) {
         if (elapsed >= FRACTURE_SPLIT_DELAY && config.split) {
           const radius = config.radius * config.split.radiusScale;
+          enemyBodyOptions.radius = radius;
           for (let index = 0; index < config.split.count; index += 1) {
             const offset = index - (config.split.count - 1) / 2;
             sceneCtx.save();
             sceneCtx.translate(offset * 34, Math.abs(offset) * 11);
-            drawEnemyBody(sceneCtx, { type, radius, time: elapsed, phase: index * 1.7 });
+            enemyBodyOptions.phase = index * 1.7;
+            drawEnemyBody(sceneCtx, enemyBodyOptions);
             sceneCtx.restore();
           }
         }
       } else {
         sceneCtx.save();
-        if (showingSuppression) sceneCtx.translate(suppressionSource.x, suppressionSource.y);
-        drawEnemyBody(sceneCtx, { type, time: elapsed });
+        if (showingSuppression) sceneCtx.translate(SUPPRESSION_SOURCE.x, SUPPRESSION_SOURCE.y);
+        enemyBodyOptions.radius = config.radius;
+        enemyBodyOptions.phase = 0;
+        drawEnemyBody(sceneCtx, enemyBodyOptions);
         sceneCtx.restore();
       }
 
       if (shield) {
-        drawEnemyShield(sceneCtx, shield, {
-          charge: shieldCycle.active ? 1 : 0,
-          radiusScale: shieldCycle.radiusScale,
-          hitStrength: shieldCycle.hitStrength,
-        });
+        shieldVisualState.charge = shieldCycle.active ? 1 : 0;
+        shieldVisualState.radiusScale = shieldCycle.radiusScale;
+        shieldVisualState.hitStrength = shieldCycle.hitStrength;
+        drawEnemyShield(sceneCtx, shield, shieldVisualState);
       }
       if (showingSuppression && config.aura) {
-        drawSuppressionLink(sceneCtx, suppressionSource, suppressionTarget, config.aura, elapsed, 7, 1, false);
+        drawSuppressionLink(sceneCtx, SUPPRESSION_SOURCE, SUPPRESSION_TARGET, config.aura, elapsed, 7, 1, false);
         if (bloomCtx) {
-          drawSuppressionLink(bloomCtx, suppressionSource, suppressionTarget, config.aura, elapsed, 7, 1, true);
+          drawSuppressionLink(bloomCtx, SUPPRESSION_SOURCE, SUPPRESSION_TARGET, config.aura, elapsed, 7, 1, true);
         }
       }
       effects.render(sceneCtx, 'air', bloomCtx);
@@ -262,29 +340,35 @@ export function EnemySpecimen({
       sceneCtx.restore();
 
       if (pipeline) {
-        const shieldDistortion: ShieldDistortion | null = shield ? {
-          centerX: centerX * deviceScale,
-          centerY: (cssHeight - centerY) * deviceScale,
-          radius: shield.radius * worldScale * deviceScale,
-          radiusScale: shieldCycle.radiusScale,
-          active: shieldCycle.active,
-          sides: shield.sides,
-          rotation: -shield.rotation,
-          hitStrength: shieldCycle.hitStrength,
-          color: hexToRgb(shield.color),
-          rippleAge: shieldCycle.rippleAge,
-          time: elapsed,
-        } : null;
-        const splitDistortion: SplitDistortion | null = type === 'fracture'
-          && fractureSplit
-          && elapsed < FRACTURE_RIPPLE_DURATION ? {
-            centerX: centerX * deviceScale,
-            centerY: (cssHeight - centerY) * deviceScale,
-            radius: 120 * worldScale * deviceScale,
-            phase: elapsed / FRACTURE_RIPPLE_DURATION,
-            color: hexToRgb('#73e7f2'),
-          } : null;
-        pipeline.render(scene, shieldDistortion, splitDistortion, [], elapsed);
+        if (shield && shieldColor) {
+          shieldDistortion.centerX = centerX * deviceScale;
+          shieldDistortion.centerY = (cssHeight - centerY) * deviceScale;
+          shieldDistortion.radius = shield.radius * worldScale * deviceScale;
+          shieldDistortion.radiusScale = shieldCycle.radiusScale;
+          shieldDistortion.active = shieldCycle.active;
+          shieldDistortion.sides = shield.sides;
+          shieldDistortion.rotation = -shield.rotation;
+          shieldDistortion.hitStrength = shieldCycle.hitStrength;
+          shieldDistortion.color = shieldColor;
+          shieldDistortion.rippleAge = shieldCycle.rippleAge;
+          shieldDistortion.time = elapsed;
+        }
+        const splitActive = activeType === 'fracture'
+          && activeFractureSplit
+          && elapsed < FRACTURE_RIPPLE_DURATION;
+        if (splitActive) {
+          splitDistortion.centerX = centerX * deviceScale;
+          splitDistortion.centerY = (cssHeight - centerY) * deviceScale;
+          splitDistortion.radius = 120 * worldScale * deviceScale;
+          splitDistortion.phase = elapsed / FRACTURE_RIPPLE_DURATION;
+        }
+        pipeline.render(
+          scene,
+          shield ? shieldDistortion : null,
+          splitActive ? splitDistortion : null,
+          NO_SINGULARITIES,
+          elapsed,
+        );
       } else if (fallbackCtx) {
         fallbackCtx.setTransform(1, 0, 0, 1, 0, 0);
         fallbackCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -299,7 +383,7 @@ export function EnemySpecimen({
       effects.clear();
       pipeline?.dispose();
     };
-  }, [fractureSplit, radiantSuppression, type]);
+  }, []);
 
   return <canvas
     ref={canvasRef}

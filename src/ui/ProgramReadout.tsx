@@ -15,13 +15,11 @@ export function ProgramReadout({ program, engine, maxEnergy }: { program: TowerP
   const countProjectiles = (shot: ShotBlueprint): number => {
     const own = shot.count * shot.repeats;
     const payload = shot.payload.reduce((sum, child) => sum + countProjectiles(child), 0);
-    const releases = shot.static && shot.trigger?.type === 'proximity' ? shot.static.maxTriggers : shot.trigger ? 1 : 0;
+    const releases = shot.trigger ? 1 : 0;
     return own + own * releases * payload;
   };
   const countTriggers = (shot: ShotBlueprint): number => {
-    const own = shot.trigger
-      ? shot.count * shot.repeats * (shot.static && shot.trigger.type === 'proximity' ? shot.static.maxTriggers : 1)
-      : 0;
+    const own = shot.trigger ? shot.count * shot.repeats : 0;
     return own + own * shot.payload.reduce((sum, child) => sum + countTriggers(child), 0);
   };
   const projectileCount = program.shots.reduce((sum, shot) => sum + countProjectiles(shot), 0);
@@ -36,13 +34,11 @@ export function ProgramReadout({ program, engine, maxEnergy }: { program: TowerP
   return (
     <div className="program-output" data-tutorial-program>
       <div className={`program-readout ${warning ? 'warning' : ''}`}>
-        <span className="readout-icon" aria-hidden="true"><i /></span>
         <div><strong>{summary}</strong><small>{warning ?? (program.wraps > 0
           ? t('program.wrapped') : hasTrigger
             ? t('program.triggered') : t('program.valid'))}</small></div>
-        <span className="energy-cost">{program.energyCost} ⚡</span>
       </div>
-      {!hasTrigger ? null : <div className="trigger-trace"><small>PAYLOAD</small><div>
+      {!hasTrigger ? null : <div className="trigger-trace"><small>{t('program.payload')}</small><div>
         {program.shots.map((shot, index) => <TriggerNode key={`${shot.source}-${index}`} shot={shot} engine={engine} />)}
       </div></div>}
     </div>

@@ -1,7 +1,11 @@
 import type { EffectPainter } from './types';
 
 export class CanvasEffectPainter implements EffectPainter {
-  constructor(readonly ctx: CanvasRenderingContext2D, private readonly intensity = 1) {}
+  constructor(readonly ctx: CanvasRenderingContext2D, private intensity = 1) {}
+
+  setIntensity(intensity: number): void {
+    this.intensity = intensity;
+  }
 
   private alpha(value: number): number {
     return Math.max(0, Math.min(1, value * this.intensity));
@@ -121,13 +125,18 @@ export class CanvasEffectPainter implements EffectPainter {
 
 /** Executes effect geometry once while painting it into the scene and emissive targets. */
 export class MirroredEffectPainter implements EffectPainter {
-  readonly ctx: CanvasRenderingContext2D;
+  get ctx(): CanvasRenderingContext2D {
+    return this.scene.ctx;
+  }
 
   constructor(
-    private readonly scene: EffectPainter,
-    private readonly emissive: EffectPainter,
-  ) {
-    this.ctx = scene.ctx;
+    private scene: EffectPainter,
+    private emissive: EffectPainter,
+  ) {}
+
+  setPainters(scene: EffectPainter, emissive: EffectPainter): void {
+    this.scene = scene;
+    this.emissive = emissive;
   }
 
   circle(x: number, y: number, radius: number, color: string, alpha = 1): void {

@@ -105,16 +105,14 @@
   box-shadow: 0 0 0 2px rgba(0, 184, 148, 0.12);
 }
 
-.creative-scales,
-.setup-scales {
+.creative-scales {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 10px;
 }
 
-.creative-scales label,
-.setup-scales label {
+.creative-scales label {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -124,14 +122,12 @@
   font-weight: 700;
 }
 
-.creative-scales input,
-.setup-scales input {
+.creative-scales input {
   min-width: 0;
   accent-color: #00b894;
 }
 
-.creative-scales b,
-.setup-scales b {
+.creative-scales b {
   color: #4f4959;
   font-family: var(--font-mono);
   font-size: 15px;

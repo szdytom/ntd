@@ -1,5 +1,5 @@
 import { ENEMIES, type EnemyShieldConfig } from './config';
-import { FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints } from './enemy-shapes';
+import { FRACTURE_SHAPE, fractureSpikeAngles, traceFractureSpike } from './enemy-shapes';
 import { clamp } from './math';
 import type { EnemyType } from './types';
 
@@ -165,18 +165,10 @@ export function drawEnemyShield(
 
 function drawFractureBody(ctx: CanvasRenderingContext2D, radius: number, fillColor: string): void {
   const coreRadius = radius * FRACTURE_SHAPE.coreRadiusScale;
-  const traceSpike = (angle: number): void => {
-    const [tip, firstBase, secondBase] = fractureSpikePoints(radius, angle);
-    ctx.beginPath();
-    ctx.moveTo(tip.x, tip.y);
-    ctx.lineTo(firstBase.x, firstBase.y);
-    ctx.lineTo(secondBase.x, secondBase.y);
-    ctx.closePath();
-  };
 
   ctx.fillStyle = fillColor;
   for (const angle of fractureSpikeAngles()) {
-    traceSpike(angle);
+    traceFractureSpike(ctx, radius, angle);
     ctx.fill();
   }
   ctx.beginPath();
@@ -187,7 +179,7 @@ function drawFractureBody(ctx: CanvasRenderingContext2D, radius: number, fillCol
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 3;
   for (const angle of fractureSpikeAngles()) {
-    traceSpike(angle);
+    traceFractureSpike(ctx, radius, angle);
     ctx.stroke();
   }
   ctx.fillStyle = fillColor;

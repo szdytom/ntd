@@ -13,6 +13,9 @@ describe('path sampler', () => {
     expect(path.pointAtDistance(15)).toEqual({ position: { x: 15, y: 0 }, angle: 0 });
     expect(path.pointAtDistance(50)).toEqual({ position: { x: 30, y: 20 }, angle: Math.PI / 2 });
     expect(path.pointAtDistance(100).position).toEqual({ x: 30, y: 40 });
+    const reused = { x: -1, y: -1 };
+    expect(path.sampleInto(50, reused)).toBe(Math.PI / 2);
+    expect(reused).toEqual({ x: 30, y: 20 });
   });
 
   it('projects points onto the nearest path segment', () => {

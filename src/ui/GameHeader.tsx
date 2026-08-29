@@ -1,6 +1,7 @@
 import type { GameEngine } from '../game/engine';
 import type { GameSnapshot } from '../game/types';
 import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import './GameHeader.css';
 
 export function GameHeader({
@@ -13,7 +14,8 @@ export function GameHeader({
   onExit: () => void;
 }) {
   const { t } = useTranslation();
-  const waveDisabled = snapshot.status !== 'planning';
+  const drafting = Boolean(snapshot.draft);
+  const waveDisabled = snapshot.status !== 'planning' || drafting;
   const launchLabel = snapshot.status === 'wave'
     ? t('header.signals', { count: snapshot.enemiesAlive + snapshot.waveQueue })
     : snapshot.status === 'reward'
@@ -25,13 +27,9 @@ export function GameHeader({
 
   return (
     <header className="topbar">
-      <div className="brand-block">
-        <div className="brand-mark" aria-hidden="true"><i /><b /><span /></div>
-        <div>
-          <div className="brand-name">PRISM <span>BASTION</span></div>
-          <div className="brand-sub">MODULAR DEFENSE LAB · 07</div>
-        </div>
-      </div>
+      <button className="exit-button" onClick={onExit} aria-label={t('header.exit')}>
+        <span aria-hidden="true">←</span><strong>{t('header.back')}</strong>
+      </button>
 
       <div className="top-stats" aria-label={t('header.gameStatus')}>
         <div className="metric core-metric">
@@ -50,13 +48,13 @@ export function GameHeader({
       </div>
 
       <div className="top-actions">
-        <button className="icon-button exit-button" onClick={onExit} aria-label={t('header.exit')}>←</button>
+        <LanguageSwitcher disabled={drafting} />
         <div className="speed-switch" role="group" aria-label={t('header.speed')}>
           {[1, 2].map((speed) => (
-            <button key={speed} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
+            <button key={speed} disabled={drafting} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
           ))}
         </div>
-        <button className={`icon-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.paused ? t('header.resume') : t('header.pause')}>
+        <button disabled={drafting} className={`icon-button pause-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.paused ? t('header.resume') : t('header.pause')}>
           <span className="pause-glyph">{snapshot.paused ? '▶' : 'Ⅱ'}</span>
         </button>
         <button className="launch-button" data-tutorial-launch onClick={() => engine.startWave()} disabled={waveDisabled}>

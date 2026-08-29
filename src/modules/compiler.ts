@@ -258,16 +258,11 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
   const countOf = (shot: ShotBlueprint): number => {
     const ownInstances = shot.count * shot.repeats;
     const payloadInstances = shot.payload.reduce((sum, payload) => sum + countOf(payload), 0);
-    const payloadReleases = shot.static && shot.trigger?.type === 'proximity'
-      ? shot.static.maxTriggers
-      : shot.trigger ? 1 : 0;
+    const payloadReleases = shot.trigger ? 1 : 0;
     return ownInstances + ownInstances * payloadReleases * payloadInstances;
   };
   const triggerCount = (shot: ShotBlueprint): number => {
-    const ownInstances = shot.count * shot.repeats;
-    const ownTriggers = shot.trigger
-      ? ownInstances * (shot.static && shot.trigger.type === 'proximity' ? shot.static.maxTriggers : 1)
-      : 0;
+    const ownTriggers = shot.trigger ? shot.count * shot.repeats : 0;
     return ownTriggers + ownTriggers * shot.payload.reduce((sum, payload) => sum + triggerCount(payload), 0);
   };
   const energyCost = shots.reduce((sum, shot) => sum + energyOf(shot), 0);

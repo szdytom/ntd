@@ -14,7 +14,6 @@ import { overdriveModule } from './overdrive';
 import { resonantTrailModule } from './resonant-trail';
 import { pulseModule } from './pulse';
 import { proximityMineModule } from './proximity-mine';
-import { proximityTriggerModule } from './proximity-trigger';
 import { reclaimCircuitModule } from './reclaim-circuit';
 import { razorModule } from './razor';
 import { ricochetModule } from './ricochet';
@@ -52,8 +51,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(teslaNodeModule)
     .register(toxicCloudModule)
     .register(impactTriggerModule)
-    .register(timerTriggerModule)
-    .register(proximityTriggerModule);
+    .register(timerTriggerModule);
 }
 
 export { ModuleRegistry } from './registry';

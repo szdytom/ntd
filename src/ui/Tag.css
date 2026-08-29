@@ -1,0 +1,39 @@
+.ui-tag {
+  --tag-background: #efedf3;
+  --tag-foreground: #252134;
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border: 2px solid var(--ink, #252134);
+  border-radius: 0;
+  color: var(--tag-foreground);
+  background: var(--tag-background);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.ui-tag--borderless { border: 0; }
+.ui-tag--monospace { font-family: var(--font-mono); letter-spacing: .05em; }
+
+.ui-tag--yellow {
+  --tag-background: var(--yellow, #ffd447);
+  --tag-foreground: var(--ink, #252134);
+}
+
+.ui-tag--purple { --tag-background: var(--purple, #6558e8); --tag-foreground: #fff; }
+.ui-tag--coral { --tag-background: var(--coral, #ff637a); --tag-foreground: #fff; }
+.ui-tag--mint { --tag-background: var(--mint, #13b88e); --tag-foreground: #fff; }
+.ui-tag--accent { --tag-background: var(--tag-accent, var(--enemy-accent, var(--purple, #6558e8))); --tag-foreground: #fff; }
+.ui-tag--dark-text { --tag-foreground: var(--ink, #252134); }
+.ui-tag--light-text { --tag-foreground: #fff; }
+
+/* Keep broad page-level selectors from overriding the shared tag palette. */
+.ui-tag.ui-tag {
+  color: var(--tag-foreground);
+  background: var(--tag-background);
+}

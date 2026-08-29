@@ -10,7 +10,6 @@ describe('module balance metadata', () => {
     ['razor', 24],
     ['tesla-node', 22],
     ['proximity-mine', 28],
-    ['proximity-trigger', 7],
     ['reclaim-circuit', 4],
     ['colossus', 9],
     ['singularity', 82],

@@ -6,6 +6,8 @@ import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/diff
 import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
 import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
 import { LevelMap } from './LevelMap';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { Tag } from './Tag';
 import './LevelSelect.css';
 
 const VISIBLE_LEVEL_COUNT = 3;
@@ -96,56 +98,64 @@ export function LevelSelect({ onStart, onOpenArchive }: {
 
   return (
     <main className="level-select-shell">
+      <div className="level-select-frame">
       <header className="level-select-head">
-        <div className="brand-block">
-          <div className="brand-mark" aria-hidden="true"><i /><b /><span /></div>
-          <div><div className="brand-name">PRISM <span>BASTION</span></div><div className="brand-sub">MODULAR DEFENSE NETWORK</div></div>
-        </div>
         <section className="level-select-intro">
-          <div><span>{t('levelSelect.eyebrow')}</span><h1>{t('levelSelect.title')}</h1><p>{t('levelSelect.intro')}</p></div>
+          <h1>{t('levelSelect.title')}</h1>
         </section>
+        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}>
+          <span>
+            <small>{mode === 'creative' ? t('levelSelect.creativeTitle') : difficultyName(t, selectedDifficulty.id)} · {levelName(t, selectedLevel.id)}</small>
+            <strong>{t('levelSelect.startAction')}</strong>
+          </span>
+          <b aria-hidden="true">→</b>
+        </button>
+      </header>
+
+      <section className="mission-controls" aria-label={t('levelSelect.missionSetup')}>
         <div className="mode-selector" role="group" aria-label={t('levelSelect.modeLabel')}>
           <button aria-pressed={mode === 'standard'} className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>{t('levelSelect.standardTitle')}</strong><small>{t('levelSelect.standardDetail')}</small></button>
           <button aria-pressed={mode === 'creative'} className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>{t('levelSelect.creativeTitle')}</strong><small>{t('levelSelect.creativeDetail')}</small></button>
         </div>
-        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}><span>{mode === 'creative'
-          ? t('levelSelect.creativeDeployTo')
-          : t('levelSelect.deployTo', { difficulty: difficultyName(t, selectedDifficulty.id) })}</span><strong>{levelName(t, selectedLevel.id)} →</strong></button>
-      </header>
 
-      <button className="enemy-archive-entry" onClick={onOpenArchive} aria-label={t('enemyArchive.entryAria')}>
-        <span className="enemy-archive-entry-spectrum" aria-hidden="true">
-          {ARCHIVE_ENEMY_TYPES.map((type) => <i key={type} style={{ '--signal-color': ENEMIES[type].color } as CSSProperties} />)}
-        </span>
-        <span><strong>{t('enemyArchive.entry')}</strong><small>{t('enemyArchive.entryDetail', { count: ARCHIVE_ENEMY_TYPES.length })}</small></span>
-        <b aria-hidden="true">→</b>
-      </button>
-
-      <section className="difficulty-select" aria-label={t('levelSelect.difficultyLabel')}>
-        <div className="difficulty-select-head">
-          <div><span>{t('levelSelect.difficultyEyebrow')}</span><strong>{t('levelSelect.difficultyHeading')}</strong></div>
-        </div>
-        <div className="difficulty-options" role="radiogroup" aria-label={t('levelSelect.chooseDifficulty')}>
-          {DIFFICULTIES.map((difficulty, index) => (
-            <button
-              key={difficulty.id}
-              className={difficulty.id === difficultyId ? 'selected' : ''}
-              data-rank={difficulty.rank}
-              role="radio"
-              aria-checked={difficulty.id === difficultyId}
-              tabIndex={difficulty.id === difficultyId ? 0 : -1}
-              onKeyDown={(event) => cycleDifficulty(event, index)}
-              onClick={() => setDifficultyId(difficulty.id)}
-            >
-              <span>{difficulty.rank < 0 ? '◇'.repeat(-difficulty.rank) : difficulty.rank > 0 ? '◆'.repeat(difficulty.rank) : '—'}</span>
-              <strong>{difficultyName(t, difficulty.id)}</strong>
-              <small>{t(`difficulties.${difficulty.id}.tone`)}</small>
-            </button>
-          ))}
-        </div>
+        <section className="difficulty-select" aria-label={t('levelSelect.difficultyLabel')}>
+          <div className="difficulty-options" role="radiogroup" aria-label={t('levelSelect.chooseDifficulty')}>
+            {DIFFICULTIES.map((difficulty, index) => (
+              <button
+                key={difficulty.id}
+                className={difficulty.id === difficultyId ? 'selected' : ''}
+                data-rank={difficulty.rank}
+                role="radio"
+                aria-checked={difficulty.id === difficultyId}
+                tabIndex={difficulty.id === difficultyId ? 0 : -1}
+                onKeyDown={(event) => cycleDifficulty(event, index)}
+                onClick={() => setDifficultyId(difficulty.id)}
+              >
+                <span>{difficulty.rank < 0 ? '◇'.repeat(-difficulty.rank) : difficulty.rank > 0 ? '◆'.repeat(difficulty.rank) : '—'}</span>
+                <strong>{difficultyName(t, difficulty.id)}</strong>
+              </button>
+            ))}
+          </div>
+        </section>
       </section>
 
-      <div className="level-carousel">
+      <section className="sector-selection" aria-label={t('levelSelect.chooseLevel')}>
+        <header className="selection-section-head">
+          <div className="selection-heading-copy">
+            <strong>{t('levelSelect.sectorHeading')}</strong>
+            <span>{t('levelSelect.sectorHint')}</span>
+          </div>
+          <div className="level-select-utilities">
+            <button className="enemy-archive-entry" onClick={onOpenArchive} aria-label={t('enemyArchive.entryAria')}>
+              <span className="enemy-archive-entry-spectrum" aria-hidden="true">
+                {ARCHIVE_ENEMY_TYPES.map((type) => <i key={type} style={{ '--signal-color': ENEMIES[type].color } as CSSProperties} />)}
+              </span>
+              <strong>{t('enemyArchive.entry')}</strong>
+            </button>
+            <LanguageSwitcher />
+          </div>
+        </header>
+        <div className="level-carousel">
         <button className="level-carousel-arrow previous" onClick={() => moveCarousel(-1)} disabled={carouselStart === 0} aria-label={t('levelSelect.previousLevels')} />
         <section key={carouselStart} className={`level-grid ${carouselDirection ? `slide-${carouselDirection}` : ''}`} role="radiogroup" aria-label={t('levelSelect.chooseLevel')}>
         {visibleLevels.map((level, visibleIndex) => {
@@ -161,30 +171,24 @@ export function LevelSelect({ onStart, onOpenArchive }: {
             onKeyDown={(event) => cycleLevel(event, index)}
             onClick={() => selectLevel(level.id)}
           >
-            <div className="level-map-wrap"><LevelMap level={level} /><span>{level.sector}</span></div>
+            <div className="level-map-wrap"><LevelMap level={level} /><Tag className="level-sector-tag" tone="accent" monospace>{level.sector.replace('SECTOR ', '')}</Tag></div>
             <div className="level-card-copy">
               <div><small>{'◆'.repeat(level.difficulty)}{'◇'.repeat(3 - level.difficulty)}</small><b>{t('levelSelect.waves', { count: level.waves.length })}</b></div>
               <h2>{levelName(t, level.id)}</h2>
               <p>{levelDescription(t, level.id)}</p>
-              <footer><span>{t('levelSelect.towerNodes', { count: level.towerPads.length })}</span></footer>
+              <footer><Tag>{t('levelSelect.towerNodes', { count: level.towerPads.length })}</Tag></footer>
             </div>
           </button>
           );
         })}
         </section>
         <button className="level-carousel-arrow next" onClick={() => moveCarousel(1)} disabled={carouselStart === maximumCarouselStart} aria-label={t('levelSelect.nextLevels')} />
-      </div>
+        </div>
+      </section>
 
-      {mode !== 'creative' ? (
-        <section className="standard-brief">
-          <strong>{t('levelSelect.standardRules')}</strong>
-          <span>{t('levelSelect.ruleStarting')}</span><i />
-          <span>{t('levelSelect.ruleDraft')}</span><i />
-          <span>{t('levelSelect.ruleInventory')}</span>
-        </section>
-      ) : (
+      {mode === 'creative' ? (
         <section className="creative-setup-card">
-          <div><span>{t('levelSelect.creativeEyebrow')}</span><h2>{t('levelSelect.creativeHeading')}</h2><p>{t('levelSelect.creativeDescription')}</p></div>
+          <div className="creative-setup-title"><h2>{t('levelSelect.creativeHeading')}</h2></div>
           <div className="setup-rules">
             <label className="core-rule">
               <span>{t('levelSelect.coreStability')}</span>
@@ -192,7 +196,6 @@ export function LevelSelect({ onStart, onOpenArchive }: {
                 const value = Number(event.currentTarget.value);
                 setCreative((current) => ({ ...current, coreStability: positiveInteger(value, current.coreStability) }));
               }} /><b>♥</b></div>
-              <small>{t('levelSelect.coreStabilityDescription')}</small>
             </label>
             <label className="wave-rule">
               <span>{t('levelSelect.waveCount')}</span>
@@ -200,7 +203,6 @@ export function LevelSelect({ onStart, onOpenArchive }: {
                 const value = Number(event.currentTarget.value);
                 setCreative((current) => ({ ...current, waveCount: positiveInteger(value, current.waveCount) }));
               }} /><b>≋</b></div>
-              <small>{t('levelSelect.waveCountDescription', { count: selectedLevel.waves.length })}</small>
             </label>
           </div>
           <div className="setup-scales">
@@ -208,7 +210,8 @@ export function LevelSelect({ onStart, onOpenArchive }: {
             <label><span>{t('levelSelect.speedScale')}</span><input type="range" min="0.25" max="3" step="0.25" value={creative.speedScale} onChange={(event) => setCreative((current) => ({ ...current, speedScale: Number(event.target.value) }))} /><b>{creative.speedScale.toFixed(2)}×</b></label>
           </div>
         </section>
-      )}
+      ) : null}
+      </div>
     </main>
   );
 }

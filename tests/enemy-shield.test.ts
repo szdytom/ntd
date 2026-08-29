@@ -42,8 +42,8 @@ describe('enemy shield', () => {
     const enemy = shieldEnemy();
     absorbShieldDamage(enemy, enemy.shield, shieldConfig);
 
-    expect(updateEnemyShield(enemy, shieldConfig, shieldConfig.cooldown)).toEqual({ restored: false });
-    expect(updateEnemyShield(enemy, shieldConfig, 0.25)).toEqual({ restored: true });
+    expect(updateEnemyShield(enemy, shieldConfig, shieldConfig.cooldown)).toBe(false);
+    expect(updateEnemyShield(enemy, shieldConfig, 0.25)).toBe(true);
   });
 
   it('uses regular-polygon containment with projectile padding', () => {

@@ -37,6 +37,7 @@ import type {
 
 type Listener = (event: GameEvent) => void;
 type ViewListener = () => void;
+const NO_EXCLUDED_ENEMY_IDS: readonly number[] = [];
 
 export interface GameEngineOptions {
   seed?: number;
@@ -62,7 +63,6 @@ const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
-const PROXIMITY_ARM_TARGET_KEY = 'engine:proximity-arm-target';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
@@ -121,12 +121,19 @@ export class GameEngine {
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
   private readonly enemyIndex = new EnemySpatialIndex();
+  private readonly spatialCandidates: Enemy[] = [];
+  private readonly movementStart: Point = { x: 0, y: 0 };
+  private readonly movementEnd: Point = { x: 0, y: 0 };
+  private towerAuraCooldown = 1;
+  private towerAuraEnergyRegen = 1;
   private draft: GameSnapshot['draft'] = null;
   private previousDraftChoices = new Set<ModuleId>();
   private draftsWithoutRare = 0;
   private creativeSetup: CreativeSetup;
   private readonly combatApi: ModuleCombatApi = {
-    nearbyEnemies: (position, radius, excludeIds = []) => this.enemyIndex.nearestWithinRadius(position, radius, excludeIds),
+    nearbyEnemies: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
+      this.enemyIndex.nearestWithinRadius(position, radius, excludeIds)
+    ),
     dealDamage: (enemy, damage, color, source) => {
       const result = this.applyDamage(enemy, Math.max(1, Math.round(damage)), color);
       if (source) this.refundProjectileEnergy(source, result.healthDamage);
@@ -138,7 +145,8 @@ export class GameEngine {
         y: enemy.position.y - projectile.position.y,
       });
       projectile.targetId = enemy.id;
-      projectile.velocity = { x: direction.x * projectile.speed, y: direction.y * projectile.speed };
+      projectile.velocity.x = direction.x * projectile.speed;
+      projectile.velocity.y = direction.y * projectile.speed;
     },
     displace: (enemy, distanceDelta) => this.displaceEnemy(enemy, distanceDelta),
   };
@@ -680,8 +688,8 @@ export class GameEngine {
     for (const enemy of this.enemies) {
       if (enemy.dead) continue;
       const shieldConfig = ENEMIES[enemy.type].shield;
-      const shieldUpdate = updateEnemyShield(enemy, shieldConfig, delta);
-      if (shieldUpdate.restored && shieldConfig) {
+      const shieldRestored = updateEnemyShield(enemy, shieldConfig, delta);
+      if (shieldRestored && shieldConfig) {
         enemy.shieldRippleAge = 0;
         this.effects.spawn(GAME_EFFECT_IDS.shieldRestore, {
           position: enemy.position,
@@ -697,9 +705,7 @@ export class GameEngine {
       const speed = enemy.speed * (1 - enemy.slowFactor);
       enemy.distance += speed * delta;
       enemy.progress = enemy.distance / this.path.length;
-      const at = this.path.pointAtDistance(enemy.distance);
-      enemy.position = at.position;
-      enemy.angle = at.angle;
+      enemy.angle = this.path.sampleInto(enemy.distance, enemy.position);
       if (enemy.distance >= this.path.length) {
         enemy.dead = true;
         const damage = enemy.coreDamage;
@@ -719,12 +725,12 @@ export class GameEngine {
 
   private updateTowers(delta: number): void {
     for (const tower of this.towers) {
-      const auraModifiers = this.getTowerAuraModifiers(tower);
+      this.updateTowerAuraModifiers(tower);
       tower.energy = Math.min(
         tower.maxEnergy,
-        tower.energy + tower.energyRegen * auraModifiers.energyRegen * delta,
+        tower.energy + tower.energyRegen * this.towerAuraEnergyRegen * delta,
       );
-      tower.cooldownLeft = Math.max(0, tower.cooldownLeft - delta / auraModifiers.cooldown);
+      tower.cooldownLeft = Math.max(0, tower.cooldownLeft - delta / this.towerAuraCooldown);
       tower.flash = Math.max(0, tower.flash - delta * 5);
 
       const target = this.findTarget(tower);
@@ -752,7 +758,7 @@ export class GameEngine {
     }
   }
 
-  private getTowerAuraModifiers(tower: Tower): { cooldown: number; energyRegen: number } {
+  private updateTowerAuraModifiers(tower: Tower): void {
     let cooldown = 1;
     let energyRegen = 1;
     for (const enemy of this.enemies) {
@@ -762,15 +768,20 @@ export class GameEngine {
       cooldown = Math.max(cooldown, aura.cooldownMultiplier);
       energyRegen = Math.min(energyRegen, aura.energyRegenMultiplier);
     }
-    return { cooldown, energyRegen };
+    this.towerAuraCooldown = cooldown;
+    this.towerAuraEnergyRegen = energyRegen;
   }
 
   private findTarget(tower: Tower): Enemy | null {
-    const candidates = this.enemyIndex.withinRadius(tower.position, tower.range);
+    const candidates = this.enemyIndex.collectWithinRadius(
+      tower.position,
+      tower.range,
+      this.spatialCandidates,
+    );
     return selectTowerTarget(
       tower,
       candidates,
-      (enemy) => this.enemyIndex.withinRadius(enemy.position, 92).length,
+      (enemy) => this.enemyIndex.countWithinRadius(enemy.position, 92),
     );
   }
 
@@ -783,7 +794,13 @@ export class GameEngine {
       if (tower && (target || cast.blueprint.static)) this.castShot(tower, cast.blueprint, target, cast.origin);
       cast.delay = -999;
     }
-    this.scheduledCasts = this.scheduledCasts.filter((cast) => cast.delay > -100);
+    let aliveCount = 0;
+    for (const cast of this.scheduledCasts) {
+      if (cast.delay <= -100) continue;
+      this.scheduledCasts[aliveCount] = cast;
+      aliveCount += 1;
+    }
+    this.scheduledCasts.length = aliveCount;
   }
 
   private castShot(tower: Tower, blueprint: ShotBlueprint, target: Enemy | null, origin?: Point): void {
@@ -898,24 +915,19 @@ export class GameEngine {
         projectile.triggerCooldown = Math.max(0, projectile.triggerCooldown - delta);
         if (projectile.age >= config.armTime && config.gravity) {
           const fieldDistance = this.path.nearestDistance(projectile.position);
-          for (const enemy of this.findProximityTargets(projectile.position, config.gravity.radius)) {
+          const nearbyEnemies = this.enemyIndex.collectWithinRadius(
+            projectile.position,
+            config.gravity.radius,
+            this.spatialCandidates,
+          );
+          for (const enemy of nearbyEnemies) {
             const offset = fieldDistance - enemy.distance;
             const displacement = Math.sign(offset) * Math.min(Math.abs(offset), config.gravity.pull * delta);
             this.combatApi.displace(enemy, displacement);
           }
         }
-        const nearbyTarget = this.findProximityTarget(projectile.position, config.triggerRadius);
-        if (projectile.age < config.armTime) {
-          if (nearbyTarget) projectile.moduleState[PROXIMITY_ARM_TARGET_KEY] = nearbyTarget.id;
-          continue;
-        }
         if (projectile.age >= config.armTime && projectile.triggerCooldown <= 0) {
-          const armedTargetId = projectile.moduleState[PROXIMITY_ARM_TARGET_KEY];
-          const armedTarget = typeof armedTargetId === 'number'
-            ? this.enemies.find((enemy) => enemy.id === armedTargetId && !enemy.dead) ?? null
-            : null;
-          delete projectile.moduleState[PROXIMITY_ARM_TARGET_KEY];
-          const target = nearbyTarget ?? armedTarget;
+          const target = this.enemyIndex.findNearestWithinRadius(projectile.position, config.triggerRadius);
           if (target) {
             projectile.triggerCooldown = config.cooldown;
             projectile.triggerCount += 1;
@@ -929,15 +941,18 @@ export class GameEngine {
               triggerTarget: target,
               combat: this.combatApi,
             });
-            if (projectile.shot.trigger?.type === 'proximity') this.firePayload(projectile, target);
             if (projectile.triggerCount >= config.maxTriggers) projectile.life = 0;
           }
         }
         continue;
       }
 
-      projectile.trail.unshift({ ...projectile.position });
-      if (projectile.trail.length > 6) projectile.trail.pop();
+      const trailPoint = projectile.trail.length >= 6 ? projectile.trail.pop() : undefined;
+      if (trailPoint) {
+        trailPoint.x = projectile.position.x;
+        trailPoint.y = projectile.position.y;
+        projectile.trail.unshift(trailPoint);
+      } else projectile.trail.unshift({ ...projectile.position });
 
       if (projectile.seeking > 0) {
         const target = this.resolveSeekingTarget(projectile);
@@ -947,19 +962,19 @@ export class GameEngine {
           const angleDifference = ((desiredAngle - currentAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
           const maxTurn = projectile.seeking * delta;
           const nextAngle = currentAngle + Math.max(-maxTurn, Math.min(maxTurn, angleDifference));
-          projectile.velocity = {
-            x: Math.cos(nextAngle) * projectile.speed,
-            y: Math.sin(nextAngle) * projectile.speed,
-          };
+          projectile.velocity.x = Math.cos(nextAngle) * projectile.speed;
+          projectile.velocity.y = Math.sin(nextAngle) * projectile.speed;
         }
       }
 
-      const movementStart = { ...projectile.position };
-      const movementEnd = {
-        x: projectile.position.x + projectile.velocity.x * delta,
-        y: projectile.position.y + projectile.velocity.y * delta,
-      };
-      projectile.position = movementEnd;
+      const movementStart = this.movementStart;
+      const movementEnd = this.movementEnd;
+      movementStart.x = projectile.position.x;
+      movementStart.y = projectile.position.y;
+      movementEnd.x = movementStart.x + projectile.velocity.x * delta;
+      movementEnd.y = movementStart.y + projectile.velocity.y * delta;
+      projectile.position.x = movementEnd.x;
+      projectile.position.y = movementEnd.y;
       projectile.trailTimer -= delta;
       if (projectile.trailTimer <= 0) {
         projectile.trailTimer = 0.065;
@@ -976,10 +991,8 @@ export class GameEngine {
 
       const hit = this.findFirstProjectileHit(projectile, movementStart, movementEnd);
       if (hit) {
-        projectile.position = {
-          x: movementStart.x + (movementEnd.x - movementStart.x) * hit.time,
-          y: movementStart.y + (movementEnd.y - movementStart.y) * hit.time,
-        };
+        projectile.position.x = movementStart.x + (movementEnd.x - movementStart.x) * hit.time;
+        projectile.position.y = movementStart.y + (movementEnd.y - movementStart.y) * hit.time;
         this.hitEnemy(projectile, hit.enemy);
       }
 
@@ -1020,7 +1033,13 @@ export class GameEngine {
       enemy.slowTime = Math.max(enemy.slowTime, projectile.shot.slowDuration);
     }
     if (projectile.splash > 0) {
-      for (const nearby of this.enemyIndex.withinRadius(enemy.position, projectile.splash, [enemy.id])) {
+      const nearbyEnemies = this.enemyIndex.collectWithinRadius(
+        enemy.position,
+        projectile.splash,
+        this.spatialCandidates,
+        enemy.id,
+      );
+      for (const nearby of nearbyEnemies) {
         const splashDamage = this.applyDamage(
           nearby,
           Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor),
@@ -1033,8 +1052,9 @@ export class GameEngine {
     if (projectile.pierce < 0) projectile.life = 0;
     else {
       const exitDistance = (enemy.radius + projectile.radius) * 2 + 2;
-      projectile.position.x += normalize(projectile.velocity).x * exitDistance;
-      projectile.position.y += normalize(projectile.velocity).y * exitDistance;
+      const velocityLength = Math.hypot(projectile.velocity.x, projectile.velocity.y) || 1;
+      projectile.position.x += projectile.velocity.x / velocityLength * exitDistance;
+      projectile.position.y += projectile.velocity.y / velocityLength * exitDistance;
       if (projectile.seeking > 0) this.resolveSeekingTarget(projectile);
     }
   }
@@ -1044,36 +1064,22 @@ export class GameEngine {
     if (current) return current;
 
     const remainingRange = Math.max(0, projectile.speed * projectile.life);
-    const target = this.enemyIndex.nearestWithinRadius(
+    const target = this.enemyIndex.findNearestWithinRadius(
       projectile.position,
       Math.min(SEEKING_RETARGET_RADIUS, remainingRange),
-    )[0] ?? null;
+    );
     projectile.targetId = target?.id ?? null;
     if (target) this.combatApi.retarget(projectile, target);
     return target;
   }
 
   private findTriggerTarget(position: Point): Enemy | null {
-    return this.enemyIndex.withinRadius(position, 280).reduce<Enemy | null>(
-      (best, enemy) => !best || enemy.progress > best.progress ? enemy : best,
-      null,
-    );
-  }
-
-  private findProximityTarget(position: Point, triggerRadius: number): Enemy | null {
-    return this.findProximityTargets(position, triggerRadius)[0] ?? null;
-  }
-
-  private findProximityTargets(position: Point, triggerRadius: number): Enemy[] {
-    return this.enemyIndex.nearestWithinRadius(position, triggerRadius + MAX_ENEMY_COLLISION_RADIUS)
-      .filter((enemy) => distance(position, enemy.position) <= triggerRadius + this.enemyCollisionRadius(enemy));
-  }
-
-  private enemyCollisionRadius(enemy: Enemy): number {
-    const shield = ENEMIES[enemy.type].shield;
-    return shield && enemy.shield > 0
-      ? Math.max(enemy.radius, shield.radius * enemy.shieldRadiusScale)
-      : enemy.radius;
+    const nearbyEnemies = this.enemyIndex.collectWithinRadius(position, 280, this.spatialCandidates);
+    let best: Enemy | null = null;
+    for (const enemy of nearbyEnemies) {
+      if (!best || enemy.progress > best.progress) best = enemy;
+    }
+    return best;
   }
 
   private findFirstProjectileHit(
@@ -1082,7 +1088,13 @@ export class GameEngine {
     end: Point,
   ): { enemy: Enemy; time: number } | null {
     let first: { enemy: Enemy; time: number } | null = null;
-    for (const enemy of this.enemyIndex.alongSegment(start, end, MAX_ENEMY_COLLISION_RADIUS + projectile.radius)) {
+    const candidates = this.enemyIndex.collectAlongSegment(
+      start,
+      end,
+      MAX_ENEMY_COLLISION_RADIUS + projectile.radius,
+      this.spatialCandidates,
+    );
+    for (const enemy of candidates) {
       const time = this.projectileHitTime(enemy, projectile, start, end);
       if (time !== null && (!first || time < first.time)) first = { enemy, time };
     }
@@ -1164,9 +1176,7 @@ export class GameEngine {
     if (enemy.dead || !Number.isFinite(distanceDelta)) return;
     enemy.distance = Math.max(0, Math.min(this.path.length, enemy.distance + distanceDelta));
     enemy.progress = enemy.distance / this.path.length;
-    const at = this.path.pointAtDistance(enemy.distance);
-    enemy.position = at.position;
-    enemy.angle = at.angle;
+    enemy.angle = this.path.sampleInto(enemy.distance, enemy.position);
   }
 
   private applyDamage(enemy: Enemy, damage: number, color: string) {
@@ -1237,7 +1247,13 @@ export class GameEngine {
       pending.spawned = true;
       this.spawnSplitChildren(pending.parent);
     }
-    this.pendingEnemySplits = this.pendingEnemySplits.filter((pending) => pending.age < pending.duration);
+    let aliveCount = 0;
+    for (const pending of this.pendingEnemySplits) {
+      if (pending.age >= pending.duration) continue;
+      this.pendingEnemySplits[aliveCount] = pending;
+      aliveCount += 1;
+    }
+    this.pendingEnemySplits.length = aliveCount;
   }
 
   private spawnSplitChildren(parent: Enemy): void {
@@ -1300,7 +1316,13 @@ export class GameEngine {
         status.tickTimer += status.interval;
       }
     }
-    enemy.statuses = enemy.statuses.filter((status) => status.remaining > 0);
+    let aliveCount = 0;
+    for (const status of enemy.statuses) {
+      if (status.remaining <= 0) continue;
+      enemy.statuses[aliveCount] = status;
+      aliveCount += 1;
+    }
+    enemy.statuses.length = aliveCount;
   }
 
   private updateVisuals(delta: number): void {
@@ -1313,19 +1335,40 @@ export class GameEngine {
       text.life -= delta;
       text.position.y -= delta * 34;
     }
-    this.floatingTexts.splice(0, this.floatingTexts.length, ...this.floatingTexts.filter((text) => text.life > 0));
+    let aliveCount = 0;
+    for (const text of this.floatingTexts) {
+      if (text.life <= 0) continue;
+      this.floatingTexts[aliveCount] = text;
+      aliveCount += 1;
+    }
+    this.floatingTexts.length = aliveCount;
   }
 
   private cleanEntities(): void {
-    const splittingParentIds = new Set(
-      this.pendingEnemySplits.filter((split) => !split.spawned).map((split) => split.parent.id),
-    );
-    this.enemies.splice(
-      0,
-      this.enemies.length,
-      ...this.enemies.filter((enemy) => !enemy.dead || splittingParentIds.has(enemy.id)),
-    );
-    this.projectiles.splice(0, this.projectiles.length, ...this.projectiles.filter((projectile) => projectile.life > 0));
+    let aliveEnemyCount = 0;
+    for (const enemy of this.enemies) {
+      let keep = !enemy.dead;
+      if (!keep) {
+        for (const split of this.pendingEnemySplits) {
+          if (!split.spawned && split.parent === enemy) {
+            keep = true;
+            break;
+          }
+        }
+      }
+      if (!keep) continue;
+      this.enemies[aliveEnemyCount] = enemy;
+      aliveEnemyCount += 1;
+    }
+    this.enemies.length = aliveEnemyCount;
+
+    let aliveProjectileCount = 0;
+    for (const projectile of this.projectiles) {
+      if (projectile.life <= 0) continue;
+      this.projectiles[aliveProjectileCount] = projectile;
+      aliveProjectileCount += 1;
+    }
+    this.projectiles.length = aliveProjectileCount;
   }
 
   private rollDraftChoices(): ModuleId[] {

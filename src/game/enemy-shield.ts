@@ -7,10 +7,6 @@ export interface ShieldDamageResult {
   broke: boolean;
 }
 
-export interface ShieldUpdateResult {
-  restored: boolean;
-}
-
 export function createEnemyShield(
   config: EnemyShieldConfig | undefined,
   healthScale: number,
@@ -54,8 +50,8 @@ export function updateEnemyShield(
   enemy: Enemy,
   config: EnemyShieldConfig | undefined,
   delta: number,
-): ShieldUpdateResult {
-  if (!config || enemy.maxShield <= 0) return { restored: false };
+): boolean {
+  if (!config || enemy.maxShield <= 0) return false;
   const wasOffline = enemy.shield <= 0;
   enemy.shield = Math.min(enemy.maxShield, enemy.shield + config.regen * delta);
   const restored = wasOffline && enemy.shield > 0;
@@ -64,7 +60,7 @@ export function updateEnemyShield(
   } else {
     enemy.shieldRadiusScale = 0;
   }
-  return { restored };
+  return restored;
 }
 
 /** Circle-padded containment test matching a regular polygon force field. */

@@ -1,9 +1,9 @@
-import { lerpPoint } from './math';
 import type { Point } from './types';
 
 export interface PathSampler {
   readonly length: number;
   pointAtDistance(distance: number): { position: Point; angle: number };
+  sampleInto(distance: number, position: Point): number;
   nearestDistance(point: Point): number;
 }
 
@@ -24,26 +24,30 @@ export function createPathSampler(path: readonly Point[]): PathSampler {
   }
   if (segments.length === 0) throw new Error('A level path requires at least one non-zero segment');
   const length = segments.reduce((sum, segment) => sum + segment.length, 0);
+  const sampleInto = (distance: number, position: Point): number => {
+    let remaining = Math.max(0, distance);
+    for (const segment of segments) {
+      if (remaining <= segment.length) {
+        const progress = remaining / segment.length;
+        position.x = segment.start.x + (segment.end.x - segment.start.x) * progress;
+        position.y = segment.start.y + (segment.end.y - segment.start.y) * progress;
+        return Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+      }
+      remaining -= segment.length;
+    }
+    const last = segments[segments.length - 1];
+    if (!last) throw new Error('Path sampler has no segments');
+    position.x = last.end.x;
+    position.y = last.end.y;
+    return Math.atan2(last.end.y - last.start.y, last.end.x - last.start.x);
+  };
   return {
     length,
     pointAtDistance(distance) {
-      let remaining = Math.max(0, distance);
-      for (const segment of segments) {
-        if (remaining <= segment.length) {
-          return {
-            position: lerpPoint(segment.start, segment.end, remaining / segment.length),
-            angle: Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x),
-          };
-        }
-        remaining -= segment.length;
-      }
-      const last = segments[segments.length - 1];
-      if (!last) throw new Error('Path sampler has no segments');
-      return {
-        position: { ...last.end },
-        angle: Math.atan2(last.end.y - last.start.y, last.end.x - last.start.x),
-      };
+      const position = { x: 0, y: 0 };
+      return { position, angle: sampleInto(distance, position) };
     },
+    sampleInto,
     nearestDistance(point) {
       let bestDistanceSquared = Number.POSITIVE_INFINITY;
       let bestPathDistance = 0;

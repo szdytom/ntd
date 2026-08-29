@@ -2,9 +2,7 @@
   position: relative;
   height: 158px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--level-accent) 9%, transparent), transparent 62%),
-    #fafafe;
+  background: #fafafe;
 }
 
 .level-map-wrap::before {
@@ -16,17 +14,12 @@
   opacity: 0.45;
 }
 
-.level-map-wrap > span {
+.level-map-wrap > .level-sector-tag {
   position: absolute;
+  z-index: 2;
   top: 12px;
   left: 13px;
-  padding: 4px 6px;
-  border-radius: 5px;
-  color: #fff;
-  background: var(--level-accent);
-  font-family: var(--font-mono);
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  --tag-accent: var(--level-accent);
 }
 
 .level-map {

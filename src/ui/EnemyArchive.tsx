@@ -5,6 +5,8 @@ import { ENEMIES, LEVELS } from '../game/config';
 import type { EnemyType } from '../game/types';
 import { enemyName, levelName } from '../i18n/presentation';
 import { EnemySpecimen } from './EnemySpecimen';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { Tag } from './Tag';
 import './EnemyArchive.css';
 
 const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
@@ -95,6 +97,7 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
       <div>
         <h1>{t('enemyArchive.title')}</h1>
       </div>
+      <LanguageSwitcher />
       <div className="enemy-archive-seal" aria-hidden="true"><i /><b>{String(selectedIndex + 1).padStart(2, '0')}</b><span /></div>
     </header>
 
@@ -154,16 +157,16 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
             <i aria-hidden="true" />
             {t(radiantSuppression ? 'enemyArchive.suppressedTower.restore' : 'enemyArchive.suppressedTower.show')}
           </button> : null}
-          <span className="subject-code">SIG-{String(selectedIndex + 1).padStart(2, '0')}</span>
-          <span className="subject-scale">{showingSuppressedTower
+          <Tag className="subject-code" tone="yellow" monospace>{t('enemyArchive.signalNumber', { number: String(selectedIndex + 1).padStart(2, '0') })}</Tag>
+          <Tag className="subject-scale" tone="accent" contrast={selectedType === 'spark' ? 'dark' : 'light'} monospace>{showingSuppressedTower
             ? `${Math.round((config.aura?.energyRegenMultiplier ?? 1) * 100)}%`
-            : `R ${formatValue(profile.radius)}`}</span>
+            : t('enemyArchive.radius', { value: formatValue(profile.radius) })}</Tag>
         </div>
 
         <div className="enemy-archive-data">
           <header>
             <div><span>{t('enemyArchive.recordLabel')}</span><h2>{name}</h2></div>
-            <strong>{role}</strong>
+            <Tag className="archive-role-tag" tone="yellow">{role}</Tag>
           </header>
           <p className="enemy-archive-description">{description}</p>
 
@@ -207,7 +210,7 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
 
             <footer className="enemy-archive-observed">
               <span>{t('enemyArchive.observedIn')}</span>
-              <div>{encounteredLevels.map((level) => <b key={level.id}>{levelName(t, level.id)}</b>)}</div>
+              <div>{encounteredLevels.map((level) => <Tag key={level.id}>{levelName(t, level.id)}</Tag>)}</div>
             </footer>
           </>}
         </div>

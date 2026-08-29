@@ -10,6 +10,7 @@ import { ModuleInspector } from './ModuleInspector';
 import { ModuleSlot } from './ModuleSlot';
 import { ProgramReadout } from './ProgramReadout';
 import { TowerOverview } from './TowerOverview';
+import { Tag } from './Tag';
 import './Workshop.css';
 
 export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot }) {
@@ -45,7 +46,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
       <div className="workshop-head">
         <h2>{t('workshop.title')} <span>{t('workshop.subtitle')}</span></h2>
         <div className="workshop-head-actions">
-          <div className="tower-id">NODE T{String(tower.id).padStart(2, '0')}</div>
+          <Tag className="tower-id" tone="yellow">{t('tower.nodeNumber', { id: String(tower.id).padStart(2, '0') })}</Tag>
           <button className="workshop-close" data-tutorial-workshop-close onClick={() => engine.selectTower(null)} aria-label={t('workshop.close')}>×</button>
         </div>
       </div>
@@ -59,7 +60,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
         <div className="workshop-main">
           <section className="program-section">
             <div className="section-title">
-              <div><span className="step-number">01</span><div><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
+              <div><i className="section-color program-color" aria-hidden="true" /><div><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
               <button onClick={() => engine.clearLoadout()}>{t('workshop.clear')}</button>
             </div>
             <div className="slot-flow" style={{ '--slot-count': tower.slots.length } as CSSProperties}>
@@ -79,10 +80,10 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
 
           <section className="library-section">
             <div className="section-title library-title">
-              <div><span className="step-number">02</span><div><h3>{filterLabel} · {visibleDefinitions.length}</h3><small>{t('workshop.installHint')}</small></div></div>
+              <div><i className="section-color library-color" aria-hidden="true" /><div><h3>{filterLabel} · {visibleDefinitions.length}</h3><small>{t('workshop.installHint')}</small></div></div>
               <div className="module-filters" aria-label={t('workshop.filterAria')}>
                 {([
-                  ['all', 'ALL'],
+                  ['all', t('kinds.allShort')],
                   ['projectile', kindLabel(t, 'projectile')],
                   ['static', kindLabel(t, 'static')],
                   ['modifier', kindLabel(t, 'modifier')],

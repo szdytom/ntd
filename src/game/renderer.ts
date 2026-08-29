@@ -11,9 +11,26 @@ import { ENEMIES, WORLD } from './config';
 import { clamp, distance, seededNoise } from './math';
 import { drawEnemyBody, drawEnemyShield, hexToRgb, traceRegularPolygon } from './enemy-visuals';
 import { drawSuppressionLink, drawSuppressionSource } from './suppression-visuals';
-import { drawTowerBody } from './tower-visuals';
+import { drawTowerBody, type TowerVisualOptions } from './tower-visuals';
 import type { GameEngine } from './engine';
 import type { Enemy, Point, Projectile, Tower } from './types';
+import type { ProjectileRenderContext } from '../modules/types';
+
+const DECORATIONS = [
+  { x: 58, y: 43, color: '#ffcf4a', shape: 3, size: 8 },
+  { x: 351, y: 55, color: '#00b894', shape: 4, size: 7 },
+  { x: 724, y: 67, color: '#ff6b9d', shape: 3, size: 7 },
+  { x: 1008, y: 89, color: '#6c5ce7', shape: 6, size: 8 },
+  { x: 78, y: 480, color: '#00a8e8', shape: 4, size: 6 },
+  { x: 194, y: 600, color: '#ff9f43', shape: 3, size: 8 },
+  { x: 436, y: 588, color: '#ff6b9d', shape: 6, size: 7 },
+  { x: 721, y: 585, color: '#00b894', shape: 4, size: 6 },
+] as const;
+const SPLIT_DISTORTION_COLOR = hexToRgb('#73e7f2');
+const compareEnemyY = (left: Enemy, right: Enemy): number => left.position.y - right.position.y;
+const PAD_DASH = [5, 5];
+const RANGE_DASH = [7, 7];
+const NO_DASH: number[] = [];
 
 export class GameRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -29,6 +46,51 @@ export class GameRenderer {
   private readonly bloom: WebGLBloomPipeline | null;
   private readonly fallbackCtx: CanvasRenderingContext2D | null;
   private readonly resizeObserver: ResizeObserver;
+  private readonly activeSingularities: Projectile[] = [];
+  private readonly singularityDistortions: SingularityDistortion[] = [];
+  private readonly suppressionSources: Enemy[] = [];
+  private readonly orderedEnemies: Enemy[] = [];
+  private readonly shieldDistortion: ShieldDistortion = {
+    centerX: 0,
+    centerY: 0,
+    radius: 0,
+    radiusScale: 0,
+    active: false,
+    sides: 6,
+    rotation: 0,
+    hitStrength: 0,
+    color: [0.27, 0.72, 1],
+    rippleAge: 2,
+    time: 0,
+  };
+  private shieldDistortionColor = '';
+  private readonly splitDistortion: SplitDistortion = {
+    centerX: 0,
+    centerY: 0,
+    radius: 0,
+    phase: 0,
+    color: SPLIT_DISTORTION_COLOR,
+  };
+  private readonly towerVisualOptions: TowerVisualOptions = {
+    color: '#6c5ce7',
+    energyRatio: 1,
+    level: 1,
+    rotation: 0,
+  };
+  private readonly towerLabels = new Map<number, { level: number; label: string }>();
+  private readonly enemyBodyOptions = {
+    type: 'spark' as Enemy['type'],
+    radius: 0,
+    time: 0,
+    travelAngle: 0,
+    phase: 0,
+    hitStrength: 0,
+  };
+  private readonly enemyShieldVisualState = { charge: 0, radiusScale: 0, hitStrength: 0 };
+  private readonly projectileRenderContext: ProjectileRenderContext = {
+    ctx: null as unknown as CanvasRenderingContext2D,
+    projectile: null as unknown as Projectile,
+  };
 
   constructor(private canvas: HTMLCanvasElement, private engine: GameEngine) {
     const context = this.scene.getContext('2d', { alpha: false });
@@ -81,6 +143,7 @@ export class GameRenderer {
   }
 
   render(): void {
+    this.collectFrameEntities();
     const ctx = this.ctx;
     const bloomCtx = this.bloom?.beginFrame(this.offsetX, this.offsetY, this.scale);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -153,27 +216,35 @@ export class GameRenderer {
   }
 
   private getShieldDistortion(): ShieldDistortion | null {
-    const enemy = this.engine.enemies.find((candidate) => !candidate.dead && ENEMIES[candidate.type].shield);
+    let enemy: Enemy | null = null;
+    for (const candidate of this.engine.enemies) {
+      if (candidate.dead || !ENEMIES[candidate.type].shield) continue;
+      enemy = candidate;
+      break;
+    }
     if (!enemy) return null;
     const shield = ENEMIES[enemy.type].shield;
     if (!shield || (enemy.shield <= 0 && enemy.shieldRippleAge >= 0.72)) return null;
     const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
     const screenX = this.offsetX + enemy.position.x * this.scale;
     const screenY = this.offsetY + (enemy.position.y + bob) * this.scale;
-    return {
-      centerX: screenX * this.dpr,
-      centerY: (this.cssHeight - screenY) * this.dpr,
-      radius: shield.radius * this.scale * this.dpr,
-      radiusScale: enemy.shieldRadiusScale,
-      active: enemy.shield > 0,
-      sides: shield.sides,
-      // Canvas Y coordinates point down, while WebGL screen coordinates point up.
-      rotation: -shield.rotation,
-      hitStrength: enemy.shieldHitFlash,
-      color: hexToRgb(shield.color),
-      rippleAge: enemy.shieldRippleAge,
-      time: this.engine.visualElapsed,
-    };
+    const distortion = this.shieldDistortion;
+    distortion.centerX = screenX * this.dpr;
+    distortion.centerY = (this.cssHeight - screenY) * this.dpr;
+    distortion.radius = shield.radius * this.scale * this.dpr;
+    distortion.radiusScale = enemy.shieldRadiusScale;
+    distortion.active = enemy.shield > 0;
+    distortion.sides = shield.sides;
+    // Canvas Y coordinates point down, while WebGL screen coordinates point up.
+    distortion.rotation = -shield.rotation;
+    distortion.hitStrength = enemy.shieldHitFlash;
+    if (this.shieldDistortionColor !== shield.color) {
+      distortion.color = hexToRgb(shield.color);
+      this.shieldDistortionColor = shield.color;
+    }
+    distortion.rippleAge = enemy.shieldRippleAge;
+    distortion.time = this.engine.visualElapsed;
+    return distortion;
   }
 
   private getSplitDistortion(): SplitDistortion | null {
@@ -182,38 +253,57 @@ export class GameRenderer {
     if (!rift) return null;
     const screenX = this.offsetX + rift.position.x * this.scale;
     const screenY = this.offsetY + rift.position.y * this.scale;
-    return {
-      centerX: screenX * this.dpr,
-      centerY: (this.cssHeight - screenY) * this.dpr,
-      radius: 120 * this.scale * this.dpr,
-      phase: clamp(rift.age / rift.duration, 0, 1),
-      color: hexToRgb('#73e7f2'),
-    };
+    const distortion = this.splitDistortion;
+    distortion.centerX = screenX * this.dpr;
+    distortion.centerY = (this.cssHeight - screenY) * this.dpr;
+    distortion.radius = 120 * this.scale * this.dpr;
+    distortion.phase = clamp(rift.age / rift.duration, 0, 1);
+    return distortion;
   }
 
-  private getActiveSingularities(): Projectile[] {
-    return this.engine.projectiles.filter((projectile) => (
-      projectile.behavior === 'static'
-      && projectile.shot.source === 'singularity'
-      && projectile.age >= (projectile.shot.static?.armTime ?? 0)
-      && projectile.life > 0
-    ));
+  private collectFrameEntities(): void {
+    this.activeSingularities.length = 0;
+    for (const projectile of this.engine.projectiles) {
+      if (
+        projectile.behavior === 'static'
+        && projectile.shot.source === 'singularity'
+        && projectile.age >= (projectile.shot.static?.armTime ?? 0)
+        && projectile.life > 0
+      ) this.activeSingularities.push(projectile);
+    }
+
+    this.suppressionSources.length = 0;
+    this.orderedEnemies.length = 0;
+    for (const enemy of this.engine.enemies) {
+      this.orderedEnemies.push(enemy);
+      if (!enemy.dead && ENEMIES[enemy.type].aura) this.suppressionSources.push(enemy);
+    }
+    this.orderedEnemies.sort(compareEnemyY);
   }
 
   private getSingularityDistortions(): SingularityDistortion[] {
-    return this.getActiveSingularities().slice(-4).map((projectile) => {
+    const start = Math.max(0, this.activeSingularities.length - 4);
+    const count = this.activeSingularities.length - start;
+    for (let index = 0; index < count; index += 1) {
+      const projectile = this.activeSingularities[start + index];
+      if (!projectile) continue;
       const screenX = this.offsetX + projectile.position.x * this.scale;
       const screenY = this.offsetY + projectile.position.y * this.scale;
       const armTime = projectile.shot.static?.armTime ?? 0;
       const fadeIn = clamp((projectile.age - armTime) / 0.28, 0, 1);
       const fadeOut = clamp(projectile.life / 0.4, 0, 1);
-      return {
-        centerX: screenX * this.dpr,
-        centerY: (this.cssHeight - screenY) * this.dpr,
-        radius: 72 * this.scale * this.dpr,
-        strength: fadeIn * fadeOut,
-      };
-    });
+      let distortion = this.singularityDistortions[index];
+      if (!distortion) {
+        distortion = { centerX: 0, centerY: 0, radius: 0, strength: 0 };
+        this.singularityDistortions[index] = distortion;
+      }
+      distortion.centerX = screenX * this.dpr;
+      distortion.centerY = (this.cssHeight - screenY) * this.dpr;
+      distortion.radius = 72 * this.scale * this.dpr;
+      distortion.strength = fadeIn * fadeOut;
+    }
+    this.singularityDistortions.length = count;
+    return this.singularityDistortions;
   }
 
   private drawBloomSources(ctx: CanvasRenderingContext2D): void {
@@ -376,17 +466,7 @@ export class GameRenderer {
 
   private drawDecorations(): void {
     const ctx = this.ctx;
-    const bits = [
-      { x: 58, y: 43, color: '#ffcf4a', shape: 3, size: 8 },
-      { x: 351, y: 55, color: '#00b894', shape: 4, size: 7 },
-      { x: 724, y: 67, color: '#ff6b9d', shape: 3, size: 7 },
-      { x: 1008, y: 89, color: '#6c5ce7', shape: 6, size: 8 },
-      { x: 78, y: 480, color: '#00a8e8', shape: 4, size: 6 },
-      { x: 194, y: 600, color: '#ff9f43', shape: 3, size: 8 },
-      { x: 436, y: 588, color: '#ff6b9d', shape: 6, size: 7 },
-      { x: 721, y: 585, color: '#00b894', shape: 4, size: 6 },
-    ];
-    for (const bit of bits) {
+    for (const bit of DECORATIONS) {
       ctx.save();
       ctx.translate(bit.x, bit.y);
       ctx.rotate(this.engine.visualElapsed * 0.25 + bit.x);
@@ -403,7 +483,13 @@ export class GameRenderer {
   private drawTowerPads(): void {
     const ctx = this.ctx;
     for (let index = 0; index < this.engine.level.towerPads.length; index += 1) {
-      if (this.engine.towers.some((tower) => tower.padIndex === index)) continue;
+      let occupied = false;
+      for (const tower of this.engine.towers) {
+        if (tower.padIndex !== index) continue;
+        occupied = true;
+        break;
+      }
+      if (occupied) continue;
       const pad = this.engine.level.towerPads[index];
       if (!pad) continue;
       const hovered = this.engine.pointer ? distance(this.engine.pointer, pad) < 38 : false;
@@ -417,11 +503,11 @@ export class GameRenderer {
       }
       ctx.strokeStyle = hovered ? '#6c5ce7' : '#c8c5d2';
       ctx.lineWidth = hovered ? 2.5 : 1.5;
-      ctx.setLineDash([5, 5]);
+      ctx.setLineDash(PAD_DASH);
       ctx.beginPath();
       ctx.arc(0, 0, 29, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.setLineDash(NO_DASH);
       ctx.strokeStyle = hovered ? '#6c5ce7' : '#aaa7b8';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
@@ -443,9 +529,14 @@ export class GameRenderer {
   }
 
   private drawSelectionRange(): void {
-    const hoveredTower = this.engine.pointer
-      ? this.engine.towers.find((tower) => distance(tower.position, this.engine.pointer!) < 35) ?? null
-      : null;
+    let hoveredTower: Tower | null = null;
+    if (this.engine.pointer) {
+      for (const candidate of this.engine.towers) {
+        if (distance(candidate.position, this.engine.pointer) >= 35) continue;
+        hoveredTower = candidate;
+        break;
+      }
+    }
     const tower = hoveredTower ?? this.engine.getSelectedTower();
     if (!tower) return;
     const ctx = this.ctx;
@@ -454,7 +545,7 @@ export class GameRenderer {
     ctx.fillStyle = hoveredTower ? 'rgba(108, 92, 231, 0.045)' : 'rgba(108, 92, 231, 0.025)';
     ctx.strokeStyle = hoveredTower ? 'rgba(108, 92, 231, 0.48)' : 'rgba(108, 92, 231, 0.28)';
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([7, 7]);
+    ctx.setLineDash(RANGE_DASH);
     ctx.beginPath();
     ctx.arc(tower.position.x, tower.position.y, tower.range + pulse, 0, Math.PI * 2);
     ctx.fill();
@@ -462,12 +553,8 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  private getSuppressionSources(): Enemy[] {
-    return this.engine.enemies.filter((enemy) => !enemy.dead && ENEMIES[enemy.type].aura);
-  }
-
   private drawEnemyAuraSources(bloomCtx: CanvasRenderingContext2D | null): void {
-    const sources = this.getSuppressionSources();
+    const sources = this.suppressionSources;
     if (sources.length === 0) return;
     const ctx = this.ctx;
 
@@ -480,7 +567,7 @@ export class GameRenderer {
   }
 
   private drawEnemyAuraLinks(bloomCtx: CanvasRenderingContext2D | null): void {
-    const sources = this.getSuppressionSources();
+    const sources = this.suppressionSources;
     if (sources.length === 0) return;
     const ctx = this.ctx;
     for (const tower of this.engine.towers) {
@@ -503,7 +590,7 @@ export class GameRenderer {
   }
 
   private drawSingularityFields(bloomCtx: CanvasRenderingContext2D | null): void {
-    for (const projectile of this.getActiveSingularities()) {
+    for (const projectile of this.activeSingularities) {
       this.drawSingularityParticles(this.ctx, projectile, false);
       if (bloomCtx) this.drawSingularityParticles(bloomCtx, projectile, true);
     }
@@ -583,24 +670,39 @@ export class GameRenderer {
     const ctx = this.ctx;
     const color = this.engine.getTowerColor(tower);
     const selected = tower.id === this.engine.selectedTowerId;
-    const programHasProjectile = tower.slots.some((id) => id && this.engine.modules.get(id)?.kind === 'projectile');
+    let programHasProjectile = false;
+    for (const id of tower.slots) {
+      if (!id || this.engine.modules.get(id)?.kind !== 'projectile') continue;
+      programHasProjectile = true;
+      break;
+    }
+    let labelRecord = this.towerLabels.get(tower.id);
+    if (!labelRecord || labelRecord.level !== tower.level) {
+      labelRecord = {
+        level: tower.level,
+        label: i18n.t('canvas.towerLabel', { id: String(tower.id).padStart(2, '0'), level: tower.level }),
+      };
+      this.towerLabels.set(tower.id, labelRecord);
+    }
+    const options = this.towerVisualOptions;
+    options.color = color;
+    options.selected = selected;
+    options.energyRatio = tower.energy / tower.maxEnergy;
+    options.level = tower.level;
+    options.rotation = tower.rotation;
+    options.flash = tower.flash;
+    options.programHasProjectile = programHasProjectile;
+    options.label = labelRecord.label;
     ctx.save();
     ctx.translate(tower.position.x, tower.position.y);
-    drawTowerBody(ctx, {
-      color,
-      selected,
-      energyRatio: tower.energy / tower.maxEnergy,
-      level: tower.level,
-      rotation: tower.rotation,
-      flash: tower.flash,
-      programHasProjectile,
-      label: `T${String(tower.id).padStart(2, '0')} · L${tower.level}`,
-    });
+    drawTowerBody(ctx, options);
     ctx.restore();
   }
 
   private drawProjectiles(): void {
     const ctx = this.ctx;
+    const renderContext = this.projectileRenderContext;
+    renderContext.ctx = ctx;
     for (const projectile of this.engine.projectiles) {
       for (let index = projectile.trail.length - 1; index >= 0; index -= 1) {
         const trail = projectile.trail[index];
@@ -612,39 +714,39 @@ export class GameRenderer {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-      this.engine.modules.renderProjectile(projectile.modules, { ctx, projectile });
+      renderContext.projectile = projectile;
+      this.engine.modules.renderProjectile(projectile.modules, renderContext);
     }
   }
 
   private drawEnemies(): void {
-    const ordered = [...this.engine.enemies].sort((a, b) => a.position.y - b.position.y);
-    for (const enemy of ordered) this.drawEnemy(enemy);
+    for (const enemy of this.orderedEnemies) this.drawEnemy(enemy);
   }
 
   private drawEnemy(enemy: Enemy): void {
     const ctx = this.ctx;
     const config = ENEMIES[enemy.type];
     const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
+    const bodyOptions = this.enemyBodyOptions;
+    bodyOptions.type = enemy.type;
+    bodyOptions.radius = enemy.radius;
+    bodyOptions.time = this.engine.elapsed;
+    bodyOptions.travelAngle = enemy.angle;
+    bodyOptions.phase = enemy.id * 0.17;
+    bodyOptions.hitStrength = enemy.hitFlash;
     ctx.save();
     ctx.translate(enemy.position.x, enemy.position.y + bob);
-    drawEnemyBody(ctx, {
-      type: enemy.type,
-      radius: enemy.radius,
-      time: this.engine.elapsed,
-      travelAngle: enemy.angle,
-      phase: enemy.id * 0.17,
-      hitStrength: enemy.hitFlash,
-    });
+    drawEnemyBody(ctx, bodyOptions);
     ctx.restore();
 
     if (config.shield) {
+      const shieldState = this.enemyShieldVisualState;
+      shieldState.charge = enemy.maxShield > 0 ? enemy.shield / enemy.maxShield : 0;
+      shieldState.radiusScale = enemy.shieldRadiusScale;
+      shieldState.hitStrength = enemy.shieldHitFlash;
       ctx.save();
       ctx.translate(enemy.position.x, enemy.position.y + bob);
-      drawEnemyShield(ctx, config.shield, {
-        charge: enemy.maxShield > 0 ? enemy.shield / enemy.maxShield : 0,
-        radiusScale: enemy.shieldRadiusScale,
-        hitStrength: enemy.shieldHitFlash,
-      });
+      drawEnemyShield(ctx, config.shield, shieldState);
       ctx.restore();
     }
 
@@ -682,7 +784,9 @@ export class GameRenderer {
       ctx.arc(enemy.position.x, enemy.position.y + bob, enemy.radius + 5, 0, Math.PI * 2);
       ctx.stroke();
     }
-    enemy.statuses.forEach((status, index) => {
+    for (let index = 0; index < enemy.statuses.length; index += 1) {
+      const status = enemy.statuses[index];
+      if (!status) continue;
       const radius = enemy.radius + 7 + index * 4;
       ctx.strokeStyle = status.color;
       ctx.globalAlpha = 0.72;
@@ -710,7 +814,7 @@ export class GameRenderer {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-    });
+    }
   }
 
   private drawFloatingText(): void {

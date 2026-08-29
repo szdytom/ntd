@@ -11,6 +11,12 @@ export const FRACTURE_SHAPE = {
   rotation: -Math.PI / 2,
 } as const;
 
+const FRACTURE_SPIKE_ANGLES: readonly number[] = Object.freeze(
+  Array.from({ length: FRACTURE_SHAPE.spikeCount }, (_, index) => (
+    FRACTURE_SHAPE.rotation + index * Math.PI * 2 / FRACTURE_SHAPE.spikeCount
+  )),
+);
+
 export function fractureSpikePoints(
   radius: number,
   angle: number,
@@ -36,8 +42,30 @@ export function fractureSpikePoints(
   ];
 }
 
-export function fractureSpikeAngles(): number[] {
-  return Array.from({ length: FRACTURE_SHAPE.spikeCount }, (_, index) => (
-    FRACTURE_SHAPE.rotation + index * Math.PI * 2 / FRACTURE_SHAPE.spikeCount
-  ));
+export function fractureSpikeAngles(): readonly number[] {
+  return FRACTURE_SPIKE_ANGLES;
+}
+
+export function traceFractureSpike(
+  ctx: CanvasRenderingContext2D,
+  radius: number,
+  angle: number,
+): void {
+  const radialX = Math.cos(angle);
+  const radialY = Math.sin(angle);
+  const tangentX = -radialY;
+  const tangentY = radialX;
+  const baseRadius = radius * FRACTURE_SHAPE.spikeBaseRadiusScale;
+  const halfWidth = radius * FRACTURE_SHAPE.spikeHalfWidthScale;
+  ctx.beginPath();
+  ctx.moveTo(radialX * radius, radialY * radius);
+  ctx.lineTo(
+    radialX * baseRadius + tangentX * halfWidth,
+    radialY * baseRadius + tangentY * halfWidth,
+  );
+  ctx.lineTo(
+    radialX * baseRadius - tangentX * halfWidth,
+    radialY * baseRadius - tangentY * halfWidth,
+  );
+  ctx.closePath();
 }

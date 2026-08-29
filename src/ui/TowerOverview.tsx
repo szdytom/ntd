@@ -17,7 +17,7 @@ export function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEng
   return <>
     <div className="tower-overview" style={{ '--tower-color': color } as CSSProperties}>
       <div className="tower-avatar"><i /><b /><span /></div>
-      <div className="tower-title"><small>{t('tower.currentNode')}</small><h3>{t('tower.refractor')} <span>T{String(tower.id).padStart(2, '0')}</span></h3><div className="online"><i />{t('tower.online', { level: tower.level })}</div></div>
+      <div className="tower-title"><small>{t('tower.currentNode')}</small><h3>{t('tower.refractor')} <span>{t('tower.nodeNumber', { id: String(tower.id).padStart(2, '0') })}</span></h3><div className="online"><i />{t('tower.online', { level: tower.level })}</div></div>
       <div className="energy-gauge"><small>{t('tower.energy')}</small><strong>{Math.round(tower.energy)}<em>/{tower.maxEnergy}</em></strong><div><i style={{ width: `${energyRatio * 100}%` }} /></div></div>
     </div>
     <div className="stat-grid">
@@ -32,7 +32,7 @@ export function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEng
       </select></label>
       <button onClick={() => engine.upgradeSelectedTower()} disabled={upgradeCost === 0 || engine.status === 'wave'}
         title={upgradeCost === 0 ? t('tower.maxTitle') : t('tower.upgradeTitle')}>
-        <span>{upgradeCost === 0 ? 'MAX' : t('tower.upgrade', { level: tower.level + 1 })}</span><strong>{upgradeCost === 0 ? t('tower.maxed') : `${upgradeCost} ◇`}</strong>
+        <span>{upgradeCost === 0 ? t('tower.maximum') : t('tower.upgrade', { level: tower.level + 1 })}</span><strong>{upgradeCost === 0 ? t('tower.maxed') : `${upgradeCost} ◇`}</strong>
       </button>
     </div>
   </>;

@@ -59,7 +59,8 @@ describe('level selection accessibility', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh-CN');
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('button', { name: zhCN['lang.name'] }));
 
     expect(document.documentElement.lang).toBe('zh-CN');
     expect(screen.getByRole('heading', { name: zhCN['levelSelect.title'] })).toBeTruthy();

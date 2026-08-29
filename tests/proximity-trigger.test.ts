@@ -53,9 +53,7 @@ const proximityMineShot = (engine: GameEngine): ShotBlueprint => {
   const carrier = engine.modules.compile([
     'impact-trigger',
     'pulse',
-    'proximity-trigger',
     'proximity-mine',
-    'pulse',
   ]).shots[0];
   const mine = carrier?.payload[0];
   if (!mine?.static) throw new Error('Expected a proximity mine payload');
@@ -63,7 +61,7 @@ const proximityMineShot = (engine: GameEngine): ShotBlueprint => {
 };
 
 describe('static proximity detection', () => {
-  it('triggers after arming when an enemy crossed the sensor during arm time', () => {
+  it('does not retain enemies that crossed the sensor before arming', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 31 });
     engine.spawnCreativeEnemy('spark');
     const enemy = engine.enemies[0];
@@ -74,10 +72,10 @@ describe('static proximity detection', () => {
     const steps = Math.ceil((projectile.shot.static?.armTime ?? 0) / FIXED_SIMULATION_STEP) + 1;
     for (let step = 0; step < steps; step += 1) engine.update(FIXED_SIMULATION_STEP);
 
-    expect(projectile.triggerCount).toBe(1);
+    expect(projectile.triggerCount).toBe(0);
   });
 
-  it('uses the enemy body boundary instead of requiring its center inside the sensor', () => {
+  it('uses the configured center radius', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 37 });
     engine.spawnCreativeEnemy('spark');
     const enemy = engine.enemies[0];
@@ -88,12 +86,31 @@ describe('static proximity detection', () => {
       ...compiledShot,
       static: { ...compiledShot.static, armTime: 0 },
     };
-    placeEnemy(engine, enemy, 180, 0);
+    placeEnemy(engine, enemy, 173, 0);
     const projectile = createStaticProjectile(engine, shot, 100);
 
     engine.update(FIXED_SIMULATION_STEP);
 
-    expect(enemy.radius).toBeGreaterThan(180 - 100 - shot.static.triggerRadius);
+    expect(enemy.radius).toBeGreaterThan(173 - 100 - shot.static.triggerRadius);
+    expect(projectile.triggerCount).toBe(0);
+  });
+
+  it('triggers once an armed enemy center enters the sensor', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 41 });
+    engine.spawnCreativeEnemy('spark');
+    const enemy = engine.enemies[0];
+    if (!enemy) throw new Error('Expected an enemy');
+    const compiledShot = proximityMineShot(engine);
+    if (!compiledShot.static) throw new Error('Expected static shot configuration');
+    const shot: ShotBlueprint = {
+      ...compiledShot,
+      static: { ...compiledShot.static, armTime: 0 },
+    };
+    placeEnemy(engine, enemy, 171, 0);
+    const projectile = createStaticProjectile(engine, shot, 100);
+
+    engine.update(FIXED_SIMULATION_STEP);
+
     expect(projectile.triggerCount).toBe(1);
   });
 });

@@ -3,7 +3,6 @@ import '../i18n';
 import { GameEngine } from '../game/engine';
 import { EnemyArchive } from './EnemyArchive';
 import { GameSession } from './GameSession';
-import { LanguageSwitcher } from './LanguageSwitcher';
 import { LevelSelect, type LevelSelection } from './LevelSelect';
 import './App.css';
 
@@ -12,7 +11,6 @@ export function App() {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const start = (selection: LevelSelection): void => setEngine(new GameEngine(selection));
   return <>
-    <LanguageSwitcher />
     {engine
       ? <GameSession engine={engine} onExit={() => setEngine(null)} />
       : archiveOpen

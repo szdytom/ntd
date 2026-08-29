@@ -4,15 +4,12 @@
   gap: 6px;
 }
 
-.enemy-preview span {
+.enemy-preview .enemy-preview-tag {
   display: flex;
-  height: 34px;
+  min-height: 30px;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 0 7px;
-  border: 1px solid #e9e7ed;
-  border-radius: 7px;
-  background: #faf9fc;
 }
 
 .enemy-preview i,
@@ -83,7 +80,7 @@
 }
 
 .enemy-preview b {
-  color: #5d586b;
+  color: #252134;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 11px;
 }

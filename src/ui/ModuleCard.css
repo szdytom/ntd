@@ -40,8 +40,17 @@
   position: absolute;
   top: 8px;
   right: 8px;
+  display: grid;
   width: 22px;
   height: 22px;
+  place-items: center;
+  border: 2px solid #252134;
+  color: #fff;
+  background: var(--module-color);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .rarity-mark {

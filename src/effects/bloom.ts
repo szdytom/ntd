@@ -1,6 +1,6 @@
-const VERTEX_SHADER = `
-attribute vec2 a_position;
-varying vec2 v_uv;
+const VERTEX_SHADER = `#version 300 es
+in vec2 a_position;
+out vec2 v_uv;
 
 void main() {
   v_uv = a_position * 0.5 + 0.5;
@@ -8,24 +8,25 @@ void main() {
 }
 `;
 
-const BLUR_SHADER = `
+const BLUR_SHADER = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
 uniform vec2 u_step;
-varying vec2 v_uv;
+in vec2 v_uv;
+out vec4 outColor;
 
 void main() {
-  vec4 color = texture2D(u_texture, v_uv) * 0.2270270270;
-  color += texture2D(u_texture, v_uv + u_step * 1.3846153846) * 0.3162162162;
-  color += texture2D(u_texture, v_uv - u_step * 1.3846153846) * 0.3162162162;
-  color += texture2D(u_texture, v_uv + u_step * 3.2307692308) * 0.0702702703;
-  color += texture2D(u_texture, v_uv - u_step * 3.2307692308) * 0.0702702703;
-  gl_FragColor = color;
+  vec4 color = texture(u_texture, v_uv) * 0.2270270270;
+  color += texture(u_texture, v_uv + u_step * 1.3846153846) * 0.3162162162;
+  color += texture(u_texture, v_uv - u_step * 1.3846153846) * 0.3162162162;
+  color += texture(u_texture, v_uv + u_step * 3.2307692308) * 0.0702702703;
+  color += texture(u_texture, v_uv - u_step * 3.2307692308) * 0.0702702703;
+  outColor = color;
 }
 `;
 
-const COMPOSITE_SHADER = `
+const COMPOSITE_SHADER = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_scene;
@@ -52,7 +53,8 @@ uniform float u_singularityStrengths[4];
 uniform float u_singularityCount;
 uniform float u_time;
 uniform float u_pixelRatio;
-varying vec2 v_uv;
+in vec2 v_uv;
+out vec4 outColor;
 
 const float TAU = 6.28318530718;
 
@@ -183,27 +185,27 @@ void main() {
   float singularityHorizon;
   float singularityLens;
   sceneUv = singularityDistortion(sceneUv, singularityHorizon, singularityLens);
-  vec3 scene = texture2D(u_scene, sceneUv).rgb;
+  vec3 scene = texture(u_scene, sceneUv).rgb;
   if (u_splitActive > 0.5 && splitBlur > 0.001) {
     vec2 delta = sceneUv * u_resolution - u_splitCenter;
     vec2 tangent = normalize(vec2(-delta.y, delta.x) + vec2(0.001));
     vec2 blurStep = tangent * (1.5 + splitBlur * 4.5) * u_pixelRatio / u_resolution;
     vec3 softened = (
-      texture2D(u_scene, clamp(sceneUv - blurStep, vec2(0.001), vec2(0.999))).rgb
+      texture(u_scene, clamp(sceneUv - blurStep, vec2(0.001), vec2(0.999))).rgb
       + scene
-      + texture2D(u_scene, clamp(sceneUv + blurStep, vec2(0.001), vec2(0.999))).rgb
+      + texture(u_scene, clamp(sceneUv + blurStep, vec2(0.001), vec2(0.999))).rgb
     ) / 3.0;
     scene = mix(scene, softened, clamp(splitBlur * 0.78, 0.0, 0.78));
   }
   if (singularityLens > 0.001) {
     vec2 pixel = 1.25 * u_pixelRatio / u_resolution;
     vec3 refracted = scene;
-    refracted.r = texture2D(u_scene, clamp(sceneUv - pixel, vec2(0.001), vec2(0.999))).r;
-    refracted.b = texture2D(u_scene, clamp(sceneUv + pixel, vec2(0.001), vec2(0.999))).b;
+    refracted.r = texture(u_scene, clamp(sceneUv - pixel, vec2(0.001), vec2(0.999))).r;
+    refracted.b = texture(u_scene, clamp(sceneUv + pixel, vec2(0.001), vec2(0.999))).b;
     scene = mix(scene, refracted, clamp(singularityLens * 0.52, 0.0, 0.52));
   }
-  vec4 wideGlow = texture2D(u_bloom, v_uv);
-  vec4 hotGlow = texture2D(u_emissive, v_uv);
+  vec4 wideGlow = texture(u_bloom, v_uv);
+  vec4 hotGlow = texture(u_emissive, v_uv);
 
   // Pure additive light vanishes on white, so the broad halo uses bounded tinting first.
   vec3 bloomColor = clamp(unpremultiply(wideGlow), 0.0, 1.0);
@@ -222,13 +224,106 @@ void main() {
   result = mix(result, u_splitColor, clamp(splitBlur * 0.075, 0.0, 0.075));
   result = mix(result, vec3(0.027, 0.012, 0.065), clamp(singularityHorizon * 0.92, 0.0, 0.92));
   result = mix(result, vec3(0.435, 0.290, 0.847), clamp(singularityLens * 0.10, 0.0, 0.10));
-  gl_FragColor = vec4(result, 1.0);
+  outColor = vec4(result, 1.0);
 }
 `;
 
 interface ProgramInfo {
   program: WebGLProgram;
   position: number;
+}
+
+interface ProgramSet {
+  blur: ProgramInfo;
+  composite: ProgramInfo;
+}
+
+interface ParallelShaderCompileExtension {
+  readonly COMPLETION_STATUS_KHR: number;
+}
+
+const PROGRAM_CACHE = new WeakMap<WebGL2RenderingContext, Promise<ProgramSet>>();
+let shaderWarmupCanvas: HTMLCanvasElement | null = null;
+let shaderWarmupPromise: Promise<void> | null = null;
+
+const nextCompilationCheck = (): Promise<void> => new Promise((resolve) => {
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+  else setTimeout(resolve, 0);
+});
+
+async function compileProgram(
+  gl: WebGL2RenderingContext,
+  fragmentSource: string,
+  parallel: ParallelShaderCompileExtension | null,
+): Promise<ProgramInfo> {
+  const vertex = gl.createShader(gl.VERTEX_SHADER);
+  const fragment = gl.createShader(gl.FRAGMENT_SHADER);
+  const program = gl.createProgram();
+  if (!vertex || !fragment || !program) {
+    if (vertex) gl.deleteShader(vertex);
+    if (fragment) gl.deleteShader(fragment);
+    if (program) gl.deleteProgram(program);
+    throw new Error('Could not create WebGL2 shader program');
+  }
+
+  gl.shaderSource(vertex, VERTEX_SHADER);
+  gl.shaderSource(fragment, fragmentSource);
+  gl.compileShader(vertex);
+  gl.compileShader(fragment);
+  gl.attachShader(program, vertex);
+  gl.attachShader(program, fragment);
+  gl.linkProgram(program);
+
+  if (parallel) {
+    while (!gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
+      await nextCompilationCheck();
+    }
+  } else await nextCompilationCheck();
+
+  const vertexCompiled = gl.getShaderParameter(vertex, gl.COMPILE_STATUS);
+  const fragmentCompiled = gl.getShaderParameter(fragment, gl.COMPILE_STATUS);
+  const linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+  const message = !vertexCompiled
+    ? gl.getShaderInfoLog(vertex)
+    : !fragmentCompiled
+      ? gl.getShaderInfoLog(fragment)
+      : !linked ? gl.getProgramInfoLog(program) : null;
+  gl.deleteShader(vertex);
+  gl.deleteShader(fragment);
+  if (!vertexCompiled || !fragmentCompiled || !linked) {
+    gl.deleteProgram(program);
+    throw new Error(message || 'Unknown WebGL2 shader compilation error');
+  }
+  return { program, position: gl.getAttribLocation(program, 'a_position') };
+}
+
+function getCachedPrograms(gl: WebGL2RenderingContext): Promise<ProgramSet> {
+  const cached = PROGRAM_CACHE.get(gl);
+  if (cached) return cached;
+  const parallel = gl.getExtension('KHR_parallel_shader_compile') as ParallelShaderCompileExtension | null;
+  const pending = Promise.all([
+    compileProgram(gl, BLUR_SHADER, parallel),
+    compileProgram(gl, COMPOSITE_SHADER, parallel),
+  ]).then(([blur, composite]) => ({ blur, composite }));
+  PROGRAM_CACHE.set(gl, pending);
+  void pending.catch(() => PROGRAM_CACHE.delete(gl));
+  return pending;
+}
+
+/**
+ * Warms the browser/driver shader cache after page load. WebGL programs are
+ * context-owned, so the actual canvas still links asynchronously and then
+ * keeps its own cached ProgramSet for the lifetime of that context.
+ */
+export function preloadBloomShaders(): Promise<void> {
+  if (shaderWarmupPromise) return shaderWarmupPromise;
+  shaderWarmupCanvas = document.createElement('canvas');
+  shaderWarmupCanvas.width = 1;
+  shaderWarmupCanvas.height = 1;
+  const gl = createBloomWebGLContext(shaderWarmupCanvas);
+  if (!gl) return Promise.resolve();
+  shaderWarmupPromise = getCachedPrograms(gl).then(() => undefined).catch(() => undefined);
+  return shaderWarmupPromise;
 }
 
 export interface ShieldDistortion {
@@ -261,8 +356,8 @@ export interface SingularityDistortion {
   strength: number;
 }
 
-export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderingContext | null {
-  return output.getContext('webgl', {
+export function createBloomWebGLContext(output: HTMLCanvasElement): WebGL2RenderingContext | null {
+  return output.getContext('webgl2', {
     alpha: false,
     antialias: false,
     depth: false,
@@ -280,7 +375,7 @@ export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderi
 export class WebGLBloomPipeline {
   private readonly emissive = document.createElement('canvas');
   private readonly emissiveCtx: CanvasRenderingContext2D;
-  private gl: WebGLRenderingContext;
+  private gl: WebGL2RenderingContext;
   private blurProgram!: ProgramInfo;
   private compositeProgram!: ProgramInfo;
   private quad!: WebGLBuffer;
@@ -296,13 +391,20 @@ export class WebGLBloomPipeline {
   private blurWidth = 1;
   private blurHeight = 1;
   private contextLost = false;
+  private programsReady = false;
+  private initializationError: Error | null = null;
+  private initializationVersion = 0;
+  private disposed = false;
   private readonly uniformLocations = new WeakMap<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
+  private readonly singularityCenters = new Float32Array(8);
+  private readonly singularityRadii = new Float32Array(4);
+  private readonly singularityStrengths = new Float32Array(4);
   private readonly emissiveScale = 0.5;
   private readonly blurScale = 0.25;
 
   constructor(
     private readonly output: HTMLCanvasElement,
-    context?: WebGLRenderingContext,
+    context?: WebGL2RenderingContext,
   ) {
     const emissiveCtx = this.emissive.getContext('2d', { alpha: true });
     if (!emissiveCtx) throw new Error('Emissive Canvas 2D context is unavailable');
@@ -311,7 +413,8 @@ export class WebGLBloomPipeline {
     const gl = context ?? createBloomWebGLContext(output);
     if (!gl) throw new Error('WebGL is required for the game renderer');
     this.gl = gl;
-    this.initialize();
+    this.initializeResources();
+    this.initializePrograms();
 
     output.addEventListener('webglcontextlost', this.handleContextLost);
     output.addEventListener('webglcontextrestored', this.handleContextRestored);
@@ -358,6 +461,12 @@ export class WebGLBloomPipeline {
     singularities: readonly SingularityDistortion[] = [],
     time = 0,
   ): void {
+    if (this.initializationError) {
+      const error = this.initializationError;
+      this.initializationError = null;
+      throw error;
+    }
+    if (!this.programsReady) return;
     if (this.contextLost) return;
     const gl = this.gl;
     gl.disable(gl.BLEND);
@@ -373,16 +482,15 @@ export class WebGLBloomPipeline {
   }
 
   dispose(): void {
+    this.disposed = true;
+    this.initializationVersion += 1;
     this.output.removeEventListener('webglcontextlost', this.handleContextLost);
     this.output.removeEventListener('webglcontextrestored', this.handleContextRestored);
     if (!this.contextLost) this.deleteResources();
   }
 
-  private initialize(): void {
+  private initializeResources(): void {
     const gl = this.gl;
-    this.blurProgram = this.createProgram(BLUR_SHADER);
-    this.compositeProgram = this.createProgram(COMPOSITE_SHADER);
-
     const quad = gl.createBuffer();
     if (!quad) throw new Error('Could not create WebGL fullscreen buffer');
     this.quad = quad;
@@ -398,6 +506,25 @@ export class WebGLBloomPipeline {
     this.pongTexture = this.createTexture();
     this.pingFramebuffer = this.createFramebuffer(this.pingTexture);
     this.pongFramebuffer = this.createFramebuffer(this.pongTexture);
+  }
+
+  private initializePrograms(): void {
+    this.programsReady = false;
+    this.initializationError = null;
+    const version = ++this.initializationVersion;
+    const warmup = shaderWarmupPromise ?? Promise.resolve();
+    void warmup
+      .then(() => getCachedPrograms(this.gl))
+      .then(({ blur, composite }) => {
+        if (this.disposed || version !== this.initializationVersion) return;
+        this.blurProgram = blur;
+        this.compositeProgram = composite;
+        this.programsReady = true;
+      })
+      .catch((error: unknown) => {
+        if (this.disposed || version !== this.initializationVersion) return;
+        this.initializationError = error instanceof Error ? error : new Error(String(error));
+      });
   }
 
   private allocateTargets(): void {
@@ -479,9 +606,9 @@ export class WebGLBloomPipeline {
       split?.color[1] ?? 0.91,
       split?.color[2] ?? 0.95,
     );
-    const singularityCenters = new Float32Array(8);
-    const singularityRadii = new Float32Array(4);
-    const singularityStrengths = new Float32Array(4);
+    const singularityCenters = this.singularityCenters;
+    const singularityRadii = this.singularityRadii;
+    const singularityStrengths = this.singularityStrengths;
     const singularityCount = Math.min(4, singularities.length);
     for (let index = 0; index < singularityCount; index += 1) {
       const singularity = singularities[index];
@@ -519,25 +646,6 @@ export class WebGLBloomPipeline {
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source);
   }
 
-  private createProgram(fragmentSource: string): ProgramInfo {
-    const gl = this.gl;
-    const vertex = this.compileShader(gl.VERTEX_SHADER, VERTEX_SHADER);
-    const fragment = this.compileShader(gl.FRAGMENT_SHADER, fragmentSource);
-    const program = gl.createProgram();
-    if (!program) throw new Error('Could not create WebGL program');
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    gl.deleteShader(vertex);
-    gl.deleteShader(fragment);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const message = gl.getProgramInfoLog(program) || 'Unknown shader link error';
-      gl.deleteProgram(program);
-      throw new Error(message);
-    }
-    return { program, position: gl.getAttribLocation(program, 'a_position') };
-  }
-
   private uniform(program: WebGLProgram, name: string): WebGLUniformLocation | null {
     let locations = this.uniformLocations.get(program);
     if (!locations) {
@@ -546,20 +654,6 @@ export class WebGLBloomPipeline {
     }
     if (!locations.has(name)) locations.set(name, this.gl.getUniformLocation(program, name));
     return locations.get(name) ?? null;
-  }
-
-  private compileShader(type: number, source: string): WebGLShader {
-    const gl = this.gl;
-    const shader = gl.createShader(type);
-    if (!shader) throw new Error('Could not create WebGL shader');
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const message = gl.getShaderInfoLog(shader) || 'Unknown shader compile error';
-      gl.deleteShader(shader);
-      throw new Error(message);
-    }
-    return shader;
   }
 
   private createTexture(): WebGLTexture {
@@ -596,8 +690,6 @@ export class WebGLBloomPipeline {
 
   private deleteResources(): void {
     const gl = this.gl;
-    gl.deleteProgram(this.blurProgram.program);
-    gl.deleteProgram(this.compositeProgram.program);
     gl.deleteBuffer(this.quad);
     gl.deleteTexture(this.sceneTexture);
     gl.deleteTexture(this.emissiveTexture);
@@ -610,11 +702,15 @@ export class WebGLBloomPipeline {
   private readonly handleContextLost = (event: Event): void => {
     event.preventDefault();
     this.contextLost = true;
+    this.programsReady = false;
+    this.initializationVersion += 1;
+    PROGRAM_CACHE.delete(this.gl);
   };
 
   private readonly handleContextRestored = (): void => {
     this.contextLost = false;
-    this.initialize();
+    this.initializeResources();
     this.allocateTargets();
+    this.initializePrograms();
   };
 }

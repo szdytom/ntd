@@ -56,7 +56,20 @@ describe('spatial targeting systems', () => {
 
     expect(index.withinRadius({ x: 0, y: 0 }, 100).map((item) => item.id)).toEqual([1, 2]);
     expect(index.nearestWithinRadius({ x: 70, y: 0 }, 100).map((item) => item.id)).toEqual([2, 1]);
+    expect(index.findNearestWithinRadius({ x: 70, y: 0 }, 100)?.id).toBe(2);
+    expect(index.countWithinRadius({ x: 0, y: 0 }, 100)).toBe(2);
     expect(index.alongSegment({ x: 0, y: 0 }, { x: 90, y: 0 }, 12).map((item) => item.id)).toEqual([1, 2]);
+  });
+
+  it('fills reusable query buffers without retaining stale results', () => {
+    const index = new EnemySpatialIndex(64);
+    const result: Enemy[] = [];
+    index.rebuild(enemies);
+
+    expect(index.collectWithinRadius({ x: 0, y: 0 }, 100, result).map((item) => item.id)).toEqual([1, 2]);
+    expect(index.collectWithinRadius({ x: 240, y: 0 }, 10, result).map((item) => item.id)).toEqual([3]);
+    expect(index.collectAlongSegment({ x: 0, y: 0 }, { x: 90, y: 0 }, 12, result).map((item) => item.id))
+      .toEqual([1, 2]);
   });
 
   it('selects targets with a linear scan for each targeting strategy', () => {
