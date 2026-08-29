@@ -11,6 +11,34 @@ export const FRACTURE_SHAPE = {
   rotation: -Math.PI / 2,
 } as const;
 
+export const SURGE_SHAPE = {
+  rearwardScale: 0.72,
+  halfWidthScale: 0.78,
+  notchScale: 0.36,
+} as const;
+
+export function surgeBodyPoints(radius: number): readonly [ShapePoint, ShapePoint, ShapePoint, ShapePoint] {
+  return [
+    { x: radius, y: 0 },
+    { x: -radius * SURGE_SHAPE.rearwardScale, y: radius * SURGE_SHAPE.halfWidthScale },
+    { x: -radius * SURGE_SHAPE.notchScale, y: 0 },
+    { x: -radius * SURGE_SHAPE.rearwardScale, y: -radius * SURGE_SHAPE.halfWidthScale },
+  ];
+}
+
+export function traceSurgeBody(ctx: CanvasRenderingContext2D, radius: number): void {
+  const points = surgeBodyPoints(radius);
+  const first = points[0];
+  if (!first) return;
+  ctx.beginPath();
+  ctx.moveTo(first.x, first.y);
+  for (let index = 1; index < points.length; index += 1) {
+    const point = points[index];
+    if (point) ctx.lineTo(point.x, point.y);
+  }
+  ctx.closePath();
+}
+
 const FRACTURE_SPIKE_ANGLES: readonly number[] = Object.freeze(
   Array.from({ length: FRACTURE_SHAPE.spikeCount }, (_, index) => (
     FRACTURE_SHAPE.rotation + index * Math.PI * 2 / FRACTURE_SHAPE.spikeCount

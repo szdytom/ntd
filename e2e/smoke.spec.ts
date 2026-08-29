@@ -105,14 +105,19 @@ test('signal compendium exposes every signal profile from its own entry', async 
   const index = page.getByRole('navigation', { name: 'Enemy signal index' });
   const consoleFrame = page.locator('.enemy-archive-console');
   const initialFrameHeight = await consoleFrame.evaluate((element) => element.getBoundingClientRect().height);
-  await expect(index.getByRole('button')).toHaveCount(7);
-  await expect(page.getByText('SIGNAL ARCHIVE · 7', { exact: true })).toHaveCount(0);
+  await expect(index.getByRole('button')).toHaveCount(8);
+  await expect(page.getByText('SIGNAL ARCHIVE · 8', { exact: true })).toHaveCount(0);
   await expect(index.getByText('01', { exact: true })).toHaveCount(0);
-  await expect(index.getByText('01 / 07', { exact: true })).toHaveCount(0);
+  await expect(index.getByText('01 / 08', { exact: true })).toHaveCount(0);
   await expect(page.locator('.enemy-archive-seal b')).toHaveText('01');
+  await index.getByRole('button', { name: /Surge/ }).click();
+  await expect(page.getByRole('heading', { name: 'Surge' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('02');
+  await expect(page.getByText('Sine surge')).toBeVisible();
+  await expect(page.locator('[data-stat="speed"] strong')).toHaveText('95 u/s');
   await index.getByRole('button', { name: /Prism Crown/ }).click();
   await expect(page.getByRole('heading', { name: 'Prism Crown' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText('05');
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('06');
   await expect(page.getByText('Regenerating shield lattice')).toBeVisible();
   await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-has-shield', 'true');
   expect(await page.locator('.enemy-archive-specimen').evaluate((canvas) => (
@@ -135,7 +140,7 @@ test('signal compendium exposes every signal profile from its own entry', async 
   await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
   await index.getByRole('button', { name: /Radiant Lag Ring/ }).click();
   await expect(page.getByRole('heading', { name: 'Radiant Lag Ring' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText('07');
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('08');
   await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'false');
   await page.getByRole('button', { name: 'Suppress tower' }).click();
   await expect(page.getByRole('heading', { name: 'Suppressed Tower' })).toBeVisible();

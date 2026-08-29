@@ -9,7 +9,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { Tag } from './Tag';
 import './EnemyArchive.css';
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
 const MAXIMUMS = {
   hp: Math.max(...ENEMY_TYPES.map((type) => ENEMIES[type].hp)),
   speed: Math.max(...ENEMY_TYPES.map((type) => ENEMIES[type].speed)),
@@ -65,6 +65,14 @@ export function EnemyArchive({ onBack, initialType = 'spark', backToBattlefield 
       radius: config.aura.radius,
       cooldown: config.aura.cooldownMultiplier,
       regen: Math.round(config.aura.energyRegenMultiplier * 100),
+    }),
+  } : config.movement ? {
+    label: t('enemyArchive.abilities.waveAdvance'),
+    detail: t('enemyArchive.abilities.waveAdvanceDetail', {
+      cycle: config.movement.cycle,
+      multiplier: config.movement.peakSpeedMultiplier,
+      power: config.movement.wavePower,
+      speed: config.speed,
     }),
   } : {
     label: t('enemyArchive.abilities.standard'),

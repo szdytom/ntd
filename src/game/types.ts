@@ -112,7 +112,7 @@ export interface Tower {
   targetId: number | null;
 }
 
-export type EnemyType = 'spark' | 'kite' | 'block' | 'hex' | 'crown' | 'fracture' | 'radiant';
+export type EnemyType = 'spark' | 'surge' | 'kite' | 'block' | 'hex' | 'crown' | 'fracture' | 'radiant';
 
 export interface Enemy {
   id: number;
@@ -124,6 +124,7 @@ export interface Enemy {
   hp: number;
   maxHp: number;
   speed: number;
+  movementPhase?: number;
   reward: number;
   coreDamage: number;
   radius: number;

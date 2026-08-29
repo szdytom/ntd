@@ -1,5 +1,5 @@
 import { ENEMIES, type EnemyShieldConfig } from './config';
-import { FRACTURE_SHAPE, fractureSpikeAngles, traceFractureSpike } from './enemy-shapes';
+import { FRACTURE_SHAPE, fractureSpikeAngles, traceFractureSpike, traceSurgeBody } from './enemy-shapes';
 import { clamp } from './math';
 import type { EnemyType } from './types';
 
@@ -76,6 +76,7 @@ export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyV
   } else {
     ctx.fillStyle = fillColor;
     if (config.shape === 'ring') traceRing(ctx, radius, radius * 0.48);
+    else if (config.shape === 'surge') traceSurgeBody(ctx, radius);
     else traceRegularPolygon(ctx, 0, 0, radius, config.sides, options.type === 'spark' ? Math.PI / 2 : 0);
     ctx.fill(config.shape === 'ring' ? 'evenodd' : 'nonzero');
     ctx.shadowColor = 'transparent';

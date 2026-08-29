@@ -9,6 +9,7 @@ import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, TUTORIAL_LEVEL_ID, W
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
+import { enemyMovementSpeedMultiplier } from './enemy-movement';
 import { findPathInterception } from './interception';
 import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
 import { createPathSampler, type PathSampler } from './path';
@@ -671,6 +672,7 @@ export class GameEngine {
       hp: Math.round(config.hp * scale),
       maxHp: Math.round(config.hp * scale),
       speed: config.speed * this.level.enemySpeedScale * this.difficulty.enemySpeed * creativeSpeedScale,
+      movementPhase: 0,
       reward: Math.max(1, Math.round(config.reward * this.difficulty.economy)),
       coreDamage: config.coreDamage,
       radius: config.radius,
@@ -687,7 +689,8 @@ export class GameEngine {
   private updateEnemies(delta: number): void {
     for (const enemy of this.enemies) {
       if (enemy.dead) continue;
-      const shieldConfig = ENEMIES[enemy.type].shield;
+      const config = ENEMIES[enemy.type];
+      const shieldConfig = config.shield;
       const shieldRestored = updateEnemyShield(enemy, shieldConfig, delta);
       if (shieldRestored && shieldConfig) {
         enemy.shieldRippleAge = 0;
@@ -702,7 +705,12 @@ export class GameEngine {
       if (enemy.dead) continue;
       enemy.slowTime = Math.max(0, enemy.slowTime - delta);
       if (enemy.slowTime <= 0) enemy.slowFactor = 0;
-      const speed = enemy.speed * (1 - enemy.slowFactor);
+      const movementPhase = enemy.movementPhase ?? 0;
+      const movementMultiplier = enemyMovementSpeedMultiplier(config.movement, movementPhase);
+      enemy.movementPhase = config.movement
+        ? (movementPhase + delta) % config.movement.cycle
+        : 0;
+      const speed = enemy.speed * movementMultiplier * (1 - enemy.slowFactor);
       enemy.distance += speed * delta;
       enemy.progress = enemy.distance / this.path.length;
       enemy.angle = this.path.sampleInto(enemy.distance, enemy.position);

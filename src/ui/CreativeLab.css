@@ -87,6 +87,15 @@
   transform: none;
 }
 
+.creative-enemy-grid span i.surge {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  background: var(--enemy-color);
+  clip-path: polygon(100% 50%, 14% 100%, 32% 50%, 14% 0);
+  transform: none;
+}
+
 .creative-enemy-grid button b {
   display: grid;
   width: 32px;

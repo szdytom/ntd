@@ -12,10 +12,17 @@ export interface EnemyConfig {
   color: string;
   sides: number;
   name: string;
-  shape?: 'polygon' | 'fracture' | 'ring';
+  shape?: 'polygon' | 'surge' | 'fracture' | 'ring';
+  movement?: EnemyWaveMovementConfig;
   shield?: EnemyShieldConfig;
   split?: EnemySplitConfig;
   aura?: EnemyAuraConfig;
+}
+
+export interface EnemyWaveMovementConfig {
+  cycle: number;
+  peakSpeedMultiplier: number;
+  wavePower: number;
 }
 
 export interface EnemyAuraConfig {
@@ -49,6 +56,19 @@ export interface EnemyShieldConfig {
 
 export const ENEMIES: Record<EnemyType, EnemyConfig> = {
   spark: { hp: 28, speed: 105, spawnDelay: 0.42, reward: 3, coreDamage: 1, radius: 13, color: '#ffcf4a', sides: 3, name: 'Spark' },
+  surge: {
+    hp: 24,
+    speed: 95,
+    spawnDelay: 0.5,
+    reward: 4,
+    coreDamage: 1,
+    radius: 15,
+    color: '#3d8bfd',
+    sides: 4,
+    name: 'Surge',
+    shape: 'surge',
+    movement: { cycle: 1.3, peakSpeedMultiplier: 5.25, wavePower: 8 },
+  },
   kite: { hp: 62, speed: 74, spawnDelay: 0.58, reward: 5, coreDamage: 1, radius: 15, color: '#ff6b9d', sides: 4, name: 'Kite' },
   block: { hp: 125, speed: 53, spawnDelay: 0.72, reward: 8, coreDamage: 2, radius: 17, color: '#20c997', sides: 4, name: 'Phalanx' },
   hex: { hp: 235, speed: 43, spawnDelay: 0.86, reward: 14, coreDamage: 3, radius: 21, color: '#7257fa', sides: 6, name: 'Hex Armor' },
@@ -169,7 +189,7 @@ export const LEVELS = [
     ],
     waves: [
       wave(['crown', 1], ['spark', 6]),
-      wave(['spark', 12], ['kite', 8], ['block', 2]),
+      wave(['spark', 8], ['surge', 4], ['kite', 8], ['block', 2]),
       wave(['kite', 8], ['block', 6], ['hex', 2]),
       wave(['spark', 10], ['block', 8], ['hex', 4]),
       wave(['kite', 4], ['block', 3], ['hex', 5], ['fracture', 1]),
@@ -198,7 +218,7 @@ export const LEVELS = [
     waves: [
       wave(['spark', 14], ['kite', 7], ['block', 1]),
       wave(['kite', 10], ['block', 5]),
-      wave(['spark', 8], ['block', 7], ['hex', 2]),
+      wave(['spark', 4], ['surge', 4], ['block', 7], ['hex', 2]),
       wave(['kite', 10], ['block', 7], ['hex', 2]),
       wave(['spark', 12], ['block', 8], ['hex', 5]),
       wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1]),
@@ -225,7 +245,7 @@ export const LEVELS = [
       { x: 680, y: 322 }, { x: 682, y: 610 }, { x: 894, y: 342 }, { x: 1040, y: 220 },
     ],
     waves: [
-      wave(['spark', 18], ['kite', 5], ['block', 1]),
+      wave(['spark', 12], ['surge', 6], ['kite', 5], ['block', 1]),
       wave(['spark', 12], ['kite', 10], ['block', 2]),
       wave(['kite', 8], ['block', 6], ['hex', 1]),
       wave(['spark', 12], ['block', 8], ['hex', 3]),
