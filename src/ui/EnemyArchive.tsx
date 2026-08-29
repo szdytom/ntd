@@ -17,9 +17,13 @@ const MAXIMUMS = {
   coreDamage: Math.max(...ENEMY_TYPES.map((type) => ENEMIES[type].coreDamage)),
 };
 
-export function EnemyArchive({ onBack }: { onBack: () => void }) {
+export function EnemyArchive({ onBack, initialType = 'spark', backToBattlefield = false }: {
+  onBack: () => void;
+  initialType?: EnemyType;
+  backToBattlefield?: boolean;
+}) {
   const { t } = useTranslation();
-  const [selectedType, setSelectedType] = useState<EnemyType>('spark');
+  const [selectedType, setSelectedType] = useState<EnemyType>(initialType);
   const [fractureSplit, setFractureSplit] = useState(false);
   const [radiantSuppression, setRadiantSuppression] = useState(false);
   const config = ENEMIES[selectedType];
@@ -91,7 +95,7 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
 
   return <main className="enemy-archive-shell" style={archiveStyle}>
     <header className="enemy-archive-head">
-      <button className="enemy-archive-back" onClick={onBack} aria-label={t('enemyArchive.back')}>
+      <button className="enemy-archive-back" onClick={onBack} aria-label={t(backToBattlefield ? 'enemyArchive.backToBattlefield' : 'enemyArchive.back')}>
         <span aria-hidden="true">←</span>
       </button>
       <div>

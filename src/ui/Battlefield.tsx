@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
-import type { GameViewSnapshot } from '../game/types';
+import type { EnemyType, GameViewSnapshot } from '../game/types';
 import { difficultyName, levelName } from '../i18n/presentation';
 import { GameCanvas } from './GameCanvas';
 import { EnemyPreview } from './EnemyPreview';
@@ -11,9 +11,10 @@ import { CreativeLab } from './CreativeLab';
 import { Tag } from './Tag';
 import './Battlefield.css';
 
-export function Battlefield({ engine, view, workshop, children }: {
+export function Battlefield({ engine, view, onOpenArchive, workshop, children }: {
   engine: GameEngine;
   view: GameViewSnapshot;
+  onOpenArchive: (type: EnemyType) => void;
   workshop?: ReactNode;
   children?: ReactNode;
 }) {
@@ -58,7 +59,7 @@ export function Battlefield({ engine, view, workshop, children }: {
                 >{t('battlefield.signalConsole')}</button>
               ) : null}
             </div>
-            <EnemyPreview engine={engine} wave={snapshot.wave} />
+            <EnemyPreview engine={engine} wave={snapshot.wave} onOpenArchive={onOpenArchive} />
           </div>
         </div>
 

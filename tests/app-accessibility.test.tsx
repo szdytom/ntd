@@ -106,4 +106,22 @@ describe('level selection accessibility', () => {
     expect(screen.getByRole('button', { name: zhCN['settings.close'] })).toBeTruthy();
     expect(screen.getByRole('heading', { name: zhCN['levelSelect.title'] })).toBeTruthy();
   });
+
+  it('opens the selected next-wave signal in the compendium and returns to the same run', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
+    await user.click(screen.getByRole('button', { name: /Start deployment/ }));
+
+    const draft = screen.getByRole('region', { name: 'Choose initial modules' });
+    await user.click(within(draft).getAllByRole('button')[0]);
+    expect(within(draft).getByText('2 / 3')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Open Prism Crown in the signal compendium' }));
+    expect(screen.getByRole('heading', { name: 'Prism Crown' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Return to current battlefield' }));
+    expect(screen.getByRole('region', { name: 'Choose initial modules' })).toBeTruthy();
+    expect(screen.getByText('2 / 3')).toBeTruthy();
+  });
 });

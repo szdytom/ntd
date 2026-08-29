@@ -3,6 +3,7 @@ import '../i18n';
 import { TUTORIAL_LEVEL_ID, getLevel } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID } from '../game/difficulty';
 import { GameEngine } from '../game/engine';
+import type { EnemyType } from '../game/types';
 import { EnemyArchive } from './EnemyArchive';
 import { GameSession } from './GameSession';
 import { LevelSelect, type LevelSelection } from './LevelSelect';
@@ -41,7 +42,7 @@ const tutorialSelection = (): LevelSelection => ({
 
 export function App() {
   const [engine, setEngine] = useState<GameEngine | null>(null);
-  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveType, setArchiveType] = useState<EnemyType | null>(null);
   const [tutorialOfferOpen, setTutorialOfferOpen] = useState(() => !tutorialOfferWasResolved());
   const start = (selection: LevelSelection): void => setEngine(new GameEngine(selection));
   const declineTutorial = (): void => {
@@ -53,12 +54,17 @@ export function App() {
     start(tutorialSelection());
   };
   return <>
-    {engine
-      ? <GameSession engine={engine} onExit={() => setEngine(null)} onTutorialResolved={rememberTutorialOfferResolution} />
-      : archiveOpen
-        ? <EnemyArchive onBack={() => setArchiveOpen(false)} />
-        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveOpen(true)} />}
-    {tutorialOfferOpen && !engine && !archiveOpen
+    {archiveType
+      ? <EnemyArchive initialType={archiveType} onBack={() => setArchiveType(null)} backToBattlefield={Boolean(engine)} />
+      : engine
+        ? <GameSession
+          engine={engine}
+          onExit={() => setEngine(null)}
+          onOpenArchive={setArchiveType}
+          onTutorialResolved={rememberTutorialOfferResolution}
+        />
+        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType('spark')} />}
+    {tutorialOfferOpen && !engine && !archiveType
       ? <TutorialOffer onAccept={acceptTutorial} onDecline={declineTutorial} />
       : null}
   </>;

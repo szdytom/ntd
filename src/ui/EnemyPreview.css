@@ -4,6 +4,24 @@
   gap: 6px;
 }
 
+.enemy-preview-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 140ms ease;
+}
+
+.enemy-preview-button:hover {
+  transform: translateY(-2px);
+}
+
+.enemy-preview-button:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .enemy-preview .enemy-preview-tag {
   display: flex;
   min-height: 30px;
