@@ -329,7 +329,7 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
     onKeyDown={nudgePanel}
   >⠿</button>;
   const panelStyle: CSSProperties | undefined = panelPosition
-    ? { top: panelPosition.y, left: panelPosition.x, bottom: 'auto' }
+    ? { top: panelPosition.y, right: 'auto', bottom: 'auto', left: panelPosition.x, transform: 'none' }
     : undefined;
 
   if (!engine.tutorialEnabled || dismissed || !step) return null;
@@ -339,7 +339,10 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
     </aside>;
   }
 
-  const advance = (): void => setStepIndex((index) => index + 1);
+  const advance = (): void => {
+    if (step.id === 'welcome') setPanelPosition(null);
+    setStepIndex((index) => index + 1);
+  };
   const activateTarget = (): void => {
     if (step.action === 'select-tower') {
       const tower = engine.towers[0];
@@ -377,7 +380,12 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
       /> : null}
     </> : null}
     {secondaryTarget ? <div className="tutorial-spotlight drag-destination" data-label={t('tutorial.dragDestination')} style={secondaryTargetStyle} /> : null}
-    <section ref={panelRef} data-tutorial-panel className="tutorial-card" style={panelStyle}>
+    <section
+      ref={panelRef}
+      data-tutorial-panel
+      className={`tutorial-card ${step.id === 'welcome' ? 'tutorial-card-welcome' : ''}`}
+      style={panelStyle}
+    >
       <div className="tutorial-card-head"><span>{stepText('eyebrow')}</span>{dragHandle}<button className="tutorial-skip" onClick={() => setDismissed(true)}>{t('tutorial.skip')}</button></div>
       <h2>{stepText('title')}</h2>
       <p>{stepText('body')}</p>

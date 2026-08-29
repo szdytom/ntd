@@ -1,5 +1,6 @@
 .tutorial-layer {
   --tutorial-ink: #252134;
+  --tutorial-panel-edge: 20px;
   position: fixed;
   z-index: 120;
   inset: 0;
@@ -60,8 +61,8 @@
 .tutorial-card {
   position: fixed;
   z-index: 3;
-  bottom: 20px;
-  left: 20px;
+  right: var(--tutorial-panel-edge);
+  bottom: var(--tutorial-panel-edge);
   width: min(430px, calc(100vw - 40px));
   padding: 0 0 18px;
   overflow: hidden;
@@ -70,6 +71,14 @@
   background: #fff;
   box-shadow: 9px 9px 0 rgba(37, 33, 52, .28);
   pointer-events: auto;
+  transition: transform 360ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.tutorial-card-welcome {
+  transform: translate(
+    calc(-50vw + 50% + var(--tutorial-panel-edge)),
+    calc(-50vh + 50% + var(--tutorial-panel-edge))
+  );
 }
 
 .tutorial-card-head {
@@ -213,7 +222,7 @@
   position: fixed;
   z-index: 80;
   bottom: 20px;
-  left: 20px;
+  right: var(--tutorial-panel-edge);
   display: grid;
   width: min(430px, calc(100vw - 40px));
   padding: 10px 52px 10px 16px;
@@ -250,14 +259,21 @@
 }
 
 @media (max-width: 540px) {
-  .tutorial-card { right: 10px; bottom: 10px; left: 10px; width: auto; padding-bottom: 14px; }
+  .tutorial-layer { --tutorial-panel-edge: 10px; }
+
+  .tutorial-card {
+    width: min(430px, calc(100vw - 20px));
+    padding-bottom: 14px;
+  }
 
   .tutorial-card h2 { margin-top: 10px; font-size: 18px; }
   .tutorial-card p { font-size: 14px; line-height: 1.5; }
-  .tutorial-observer { right: 10px; bottom: 10px; left: 10px; width: auto; }
+  .tutorial-observer { width: min(430px, calc(100vw - 20px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tutorial-spotlight,
   .tutorial-instruction i { animation: none; }
+
+  .tutorial-card { transition: none; }
 }

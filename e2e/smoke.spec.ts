@@ -159,6 +159,10 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   const initialCardBox = await tutorialCard.boundingBox();
   const dragHandleBox = await tutorial.getByRole('button', { name: 'Move tutorial panel' }).boundingBox();
   if (!initialCardBox || !dragHandleBox) throw new Error('Expected a draggable tutorial card');
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error('Expected a viewport');
+  expect(initialCardBox.x + initialCardBox.width / 2).toBeCloseTo(viewport.width / 2, 0);
+  expect(initialCardBox.y + initialCardBox.height / 2).toBeCloseTo(viewport.height / 2, 0);
   await page.mouse.move(dragHandleBox.x + dragHandleBox.width / 2, dragHandleBox.y + dragHandleBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(dragHandleBox.x + dragHandleBox.width / 2, dragHandleBox.y - 90, { steps: 5 });
@@ -167,6 +171,10 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   expect(movedCardBox?.x ?? 0).toBeCloseTo(initialCardBox.x, 0);
   expect(movedCardBox?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(initialCardBox.y - 30);
   await tutorial.getByRole('button', { name: 'Begin calibration' }).click();
+  const cornerCardBox = await tutorialCard.boundingBox();
+  if (!cornerCardBox) throw new Error('Expected the tutorial card in the lower-right corner');
+  expect(viewport.width - cornerCardBox.x - cornerCardBox.width).toBeCloseTo(20, 0);
+  expect(viewport.height - cornerCardBox.y - cornerCardBox.height).toBeCloseTo(20, 0);
   await tutorial.getByRole('button', { name: 'Click the highlighted tower' }).click();
   let workshop = page.getByLabel('Tower module workshop');
   await expect(tutorial.locator('.tutorial-spotlight.drag-source')).toHaveCount(1);
