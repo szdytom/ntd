@@ -21,11 +21,15 @@ export function Battlefield({ engine, view, workshop, children }: {
   const { t } = useTranslation();
   const [creativePanelOpen, setCreativePanelOpen] = useState(false);
   const { game: snapshot } = view;
-  const phase = snapshot.status === 'wave'
-    ? t('battlefield.contact')
-    : snapshot.status === 'reward'
-      ? t('battlefield.intercepting')
-      : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
+  const phase = snapshot.status === 'won'
+    ? t('battlefield.won')
+    : snapshot.status === 'lost'
+      ? t('battlefield.lost')
+      : snapshot.status === 'wave'
+        ? t('battlefield.contact')
+        : snapshot.status === 'reward'
+          ? t('battlefield.intercepting')
+          : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
   const terminal = snapshot.status === 'won' || snapshot.status === 'lost';
   const spawn = engine.path.pointAtDistance(44).position;
   const core = engine.path.pointAtDistance(engine.path.length - 54).position;
@@ -35,7 +39,6 @@ export function Battlefield({ engine, view, workshop, children }: {
         <div className="battle-head">
           <div>
             <h1>{levelName(t, engine.level.id)} <Tag className="battle-sector-tag" tone="purple" borderless monospace>{engine.level.sector.replace('SECTOR ', '')}</Tag></h1>
-            <div className="battle-phase"><i className={`live-dot ${snapshot.status === 'wave' && !snapshot.paused ? 'combat' : ''}`} /><span>{phase}</span></div>
           </div>
           <div className="incoming">
             <div className="incoming-title">

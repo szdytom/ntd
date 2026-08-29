@@ -2,10 +2,18 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../src/i18n';
 import zhCN from '../src/i18n/locales/zh-CN.json';
-import { App } from '../src/ui/App';
+import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
+
+beforeEach(() => {
+  try {
+    globalThis.localStorage?.removeItem(TUTORIAL_OFFER_STORAGE_KEY);
+  } catch {
+    // localStorage is unavailable when jsdom uses an opaque origin.
+  }
+});
 
 afterEach(() => {
   cleanup();
