@@ -1,5 +1,5 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
@@ -10,8 +10,13 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { Tag } from './Tag';
 import './LevelSelect.css';
 
-const VISIBLE_LEVEL_COUNT = 3;
+const DESKTOP_VISIBLE_LEVEL_COUNT = 3;
+const COMPACT_VISIBLE_LEVEL_COUNT = 1;
+const COMPACT_LEVEL_QUERY = '(max-width: 980px)';
 const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const visibleLevelCountForViewport = (): number => globalThis.matchMedia?.(COMPACT_LEVEL_QUERY).matches
+  ? COMPACT_VISIBLE_LEVEL_COUNT
+  : DESKTOP_VISIBLE_LEVEL_COUNT;
 const positiveInteger = (value: number, fallback: number): number => Number.isFinite(value)
   ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
   : fallback;
@@ -38,12 +43,32 @@ export function LevelSelect({ onStart, onOpenArchive }: {
   const [mode, setMode] = useState<GameMode>('standard');
   const [difficultyId, setDifficultyId] = useState<DifficultyId>(DEFAULT_DIFFICULTY_ID);
   const [creative, setCreative] = useState<CreativeSetup>(initialCreativeSetup);
-  const [carouselStart, setCarouselStart] = useState(0);
+  const [visibleLevelCount, setVisibleLevelCount] = useState(visibleLevelCountForViewport);
+  const [carouselStart, setCarouselStart] = useState(() => visibleLevelCount === COMPACT_VISIBLE_LEVEL_COUNT
+    ? Math.max(0, LEVELS.findIndex((level) => level.id === DEFAULT_LEVEL_ID))
+    : 0);
   const [carouselDirection, setCarouselDirection] = useState<'next' | 'previous' | null>(null);
   const selectedLevel = getLevel(levelId);
   const selectedDifficulty = getDifficulty(difficultyId);
-  const maximumCarouselStart = Math.max(0, LEVELS.length - VISIBLE_LEVEL_COUNT);
-  const visibleLevels = LEVELS.slice(carouselStart, carouselStart + VISIBLE_LEVEL_COUNT);
+  const maximumCarouselStart = Math.max(0, LEVELS.length - visibleLevelCount);
+  const visibleLevels = LEVELS.slice(carouselStart, carouselStart + visibleLevelCount);
+  useEffect(() => {
+    const mediaQuery = globalThis.matchMedia?.(COMPACT_LEVEL_QUERY);
+    if (!mediaQuery) return;
+    const updateVisibleLevelCount = (event: MediaQueryListEvent): void => {
+      const nextCount = event.matches ? COMPACT_VISIBLE_LEVEL_COUNT : DESKTOP_VISIBLE_LEVEL_COUNT;
+      setVisibleLevelCount(nextCount);
+      setCarouselStart((current) => {
+        const maximumStart = Math.max(0, LEVELS.length - nextCount);
+        if (nextCount !== COMPACT_VISIBLE_LEVEL_COUNT) return Math.min(current, maximumStart);
+        const selectedIndex = LEVELS.findIndex((level) => level.id === levelId);
+        return selectedIndex < 0 ? Math.min(current, maximumStart) : selectedIndex;
+      });
+      setCarouselDirection(null);
+    };
+    mediaQuery.addEventListener('change', updateVisibleLevelCount);
+    return () => mediaQuery.removeEventListener('change', updateVisibleLevelCount);
+  }, [levelId]);
   const selectLevel = (nextLevelId: string): void => {
     setLevelId(nextLevelId);
     setCreative((current) => ({ ...current, waveCount: getLevel(nextLevelId).waves.length }));
@@ -78,9 +103,9 @@ export function LevelSelect({ onStart, onOpenArchive }: {
       setCarouselDirection('previous');
       setCarouselStart(nextIndex);
     }
-    else if (nextIndex >= carouselStart + VISIBLE_LEVEL_COUNT) {
+    else if (nextIndex >= carouselStart + visibleLevelCount) {
       setCarouselDirection('next');
-      setCarouselStart(Math.min(maximumCarouselStart, nextIndex - VISIBLE_LEVEL_COUNT + 1));
+      setCarouselStart(Math.min(maximumCarouselStart, nextIndex - visibleLevelCount + 1));
     }
     focusSelectedOption(event.currentTarget);
   };
@@ -90,7 +115,7 @@ export function LevelSelect({ onStart, onOpenArchive }: {
     setCarouselDirection(offset > 0 ? 'next' : 'previous');
     setCarouselStart(nextStart);
     const selectedIndex = LEVELS.findIndex((level) => level.id === levelId);
-    if (selectedIndex < nextStart || selectedIndex >= nextStart + VISIBLE_LEVEL_COUNT) {
+    if (selectedIndex < nextStart || selectedIndex >= nextStart + visibleLevelCount) {
       const nextSelection = LEVELS[nextStart];
       if (nextSelection) selectLevel(nextSelection.id);
     }

@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
 import zhCN from '../src/i18n/locales/zh-CN.json';
 import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
@@ -17,6 +17,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   void i18n.changeLanguage('en');
 });
 
@@ -63,6 +64,32 @@ describe('level selection accessibility', () => {
     expect(group.classList.contains('slide-next')).toBe(true);
     expect(group.textContent).not.toContain('Launch Elbow');
     expect(group.textContent).toContain('Verdant Fold');
+  });
+
+  it('shows one selected level card at a time at 949px wide', async () => {
+    const viewportWidth = 949;
+    vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
+      matches: query === '(max-width: 980px)' && viewportWidth <= 980,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    } satisfies MediaQueryList)));
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
+
+    let group = screen.getByRole('radiogroup', { name: 'Choose defense sector' });
+    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(1);
+    expect(group.textContent).toContain('White Prism');
+
+    await user.click(screen.getByRole('button', { name: 'Show next levels' }));
+    group = screen.getByRole('radiogroup', { name: 'Choose defense sector' });
+    expect(group.querySelectorAll('[role="radio"]')).toHaveLength(1);
+    expect(group.textContent).toContain('Rose Circuit');
   });
 
   it('switches the complete interface language and updates the document locale', async () => {
