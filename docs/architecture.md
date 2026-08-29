@@ -18,7 +18,8 @@
 - `compile`：如何修改下一发，或如何生成弹射物蓝图；
 - `renderProjectile`：弹体本身或叠加层的 Canvas 绘制；
 - `effects`：该模块拥有的效果定义；
-- `onCast`、`onTrail`、`onHit`：运行时效果钩子。
+- `onCast`、`onTrail`、`onHit`：弹体自身的运行时钩子；
+- `targetEffect`：声明跟随载体传播到目标的 Modifier 效果，以及它订阅的 `damage` / `static` 通道。
 
 简化示例：
 
@@ -33,6 +34,12 @@ export const ionModule: ModuleDefinition = {
   },
   effects: [ionHitEffect],
   compile: (context) => context.modifyNext({ speedMultiplier: 1.2 }),
+  targetEffect: {
+    channels: ['damage'],
+    apply: ({ enemy, combat }) => {
+      if (enemy) combat.applyStatus(enemy, ionizedStatus);
+    },
+  },
   renderProjectile: ({ ctx, projectile }) => {
     // 绘制离子叠加层
   },
@@ -53,11 +60,15 @@ export const ionModule: ModuleDefinition = {
 需要实现链伤、持续伤害或改道等实际玩法时，钩子可以使用受限的 `ModuleCombatApi`：
 
 - `nearbyEnemies()` 查询范围目标；
-- `dealDamage()` 通过统一伤害入口结算；
-- `applyStatus()` 添加或刷新通用周期状态；
+- `dealDamage()` 通过统一伤害入口结算，并把载体的 `damage` 目标效果传播给该目标；
+- `affectTarget()` 为无伤害的静态范围发布 `static` 目标效果；
+- `applySlow()` 统一添加或刷新减速，并返回目标是否刚从无减速进入减速；
+- `applyStatus()` 添加或刷新通用周期状态，并返回该状态是否为首次进入；
 - `retarget()` 改变弹体目标和速度向量。
 
 模块不会获得完整 `GameEngine`，所以它可以创造玩法，但不会耦合波次、经济或 UI。
+
+`onHit` 只表达弹体直接碰撞本身，例如弹跃或命中触发；它不再承担 Modifier 的目标效果。爆炸、连锁电击、地雷和哨戒攻击都通过 `dealDamage()` 自动传播伤害通道，因此无需识别冷凝或腐蚀。毒雾与奇点这类无伤害区域在枚举范围目标后调用 `affectTarget()`。新增 Modifier 只需声明订阅通道和 `apply()`，新增范围、连锁或静态载体只需发布自己实际影响的目标，双方不需要互相添加判断。冷凝与腐蚀使用状态接口的布尔返回值只在首次进入时播放粒子，后续传播只刷新时间。
 
 ## 编译模型
 

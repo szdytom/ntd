@@ -24,10 +24,22 @@ export const toxinModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Corrosive Spore', shortName: 'Corrosion', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
-    description: 'Adds refreshable damage over time', detail: '3×6 corrosion damage · Lasts 3 seconds',
+    description: 'Corrodes every target damaged by the next projectile', detail: '3×6 corrosion damage · Lasts 3 seconds',
   },
   effects,
   compile: (context) => context.modifyNext({ damageMultiplier: 0.9 }),
+  targetEffect: {
+    channels: ['damage'],
+    apply: ({ effects: engine, position, enemy, combat }) => {
+      if (!enemy) return;
+      const enteredCorrosion = combat.applyStatus(enemy, {
+        id: 'toxin', duration: 3, interval: 0.5, damage: 3, color,
+      });
+      if (enteredCorrosion) {
+        engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
+      }
+    },
+  },
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.fillStyle = color;
@@ -45,12 +57,5 @@ export const toxinModule: ModuleDefinition = {
     const count = ((projectile.moduleState['toxin:trail'] as number | undefined) ?? 0) + 1;
     projectile.moduleState['toxin:trail'] = count;
     if (count % 3 === 0) engine.spawn('module:toxin:trail', { position, color });
-  },
-  onHit: ({ effects: engine, position, enemy, combat }) => {
-    engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
-    if (!enemy) return;
-    combat.applyStatus(enemy, {
-      id: 'toxin', duration: 3, interval: 0.5, damage: 3, color,
-    });
   },
 };

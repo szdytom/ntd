@@ -1,7 +1,7 @@
 import { EffectEngine } from '../effects/engine';
 import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
 import { createModuleRegistry, DRAFT_BALANCE } from '../modules';
-import type { ModuleCombatApi, StatusApplication } from '../modules/types';
+import type { ModuleCombatApi, StatusApplication, TargetEffectChannel } from '../modules/types';
 import i18n from '../i18n';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
@@ -137,7 +137,19 @@ export class GameEngine {
     ),
     dealDamage: (enemy, damage, color, source) => {
       const result = this.applyDamage(enemy, Math.max(1, Math.round(damage)), color);
-      if (source) this.refundProjectileEnergy(source, result.healthDamage);
+      if (source && result.healthDamage > 0) {
+        this.refundProjectileEnergy(source, result.healthDamage);
+        this.dispatchTargetEffect(source, enemy, 'damage', result.healthDamage);
+      }
+      return result.healthDamage;
+    },
+    affectTarget: (enemy, source, channel) => this.dispatchTargetEffect(source, enemy, channel),
+    applySlow: (enemy, factor, duration) => {
+      if (enemy.dead || factor <= 0 || duration <= 0) return false;
+      const enteredSlow = enemy.slowFactor <= 0 || enemy.slowTime <= 0;
+      enemy.slowFactor = Math.max(enemy.slowFactor, factor);
+      enemy.slowTime = Math.max(enemy.slowTime, duration);
+      return enteredSlow;
     },
     applyStatus: (enemy, status) => this.applyStatus(enemy, status),
     retarget: (projectile, enemy) => {
@@ -1041,12 +1053,11 @@ export class GameEngine {
   }
 
   private hitEnemy(projectile: Projectile, enemy: Enemy): void {
-    const damage = this.applyDamage(enemy, projectile.damage, projectile.color);
-    if (damage.healthDamage <= 0) {
+    const damageDealt = this.combatApi.dealDamage(enemy, projectile.damage, projectile.color, projectile);
+    if (damageDealt <= 0) {
       projectile.life = 0;
       return;
     }
-    this.refundProjectileEnergy(projectile, damage.healthDamage);
     this.modules.dispatch('onHit', projectile.modules, {
       effects: this.effects,
       position: { ...enemy.position },
@@ -1055,7 +1066,7 @@ export class GameEngine {
       shot: projectile.shot,
       projectile,
       enemy,
-      damageDealt: damage.healthDamage,
+      damageDealt,
       combat: this.combatApi,
     });
     if (
@@ -1065,10 +1076,6 @@ export class GameEngine {
       projectile.triggered = true;
       this.triggerProjectile(projectile, enemy);
     }
-    if (projectile.slow > 0 && !enemy.dead) {
-      enemy.slowFactor = Math.max(enemy.slowFactor, projectile.slow);
-      enemy.slowTime = Math.max(enemy.slowTime, projectile.shot.slowDuration);
-    }
     if (projectile.splash > 0) {
       const nearbyEnemies = this.enemyIndex.collectWithinRadius(
         enemy.position,
@@ -1077,12 +1084,12 @@ export class GameEngine {
         enemy.id,
       );
       for (const nearby of nearbyEnemies) {
-        const splashDamage = this.applyDamage(
+        this.combatApi.dealDamage(
           nearby,
           Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor),
           projectile.color,
+          projectile,
         );
-        this.refundProjectileEnergy(projectile, splashDamage.healthDamage);
       }
     }
     projectile.pierce -= 1;
@@ -1094,6 +1101,27 @@ export class GameEngine {
       projectile.position.y += projectile.velocity.y / velocityLength * exitDistance;
       if (projectile.seeking > 0) this.resolveSeekingTarget(projectile);
     }
+  }
+
+  private dispatchTargetEffect(
+    projectile: Projectile,
+    enemy: Enemy,
+    channel: TargetEffectChannel,
+    damageDealt?: number,
+  ): void {
+    const tower = this.towers.find((item) => item.id === projectile.towerId);
+    this.modules.dispatchTargetEffect(channel, projectile.modules, {
+      effects: this.effects,
+      position: { ...enemy.position },
+      rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
+      color: projectile.color,
+      shot: projectile.shot,
+      ...(tower ? { tower } : {}),
+      projectile,
+      enemy,
+      ...(damageDealt === undefined ? {} : { damageDealt }),
+      combat: this.combatApi,
+    });
   }
 
   private resolveSeekingTarget(projectile: Projectile): Enemy | null {
@@ -1326,7 +1354,8 @@ export class GameEngine {
     }
   }
 
-  private applyStatus(enemy: Enemy, status: StatusApplication): void {
+  private applyStatus(enemy: Enemy, status: StatusApplication): boolean {
+    if (enemy.dead || status.duration <= 0) return false;
     const existing = enemy.statuses.find((item) => item.id === status.id);
     if (existing) {
       existing.remaining = Math.max(existing.remaining, status.duration);
@@ -1334,13 +1363,14 @@ export class GameEngine {
       existing.damage = Math.max(existing.damage, status.damage);
       existing.interval = status.interval;
       existing.color = status.color;
-      return;
+      return false;
     }
     enemy.statuses.push({
       ...status,
       remaining: status.duration,
       tickTimer: status.interval,
     });
+    return true;
   }
 
   private updateEnemyStatuses(enemy: Enemy, delta: number): void {

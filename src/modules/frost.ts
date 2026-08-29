@@ -24,10 +24,18 @@ export const frostModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Condensing Lens', shortName: 'Frost', symbol: '✣', color, tint: '#e4f7ff', energy: 5, rarity: 'common',
-    description: 'Adds a slow to the next projectile', detail: '30% slow · Lasts 1.6 seconds',
+    description: 'Slows every target affected by the next payload', detail: '30% slow · Lasts 1.6 seconds',
   },
   effects,
   compile: (context) => context.modifyNext({ slow: 0.3, slowDuration: 1.6 }),
+  targetEffect: {
+    channels: ['damage', 'static'],
+    apply: ({ effects: engine, position, enemy, shot, combat }) => {
+      if (enemy && combat.applySlow(enemy, shot.slow, shot.slowDuration)) {
+        engine.spawnMany(['module:frost:hit-ring', 'module:frost:shards'], { position, color });
+      }
+    },
+  },
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.strokeStyle = color;
@@ -44,5 +52,4 @@ export const frostModule: ModuleDefinition = {
     ctx.restore();
   },
   onTrail: ({ effects: engine, position }) => engine.spawn('module:frost:trail', { position, color }),
-  onHit: ({ effects: engine, position }) => engine.spawnMany(['module:frost:hit-ring', 'module:frost:shards'], { position, color }),
 };

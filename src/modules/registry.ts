@@ -1,7 +1,12 @@
 import type { EffectEngine } from '../effects/engine';
 import type { ModuleId, TowerProgram } from '../game/types';
 import { compileProgram } from './compiler';
-import type { ModuleDefinition, ModuleEffectContext, ProjectileRenderContext } from './types';
+import type {
+  ModuleDefinition,
+  ModuleEffectContext,
+  ProjectileRenderContext,
+  TargetEffectChannel,
+} from './types';
 
 export class ModuleRegistry {
   private definitions = new Map<ModuleId, ModuleDefinition>();
@@ -55,6 +60,17 @@ export class ModuleRegistry {
     context: ModuleEffectContext,
   ): void {
     for (const id of moduleIds) this.definitions.get(id)?.[hook]?.(context);
+  }
+
+  dispatchTargetEffect(
+    channel: TargetEffectChannel,
+    moduleIds: readonly ModuleId[],
+    context: ModuleEffectContext,
+  ): void {
+    for (const id of moduleIds) {
+      const effect = this.definitions.get(id)?.targetEffect;
+      if (effect?.channels.includes(channel)) effect.apply(context);
+    }
   }
 
   renderProjectile(moduleIds: readonly ModuleId[], context: ProjectileRenderContext): void {

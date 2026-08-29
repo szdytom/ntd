@@ -84,11 +84,24 @@ export interface ModuleEffectContext {
 }
 
 export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer'>;
+export type TargetEffectChannel = 'damage' | 'static';
+
+/**
+ * Describes a modifier effect that follows every target affected by its carrier.
+ * Carriers publish targets through ModuleCombatApi instead of knowing which
+ * modifiers happen to be installed on them.
+ */
+export interface ModuleTargetEffect {
+  readonly channels: readonly TargetEffectChannel[];
+  apply(context: ModuleEffectContext): void;
+}
 
 export interface ModuleCombatApi {
   nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Enemy[];
-  dealDamage(enemy: Enemy, damage: number, color: string, source?: Projectile): void;
-  applyStatus(enemy: Enemy, status: StatusApplication): void;
+  dealDamage(enemy: Enemy, damage: number, color: string, source: Projectile): number;
+  affectTarget(enemy: Enemy, source: Projectile, channel: TargetEffectChannel): void;
+  applySlow(enemy: Enemy, factor: number, duration: number): boolean;
+  applyStatus(enemy: Enemy, status: StatusApplication): boolean;
   retarget(projectile: Projectile, enemy: Enemy): void;
   displace(enemy: Enemy, distanceDelta: number): void;
 }
@@ -103,6 +116,7 @@ export interface ModuleDefinition {
   readonly kind: ModuleKind;
   readonly meta: ModuleMeta;
   readonly effects?: readonly EffectDefinition[];
+  readonly targetEffect?: ModuleTargetEffect;
   compile(context: ModuleCompileContext): void;
   renderProjectile?(context: ProjectileRenderContext): void;
   onCast?(context: ModuleEffectContext): void;

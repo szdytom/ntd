@@ -83,11 +83,15 @@ export const singularityModule: ModuleDefinition = {
     ctx.restore();
   },
   onDeploy: ({ effects: engine, position }) => engine.spawn('module:singularity:deploy', { position, color }),
-  onTrigger: ({ effects: engine, position, projectile }) => {
+  onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawn('module:singularity:pull', {
       position,
       rotation: projectile?.age ?? 0,
       color,
     });
+    if (!projectile) return;
+    for (const enemy of combat.nearbyEnemies(position, projectile.shot.static?.gravity?.radius ?? 150)) {
+      combat.affectTarget(enemy, projectile, 'static');
+    }
   },
 };
