@@ -65,7 +65,10 @@
   transition: background .16s ease, color .16s ease;
 }
 
-.enemy-archive-entry:hover { color: #fff; background: var(--purple); }
+.enemy-archive-entry:hover {
+  color: var(--select-ink);
+  background: color-mix(in srgb, var(--purple) 8%, #fff);
+}
 
 .enemy-archive-entry-spectrum {
   display: flex;
@@ -82,11 +85,9 @@
   border: 1px solid var(--select-ink);
   background: var(--signal-color);
   transform: rotate(45deg);
-  transition: border-color .16s ease, transform .16s ease;
 }
 
 .enemy-archive-entry-spectrum i:nth-child(2n) { border-radius: 50%; }
-.enemy-archive-entry:hover .enemy-archive-entry-spectrum i { border-color: #fff; transform: rotate(45deg) translate(-2px, -2px); }
 .enemy-archive-entry > strong { font-size: 11px; white-space: nowrap; }
 
 .mission-controls {
