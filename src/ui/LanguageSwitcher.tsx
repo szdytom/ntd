@@ -24,8 +24,6 @@ export function LanguageSwitcher({ disabled = false }: { disabled?: boolean }) {
 
   const chooseLanguage = (option: SupportedLanguage): void => {
     void i18n.changeLanguage(option);
-    setOpen(false);
-    triggerRef.current?.focus();
   };
 
   return (

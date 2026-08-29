@@ -74,6 +74,8 @@ describe('level selection accessibility', () => {
     await user.click(screen.getByRole('button', { name: zhCN['lang.name'] }));
 
     expect(document.documentElement.lang).toBe('zh-CN');
+    expect(screen.getByRole('dialog', { name: zhCN['settings.title'] })).toBeTruthy();
+    expect(screen.getByRole('button', { name: zhCN['settings.close'] })).toBeTruthy();
     expect(screen.getByRole('heading', { name: zhCN['levelSelect.title'] })).toBeTruthy();
   });
 });
