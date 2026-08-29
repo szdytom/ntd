@@ -1,4 +1,5 @@
 import { distance } from '../src/game/math';
+import { WORLD } from '../src/game/config';
 import { EnemySpatialIndex } from '../src/game/spatial-index';
 import type { Enemy, Point } from '../src/game/types';
 
@@ -11,7 +12,7 @@ const enemies: Enemy[] = Array.from({ length: ENEMY_COUNT }, (_, id) => ({
   type: 'spark',
   progress: id / ENEMY_COUNT,
   distance: id,
-  position: { x: (id * 73) % 1080, y: (id * 151) % 650 },
+  position: { x: (id * 73) % WORLD.width, y: (id * 151) % WORLD.height },
   angle: 0,
   hp: 1,
   maxHp: 1,
@@ -30,8 +31,8 @@ const enemies: Enemy[] = Array.from({ length: ENEMY_COUNT }, (_, id) => ({
   dead: false,
 }));
 const queries: Point[] = Array.from({ length: QUERY_COUNT }, (_, id) => ({
-  x: (id * 47) % 1080,
-  y: (id * 89) % 650,
+  x: (id * 47) % WORLD.width,
+  y: (id * 89) % WORLD.height,
 }));
 
 const measure = (query: (point: Point) => number): { milliseconds: number; matches: number } => {

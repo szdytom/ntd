@@ -710,7 +710,7 @@ export class GameEngine {
         const damage = enemy.coreDamage;
         this.core = Math.max(0, this.core - damage);
         this.effects.spawn('game:core-hit', {
-          position: this.path.pointAtDistance(this.path.length - 54).position,
+          position: this.path.pointAtDistance(this.path.length).position,
           color: '#ff5c5c',
         });
         this.emit({ type: 'toast', message: i18n.t('toast.coreDamaged', { damage }), tone: 'warn' });

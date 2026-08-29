@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const WORLD = { width: 1080, height: 650 } as const;
+const WORLD = { width: 1160, height: 650 } as const;
 const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
 
 async function prepareReturningPlayer(page: Page): Promise<void> {
@@ -35,8 +35,8 @@ test('first visit offers the tutorial and remembers a final choice', async ({ pa
   await offer.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: '\u4e2d\u6587' }).click();
   await expect(offer.getByRole('heading', { name: '\u9700\u8981\u5148\u5b8c\u6210\u64cd\u4f5c\u6559\u7a0b\u5417\uff1f' })).toBeVisible();
-  await offer.getByRole('button', { name: '\u8bbe\u7f6e' }).click();
   await page.getByRole('button', { name: 'English' }).click();
+  await page.getByRole('button', { name: 'Close settings' }).click();
 
   await offer.getByRole('button', { name: /Start Launch Elbow/ }).click();
   await expect(page.getByRole('heading', { name: 'Launch Elbow T-0', level: 1 })).toBeVisible();
@@ -149,6 +149,7 @@ test('signal compendium exposes every signal profile from its own entry', async 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: '\u4e2d\u6587' }).click();
   await expect(page.getByRole('heading', { name: /\u4fe1\u53f7\u56fe\u9274/ })).toBeVisible();
+  await page.getByRole('button', { name: '\u5173\u95ed\u8bbe\u7f6e' }).click();
   await page.getByRole('button', { name: /\u8fd4\u56de\u9632\u533a\u9009\u62e9/ }).click();
   await expect(page.getByRole('heading', { name: /\u9009\u62e9\u9632\u5fa1\u533a/ })).toBeVisible();
 });

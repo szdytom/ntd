@@ -31,7 +31,7 @@ export function Battlefield({ engine, view, workshop, children }: {
           : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
   const terminal = snapshot.status === 'won' || snapshot.status === 'lost';
   const spawn = engine.path.pointAtDistance(44).position;
-  const core = engine.path.pointAtDistance(engine.path.length - 54).position;
+  const core = engine.path.pointAtDistance(engine.path.length).position;
   return (
     <section className="battle-card" data-phase={snapshot.status} aria-label={t('battlefield.aria')}>
       <div className="battle-stage">

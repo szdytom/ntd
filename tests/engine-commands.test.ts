@@ -90,6 +90,22 @@ describe('engine command and view boundary', () => {
     expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(2);
   });
 
+  it('resolves an enemy impact at the rendered core endpoint', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 5 });
+    engine.spawnCreativeEnemy('spark');
+    const enemy = engine.enemies[0];
+    if (!enemy) throw new Error('Expected a creative enemy');
+    const endpoint = engine.path.pointAtDistance(engine.path.length).position;
+    enemy.distance = engine.path.length - enemy.speed * FIXED_SIMULATION_STEP / 2;
+    enemy.position = engine.path.pointAtDistance(enemy.distance).position;
+
+    engine.update(FIXED_SIMULATION_STEP);
+
+    expect(enemy.dead).toBe(true);
+    expect(enemy.position).toEqual(endpoint);
+    expect(engine.core).toBe(engine.maxCore - enemy.coreDamage);
+  });
+
   it('configures creative core stability and repeats the final designed wave', () => {
     const engine = new GameEngine({
       mode: 'creative',

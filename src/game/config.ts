@@ -1,6 +1,6 @@
 import type { EnemyType, Point } from './types';
 
-export const WORLD = { width: 1080, height: 650 } as const;
+export const WORLD = { width: 1160, height: 650 } as const;
 
 export interface EnemyConfig {
   hp: number;

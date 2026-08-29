@@ -385,7 +385,7 @@ export class GameRenderer {
     ctx.globalAlpha = 0.3 + Math.sin(this.engine.visualElapsed * 3) * 0.08;
     ctx.fillStyle = '#6c5ce7';
     ctx.beginPath();
-    const core = this.engine.path.pointAtDistance(this.engine.path.length - 54).position;
+    const core = this.engine.path.pointAtDistance(this.engine.path.length).position;
     ctx.arc(core.x, core.y, 12, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
@@ -831,7 +831,7 @@ export class GameRenderer {
 
   private drawCore(): void {
     const ctx = this.ctx;
-    const core = this.engine.path.pointAtDistance(this.engine.path.length - 54).position;
+    const core = this.engine.path.pointAtDistance(this.engine.path.length).position;
     const x = core.x;
     const y = core.y;
     const pulse = 1 + Math.sin(this.engine.elapsed * 3) * 0.05;
