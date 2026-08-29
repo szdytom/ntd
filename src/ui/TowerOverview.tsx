@@ -17,7 +17,7 @@ export function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEng
   return <>
     <div className="tower-overview" style={{ '--tower-color': color } as CSSProperties}>
       <div className="tower-avatar"><i /><b /><span /></div>
-      <div className="tower-title"><small>{t('tower.currentNode')}</small><h3>{t('tower.refractor')} <span>{t('tower.nodeNumber', { id: String(tower.id).padStart(2, '0') })}</span></h3><div className="online"><i />{t('tower.online', { level: tower.level })}</div></div>
+      <div className="tower-title"><h3>{t('tower.refractor')} <span>{t('tower.nodeNumber', { id: String(tower.id).padStart(2, '0') })}</span></h3><div className="online"><i />{t('tower.online', { level: tower.level })}</div></div>
       <div className="energy-gauge"><small>{t('tower.energy')}</small><strong>{Math.round(tower.energy)}<em>/{tower.maxEnergy}</em></strong><div><i style={{ width: `${energyRatio * 100}%` }} /></div></div>
     </div>
     <div className="stat-grid">

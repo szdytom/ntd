@@ -60,7 +60,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
         <div className="workshop-main">
           <section className="program-section">
             <div className="section-title">
-              <div><i className="section-color program-color" aria-hidden="true" /><div><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
+              <div><i className="section-color program-color" aria-hidden="true" /><div className="section-heading"><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
               <button onClick={() => engine.clearLoadout()}>{t('workshop.clear')}</button>
             </div>
             <div className="slot-flow" style={{ '--slot-count': tower.slots.length } as CSSProperties}>
@@ -80,7 +80,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
 
           <section className="library-section">
             <div className="section-title library-title">
-              <div><i className="section-color library-color" aria-hidden="true" /><div><h3>{filterLabel} · {visibleDefinitions.length}</h3><small>{t('workshop.installHint')}</small></div></div>
+              <div><i className="section-color library-color" aria-hidden="true" /><h3>{filterLabel} · {visibleDefinitions.length}</h3></div>
               <div className="module-filters" aria-label={t('workshop.filterAria')}>
                 {([
                   ['all', t('kinds.allShort')],

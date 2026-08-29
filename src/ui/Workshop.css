@@ -64,9 +64,8 @@
 .workshop .tower-overview { display: grid; grid-template-columns: 78px minmax(0,1fr) 106px; align-items: stretch; column-gap: 0; min-height: 112px; padding: 0; }
 .workshop .tower-avatar { align-self: center; justify-self: center; width: 58px; height: 58px; border-color: var(--workshop-ink); border-radius: 0; }
 .workshop .tower-title { align-self: center; margin: 0; padding: 10px 8px 10px 0; }
-.workshop .tower-title > small,
 .workshop .energy-gauge > small { font-size: 14px; }
-.workshop .tower-title h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 5px; font-size: 19px; }
+.workshop .tower-title h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 5px; font-size: 19px; }
 .workshop .tower-title h3 span { margin-left: 0; font-size: 14px; }
 .workshop .online { font-size: 14px; }
 .workshop .energy-gauge { display: grid; min-width: 0; align-content: center; padding: 10px; border-left: 2px solid var(--workshop-ink); text-align: right; }
@@ -77,7 +76,7 @@
 .workshop .stat-card { min-height: 76px; padding: 11px 8px 9px 52px; border: 0; border-right: 2px solid var(--workshop-ink); border-bottom: 2px solid var(--workshop-ink); border-radius: 0; background: #fff; }
 .workshop .stat-card:nth-child(2n) { border-right: 0; }
 .workshop .stat-card:nth-child(n+3) { border-bottom: 0; }
-.workshop .stat-symbol { top: 11px; left: 11px; width: 32px; height: 32px; border-radius: 0; }
+.workshop .stat-symbol { top: 50%; left: 11px; width: 32px; height: 32px; border-radius: 0; transform: translateY(-50%); }
 .workshop .stat-card small { margin-bottom: 5px; font-size: 14px; line-height: 1.25; }
 .workshop .stat-card strong { font-size: 18px; }
 .workshop .stat-card strong em { font-size: 14px; }
@@ -101,8 +100,9 @@
 .library-color { background: #13b88e; }
 .section-title h3,
 .section-title small { display: block; margin: 0; }
-.section-title h3 { color: var(--workshop-ink); font-size: 14px; }
-.section-title small { margin-top: 2px; color: #87818e; font-size: 14px; }
+.section-title h3 { color: var(--workshop-ink); font-size: 14px; white-space: nowrap; }
+.section-heading { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
+.section-title small { color: #87818e; font-size: 14px; white-space: nowrap; }
 .section-title > button { padding: 6px 10px; border: 2px solid var(--workshop-ink); color: var(--workshop-ink); background: #fff; cursor: pointer; font-size: 14px; font-weight: 800; }
 .section-title > button:hover { color: #fff; background: #ff637a; }
 
@@ -261,6 +261,7 @@
 
 .workshop .section-title h3 { font-size: 17px; }
 .workshop .section-title > button { border: 2px solid var(--workshop-ink); background: #fff; }
+.workshop .section-title > button:hover { color: #fff; background: #ff637a; }
 
 .workshop .slot-flow {
   gap: 2px;
