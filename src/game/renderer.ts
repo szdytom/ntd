@@ -1,5 +1,7 @@
 import {
   createBloomWebGLContext,
+  MAX_SINGULARITY,
+  MAX_SHIELD_DISTORTIONS,
   WebGLBloomPipeline,
   type ShieldDistortion,
   type SingularityDistortion,
@@ -56,20 +58,9 @@ export class GameRenderer {
   private readonly suppressionSources: Enemy[] = [];
   private readonly orderedEnemies: Enemy[] = [];
   private readonly lightningPoints: Point[] = [];
-  private readonly shieldDistortion: ShieldDistortion = {
-    centerX: 0,
-    centerY: 0,
-    radius: 0,
-    radiusScale: 0,
-    active: false,
-    sides: 6,
-    rotation: 0,
-    hitStrength: 0,
-    color: [0.27, 0.72, 1],
-    rippleAge: 2,
-    time: 0,
-  };
-  private shieldDistortionColor = '';
+  private readonly shieldDistortions: ShieldDistortion[] = [];
+  private readonly shieldDistortionPool: ShieldDistortion[] = [];
+  private readonly shieldDistortionColors = new Map<string, ShieldDistortion['color']>();
   private readonly splitDistortion: SplitDistortion = {
     centerX: 0,
     centerY: 0,
@@ -192,7 +183,7 @@ export class GameRenderer {
       this.drawBloomSources(bloomCtx);
       this.bloom.render(
         this.scene,
-        this.getShieldDistortion(),
+        this.getShieldDistortions(),
         this.getSplitDistortion(),
         this.getSingularityDistortions(),
         this.engine.visualElapsed,
@@ -221,36 +212,55 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  private getShieldDistortion(): ShieldDistortion | null {
-    let enemy: Enemy | null = null;
+  private getShieldDistortions(): readonly ShieldDistortion[] {
+    const distortions = this.shieldDistortions;
+    distortions.length = 0;
     for (const candidate of this.engine.enemies) {
       if (candidate.dead || !ENEMIES[candidate.type].shield) continue;
-      enemy = candidate;
-      break;
+      const shield = ENEMIES[candidate.type].shield;
+      if (!shield || (candidate.shield <= 0 && candidate.shieldRippleAge >= 0.72)) continue;
+      const index = distortions.length;
+      if (index >= MAX_SHIELD_DISTORTIONS) break;
+      let distortion = this.shieldDistortionPool[index];
+      if (!distortion) {
+        distortion = {
+          centerX: 0,
+          centerY: 0,
+          radius: 0,
+          radiusScale: 0,
+          active: false,
+          sides: 6,
+          rotation: 0,
+          hitStrength: 0,
+          color: [0.27, 0.72, 1],
+          rippleAge: 2,
+          time: 0,
+        };
+        this.shieldDistortionPool.push(distortion);
+      }
+      const bob = Math.sin(this.engine.visualElapsed * 5 + candidate.id) * 2;
+      const screenX = this.offsetX + candidate.position.x * this.scale;
+      const screenY = this.offsetY + (candidate.position.y + bob) * this.scale;
+      distortion.centerX = screenX * this.dpr;
+      distortion.centerY = (this.cssHeight - screenY) * this.dpr;
+      distortion.radius = shield.radius * this.scale * this.dpr;
+      distortion.radiusScale = candidate.shieldRadiusScale;
+      distortion.active = candidate.shield > 0;
+      distortion.sides = shield.sides;
+      // Canvas Y coordinates point down, while WebGL screen coordinates point up.
+      distortion.rotation = -shield.rotation;
+      distortion.hitStrength = candidate.shieldHitFlash;
+      let color = this.shieldDistortionColors.get(shield.color);
+      if (!color) {
+        color = hexToRgb(shield.color);
+        this.shieldDistortionColors.set(shield.color, color);
+      }
+      distortion.color = color;
+      distortion.rippleAge = candidate.shieldRippleAge;
+      distortion.time = this.engine.visualElapsed;
+      distortions.push(distortion);
     }
-    if (!enemy) return null;
-    const shield = ENEMIES[enemy.type].shield;
-    if (!shield || (enemy.shield <= 0 && enemy.shieldRippleAge >= 0.72)) return null;
-    const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
-    const screenX = this.offsetX + enemy.position.x * this.scale;
-    const screenY = this.offsetY + (enemy.position.y + bob) * this.scale;
-    const distortion = this.shieldDistortion;
-    distortion.centerX = screenX * this.dpr;
-    distortion.centerY = (this.cssHeight - screenY) * this.dpr;
-    distortion.radius = shield.radius * this.scale * this.dpr;
-    distortion.radiusScale = enemy.shieldRadiusScale;
-    distortion.active = enemy.shield > 0;
-    distortion.sides = shield.sides;
-    // Canvas Y coordinates point down, while WebGL screen coordinates point up.
-    distortion.rotation = -shield.rotation;
-    distortion.hitStrength = enemy.shieldHitFlash;
-    if (this.shieldDistortionColor !== shield.color) {
-      distortion.color = hexToRgb(shield.color);
-      this.shieldDistortionColor = shield.color;
-    }
-    distortion.rippleAge = enemy.shieldRippleAge;
-    distortion.time = this.engine.visualElapsed;
-    return distortion;
+    return distortions;
   }
 
   private getSplitDistortion(): SplitDistortion | null {
@@ -288,7 +298,7 @@ export class GameRenderer {
   }
 
   private getSingularityDistortions(): SingularityDistortion[] {
-    const start = Math.max(0, this.activeSingularities.length - 4);
+    const start = Math.max(0, this.activeSingularities.length - MAX_SINGULARITY);
     const count = this.activeSingularities.length - start;
     for (let index = 0; index < count; index += 1) {
       const projectile = this.activeSingularities[start + index];

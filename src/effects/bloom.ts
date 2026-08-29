@@ -1,232 +1,6 @@
-const VERTEX_SHADER = `#version 300 es
-in vec2 a_position;
-out vec2 v_uv;
-
-void main() {
-  v_uv = a_position * 0.5 + 0.5;
-  gl_Position = vec4(a_position, 0.0, 1.0);
-}
-`;
-
-const BLUR_SHADER = `#version 300 es
-precision mediump float;
-
-uniform sampler2D u_texture;
-uniform vec2 u_step;
-in vec2 v_uv;
-out vec4 outColor;
-
-void main() {
-  vec4 color = texture(u_texture, v_uv) * 0.2270270270;
-  color += texture(u_texture, v_uv + u_step * 1.3846153846) * 0.3162162162;
-  color += texture(u_texture, v_uv - u_step * 1.3846153846) * 0.3162162162;
-  color += texture(u_texture, v_uv + u_step * 3.2307692308) * 0.0702702703;
-  color += texture(u_texture, v_uv - u_step * 3.2307692308) * 0.0702702703;
-  outColor = color;
-}
-`;
-
-const COMPOSITE_SHADER = `#version 300 es
-precision mediump float;
-
-uniform sampler2D u_scene;
-uniform sampler2D u_emissive;
-uniform sampler2D u_bloom;
-uniform vec2 u_resolution;
-uniform vec2 u_shieldCenter;
-uniform float u_shieldRadius;
-uniform float u_shieldScale;
-uniform float u_shieldActive;
-uniform float u_shieldSides;
-uniform float u_shieldRotation;
-uniform float u_shieldHit;
-uniform vec3 u_shieldColor;
-uniform float u_rippleAge;
-uniform vec2 u_splitCenter;
-uniform float u_splitRadius;
-uniform float u_splitPhase;
-uniform float u_splitActive;
-uniform vec3 u_splitColor;
-uniform vec2 u_singularityCenters[4];
-uniform float u_singularityRadii[4];
-uniform float u_singularityStrengths[4];
-uniform float u_singularityCount;
-uniform float u_time;
-uniform float u_pixelRatio;
-in vec2 v_uv;
-out vec4 outColor;
-
-const float TAU = 6.28318530718;
-
-vec3 unpremultiply(vec4 color) {
-  return color.rgb / max(color.a, 0.035);
-}
-
-float regularPolygonDistance(vec2 delta, float radius) {
-  float sides = max(3.0, u_shieldSides);
-  float sector = TAU / sides;
-  float angle = atan(delta.y, delta.x) - u_shieldRotation;
-  float localAngle = mod(angle + sector * 0.5, sector) - sector * 0.5;
-  float halfSector = sector * 0.5;
-  float boundary = radius * cos(halfSector) / cos(halfSector - abs(localAngle));
-  return length(delta) - boundary;
-}
-
-float shieldSurfaceMask(vec2 delta, float radius) {
-  float signedDistance = regularPolygonDistance(delta, radius);
-  float inside = 1.0 - smoothstep(-1.5 * u_pixelRatio, 2.5 * u_pixelRatio, signedDistance);
-  float centerFade = smoothstep(radius * 0.08, radius * 0.30, length(delta));
-  return inside * centerFade * u_shieldActive;
-}
-
-vec2 shieldDistortion(vec2 uv, out float surfaceMask, out float brightStripe) {
-  surfaceMask = 0.0;
-  brightStripe = 0.0;
-  if (u_shieldRadius <= 0.0) return uv;
-  vec2 delta = uv * u_resolution - u_shieldCenter;
-  float distanceToCenter = length(delta);
-  vec2 direction = delta / max(distanceToCenter, 0.001);
-
-  // Mindustry-style persistent shield surface: two interleaved phases continuously
-  // refract the scene across the field. Narrow highlights keep it visible on white.
-  float fieldRadius = u_shieldRadius * u_shieldScale;
-  surfaceMask = shieldSurfaceMask(delta, fieldRadius);
-  vec2 flow = vec2(
-    sin(delta.y * 0.105 + u_time * 2.60)
-      + sin((delta.x + delta.y) * 0.052 - u_time * 1.70) * 0.55,
-    sin(delta.x * 0.105 - u_time * 2.30)
-      + cos((delta.x - delta.y) * 0.057 + u_time * 1.90) * 0.55
-  );
-  float surfaceAmplitude = (1.55 + u_shieldHit * 1.75) * u_pixelRatio;
-  vec2 surfaceDisplacement = flow * surfaceAmplitude * surfaceMask;
-  float stripeWave = 0.5 + 0.5 * sin(
-    (delta.x + delta.y) * 0.105
-      + sin(delta.x * 0.035) * 2.0
-      + u_time * 3.2
-  );
-  brightStripe = smoothstep(0.74, 1.0, stripeWave) * surfaceMask;
-
-  // The impact wave crosses the field boundary and fades over 0.72 seconds.
-  float phase = clamp(u_rippleAge / 0.72, 0.0, 1.0);
-  float rippleLife = 1.0 - smoothstep(0.0, 1.0, phase);
-  float hitDistance = regularPolygonDistance(delta, u_shieldRadius);
-  float waveFront = u_shieldRadius * mix(-0.48, 0.46, phase);
-  float waveWidth = mix(5.0, 12.0, phase) * u_pixelRatio;
-  float waveDelta = (hitDistance - waveFront) / waveWidth;
-  float rippleBand = exp(-waveDelta * waveDelta);
-  float ripple = rippleBand * cos((hitDistance - waveFront) * 0.52 - phase * 6.0);
-
-  vec2 hitDisplacement = direction * ripple * rippleLife * 6.5 * u_pixelRatio;
-  return clamp(
-    uv + (surfaceDisplacement + hitDisplacement) / u_resolution,
-    vec2(0.001),
-    vec2(0.999)
-  );
-}
-
-vec2 splitRippleDistortion(vec2 uv, out float blurMask) {
-  blurMask = 0.0;
-  if (u_splitActive < 0.5 || u_splitRadius <= 0.0) return uv;
-  vec2 delta = uv * u_resolution - u_splitCenter;
-  float distanceToCenter = length(delta);
-  vec2 direction = delta / max(distanceToCenter, 0.001);
-  float phase = clamp(u_splitPhase, 0.0, 1.0);
-  float eased = 1.0 - pow(1.0 - phase, 3.0);
-  float waveFront = mix(8.0 * u_pixelRatio, u_splitRadius, eased);
-  float waveWidth = mix(7.0, 16.0, phase) * u_pixelRatio;
-  float waveDelta = (distanceToCenter - waveFront) / waveWidth;
-  float waveBand = exp(-waveDelta * waveDelta);
-  float interior = (1.0 - smoothstep(max(0.0, waveFront - 24.0 * u_pixelRatio), waveFront + 5.0 * u_pixelRatio, distanceToCenter))
-    * sin(phase * 3.14159265);
-  blurMask = max(waveBand, interior * 0.48);
-  float ripple = waveBand * sin(waveDelta * 4.2 - phase * 9.0);
-  vec2 displacement = direction * ripple * mix(11.0, 2.0, phase) * u_pixelRatio;
-  return clamp(uv + displacement / u_resolution, vec2(0.001), vec2(0.999));
-}
-
-vec2 singularityDistortion(vec2 uv, out float horizonMask, out float lensMask) {
-  horizonMask = 0.0;
-  lensMask = 0.0;
-  vec2 warped = uv;
-  for (int index = 0; index < 4; index++) {
-    if (float(index) >= u_singularityCount) continue;
-    vec2 center = u_singularityCenters[index];
-    float radius = max(u_singularityRadii[index], 1.0);
-    float strength = u_singularityStrengths[index];
-    vec2 delta = warped * u_resolution - center;
-    float distanceToCenter = length(delta);
-    vec2 direction = delta / max(distanceToCenter, 0.001);
-    vec2 tangent = vec2(-direction.y, direction.x);
-    float normalizedDistance = distanceToCenter / radius;
-    float field = (1.0 - smoothstep(0.12, 1.0, normalizedDistance)) * strength;
-    float lens = exp(-pow((normalizedDistance - 0.42) * 5.2, 2.0)) * strength;
-    float inwardRefraction = lens * (7.5 + field * 3.5) * u_pixelRatio;
-    float swirl = field * sin(normalizedDistance * 18.0 - u_time * 3.2) * 2.4 * u_pixelRatio;
-    warped = clamp(
-      warped - (direction * inwardRefraction + tangent * swirl) / u_resolution,
-      vec2(0.001),
-      vec2(0.999)
-    );
-    horizonMask = max(
-      horizonMask,
-      (1.0 - smoothstep(0.05, 0.24, normalizedDistance)) * strength
-    );
-    lensMask = max(lensMask, lens);
-  }
-  return warped;
-}
-
-void main() {
-  float shieldSurface;
-  float shieldStripe;
-  vec2 sceneUv = shieldDistortion(v_uv, shieldSurface, shieldStripe);
-  float splitBlur;
-  sceneUv = splitRippleDistortion(sceneUv, splitBlur);
-  float singularityHorizon;
-  float singularityLens;
-  sceneUv = singularityDistortion(sceneUv, singularityHorizon, singularityLens);
-  vec3 scene = texture(u_scene, sceneUv).rgb;
-  if (u_splitActive > 0.5 && splitBlur > 0.001) {
-    vec2 delta = sceneUv * u_resolution - u_splitCenter;
-    vec2 tangent = normalize(vec2(-delta.y, delta.x) + vec2(0.001));
-    vec2 blurStep = tangent * (1.5 + splitBlur * 4.5) * u_pixelRatio / u_resolution;
-    vec3 softened = (
-      texture(u_scene, clamp(sceneUv - blurStep, vec2(0.001), vec2(0.999))).rgb
-      + scene
-      + texture(u_scene, clamp(sceneUv + blurStep, vec2(0.001), vec2(0.999))).rgb
-    ) / 3.0;
-    scene = mix(scene, softened, clamp(splitBlur * 0.78, 0.0, 0.78));
-  }
-  if (singularityLens > 0.001) {
-    vec2 pixel = 1.25 * u_pixelRatio / u_resolution;
-    vec3 refracted = scene;
-    refracted.r = texture(u_scene, clamp(sceneUv - pixel, vec2(0.001), vec2(0.999))).r;
-    refracted.b = texture(u_scene, clamp(sceneUv + pixel, vec2(0.001), vec2(0.999))).b;
-    scene = mix(scene, refracted, clamp(singularityLens * 0.52, 0.0, 0.52));
-  }
-  vec4 wideGlow = texture(u_bloom, v_uv);
-  vec4 hotGlow = texture(u_emissive, v_uv);
-
-  // Pure additive light vanishes on white, so the broad halo uses bounded tinting first.
-  vec3 bloomColor = clamp(unpremultiply(wideGlow), 0.0, 1.0);
-  float bloomStrength = clamp(wideGlow.a * 0.92, 0.0, 0.34);
-  vec3 tintedScene = mix(scene, bloomColor, bloomStrength);
-
-  // The core still uses screen blending to preserve its bright energy center.
-  vec3 hotColor = clamp(unpremultiply(hotGlow), 0.0, 1.0);
-  float hotStrength = clamp(hotGlow.a * 0.68, 0.0, 0.72);
-  vec3 hot = hotColor * hotStrength;
-  vec3 result = 1.0 - (1.0 - tintedScene) * (1.0 - hot);
-
-  // A low-intensity tint keeps the refractive surface and moving highlights legible on white.
-  float surfaceTint = shieldSurface * 0.018 + shieldStripe * (0.085 + u_shieldHit * 0.035);
-  result = mix(result, u_shieldColor, clamp(surfaceTint, 0.0, 0.14));
-  result = mix(result, u_splitColor, clamp(splitBlur * 0.075, 0.0, 0.075));
-  result = mix(result, vec3(0.027, 0.012, 0.065), clamp(singularityHorizon * 0.92, 0.0, 0.92));
-  result = mix(result, vec3(0.435, 0.290, 0.847), clamp(singularityLens * 0.10, 0.0, 0.10));
-  outColor = vec4(result, 1.0);
-}
-`;
+import VERTEX_SHADER from './shaders/fullscreen.vert.glsl';
+import BLUR_SHADER from './shaders/bloom-blur.frag.glsl';
+import COMPOSITE_SHADER from './shaders/bloom-composite.frag.glsl';
 
 interface ProgramInfo {
   program: WebGLProgram;
@@ -341,6 +115,9 @@ export interface ShieldDistortion {
   time: number;
 }
 
+export const MAX_SHIELD_DISTORTIONS = 16;
+export const MAX_SINGULARITY = 16;
+
 export interface SplitDistortion {
   centerX: number;
   centerY: number;
@@ -396,9 +173,12 @@ export class WebGLBloomPipeline {
   private initializationVersion = 0;
   private disposed = false;
   private readonly uniformLocations = new WeakMap<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
-  private readonly singularityCenters = new Float32Array(8);
-  private readonly singularityRadii = new Float32Array(4);
-  private readonly singularityStrengths = new Float32Array(4);
+  private readonly shieldGeometry = new Float32Array(MAX_SHIELD_DISTORTIONS * 4);
+  private readonly shieldShape = new Float32Array(MAX_SHIELD_DISTORTIONS * 4);
+  private readonly shieldEffect = new Float32Array(MAX_SHIELD_DISTORTIONS * 4);
+  private readonly singularityCenters = new Float32Array(MAX_SINGULARITY * 2);
+  private readonly singularityRadii = new Float32Array(MAX_SINGULARITY);
+  private readonly singularityStrengths = new Float32Array(MAX_SINGULARITY);
   private readonly emissiveScale = 0.5;
   private readonly blurScale = 0.25;
 
@@ -456,7 +236,7 @@ export class WebGLBloomPipeline {
 
   render(
     scene: HTMLCanvasElement,
-    shield: ShieldDistortion | null = null,
+    shields: readonly ShieldDistortion[] = [],
     split: SplitDistortion | null = null,
     singularities: readonly SingularityDistortion[] = [],
     time = 0,
@@ -478,7 +258,7 @@ export class WebGLBloomPipeline {
 
     this.blur(this.emissiveTexture, this.pingFramebuffer, 1 / this.blurWidth, 0);
     this.blur(this.pingTexture, this.pongFramebuffer, 0, 1 / this.blurHeight);
-    this.composite(shield, split, singularities, time);
+    this.composite(shields, split, singularities, time);
   }
 
   dispose(): void {
@@ -556,7 +336,7 @@ export class WebGLBloomPipeline {
   }
 
   private composite(
-    shield: ShieldDistortion | null,
+    shields: readonly ShieldDistortion[],
     split: SplitDistortion | null,
     singularities: readonly SingularityDistortion[],
     time: number,
@@ -574,24 +354,31 @@ export class WebGLBloomPipeline {
     gl.uniform1i(this.uniform(program, 'u_emissive'), 1);
     gl.uniform1i(this.uniform(program, 'u_bloom'), 2);
     gl.uniform2f(this.uniform(program, 'u_resolution'), this.output.width, this.output.height);
-    gl.uniform2f(
-      this.uniform(program, 'u_shieldCenter'),
-      shield?.centerX ?? 0,
-      shield?.centerY ?? 0,
-    );
-    gl.uniform1f(this.uniform(program, 'u_shieldRadius'), shield?.radius ?? 0);
-    gl.uniform1f(this.uniform(program, 'u_shieldScale'), shield?.radiusScale ?? 0);
-    gl.uniform1f(this.uniform(program, 'u_shieldActive'), shield?.active ? 1 : 0);
-    gl.uniform1f(this.uniform(program, 'u_shieldSides'), shield?.sides ?? 6);
-    gl.uniform1f(this.uniform(program, 'u_shieldRotation'), shield?.rotation ?? 0);
-    gl.uniform1f(this.uniform(program, 'u_shieldHit'), shield?.hitStrength ?? 0);
-    gl.uniform3f(
-      this.uniform(program, 'u_shieldColor'),
-      shield?.color[0] ?? 0.27,
-      shield?.color[1] ?? 0.72,
-      shield?.color[2] ?? 1,
-    );
-    gl.uniform1f(this.uniform(program, 'u_rippleAge'), shield?.rippleAge ?? 2);
+    const shieldGeometry = this.shieldGeometry;
+    const shieldShape = this.shieldShape;
+    const shieldEffect = this.shieldEffect;
+    const shieldCount = Math.min(MAX_SHIELD_DISTORTIONS, shields.length);
+    for (let index = 0; index < shieldCount; index += 1) {
+      const shield = shields[index];
+      if (!shield) continue;
+      const offset = index * 4;
+      shieldGeometry[offset] = shield.centerX;
+      shieldGeometry[offset + 1] = shield.centerY;
+      shieldGeometry[offset + 2] = shield.radius;
+      shieldGeometry[offset + 3] = shield.radiusScale;
+      shieldShape[offset] = shield.active ? 1 : 0;
+      shieldShape[offset + 1] = shield.sides;
+      shieldShape[offset + 2] = shield.rotation;
+      shieldShape[offset + 3] = shield.hitStrength;
+      shieldEffect[offset] = shield.color[0];
+      shieldEffect[offset + 1] = shield.color[1];
+      shieldEffect[offset + 2] = shield.color[2];
+      shieldEffect[offset + 3] = shield.rippleAge;
+    }
+    gl.uniform4fv(this.uniform(program, 'u_shieldGeometry[0]'), shieldGeometry);
+    gl.uniform4fv(this.uniform(program, 'u_shieldShape[0]'), shieldShape);
+    gl.uniform4fv(this.uniform(program, 'u_shieldEffect[0]'), shieldEffect);
+    gl.uniform1f(this.uniform(program, 'u_shieldCount'), shieldCount);
     gl.uniform2f(
       this.uniform(program, 'u_splitCenter'),
       split?.centerX ?? 0,
@@ -609,7 +396,7 @@ export class WebGLBloomPipeline {
     const singularityCenters = this.singularityCenters;
     const singularityRadii = this.singularityRadii;
     const singularityStrengths = this.singularityStrengths;
-    const singularityCount = Math.min(4, singularities.length);
+    const singularityCount = Math.min(MAX_SINGULARITY, singularities.length);
     for (let index = 0; index < singularityCount; index += 1) {
       const singularity = singularities[index];
       if (!singularity) continue;

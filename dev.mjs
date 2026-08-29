@@ -11,7 +11,7 @@ const context = await esbuild.context({
   outdir: 'dist',
   entryNames: 'app',
   assetNames: 'assets/[name]-[hash]',
-  loader: { '.css': 'css' },
+  loader: { '.css': 'css', '.glsl': 'text' },
 });
 
 await context.watch();

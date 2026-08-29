@@ -24,6 +24,7 @@ import './EnemySpecimen.css';
 
 const PREVIEW_WORLD_SIZE = 280;
 const NO_SINGULARITIES: readonly SingularityDistortion[] = [];
+const NO_SHIELDS: readonly ShieldDistortion[] = [];
 const SUPPRESSION_SOURCE = { x: -48, y: -18 } as const;
 const SUPPRESSION_TARGET = { x: 58, y: 20 } as const;
 
@@ -162,6 +163,7 @@ export function EnemySpecimen({
       rippleAge: Number.POSITIVE_INFINITY,
       time: 0,
     };
+    const shieldDistortions: readonly ShieldDistortion[] = [shieldDistortion];
     const splitDistortion: SplitDistortion = {
       centerX: 0,
       centerY: 0,
@@ -364,7 +366,7 @@ export function EnemySpecimen({
         }
         pipeline.render(
           scene,
-          shield ? shieldDistortion : null,
+          shield ? shieldDistortions : NO_SHIELDS,
           splitActive ? splitDistortion : null,
           NO_SINGULARITIES,
           elapsed,
