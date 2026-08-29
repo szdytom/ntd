@@ -223,7 +223,6 @@
 	"enemyArchive.entryDetail": "{{count}} signal profiles",
 	"enemyArchive.entryAria": "Open signal compendium",
 	"enemyArchive.back": "Back to sector selection",
-	"enemyArchive.eyebrow": "SIGNAL ARCHIVE · {{count}}",
 	"enemyArchive.title": "Signal Compendium",
 	"enemyArchive.indexAria": "Enemy signal index",
 	"enemyArchive.indexTitle": "Signal index",

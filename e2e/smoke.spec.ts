@@ -57,6 +57,9 @@ test('signal compendium exposes every signal profile from its own entry', async 
   const consoleFrame = page.locator('.enemy-archive-console');
   const initialFrameHeight = await consoleFrame.evaluate((element) => element.getBoundingClientRect().height);
   await expect(index.getByRole('button')).toHaveCount(7);
+  await expect(page.getByText('SIGNAL ARCHIVE · 7', { exact: true })).toHaveCount(0);
+  await expect(index.getByText('01', { exact: true })).toHaveCount(0);
+  await expect(index.getByText('01 / 07', { exact: true })).toHaveCount(0);
   await expect(page.locator('.enemy-archive-seal b')).toHaveText('01');
   await index.getByRole('button', { name: /Prism Crown/ }).click();
   await expect(page.getByRole('heading', { name: 'Prism Crown' })).toBeVisible();

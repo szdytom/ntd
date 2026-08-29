@@ -93,7 +93,6 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
         <span aria-hidden="true">←</span>
       </button>
       <div>
-        <span>{t('enemyArchive.eyebrow', { count: ENEMY_TYPES.length })}</span>
         <h1>{t('enemyArchive.title')}</h1>
       </div>
       <div className="enemy-archive-seal" aria-hidden="true"><i /><b>{String(selectedIndex + 1).padStart(2, '0')}</b><span /></div>
@@ -103,10 +102,9 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
       <nav className="enemy-archive-index" aria-label={t('enemyArchive.indexAria')}>
         <div className="enemy-archive-index-head">
           <span>{t('enemyArchive.indexTitle')}</span>
-          <b>{String(selectedIndex + 1).padStart(2, '0')} / {String(ENEMY_TYPES.length).padStart(2, '0')}</b>
         </div>
         <div className="enemy-archive-index-list">
-          {ENEMY_TYPES.map((type, index) => {
+          {ENEMY_TYPES.map((type) => {
             const enemy = ENEMIES[type];
             const selected = type === selectedType;
             return <button
@@ -120,7 +118,6 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
               }}
               aria-current={selected ? 'true' : undefined}
             >
-              <span>{String(index + 1).padStart(2, '0')}</span>
               <i aria-hidden="true" />
               <strong>{enemyName(t, type)}</strong>
               <small>{t(`enemyArchive.enemies.${type}.role`)}</small>
