@@ -50,7 +50,7 @@ const fireAt = (engine: GameEngine, shot: ShotBlueprint, enemy: Enemy): Projecti
   return projectile;
 };
 
-describe('Prism Anvil layered armor boss', () => {
+describe('Prism Anvil layered armor elite', () => {
   it('uses the requested stats and caps only damage above six', () => {
     const config = ENEMIES.anvil;
 
@@ -98,9 +98,9 @@ describe('Prism Anvil layered armor boss', () => {
     const roseCircuit = LEVELS.find((level) => level.id === 'rose-circuit');
     if (!roseCircuit) throw new Error('Expected Rose Circuit');
 
-    expect(roseCircuit.waves.at(-2)).toContain('anvil');
-    expect(roseCircuit.waves.at(-2)).not.toContain('radiant');
-    expect(roseCircuit.waves.at(-1)).toContain('radiant');
-    expect(roseCircuit.waves.slice(0, -2).flat()).not.toContain('anvil');
+    expect(roseCircuit.waves.at(-2)?.some((entry) => entry.type === 'anvil')).toBe(true);
+    expect(roseCircuit.waves.at(-2)?.some((entry) => entry.type === 'radiant')).toBe(false);
+    expect(roseCircuit.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
+    expect(roseCircuit.waves.slice(0, -2).flat().some((entry) => entry.type === 'anvil')).toBe(false);
   });
 });

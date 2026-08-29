@@ -77,6 +77,7 @@ describe('splitting enemies', () => {
     expect(engine.enemies).not.toContain(parent);
     expect(engine.getSplitRifts()).toHaveLength(1);
     expect(children.every((enemy) => enemy.splitGeneration === 1)).toBe(true);
+    expect(children.every((enemy) => enemy.routeId === parent.routeId)).toBe(true);
     expect(children.every((enemy) => enemy.radius < parentRadius)).toBe(true);
     expect(children.every((enemy) => enemy.maxHp === Math.round(parentHp * 0.3))).toBe(true);
     expect(children.map((enemy) => enemy.distance - parent.distance)).toEqual([-25, 0, 25]);

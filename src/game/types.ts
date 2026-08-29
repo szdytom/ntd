@@ -118,6 +118,7 @@ export type EnemyType = 'spark' | 'surge' | 'kite' | 'block' | 'hex' | 'crown' |
 export interface Enemy {
   id: number;
   type: EnemyType;
+  routeId: string;
   progress: number;
   distance: number;
   position: Point;

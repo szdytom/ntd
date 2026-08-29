@@ -39,7 +39,7 @@ export function EnemyArchive({ onBack, initialType = 'spark', backToBattlefield 
   } : config;
   const selectedIndex = ENEMY_TYPES.indexOf(selectedType);
   const encounteredLevels = useMemo(() => LEVELS.filter((level) => (
-    level.waves.some((wave) => wave.includes(selectedType))
+    level.waves.some((wave) => wave.some((entry) => entry.type === selectedType))
   )), [selectedType]);
 
   const ability = showingFragments ? {

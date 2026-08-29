@@ -34,8 +34,8 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
   const runIndicator = snapshot.mode === 'creative'
     ? t('battlefield.creativeIndicator')
     : difficultyName(t, engine.difficulty.id);
-  const spawn = engine.path.pointAtDistance(44).position;
-  const core = engine.path.pointAtDistance(engine.path.length).position;
+  const spawns = engine.level.graph.entrances.map((entrance) => engine.routeFor(entrance).pointAtDistance(44).position);
+  const core = engine.getCorePosition();
   return (
     <section className="battle-card" data-phase={snapshot.status} data-mode={snapshot.mode} aria-label={t('battlefield.aria')}>
       <div className="battle-stage">
@@ -71,7 +71,11 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
 
         <div className="canvas-wrap">
           <GameCanvas engine={engine} />
-          <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>{t('battlefield.spawn')}</span></div>
+          {spawns.map((spawn, index) => (
+            <div className="spawn-label" key={engine.level.graph.entrances[index]} style={{ top: `${spawn.y / WORLD.height * 100}%` }}>
+              <i /><span>{t('battlefield.spawn')}</span>
+            </div>
+          ))}
           <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>{t('battlefield.core')}</span><i /></div>
           {!terminal ? null : (
             <div className="status-overlay" data-tone={snapshot.status}>

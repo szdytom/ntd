@@ -22,6 +22,5 @@ export const MODULE_RARITIES: Record<ModuleRarity, ModuleRarityDefinition> = {
 
 export const DRAFT_BALANCE = {
   choicesPerOffer: 4,
-  picksPerWave: 3,
   dryOffersBeforePity: 2,
 } as const;

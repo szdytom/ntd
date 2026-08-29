@@ -55,6 +55,37 @@ describe('engine command and view boundary', () => {
     expect(engine.getSnapshot().draft).toBeNull();
   });
 
+  it('uses the selected level module-draft counts for opening and wave rewards', () => {
+    const triune = new GameEngine({ mode: 'standard', levelId: 'triune-delta', seed: 7 });
+    expect(triune.getSnapshot().draft).toMatchObject({ round: 1, totalRounds: 5 });
+
+    const engine = new GameEngine({ mode: 'standard', levelId: 'white-prism', seed: 7 });
+    for (let round = 0; round < engine.level.moduleDraft.initialPicks; round += 1) {
+      const choice = engine.getSnapshot().draft?.choices[0];
+      if (!choice) throw new Error(`Expected opening draft choice ${round + 1}`);
+      engine.chooseDraftModule(choice);
+    }
+    for (const tower of engine.towers) {
+      tower.slots.fill(null);
+      tower.energy = 0;
+      tower.energyRegen = 0;
+    }
+    engine.startWave();
+    const expectedEnemies = engine.getWaveBlueprint(0).length;
+    for (let step = 0; step < 3_000 && engine.enemies.length < expectedEnemies; step += 1) {
+      engine.update(FIXED_SIMULATION_STEP);
+    }
+    engine.enemies.forEach((enemy) => { enemy.dead = true; });
+    engine.update(FIXED_SIMULATION_STEP);
+    const delaySteps = Math.ceil(WAVE_CLEAR_DELAY / FIXED_SIMULATION_STEP);
+    for (let step = 0; step < delaySteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
+
+    expect(engine.getSnapshot().draft).toMatchObject({
+      round: 1,
+      totalRounds: engine.level.moduleDraft.wavePicks,
+    });
+  });
+
   it('publishes an immutable selected-tower snapshot', () => {
     const engine = new GameEngine({ mode: 'standard', seed: 5 });
     const towerId = engine.towers[0].id;

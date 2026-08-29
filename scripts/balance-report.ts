@@ -19,4 +19,5 @@ console.table(calculateWaveBalanceRows().map((row) => ({
   effectiveHp: row.effectiveHp,
   speedPressure: Math.round(row.speedPressure),
   income: row.income,
+  entrances: Object.entries(row.entranceFlow).map(([entrance, count]) => `${entrance}:${count}`).join(' · '),
 })));

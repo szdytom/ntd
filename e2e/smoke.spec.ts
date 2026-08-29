@@ -96,6 +96,26 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await expect(page.getByRole('button', { name: /\u5f00\u59cb\u90e8\u7f72/ })).toBeVisible();
 });
 
+test('the multi-entrance sector renders its route tree and all battlefield entrances', async ({ page }) => {
+  await prepareReturningPlayer(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Show next levels' }).click();
+  await page.getByRole('button', { name: 'Show next levels' }).click();
+  const triune = page.getByRole('radio', { name: /Triune Delta/ });
+  await expect(triune).toBeVisible();
+  await expect(triune.getByText('7 waves')).toBeVisible();
+  await expect(triune.locator('.route-edge')).toHaveCount(9);
+  await expect(triune.locator('.route-junction')).toHaveCount(1);
+  await triune.click();
+  await page.getByRole('button', { name: /Creative/ }).click();
+  await page.getByRole('button', { name: /Start deployment/ }).click();
+
+  await expect(page.getByRole('heading', { name: 'Triune Delta D-6', level: 1 })).toBeVisible();
+  await expect(page.locator('.spawn-label')).toHaveCount(3);
+  await expect(page.getByTitle('Spark × 36')).toBeVisible();
+  await expect(page.getByTitle('Kite × 18')).toBeVisible();
+});
+
 test('signal compendium exposes every signal profile from its own entry', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.goto('/');

@@ -16,9 +16,15 @@ describe('executable balance documentation', () => {
     const rows = calculateWaveBalanceRows();
     const first = rows.find((row) => row.levelId === 'white-prism' && row.wave === 1);
     const last = rows.find((row) => row.levelId === 'verdant-fold' && row.wave === 7);
+    const triune = rows.find((row) => row.levelId === 'triune-delta' && row.wave === 1);
 
     expect(first).toMatchObject({ units: 7, effectiveHp: 828, income: 108 });
     expect(first?.spawnDuration).toBeCloseTo(3.75, 2);
     expect(last).toMatchObject({ units: 18, effectiveHp: 7_850, income: 322 });
+    expect(triune).toMatchObject({ units: 54, entranceFlow: {
+      'north-entry': 18,
+      'center-entry': 18,
+      'south-entry': 18,
+    } });
   });
 });

@@ -1,4 +1,5 @@
 import type { EnemyType, Point } from './types';
+import { createRouteMap, legacyPathToGraph, type NodeId, type RouteMap } from './path';
 
 export const WORLD = { width: 1160, height: 650 } as const;
 
@@ -18,6 +19,7 @@ export interface EnemyConfig {
   armor?: EnemyArmorConfig;
   split?: EnemySplitConfig;
   aura?: EnemyAuraConfig;
+  boss?: boolean;
 }
 
 export interface EnemyWaveMovementConfig {
@@ -87,6 +89,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#ff774d',
     sides: 8,
     name: 'Prism Crown',
+    boss: true,
     shield: { capacity: 240, regen: 4, cooldown: 9, radius: 72, sides: 6, rotation: Math.PI / 6, color: '#45b7ff' },
   },
   fracture: {
@@ -145,6 +148,16 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
   },
 };
 
+export interface SpawnEntry {
+  type: EnemyType;
+  entrance?: NodeId;
+}
+
+export interface LevelModuleDraft {
+  initialPicks: number;
+  wavePicks: number;
+}
+
 export interface LevelDefinition {
   id: string;
   name: string;
@@ -152,16 +165,39 @@ export interface LevelDefinition {
   description: string;
   difficulty: 1 | 2 | 3;
   accent: string;
-  path: readonly Point[];
+  graph: RouteMap;
   towerPads: readonly Point[];
-  waves: readonly (readonly EnemyType[])[];
+  waves: readonly (readonly SpawnEntry[])[];
+  moduleDraft: LevelModuleDraft;
   startingShards: number;
   enemyHealthScale: number;
   enemySpeedScale: number;
 }
 
-const group = (type: EnemyType, count: number): EnemyType[] => Array.from({ length: count }, () => type);
-const wave = (...groups: Array<[EnemyType, number]>): EnemyType[] => groups.flatMap(([type, count]) => group(type, count));
+const group = (type: EnemyType, count: number, entrance?: NodeId): SpawnEntry[] => (
+  Array.from({ length: count }, () => ({ type, ...(entrance ? { entrance } : {}) }))
+);
+const wave = (...groups: Array<[EnemyType, number, NodeId?]>): SpawnEntry[] => (
+  groups.flatMap(([type, count, entrance]) => group(type, count, entrance))
+);
+const DEFAULT_MODULE_DRAFT: LevelModuleDraft = { initialPicks: 3, wavePicks: 3 };
+
+export function resolveSpawnEntrances(
+  entry: SpawnEntry,
+  graph: RouteMap,
+): readonly NodeId[] {
+  if (entry.entrance) {
+    if (!graph.entrances.includes(entry.entrance)) {
+      throw new Error(`Unknown entrance ${entry.entrance} for ${entry.type}`);
+    }
+    return [entry.entrance];
+  }
+  if (ENEMIES[entry.type].boss) {
+    throw new Error(`Boss ${entry.type} must declare a fixed entrance`);
+  }
+  if (graph.entrances.length === 0) throw new Error('A level requires at least one entrance');
+  return graph.entrances;
+}
 
 export const TUTORIAL_LEVEL_ID = 'starter-elbow';
 
@@ -173,10 +209,10 @@ export const LEVELS = [
     description: 'A guided two-wave exercise with fixed modules.',
     difficulty: 1,
     accent: '#168aad',
-    path: [
+    graph: legacyPathToGraph([
       { x: -40, y: 510 }, { x: 420, y: 510 },
       { x: 420, y: 145 }, { x: 1120, y: 145 },
-    ],
+    ], 'starter-elbow'),
     towerPads: [
       { x: 465, y: 590 },
       { x: 465, y: 65 },
@@ -185,6 +221,7 @@ export const LEVELS = [
       wave(['spark', 5]),
       wave(['spark', 6], ['kite', 3]),
     ],
+    moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 180,
     enemyHealthScale: 0.72,
     enemySpeedScale: 0.85,
@@ -196,22 +233,23 @@ export const LEVELS = [
     description: 'A balanced angular route with shields and splitting enemies.',
     difficulty: 1,
     accent: '#6c5ce7',
-    path: [
+    graph: legacyPathToGraph([
       { x: -40, y: 118 }, { x: 165, y: 118 }, { x: 165, y: 282 },
       { x: 405, y: 282 }, { x: 405, y: 128 }, { x: 650, y: 128 },
       { x: 650, y: 392 }, { x: 872, y: 392 }, { x: 872, y: 548 }, { x: 1120, y: 548 },
-    ],
+    ], 'white-prism'),
     towerPads: [
       { x: 274, y: 192 }, { x: 292, y: 370 }, { x: 510, y: 224 }, { x: 650, y: 480 },
       { x: 752, y: 286 }, { x: 778, y: 493 }, { x: 954, y: 458 },
     ],
     waves: [
-      wave(['crown', 1], ['spark', 6]),
+      wave(['crown', 1, 'white-prism:0'], ['spark', 6]),
       wave(['spark', 8], ['surge', 4], ['kite', 8], ['block', 2]),
       wave(['kite', 8], ['block', 6], ['hex', 2]),
       wave(['spark', 10], ['block', 8], ['hex', 4]),
-      wave(['kite', 4], ['block', 3], ['hex', 5], ['fracture', 1]),
+      wave(['kite', 4], ['block', 3], ['hex', 5], ['fracture', 1, 'white-prism:0']),
     ],
+    moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 240,
     enemyHealthScale: 1,
     enemySpeedScale: 1,
@@ -223,12 +261,12 @@ export const LEVELS = [
     description: 'A serpentine route with layered armor and suppression fields.',
     difficulty: 2,
     accent: '#ff5c8a',
-    path: [
+    graph: legacyPathToGraph([
       { x: -40, y: 522 }, { x: 142, y: 522 }, { x: 142, y: 158 },
       { x: 334, y: 158 }, { x: 334, y: 470 }, { x: 532, y: 470 },
       { x: 532, y: 92 }, { x: 742, y: 92 }, { x: 742, y: 330 },
       { x: 936, y: 330 }, { x: 936, y: 552 }, { x: 1120, y: 552 },
-    ],
+    ], 'rose-circuit'),
     towerPads: [
       { x: 72, y: 410 }, { x: 232, y: 248 }, { x: 232, y: 590 }, { x: 430, y: 365 },
       { x: 628, y: 188 }, { x: 640, y: 560 }, { x: 838, y: 214 }, { x: 1020, y: 430 },
@@ -239,8 +277,9 @@ export const LEVELS = [
       wave(['spark', 4], ['surge', 4], ['block', 7], ['hex', 2]),
       wave(['kite', 10], ['block', 7], ['hex', 2]),
       wave(['spark', 12], ['block', 8], ['hex', 5], ['anvil', 1]),
-      wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1]),
+      wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1, 'rose-circuit:0']),
     ],
+    moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 250,
     enemyHealthScale: 1.08,
     enemySpeedScale: 1.03,
@@ -252,12 +291,12 @@ export const LEVELS = [
     description: 'A fast folded route combining splitting and local suppression.',
     difficulty: 3,
     accent: '#00b894',
-    path: [
+    graph: legacyPathToGraph([
       { x: -40, y: 326 }, { x: 150, y: 326 }, { x: 150, y: 92 },
       { x: 360, y: 92 }, { x: 360, y: 552 }, { x: 582, y: 552 },
       { x: 582, y: 188 }, { x: 792, y: 188 }, { x: 792, y: 474 },
       { x: 1000, y: 474 }, { x: 1000, y: 326 }, { x: 1120, y: 326 },
-    ],
+    ], 'verdant-fold'),
     towerPads: [
       { x: 72, y: 214 }, { x: 250, y: 176 }, { x: 254, y: 438 }, { x: 466, y: 306 },
       { x: 680, y: 322 }, { x: 682, y: 610 }, { x: 894, y: 342 }, { x: 1040, y: 220 },
@@ -268,14 +307,75 @@ export const LEVELS = [
       wave(['kite', 8], ['block', 6], ['hex', 1]),
       wave(['spark', 12], ['block', 8], ['hex', 3]),
       wave(['kite', 10], ['block', 8], ['hex', 4]),
-      wave(['spark', 12], ['block', 6], ['hex', 5], ['crown', 1]),
-      wave(['block', 8], ['hex', 5], ['fracture', 1], ['radiant', 1]),
+      wave(['spark', 12], ['block', 6], ['hex', 5], ['crown', 1, 'verdant-fold:0']),
+      wave(['block', 8], ['hex', 5], ['fracture', 1, 'verdant-fold:0'], ['radiant', 1, 'verdant-fold:0']),
     ],
+    moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 260,
     enemyHealthScale: 1.16,
     enemySpeedScale: 1.08,
   },
+  {
+    id: 'triune-delta',
+    name: 'Triune Delta',
+    sector: 'SECTOR D-6',
+    description: 'Three incoming channels merge under increasingly mixed elite assaults.',
+    difficulty: 2,
+    accent: '#2f80ed',
+    graph: createRouteMap([
+      { id: 'north-entry', position: { x: -40, y: 85 }, parent: 'north-bend' },
+      { id: 'north-bend', position: { x: 175, y: 85 }, parent: 'confluence' },
+      { id: 'center-entry', position: { x: -40, y: 325 }, parent: 'center-bend' },
+      { id: 'center-bend', position: { x: 175, y: 325 }, parent: 'confluence' },
+      { id: 'south-entry', position: { x: -40, y: 565 }, parent: 'south-bend' },
+      { id: 'south-bend', position: { x: 175, y: 565 }, parent: 'confluence' },
+      { id: 'confluence', position: { x: 415, y: 325 }, parent: 'lower-fold' },
+      { id: 'lower-fold', position: { x: 600, y: 510 }, parent: 'upper-fold' },
+      { id: 'upper-fold', position: { x: 820, y: 290 }, parent: 'core' },
+      { id: 'core', position: { x: 1120, y: 290 }, parent: null },
+    ], ['north-entry', 'center-entry', 'south-entry']),
+    towerPads: [
+      { x: 90, y: 180 }, { x: 355, y: 145 }, { x: 185, y: 415 }, { x: 90, y: 470 },
+      { x: 355, y: 505 }, { x: 485, y: 520 }, { x: 665, y: 590 }, { x: 745, y: 225 },
+      { x: 910, y: 390 }, { x: 1040, y: 205 },
+    ],
+    waves: [
+      wave(['spark', 12], ['kite', 6]),
+      wave(['surge', 6], ['kite', 9], ['block', 3]),
+      wave(['spark', 9], ['block', 7], ['hex', 2], ['crown', 1, 'north-entry']),
+      wave(['kite', 8], ['block', 6], ['fracture', 1, 'center-entry']),
+      wave(
+        ['surge', 6], ['hex', 6],
+        ['fracture', 1, 'north-entry'], ['crown', 1, 'center-entry'],
+        ['fracture', 1, 'south-entry'],
+      ),
+      wave(
+        ['block', 8], ['hex', 5],
+        ['anvil', 1, 'north-entry'], ['radiant', 1, 'center-entry'],
+        ['anvil', 1, 'south-entry'],
+      ),
+      wave(
+        ['kite', 6], ['block', 6], ['hex', 6],
+        ['crown', 1, 'north-entry'], ['fracture', 1, 'north-entry'],
+        ['radiant', 1, 'center-entry'], ['anvil', 1, 'center-entry'],
+        ['crown', 1, 'south-entry'], ['fracture', 1, 'south-entry'],
+      ),
+    ],
+    moduleDraft: { initialPicks: 5, wavePicks: 4 },
+    startingShards: 320,
+    enemyHealthScale: 1.2,
+    enemySpeedScale: 1.1,
+  },
 ] as const satisfies readonly [LevelDefinition, ...LevelDefinition[]];
+
+for (const level of LEVELS) {
+  for (const [key, picks] of Object.entries(level.moduleDraft)) {
+    if (!Number.isInteger(picks) || picks <= 0) throw new Error(`${level.id} ${key} must be a positive integer`);
+  }
+  for (const entries of level.waves) {
+    entries.forEach((entry) => resolveSpawnEntrances(entry, level.graph));
+  }
+}
 
 export const DEFAULT_LEVEL_ID = 'white-prism';
 

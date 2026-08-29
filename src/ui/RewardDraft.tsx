@@ -24,7 +24,9 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
       <div className="reward-heading">
         <Tag className="reward-kicker" tone="yellow">{isInitialDraft ? t('reward.initialKicker') : t('reward.cleared', { wave: String(snapshot.wave).padStart(2, '0') })}</Tag>
         <h2>{isInitialDraft ? t('reward.initialTitle') : t('reward.waveTitle')}</h2>
-        <p>{isInitialDraft ? t('reward.initialDescription') : t('reward.waveDescription')}</p>
+        <p>{isInitialDraft
+          ? t('reward.initialDescription', { count: draft.totalRounds })
+          : t('reward.waveDescription')}</p>
       </div>
       <div className="reward-progress">{Array.from({ length: draft.totalRounds }, (_, index) => <i key={index} className={index < draft.round ? 'active' : ''} />)}<span>{draft.round} / {draft.totalRounds}</span></div>
     </header>

@@ -385,7 +385,7 @@ export class GameRenderer {
     ctx.globalAlpha = 0.3 + Math.sin(this.engine.visualElapsed * 3) * 0.08;
     ctx.fillStyle = '#6c5ce7';
     ctx.beginPath();
-    const core = this.engine.path.pointAtDistance(this.engine.path.length).position;
+    const core = this.engine.getCorePosition();
     ctx.arc(core.x, core.y, 12, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
@@ -416,13 +416,12 @@ export class GameRenderer {
 
   private tracePath(ctx: CanvasRenderingContext2D): void {
     ctx.beginPath();
-    const path = this.engine.level.path;
-    const first = path[0];
-    if (!first) return;
-    ctx.moveTo(first.x, first.y);
-    for (let index = 1; index < path.length; index += 1) {
-      const point = path[index];
-      if (point) ctx.lineTo(point.x, point.y);
+    for (const edge of this.engine.level.graph.edges) {
+      const start = this.engine.level.graph.nodes.get(edge.from)?.position;
+      const end = this.engine.level.graph.nodes.get(edge.to)?.position;
+      if (!start || !end) continue;
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
     }
   }
 
@@ -446,19 +445,52 @@ export class GameRenderer {
     ctx.setLineDash([]);
 
     ctx.fillStyle = '#b8b5c6';
-    const arrowGap = this.engine.path.length / 10;
-    for (let arrowDistance = arrowGap * 0.6; arrowDistance < this.engine.path.length - 60; arrowDistance += arrowGap) {
-      const arrow = this.engine.path.pointAtDistance(arrowDistance);
-      ctx.save();
-      ctx.translate(arrow.position.x, arrow.position.y);
-      ctx.rotate(arrow.angle);
+    for (const edge of this.engine.level.graph.edges) {
+      const start = this.engine.level.graph.nodes.get(edge.from)?.position;
+      const end = this.engine.level.graph.nodes.get(edge.to)?.position;
+      if (!start || !end) continue;
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const arrowGap = 105;
+      for (let arrowDistance = 46; arrowDistance < edge.length - 28; arrowDistance += arrowGap) {
+        const progress = arrowDistance / edge.length;
+        ctx.save();
+        ctx.translate(
+          start.x + (end.x - start.x) * progress,
+          start.y + (end.y - start.y) * progress,
+        );
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(-5, -7);
+        ctx.lineTo(-2, 0);
+        ctx.lineTo(-5, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    for (const node of this.engine.level.graph.nodes.values()) {
+      if (node.children.length < 2) continue;
+      ctx.fillStyle = '#f8f7fb';
+      ctx.strokeStyle = '#b8b5c6';
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(8, 0);
-      ctx.lineTo(-5, -7);
-      ctx.lineTo(-2, 0);
-      ctx.lineTo(-5, 7);
-      ctx.closePath();
+      ctx.arc(node.position.x, node.position.y, 13, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+    }
+
+    for (const entrance of this.engine.level.graph.entrances) {
+      const marker = this.engine.routeFor(entrance).pointAtDistance(42);
+      ctx.save();
+      ctx.translate(marker.position.x, marker.position.y);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = '#ffd447';
+      ctx.strokeStyle = '#312d48';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-6, -6, 12, 12);
+      ctx.strokeRect(-6, -6, 12, 12);
       ctx.restore();
     }
     ctx.restore();
@@ -831,7 +863,7 @@ export class GameRenderer {
 
   private drawCore(): void {
     const ctx = this.ctx;
-    const core = this.engine.path.pointAtDistance(this.engine.path.length).position;
+    const core = this.engine.getCorePosition();
     const x = core.x;
     const y = core.y;
     const pulse = 1 + Math.sin(this.engine.elapsed * 3) * 0.05;

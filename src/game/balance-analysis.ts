@@ -1,5 +1,5 @@
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
-import { ENEMIES, LEVELS } from './config';
+import { ENEMIES, LEVELS, resolveSpawnEntrances } from './config';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
 
 export interface TowerStatAverages {
@@ -19,6 +19,7 @@ export interface WaveBalanceRow {
   effectiveHp: number;
   speedPressure: number;
   income: number;
+  entranceFlow: Readonly<Record<string, number>>;
 }
 
 export function sampleTowerStatAverages(sampleCount = 100_000): TowerStatAverages {
@@ -48,23 +49,28 @@ export function calculateWaveBalanceRows(): WaveBalanceRow[] {
     let effectiveHp = 0;
     let speedPressure = 0;
     let killIncome = 0;
-    for (const type of wave) {
+    const entranceFlow: Record<string, number> = {};
+    for (const entry of wave) {
+      const type = entry.type;
+      const entrances = resolveSpawnEntrances(entry, level.graph);
+      for (const entrance of entrances) entranceFlow[entrance] = (entranceFlow[entrance] ?? 0) + 1;
+      const copies = entrances.length;
       const enemy = ENEMIES[type];
       const bodyHp = Math.round(enemy.hp * healthScale);
       const durability = bodyHp + Math.round((enemy.shield?.capacity ?? 0) * healthScale);
       const splitCount = enemy.split?.count ?? 0;
       const splitHp = enemy.split ? Math.max(1, Math.round(bodyHp * enemy.split.healthScale)) : 0;
-      effectiveHp += durability + splitHp * splitCount;
-      speedPressure += durability * enemy.speed * level.enemySpeedScale / 60;
+      effectiveHp += (durability + splitHp * splitCount) * copies;
+      speedPressure += durability * enemy.speed * level.enemySpeedScale / 60 * copies;
       if (enemy.split) {
-        speedPressure += splitHp * splitCount * enemy.speed * enemy.split.speedScale * level.enemySpeedScale / 60;
+        speedPressure += splitHp * splitCount * enemy.speed * enemy.split.speedScale * level.enemySpeedScale / 60 * copies;
       }
-      killIncome += enemy.reward;
-      if (enemy.split) killIncome += Math.max(1, Math.round(enemy.reward * enemy.split.rewardScale)) * splitCount;
-      units += 1 + splitCount;
+      killIncome += enemy.reward * copies;
+      if (enemy.split) killIncome += Math.max(1, Math.round(enemy.reward * enemy.split.rewardScale)) * splitCount * copies;
+      units += (1 + splitCount) * copies;
     }
     const spawnDuration = 0.25 + wave.slice(0, -1).reduce(
-      (sum, type) => sum + ENEMIES[type].spawnDelay,
+      (sum, entry) => sum + ENEMIES[entry.type].spawnDelay,
       0,
     );
     const waveNumber = waveIndex + 1;
@@ -77,6 +83,7 @@ export function calculateWaveBalanceRows(): WaveBalanceRow[] {
       effectiveHp,
       speedPressure,
       income: killIncome + ECONOMY_BALANCE.waveBonusBase + waveNumber * ECONOMY_BALANCE.waveBonusPerWave,
+      entranceFlow,
     };
   }));
 }

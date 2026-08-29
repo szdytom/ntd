@@ -1,11 +1,21 @@
 import { EffectEngine } from '../effects/engine';
 import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
-import { createModuleRegistry, DRAFT_BALANCE } from '../modules';
+import { createModuleRegistry } from '../modules';
 import type { ModuleCombatApi, StatusApplication, TargetEffectChannel } from '../modules/types';
 import i18n from '../i18n';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
-import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, TUTORIAL_LEVEL_ID, WORLD, type LevelDefinition } from './config';
+import {
+  DEFAULT_LEVEL_ID,
+  ENEMIES,
+  getLevel,
+  resolveSpawnEntrances,
+  TOWER_COLORS,
+  TUTORIAL_LEVEL_ID,
+  WORLD,
+  type LevelDefinition,
+  type SpawnEntry,
+} from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
 import { limitEnemyHealthDamage } from './enemy-armor';
@@ -13,7 +23,7 @@ import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEne
 import { enemyMovementSpeedMultiplier } from './enemy-movement';
 import { findPathInterception } from './interception';
 import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
-import { createPathSampler, type PathSampler } from './path';
+import { resolveRoute, type NodeId, type PathSampler } from './path';
 import { EnemySpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
@@ -39,6 +49,12 @@ import type {
 
 type Listener = (event: GameEvent) => void;
 type ViewListener = () => void;
+
+interface SpawnLane {
+  entrance: NodeId;
+  queue: EnemyType[];
+  timer: number;
+}
 const NO_EXCLUDED_ENEMY_IDS: readonly number[] = [];
 
 export interface GameEngineOptions {
@@ -110,8 +126,7 @@ export class GameEngine {
 
   private listeners = new Set<Listener>();
   private viewListeners = new Set<ViewListener>();
-  private spawnQueue: EnemyType[] = [];
-  private spawnTimer = 0;
+  private spawnLanes: SpawnLane[] = [];
   private waveClearDelayLeft: number | null = null;
   private scheduledCasts: ScheduledCast[] = [];
   private pendingEnemySplits: PendingEnemySplit[] = [];
@@ -123,6 +138,7 @@ export class GameEngine {
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
   private readonly enemyIndex = new EnemySpatialIndex();
+  private readonly routeCache = new Map<NodeId, PathSampler>();
   private readonly spatialCandidates: Enemy[] = [];
   private readonly movementStart: Point = { x: 0, y: 0 };
   private readonly movementEnd: Point = { x: 0, y: 0 };
@@ -171,7 +187,9 @@ export class GameEngine {
     this.level = getLevel(normalized.levelId ?? DEFAULT_LEVEL_ID);
     this.tutorialEnabled = this.mode === 'standard' && this.level.id === TUTORIAL_LEVEL_ID;
     this.difficulty = getDifficulty(normalized.difficultyId ?? DEFAULT_DIFFICULTY_ID);
-    this.path = createPathSampler(this.level.path);
+    const firstEntrance = this.level.graph.entrances[0];
+    if (!firstEntrance) throw new Error(`Level ${this.level.id} requires an entrance`);
+    this.path = this.routeFor(firstEntrance);
     this.maxWaves = this.mode === 'creative'
       ? normalizeCreativeWaveCount(normalized.creative?.waveCount ?? this.level.waves.length)
       : this.level.waves.length;
@@ -206,7 +224,9 @@ export class GameEngine {
     }
     this.towers.push(first);
     this.selectedTowerId = null;
-    if (this.mode === 'standard' && !this.tutorialEnabled) this.beginModuleDraft();
+    if (this.mode === 'standard' && !this.tutorialEnabled) {
+      this.beginModuleDraft(this.level.moduleDraft.initialPicks);
+    }
     this.refreshViewSnapshot();
   }
 
@@ -248,7 +268,7 @@ export class GameEngine {
       score: this.score,
       enemiesAlive: this.enemies.filter((enemy) => !enemy.dead).length
         + this.pendingEnemySplits.filter((split) => !split.spawned).length,
-      waveQueue: this.spawnQueue.length,
+      waveQueue: this.spawnLanes.reduce((total, lane) => total + lane.queue.length, 0),
       selectedTowerId: this.selectedTowerId,
       speed: this.speed,
       paused: this.paused,
@@ -330,8 +350,39 @@ export class GameEngine {
     return TOWER_COLORS[tower.id % TOWER_COLORS.length] ?? TOWER_COLORS[0] ?? '#6c5ce7';
   }
 
-  getWaveBlueprint(index: number): readonly EnemyType[] {
+  getWaveBlueprint(index: number): readonly SpawnEntry[] {
     return this.level.waves[Math.min(Math.max(0, index), this.level.waves.length - 1)] ?? [];
+  }
+
+  routeFor(routeId: NodeId): PathSampler {
+    const cached = this.routeCache.get(routeId);
+    if (cached) return cached;
+    const route = resolveRoute(this.level.graph, routeId);
+    this.routeCache.set(routeId, route);
+    return route;
+  }
+
+  routeForEnemy(enemy: Enemy): PathSampler {
+    return this.routeFor(enemy.routeId);
+  }
+
+  distanceToCore(enemy: Enemy): number {
+    return Math.max(0, this.routeForEnemy(enemy).length - enemy.distance);
+  }
+
+  getCorePosition(): Point {
+    const root = this.level.graph.nodes.get(this.level.graph.root);
+    if (!root) throw new Error(`Level ${this.level.id} has no root node`);
+    return root.position;
+  }
+
+  private centerlineIntersectionTime(start: Point, end: Point): number | null {
+    let first: number | null = null;
+    for (const entrance of this.level.graph.entrances) {
+      const time = this.routeFor(entrance).centerlineIntersectionTime(start, end);
+      if (time !== null && (first === null || time < first)) first = time;
+    }
+    return first;
   }
 
   getModuleCount(moduleId: ModuleId): number {
@@ -415,9 +466,12 @@ export class GameEngine {
     this.emitState();
   }
 
-  spawnCreativeEnemy(type: EnemyType): void {
+  spawnCreativeEnemy(type: EnemyType, requestedEntrance?: NodeId): void {
     if (this.mode !== 'creative' || this.status === 'won' || this.status === 'lost') return;
-    this.spawnEnemy(type);
+    const entrance = requestedEntrance ?? this.level.graph.entrances[0];
+    if (!entrance) return;
+    if (!this.level.graph.entrances.includes(entrance)) throw new Error(`Unknown route entrance: ${entrance}`);
+    this.spawnEnemy(type, entrance);
     this.emitState();
   }
 
@@ -556,8 +610,17 @@ export class GameEngine {
     this.wave += 1;
     this.status = 'wave';
     this.waveClearDelayLeft = null;
-    this.spawnQueue = [...this.getWaveBlueprint(this.wave - 1)];
-    this.spawnTimer = 0.25;
+    this.spawnLanes = this.level.graph.entrances.map((entrance) => ({
+      entrance,
+      queue: [],
+      timer: 0.25,
+    }));
+    const lanesByEntrance = new Map(this.spawnLanes.map((lane) => [lane.entrance, lane]));
+    for (const entry of this.getWaveBlueprint(this.wave - 1)) {
+      for (const entrance of resolveSpawnEntrances(entry, this.level.graph)) {
+        lanesByEntrance.get(entrance)?.queue.push(entry.type);
+      }
+    }
     this.emit({ type: 'toast', message: i18n.t('toast.waveStarted', { wave: this.wave, maxWaves: this.maxWaves }), tone: 'info' });
     this.emitState();
   }
@@ -581,7 +644,7 @@ export class GameEngine {
     this.floatingTexts.length = 0;
     this.scheduledCasts.length = 0;
     this.pendingEnemySplits.length = 0;
-    this.spawnQueue.length = 0;
+    this.spawnLanes.length = 0;
     this.waveClearDelayLeft = null;
     this.status = 'planning';
     this.wave = 0;
@@ -613,7 +676,9 @@ export class GameEngine {
     }
     this.towers.push(first);
     this.selectedTowerId = null;
-    if (this.mode === 'standard' && !this.tutorialEnabled) this.beginModuleDraft();
+    if (this.mode === 'standard' && !this.tutorialEnabled) {
+      this.beginModuleDraft(this.level.moduleDraft.initialPicks);
+    }
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -657,16 +722,18 @@ export class GameEngine {
   }
 
   private spawnEnemies(delta: number): void {
-    if (this.spawnQueue.length === 0) return;
-    this.spawnTimer -= delta;
-    if (this.spawnTimer > 0) return;
-    const type = this.spawnQueue.shift();
-    if (!type) return;
-    this.spawnEnemy(type);
-    this.spawnTimer = ENEMIES[type].spawnDelay;
+    for (const lane of this.spawnLanes) {
+      if (lane.queue.length === 0) continue;
+      lane.timer -= delta;
+      if (lane.timer > 0) continue;
+      const type = lane.queue.shift();
+      if (!type) continue;
+      this.spawnEnemy(type, lane.entrance);
+      lane.timer = ENEMIES[type].spawnDelay;
+    }
   }
 
-  private spawnEnemy(type: EnemyType): void {
+  private spawnEnemy(type: EnemyType, routeId: NodeId): void {
     const config = ENEMIES[type];
     const creativeHealthScale = this.mode === 'creative' ? this.creativeSetup.healthScale : 1;
     const creativeSpeedScale = this.mode === 'creative' ? this.creativeSetup.speedScale : 1;
@@ -674,10 +741,12 @@ export class GameEngine {
       * this.level.enemyHealthScale
       * this.difficulty.enemyHealth
       * creativeHealthScale;
-    const at = this.path.pointAtDistance(0);
+    const route = this.routeFor(routeId);
+    const at = route.pointAtDistance(0);
     this.enemies.push({
       id: this.nextId++,
       type,
+      routeId,
       progress: 0,
       distance: 0,
       position: at.position,
@@ -725,14 +794,15 @@ export class GameEngine {
         : 0;
       const speed = enemy.speed * movementMultiplier * (1 - enemy.slowFactor);
       enemy.distance += speed * delta;
-      enemy.progress = enemy.distance / this.path.length;
-      enemy.angle = this.path.sampleInto(enemy.distance, enemy.position);
-      if (enemy.distance >= this.path.length) {
+      const route = this.routeForEnemy(enemy);
+      enemy.progress = enemy.distance / route.length;
+      enemy.angle = route.sampleInto(enemy.distance, enemy.position);
+      if (enemy.distance >= route.length) {
         enemy.dead = true;
         const damage = enemy.coreDamage;
         this.core = Math.max(0, this.core - damage);
         this.effects.spawn('game:core-hit', {
-          position: this.path.pointAtDistance(this.path.length).position,
+          position: this.getCorePosition(),
           color: '#ff5c5c',
         });
         this.emit({ type: 'toast', message: i18n.t('toast.coreDamaged', { damage }), tone: 'warn' });
@@ -803,6 +873,7 @@ export class GameEngine {
       tower,
       candidates,
       (enemy) => this.enemyIndex.countWithinRadius(enemy.position, 92),
+      (enemy) => this.distanceToCore(enemy),
     );
   }
 
@@ -834,7 +905,7 @@ export class GameEngine {
     const interception = target && !isStatic
       ? findPathInterception({
         origin: launchOrigin,
-        path: this.path,
+        path: this.routeForEnemy(target),
         projectileSpeed: blueprint.speed,
         projectileLifetime: blueprint.lifetime,
         launchOffset: spawnDistance,
@@ -935,13 +1006,13 @@ export class GameEngine {
         }
         projectile.triggerCooldown = Math.max(0, projectile.triggerCooldown - delta);
         if (projectile.age >= config.armTime && config.gravity) {
-          const fieldDistance = this.path.nearestDistance(projectile.position);
           const nearbyEnemies = this.enemyIndex.collectWithinRadius(
             projectile.position,
             config.gravity.radius,
             this.spatialCandidates,
           );
           for (const enemy of nearbyEnemies) {
+            const fieldDistance = this.routeForEnemy(enemy).nearestDistance(projectile.position);
             const offset = fieldDistance - enemy.distance;
             const displacement = Math.sign(offset) * Math.min(Math.abs(offset), config.gravity.pull * delta);
             this.combatApi.displace(enemy, displacement);
@@ -1020,7 +1091,7 @@ export class GameEngine {
       if (projectile.shot.trigger?.type === 'terrain' && !projectile.triggered) {
         const moved = distance(movementStart, projectile.position) > SIMULATION_TIME_EPSILON;
         const delayedTicks = projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] as number | undefined;
-        const crossingTime = this.path.centerlineIntersectionTime(movementStart, projectile.position);
+        const crossingTime = this.centerlineIntersectionTime(movementStart, projectile.position);
         const configuredTicks = Math.max(1, Math.round(projectile.shot.trigger.crossingTicks ?? 1));
         const crossedWithinTick = crossingTime !== null &&
           crossingTime > SIMULATION_TIME_EPSILON &&
@@ -1144,7 +1215,7 @@ export class GameEngine {
     const nearbyEnemies = this.enemyIndex.collectWithinRadius(position, 280, this.spatialCandidates);
     let best: Enemy | null = null;
     for (const enemy of nearbyEnemies) {
-      if (!best || enemy.progress > best.progress) best = enemy;
+      if (!best || this.distanceToCore(enemy) < this.distanceToCore(best)) best = enemy;
     }
     return best;
   }
@@ -1241,9 +1312,10 @@ export class GameEngine {
 
   private displaceEnemy(enemy: Enemy, distanceDelta: number): void {
     if (enemy.dead || !Number.isFinite(distanceDelta)) return;
-    enemy.distance = Math.max(0, Math.min(this.path.length, enemy.distance + distanceDelta));
-    enemy.progress = enemy.distance / this.path.length;
-    enemy.angle = this.path.sampleInto(enemy.distance, enemy.position);
+    const route = this.routeForEnemy(enemy);
+    enemy.distance = Math.max(0, Math.min(route.length, enemy.distance + distanceDelta));
+    enemy.progress = enemy.distance / route.length;
+    enemy.angle = route.sampleInto(enemy.distance, enemy.position);
   }
 
   private applyDamage(enemy: Enemy, damage: number, color: string) {
@@ -1330,16 +1402,18 @@ export class GameEngine {
   private spawnSplitChildren(parent: Enemy): void {
     const split = ENEMIES[parent.type].split;
     if (!split || parent.splitGeneration > 0) return;
-    const lastSafeDistance = Math.max(0, this.path.length - 1);
+    const route = this.routeForEnemy(parent);
+    const lastSafeDistance = Math.max(0, route.length - 1);
     for (let index = 0; index < split.count; index += 1) {
       const offset = (index - (split.count - 1) / 2) * split.spacing;
       const childDistance = Math.max(0, Math.min(lastSafeDistance, parent.distance + offset));
-      const at = this.path.pointAtDistance(childDistance);
+      const at = route.pointAtDistance(childDistance);
       const maxHp = Math.max(1, Math.round(parent.maxHp * split.healthScale));
       this.enemies.push({
         id: this.nextId++,
         type: parent.type,
-        progress: childDistance / this.path.length,
+        routeId: parent.routeId,
+        progress: childDistance / route.length,
         distance: childDistance,
         position: at.position,
         angle: at.angle,
@@ -1457,15 +1531,16 @@ export class GameEngine {
     return result.choices;
   }
 
-  private beginModuleDraft(): void {
+  private beginModuleDraft(totalRounds: number): void {
     this.previousDraftChoices.clear();
-    this.draft = { round: 1, totalRounds: DRAFT_BALANCE.picksPerWave, choices: this.rollDraftChoices() };
+    this.draft = { round: 1, totalRounds, choices: this.rollDraftChoices() };
     this.status = 'reward';
   }
 
   private checkWaveEnd(delta: number): void {
     const splitPending = this.pendingEnemySplits.some((split) => !split.spawned);
-    if (this.status !== 'wave' || this.spawnQueue.length > 0 || this.enemies.length > 0 || splitPending) {
+    const hasPendingSpawns = this.spawnLanes.some((lane) => lane.queue.length > 0);
+    if (this.status !== 'wave' || hasPendingSpawns || this.enemies.length > 0 || splitPending) {
       this.waveClearDelayLeft = null;
       return;
     }
@@ -1485,7 +1560,7 @@ export class GameEngine {
       this.status = 'won';
       this.emit({ type: 'toast', message: i18n.t('toast.victory'), tone: 'good' });
     } else if (this.mode === 'standard' && !this.tutorialEnabled) {
-      this.beginModuleDraft();
+      this.beginModuleDraft(this.level.moduleDraft.wavePicks);
       this.emit({ type: 'toast', message: i18n.t('toast.waveReward', { bonus }), tone: 'good' });
     } else {
       this.status = 'planning';

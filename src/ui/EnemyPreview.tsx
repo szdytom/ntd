@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ENEMIES } from '../game/config';
+import { ENEMIES, resolveSpawnEntrances } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { EnemyType } from '../game/types';
 import { enemyName } from '../i18n/presentation';
@@ -14,7 +14,10 @@ export function EnemyPreview({ engine, wave, onOpenArchive }: {
 }) {
   const { t } = useTranslation();
   const counts = new Map<EnemyType, number>();
-  engine.getWaveBlueprint(wave).forEach((type) => counts.set(type, (counts.get(type) ?? 0) + 1));
+  engine.getWaveBlueprint(wave).forEach((entry) => {
+    const count = resolveSpawnEntrances(entry, engine.level.graph).length;
+    counts.set(entry.type, (counts.get(entry.type) ?? 0) + count);
+  });
   return <div className="enemy-preview">{[...counts.entries()].slice(0, 4).map(([type, count]) => {
     const enemy = ENEMIES[type];
     const name = enemyName(t, type);

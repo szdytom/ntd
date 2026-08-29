@@ -30,8 +30,7 @@
   height: calc(100% - 24px);
 }
 
-.level-map polyline {
-  fill: none;
+.level-map .route-edge {
   stroke: var(--level-accent);
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -39,8 +38,14 @@
   opacity: 0.72;
 }
 
-.level-map circle {
+.level-map .tower-pad {
   fill: #fff;
   stroke: var(--level-accent);
   stroke-width: 7;
+}
+
+.level-map .route-junction {
+  fill: #fff;
+  stroke: var(--level-accent);
+  stroke-width: 8;
 }

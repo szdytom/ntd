@@ -10,6 +10,7 @@ const QUERY_RADIUS = 175;
 const enemies: Enemy[] = Array.from({ length: ENEMY_COUNT }, (_, id) => ({
   id,
   type: 'spark',
+  routeId: 'benchmark',
   progress: id / ENEMY_COUNT,
   distance: id,
   position: { x: (id * 73) % WORLD.width, y: (id * 151) % WORLD.height },

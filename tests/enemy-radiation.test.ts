@@ -12,7 +12,7 @@ function placeAtDistance(engine: GameEngine, enemy: Enemy, pathDistance: number)
   enemy.speed = 0;
 }
 
-describe('radiation boss', () => {
+describe('suppression elite', () => {
   it('halves cooldown recovery and energy regeneration only inside its radius without stacking copies', () => {
     expect(ENEMIES.radiant.aura.radius).toBe(290);
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 31 });
@@ -20,7 +20,7 @@ describe('radiation boss', () => {
     if (!tower) throw new Error('Expected the starter tower');
     engine.spawnCreativeEnemy('radiant');
     const first = engine.enemies[0];
-    if (!first) throw new Error('Expected a radiation boss');
+    if (!first) throw new Error('Expected a suppression elite');
     placeAtDistance(engine, first, 180);
     tower.position = { ...first.position };
     tower.cooldownLeft = 1;
@@ -32,7 +32,7 @@ describe('radiation boss', () => {
 
     engine.spawnCreativeEnemy('radiant');
     const second = engine.enemies[1];
-    if (!second) throw new Error('Expected a second radiation boss');
+    if (!second) throw new Error('Expected a second suppression elite');
     placeAtDistance(engine, second, 180);
     tower.cooldownLeft = 1;
     tower.energy = 0;
@@ -48,18 +48,18 @@ describe('radiation boss', () => {
     expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP, 8);
   });
 
-  it('introduces the mechanic bosses separately before pairing them in the final level', () => {
+  it('introduces the mechanic elites separately before pairing them in Verdant Fold', () => {
     const tutorial = LEVELS.find((level) => level.id === 'starter-elbow');
     const whitePrism = LEVELS.find((level) => level.id === 'white-prism');
     const roseCircuit = LEVELS.find((level) => level.id === 'rose-circuit');
     const verdantFold = LEVELS.find((level) => level.id === 'verdant-fold');
-    expect(tutorial?.waves.flat()).not.toContain('fracture');
-    expect(tutorial?.waves.flat()).not.toContain('radiant');
-    expect(whitePrism?.waves.at(-1)).toContain('fracture');
-    expect(whitePrism?.waves.at(-1)).not.toContain('radiant');
-    expect(roseCircuit?.waves.at(-1)).toContain('radiant');
-    expect(roseCircuit?.waves.at(-1)).not.toContain('fracture');
-    expect(verdantFold?.waves.at(-1)).toContain('fracture');
-    expect(verdantFold?.waves.at(-1)).toContain('radiant');
+    expect(tutorial?.waves.flat().some((entry) => entry.type === 'fracture')).toBe(false);
+    expect(tutorial?.waves.flat().some((entry) => entry.type === 'radiant')).toBe(false);
+    expect(whitePrism?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(true);
+    expect(whitePrism?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(false);
+    expect(roseCircuit?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
+    expect(roseCircuit?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(false);
+    expect(verdantFold?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(true);
+    expect(verdantFold?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
   });
 });

@@ -6,6 +6,7 @@ import type { Enemy, Tower } from '../src/game/types';
 const enemy = (id: number, x: number, hp: number, progress: number): Enemy => ({
   id,
   type: 'spark',
+  routeId: 'test',
   progress,
   distance: progress * 100,
   position: { x, y: 0 },
