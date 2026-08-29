@@ -57,6 +57,9 @@
 .enemy-archive-back:hover span { transform: translateX(-4px); }
 
 .enemy-archive-seal {
+  --seal-center-size: 12px;
+  --seal-middle-size: 28px;
+  --seal-outer-size: 44px;
   grid-column: 4;
   grid-row: 1;
   position: relative;
@@ -71,13 +74,16 @@
 .enemy-archive-seal i {
   content: '';
   position: absolute;
-  inset: 22px 30px;
+  top: 50%;
+  left: 50%;
+  width: var(--seal-outer-size);
+  height: var(--seal-outer-size);
   border: 2px solid var(--archive-ink);
   background: rgba(255,255,255,.18);
-  transform: rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
-.enemy-archive-seal::after { inset: 30px 38px; background: transparent; transform: rotate(22.5deg); }
-.enemy-archive-seal i { inset: 37px 45px; border: 0; background: var(--archive-ink); }
+.enemy-archive-seal::after { width: var(--seal-middle-size); height: var(--seal-middle-size); background: transparent; transform: translate(-50%, -50%) rotate(22.5deg); }
+.enemy-archive-seal i { width: var(--seal-center-size); height: var(--seal-center-size); border: 0; background: var(--archive-ink); }
 .enemy-archive-seal b { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; }
 
 .enemy-archive-console {
@@ -290,9 +296,7 @@
   .enemy-archive-head { grid-template-columns: 56px minmax(0, 1fr) 58px 78px; min-height: 78px; border-radius: 12px 12px 0 0; }
   .enemy-archive-head > div:nth-child(2) { padding: 0 15px; }
   .enemy-archive-head h1 { font-size: 29px; }
-  .enemy-archive-seal::before { inset: 20px 27px; }
-  .enemy-archive-seal::after { inset: 27px 34px; }
-  .enemy-archive-seal i { inset: 33px 40px; }
+  .enemy-archive-seal { --seal-center-size: 10px; --seal-middle-size: 24px; --seal-outer-size: 38px; }
   .enemy-archive-console { grid-template-columns: 1fr; overflow: visible; border-radius: 0 0 12px 12px; }
   .enemy-archive-index { overflow: hidden; border-right: 0; border-bottom: 2px solid var(--archive-ink); }
   .enemy-archive-index-head { min-height: 40px; }
@@ -308,9 +312,7 @@
 @media (max-width: 480px) {
   .enemy-archive-head { grid-template-columns: 50px minmax(0,1fr) 52px 64px; }
   .enemy-archive-head h1 { font-size: 25px; }
-  .enemy-archive-seal::before { inset: 20px 23px; }
-  .enemy-archive-seal::after { inset: 27px 30px; }
-  .enemy-archive-seal i { inset: 33px 36px; }
+  .enemy-archive-seal { --seal-center-size: 9px; --seal-middle-size: 21px; --seal-outer-size: 34px; }
   .enemy-archive-data { padding: 20px 13px; }
   .enemy-archive-data > header { display: block; }
   .enemy-archive-data > header > div { display: block; }
