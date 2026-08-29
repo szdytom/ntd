@@ -4,6 +4,7 @@ import { colossusModule } from './colossus';
 import { condenseCoreModule } from './condense-core';
 import { economizerModule } from './economizer';
 import { echoModule } from './echo';
+import { expirationTriggerModule } from './expiration-trigger';
 import { forkModule } from './fork';
 import { frostModule } from './frost';
 import { focusCoreModule } from './focus-core';
@@ -21,6 +22,7 @@ import { ModuleRegistry } from './registry';
 import { seekerModule } from './seeker';
 import { singularityModule } from './singularity';
 import { teslaNodeModule } from './tesla-node';
+import { terrainTriggerModule } from './terrain-trigger';
 import { timerTriggerModule } from './timer-trigger';
 import { toxicCloudModule } from './toxic-cloud';
 import { toxinModule } from './toxin';
@@ -51,7 +53,9 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(teslaNodeModule)
     .register(toxicCloudModule)
     .register(impactTriggerModule)
-    .register(timerTriggerModule);
+    .register(timerTriggerModule)
+    .register(expirationTriggerModule)
+    .register(terrainTriggerModule);
 }
 
 export { ModuleRegistry } from './registry';

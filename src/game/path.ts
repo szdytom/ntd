@@ -5,6 +5,7 @@ export interface PathSampler {
   pointAtDistance(distance: number): { position: Point; angle: number };
   sampleInto(distance: number, position: Point): number;
   nearestDistance(point: Point): number;
+  centerlineIntersectionTime(start: Point, end: Point): number | null;
 }
 
 export function createPathSampler(path: readonly Point[]): PathSampler {
@@ -69,6 +70,36 @@ export function createPathSampler(path: readonly Point[]): PathSampler {
         traversed += segment.length;
       }
       return bestPathDistance;
+    },
+    centerlineIntersectionTime(start, end) {
+      const movementX = end.x - start.x;
+      const movementY = end.y - start.y;
+      const movementLengthSquared = movementX * movementX + movementY * movementY;
+      if (movementLengthSquared <= Number.EPSILON) return null;
+      const epsilon = 1e-9;
+      let firstInterior: number | null = null;
+      let firstBoundary: number | null = null;
+      for (const segment of segments) {
+        const pathX = segment.end.x - segment.start.x;
+        const pathY = segment.end.y - segment.start.y;
+        const denominator = movementX * pathY - movementY * pathX;
+        if (Math.abs(denominator) <= epsilon) continue;
+        const offsetX = segment.start.x - start.x;
+        const offsetY = segment.start.y - start.y;
+        const movementTime = (offsetX * pathY - offsetY * pathX) / denominator;
+        const pathTime = (offsetX * movementY - offsetY * movementX) / denominator;
+        if (
+          movementTime < -epsilon || movementTime > 1 + epsilon ||
+          pathTime < -epsilon || pathTime > 1 + epsilon
+        ) continue;
+        const clampedTime = Math.max(0, Math.min(1, movementTime));
+        if (clampedTime > epsilon && clampedTime < 1 - epsilon) {
+          if (firstInterior === null || clampedTime < firstInterior) firstInterior = clampedTime;
+        } else if (firstBoundary === null || clampedTime < firstBoundary) {
+          firstBoundary = clampedTime;
+        }
+      }
+      return firstInterior ?? firstBoundary;
     },
   };
 }

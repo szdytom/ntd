@@ -62,6 +62,7 @@ const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
+const TERRAIN_TRIGGER_PENDING_CROSSING = 'terrain-trigger:pending-crossing';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
@@ -995,10 +996,39 @@ export class GameEngine {
         this.hitEnemy(projectile, hit.enemy);
       }
 
-      if (
+      if (projectile.shot.trigger?.type === 'terrain' && !projectile.triggered) {
+        const moved = distance(movementStart, projectile.position) > SIMULATION_TIME_EPSILON;
+        const pendingCrossing = projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] === true;
+        const crossingTime = this.path.centerlineIntersectionTime(movementStart, projectile.position);
+        if (
+          moved && (
+            pendingCrossing ||
+            (crossingTime !== null &&
+              crossingTime > SIMULATION_TIME_EPSILON &&
+              crossingTime < 1 - SIMULATION_TIME_EPSILON)
+          )
+        ) {
+          projectile.triggered = true;
+          projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] = false;
+          this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+        } else if (crossingTime !== null && crossingTime >= 1 - SIMULATION_TIME_EPSILON) {
+          projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] = true;
+        }
+      }
+
+      const outsideWorld =
         projectile.position.x < -60 || projectile.position.x > WORLD.width + 60 ||
-        projectile.position.y < -60 || projectile.position.y > WORLD.height + 60
-      ) projectile.life = 0;
+        projectile.position.y < -60 || projectile.position.y > WORLD.height + 60;
+      if (outsideWorld) projectile.life = 0;
+      if (
+        projectile.shot.trigger?.type === 'expiration' &&
+        !projectile.triggered &&
+        projectile.life <= 0 &&
+        !outsideWorld
+      ) {
+        projectile.triggered = true;
+        this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+      }
     }
   }
 

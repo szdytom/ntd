@@ -41,7 +41,7 @@ export interface ShotBlueprint {
   payload: ShotBlueprint[];
 }
 
-export type TriggerType = 'impact' | 'timer';
+export type TriggerType = 'impact' | 'timer' | 'expiration' | 'terrain';
 
 export interface TriggerSpec {
   type: TriggerType;

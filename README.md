@@ -11,7 +11,7 @@ Prism Bastion is a geometric tower-defense game built around modular programming
 
 ## Highlights
 
-- **Programmable builds:** 22 built-in modules cover piercing, forking, seeking, ricochet, area damage, damage over time, and nested triggers.
+- **Programmable builds:** 27 built-in modules cover piercing, forking, seeking, ricochet, area damage, damage over time, and nested triggers.
 - **Order is the rule:** modifiers and logic affect the next projectile to their right, while an unfinished cast block may wrap once to the beginning.
 - **Two game modes:** Standard mode includes inventory limits, opening drafts, post-wave rewards, and economic progression. Creative mode provides unlimited modules and shards plus a custom signal console.
 - **Four distinct maps and five difficulties:** every sector has its own route, deployment nodes, enemy multipliers, and wave plan.
