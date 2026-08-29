@@ -125,6 +125,8 @@ export interface LevelDefinition {
 const group = (type: EnemyType, count: number): EnemyType[] => Array.from({ length: count }, () => type);
 const wave = (...groups: Array<[EnemyType, number]>): EnemyType[] => groups.flatMap(([type, count]) => group(type, count));
 
+export const TUTORIAL_LEVEL_ID = 'starter-elbow';
+
 export const LEVELS = [
   {
     id: 'starter-elbow',

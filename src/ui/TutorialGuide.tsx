@@ -163,7 +163,11 @@ const elementBox = (element: Element): TargetBox => {
   return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
 };
 
-export function TutorialGuide({ engine, view }: { engine: GameEngine; view: GameViewSnapshot }) {
+export function TutorialGuide({ engine, view, onResolved }: {
+  engine: GameEngine;
+  view: GameViewSnapshot;
+  onResolved: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
@@ -333,15 +337,15 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
     : undefined;
 
   if (!engine.tutorialEnabled || dismissed || !step) return null;
-  if (step.id === 'wait-first-wave') {
-    return <aside ref={panelRef} data-tutorial-panel className="tutorial-observer" style={panelStyle} aria-live="polite">
-      {dragHandle}<span>{stepText('eyebrow')}</span><strong>{stepText('title')}</strong><small>{stepText('body')}</small>
-    </aside>;
-  }
 
   const advance = (): void => {
     if (step.id === 'welcome') setPanelPosition(null);
+    if (stepIndex === STEPS.length - 1) onResolved();
     setStepIndex((index) => index + 1);
+  };
+  const skipTutorial = (): void => {
+    onResolved();
+    setDismissed(true);
   };
   const activateTarget = (): void => {
     if (step.action === 'select-tower') {
@@ -385,12 +389,15 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
       data-tutorial-panel
       className={`tutorial-card ${step.id === 'welcome' ? 'tutorial-card-welcome' : ''}`}
       style={panelStyle}
+      aria-live={step.id === 'wait-first-wave' ? 'polite' : undefined}
     >
-      <div className="tutorial-card-head"><span>{stepText('eyebrow')}</span>{dragHandle}<button className="tutorial-skip" onClick={() => setDismissed(true)}>{t('tutorial.skip')}</button></div>
+      <div className="tutorial-card-head"><span>{stepText('eyebrow')}</span>{dragHandle}<button className="tutorial-skip" onClick={skipTutorial}>{t('tutorial.skip')}</button></div>
       <h2>{stepText('title')}</h2>
       <p>{stepText('body')}</p>
       {instruction ? <div className="tutorial-instruction"><i />{instruction}</div> : null}
-      {!step.action && !step.drag ? <button ref={primaryRef} className="tutorial-continue" onClick={advance}>{hasStepText('continue') ? stepText('continue') : t('common.continue')}</button> : null}
+      {step.id !== 'wait-first-wave' && !step.action && !step.drag
+        ? <button ref={primaryRef} className="tutorial-continue" onClick={advance}>{hasStepText('continue') ? stepText('continue') : t('common.continue')}</button>
+        : null}
       <div className="tutorial-progress" aria-label={t('tutorial.progress', { current: stepIndex + 1, total: STEPS.length })}>
         {STEPS.map((item, index) => <i key={item.id} className={index <= stepIndex ? 'active' : ''} />)}
       </div>

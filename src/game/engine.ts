@@ -5,7 +5,7 @@ import type { ModuleCombatApi, StatusApplication } from '../modules/types';
 import i18n from '../i18n';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
-import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, WORLD, type LevelDefinition } from './config';
+import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, TUTORIAL_LEVEL_ID, WORLD, type LevelDefinition } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
@@ -47,7 +47,6 @@ export interface GameEngineOptions {
   creative?: Partial<CreativeSetup>;
 }
 
-const TUTORIAL_LEVEL_ID = 'starter-elbow';
 const TUTORIAL_MODULES: Readonly<Record<ModuleId, number>> = {
   frost: 1,
   pulse: 2,

@@ -16,6 +16,7 @@ describe('level selection accessibility', () => {
   it('exposes mode state and supports arrow-key radio selection', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
 
     const standardMode = screen.getByRole('button', { name: /Standard/ });
     const creativeMode = screen.getByRole('button', { name: /Creative/ });
@@ -41,6 +42,7 @@ describe('level selection accessibility', () => {
   it('shows three level cards at a time and pages with arrow controls', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
 
     let group = screen.getByRole('radiogroup', { name: 'Choose defense sector' });
     expect(group.querySelectorAll('[role="radio"]')).toHaveLength(3);
@@ -58,6 +60,7 @@ describe('level selection accessibility', () => {
   it('switches the complete interface language and updates the document locale', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
     await user.click(screen.getByRole('button', { name: zhCN['lang.name'] }));

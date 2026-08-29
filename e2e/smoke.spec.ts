@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const WORLD = { width: 1080, height: 650 } as const;
+const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
+
+async function prepareReturningPlayer(page: Page): Promise<void> {
+  await page.addInitScript((key) => localStorage.setItem(key, '1'), TUTORIAL_OFFER_STORAGE_KEY);
+}
 
 async function clickBattlefieldAt(page: Page, x: number, y: number): Promise<void> {
   const canvas = page.getByRole('img', { name: 'Tower-defense battlefield' });
@@ -22,9 +27,38 @@ async function completeInitialDraft(page: Page): Promise<void> {
   await expect(dialog).toHaveCount(0);
 }
 
+test('first visit offers the tutorial and remembers a final choice', async ({ page }) => {
+  await page.goto('/');
+  const offer = page.locator('.tutorial-offer');
+  await expect(offer).toBeVisible();
+  await expect(offer).toHaveAccessibleName('Would you like a guided start?');
+  await offer.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: '\u4e2d\u6587' }).click();
+  await expect(offer.getByRole('heading', { name: '\u9700\u8981\u5148\u5b8c\u6210\u64cd\u4f5c\u6559\u7a0b\u5417\uff1f' })).toBeVisible();
+  await offer.getByRole('button', { name: '\u8bbe\u7f6e' }).click();
+  await page.getByRole('button', { name: 'English' }).click();
+
+  await offer.getByRole('button', { name: /Start Launch Elbow/ }).click();
+  await expect(page.getByRole('heading', { name: 'Launch Elbow T-0', level: 1 })).toBeVisible();
+  const tutorial = page.getByRole('region', { name: 'Launch Elbow tutorial' });
+  await expect(tutorial.getByRole('heading', { name: 'Welcome to Launch Elbow' })).toBeVisible();
+  await tutorial.getByRole('button', { name: 'Skip tutorial' }).click();
+  await page.getByRole('button', { name: 'Return to level selection' }).click();
+  await page.reload();
+  await expect(offer).toHaveCount(0);
+
+  await page.evaluate((key) => localStorage.removeItem(key), TUTORIAL_OFFER_STORAGE_KEY);
+  await page.reload();
+  await expect(offer).toBeVisible();
+  await offer.getByRole('button', { name: 'No, thanks' }).click();
+  await page.reload();
+  await expect(offer).toHaveCount(0);
+});
+
 test('setup and battlefield work in a real browser', async ({ page }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
+  await prepareReturningPlayer(page);
   await page.goto('/');
 
   const normal = page.getByRole('radio', { name: /Normal/ });
@@ -47,6 +81,7 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
 });
 
 test('mobile setup keeps primary controls reachable', async ({ page }) => {
+  await prepareReturningPlayer(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('button', { name: /Standard/ })).toBeVisible();
@@ -61,6 +96,7 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
 });
 
 test('signal compendium exposes every signal profile from its own entry', async ({ page }) => {
+  await prepareReturningPlayer(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Open signal compendium' }).click();
   await expect(page.getByRole('heading', { name: 'Signal Compendium' })).toBeVisible();
@@ -118,6 +154,7 @@ test('signal compendium exposes every signal profile from its own entry', async 
 });
 
 test('creative economy and signal controls are independent from the workshop', async ({ page }) => {
+  await prepareReturningPlayer(page);
   await page.goto('/');
   await page.getByRole('button', { name: /Creative/ }).click();
   await expect(page.getByRole('heading', { name: 'Creative Run Calibration' })).toBeVisible();
@@ -140,6 +177,8 @@ test('creative economy and signal controls are independent from the workshop', a
 });
 
 test('level carousel keeps three cards visible and launches the beginner map', async ({ page }) => {
+  test.slow();
+  await prepareReturningPlayer(page);
   await page.goto('/');
   const levelGroup = page.getByRole('radiogroup', { name: 'Choose defense sector' });
   await expect(levelGroup.getByRole('radio')).toHaveCount(3);
@@ -193,9 +232,15 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   await tutorial.getByRole('button', { name: 'Click “Launch signal”' }).click();
 
   await expect(page.getByText('Observe the module combination')).toBeVisible();
+  await expect(tutorialCard).toContainText('Observe the module combination');
+  const waveCardBox = await tutorialCard.boundingBox();
+  if (!waveCardBox) throw new Error('Expected the standard tutorial card during wave one');
+  expect(viewport.width - waveCardBox.x - waveCardBox.width).toBeCloseTo(20, 0);
+  expect(viewport.height - waveCardBox.y - waveCardBox.height).toBeCloseTo(20, 0);
   await page.getByRole('button', { name: '2×' }).click();
   await clickBattlefieldAt(page, 465, 65);
-  await expect(tutorial.getByRole('heading', { name: 'This is not the tutorial tower' })).toBeVisible({ timeout: 20_000 });
+  await expect(workshop.locator('.tower-id')).toHaveText('Node 02');
+  await expect(tutorial.getByRole('heading', { name: 'This is not the tutorial tower' })).toBeVisible({ timeout: 45_000 });
   await tutorial.getByRole('button', { name: 'Close the current Arc Workshop' }).click();
   await expect(tutorial.getByRole('heading', { name: 'Reopen the tutorial tower' })).toBeVisible();
   await tutorial.getByRole('button', { name: 'Click the highlighted starting tower' }).click();
@@ -209,6 +254,8 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   await tutorial.getByRole('button', { name: 'Ready' }).click();
   await tutorial.getByRole('button', { name: 'Click the close button in the workshop header' }).click();
   await expect(page.getByLabel('Tower module workshop')).toHaveCount(0);
+  await page.evaluate((key) => localStorage.removeItem(key), TUTORIAL_OFFER_STORAGE_KEY);
   await tutorial.getByRole('button', { name: 'Click “Launch signal” to finish the tutorial' }).click();
   await expect(tutorial).toHaveCount(0);
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), TUTORIAL_OFFER_STORAGE_KEY)).toBe('1');
 });

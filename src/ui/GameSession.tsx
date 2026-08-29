@@ -8,7 +8,11 @@ import { Toast } from './Toast';
 import { RewardDraft } from './RewardDraft';
 import { TutorialGuide } from './TutorialGuide';
 
-export function GameSession({ engine, onExit }: { engine: GameEngine; onExit: () => void }) {
+export function GameSession({ engine, onExit, onTutorialResolved }: {
+  engine: GameEngine;
+  onExit: () => void;
+  onTutorialResolved: () => void;
+}) {
   const { view, toast } = useGameState(engine);
   const { game: snapshot, selectedTower: tower } = view;
   return <div className="app-shell">
@@ -25,6 +29,6 @@ export function GameSession({ engine, onExit }: { engine: GameEngine; onExit: ()
       </div>
     </div>
     <Toast toast={toast} />
-    <TutorialGuide engine={engine} view={view} />
+    <TutorialGuide engine={engine} view={view} onResolved={onTutorialResolved} />
   </div>;
 }
