@@ -14,13 +14,20 @@ function shieldData(data: unknown): ShieldEffectData {
   };
 }
 
+export const GAME_EFFECT_IDS = {
+  fractureSplitRipple: 'game:fracture-split-ripple',
+  shieldHit: 'game:shield-hit',
+  shieldBreak: 'game:shield-break',
+  shieldRestore: 'game:shield-restore',
+} as const;
+
 export const gameEffects: readonly EffectDefinition[] = [
   shockwave({ id: 'game:tower-build-ring', lifetime: 0.5, radius: 54, stroke: 3, sides: 6, layer: 'ground' }),
   coneSparks({ id: 'game:tower-build-sparks', lifetime: 0.48, count: 18, distance: 72, length: 10, stroke: 2 }),
   shockwave({ id: 'game:enemy-pop-ring', lifetime: 0.28, radius: 32, stroke: 2.5, sides: 6 }),
   coneSparks({ id: 'game:enemy-pop-sparks', lifetime: 0.42, count: 12, distance: 54, length: 9, stroke: 2 }),
   {
-    id: 'game:fracture-split-ripple',
+    id: GAME_EFFECT_IDS.fractureSplitRipple,
     lifetime: 0.46,
     layer: 'overlay',
     bloom: 1,
@@ -44,7 +51,7 @@ export const gameEffects: readonly EffectDefinition[] = [
     },
   },
   {
-    id: 'game:shield-hit',
+    id: GAME_EFFECT_IDS.shieldHit,
     lifetime: 0.2,
     layer: 'air',
     bloom: 0.95,
@@ -54,7 +61,7 @@ export const gameEffects: readonly EffectDefinition[] = [
     },
   },
   {
-    id: 'game:shield-break',
+    id: GAME_EFFECT_IDS.shieldBreak,
     lifetime: 0.66,
     layer: 'air',
     bloom: 1,
@@ -88,7 +95,7 @@ export const gameEffects: readonly EffectDefinition[] = [
     },
   },
   {
-    id: 'game:shield-restore',
+    id: GAME_EFFECT_IDS.shieldRestore,
     lifetime: 0.52,
     layer: 'air',
     bloom: 0.82,

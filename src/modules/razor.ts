@@ -24,7 +24,7 @@ export const razorModule: ModuleDefinition = {
   id: 'razor',
   kind: 'projectile',
   meta: {
-    name: 'Returning Razor', shortName: 'Razor', symbol: '✥', color, tint: '#e3f8fc', energy: 34, rarity: 'rare',
+    name: 'Returning Razor', shortName: 'Razor', symbol: '✥', color, tint: '#e3f8fc', energy: 24, rarity: 'rare',
     description: 'A wide multi-target cutting projectile', detail: '14 damage · Hits up to 5 targets',
   },
   effects,

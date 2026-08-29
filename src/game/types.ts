@@ -33,6 +33,7 @@ export interface ShotBlueprint {
   seeking: number;
   repeats: number;
   repeatDelay: number;
+  energyRefundMultiplier: number;
   energyCost: number;
   lifetime: number;
   static?: StaticProjectileSpec;
@@ -54,6 +55,10 @@ export interface StaticProjectileSpec {
   triggerRadius: number;
   cooldown: number;
   maxTriggers: number;
+  gravity?: {
+    pull: number;
+    radius: number;
+  };
 }
 
 export interface TowerProgram {
@@ -202,9 +207,10 @@ export interface ModuleDraftSnapshot {
 }
 
 export interface CreativeSetup {
-  wave: Record<EnemyType, number>;
   healthScale: number;
   speedScale: number;
+  coreStability: number;
+  waveCount: number;
 }
 
 export interface GameSnapshot {

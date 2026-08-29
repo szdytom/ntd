@@ -54,7 +54,7 @@ export const arcboltModule: ModuleDefinition = {
   id: 'arcbolt',
   kind: 'projectile',
   meta: {
-    name: 'Arcbolt Core', shortName: 'Arcbolt', symbol: 'ϟ', color, tint: '#e9edff', energy: 42, rarity: 'legendary',
+    name: 'Arcbolt Core', shortName: 'Arcbolt', symbol: 'ϟ', color, tint: '#e9edff', energy: 25, rarity: 'legendary',
     description: 'Chains to nearby enemies on impact', detail: '22 damage · Up to 4 chains',
   },
   effects,
@@ -82,7 +82,7 @@ export const arcboltModule: ModuleDefinition = {
       const target = combat.nearbyEnemies(origin, 118, visited)[0];
       if (!target) break;
       engine.spawn('module:arcbolt:chain', { position: origin, color, data: { ...target.position } });
-      combat.dealDamage(target, damage, color);
+      combat.dealDamage(target, damage, color, projectile);
       visited.push(target.id);
       origin = { ...target.position };
       damage *= 0.78;

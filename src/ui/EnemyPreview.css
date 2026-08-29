@@ -45,9 +45,34 @@
   clip-path: polygon(25% 7%, 75% 7%, 100% 50%, 75% 93%, 25% 93%, 0 50%);
 }
 
-.enemy-preview i.star,
-.legend i.star {
-  clip-path: polygon(50% 0, 58% 34%, 66% 42%, 100% 50%, 66% 58%, 58% 66%, 50% 100%, 42% 66%, 34% 58%, 0 50%, 34% 42%, 42% 34%);
+.enemy-preview i.fracture,
+.legend i.fracture {
+  position: relative;
+  border-radius: 0;
+  background: transparent;
+}
+
+.enemy-preview i.fracture::before,
+.legend i.fracture::before,
+.enemy-preview i.fracture::after,
+.legend i.fracture::after {
+  position: absolute;
+  content: '';
+}
+
+.enemy-preview i.fracture::before,
+.legend i.fracture::before {
+  z-index: 1;
+  inset: 14%;
+  border-radius: 50%;
+  background: var(--preview-color, #00a8cc);
+}
+
+.enemy-preview i.fracture::after,
+.legend i.fracture::after {
+  inset: 0;
+  background: var(--preview-color, #00a8cc);
+  clip-path: polygon(50% 0, 58.5% 22%, 78% 41.5%, 100% 50%, 78% 58.5%, 58.5% 78%, 50% 100%, 41.5% 78%, 22% 58.5%, 0 50%, 22% 41.5%, 41.5% 22%);
 }
 
 .enemy-preview i.ring,

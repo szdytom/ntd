@@ -46,6 +46,10 @@ uniform float u_splitRadius;
 uniform float u_splitPhase;
 uniform float u_splitActive;
 uniform vec3 u_splitColor;
+uniform vec2 u_singularityCenters[4];
+uniform float u_singularityRadii[4];
+uniform float u_singularityStrengths[4];
+uniform float u_singularityCount;
 uniform float u_time;
 uniform float u_pixelRatio;
 varying vec2 v_uv;
@@ -138,12 +142,47 @@ vec2 splitRippleDistortion(vec2 uv, out float blurMask) {
   return clamp(uv + displacement / u_resolution, vec2(0.001), vec2(0.999));
 }
 
+vec2 singularityDistortion(vec2 uv, out float horizonMask, out float lensMask) {
+  horizonMask = 0.0;
+  lensMask = 0.0;
+  vec2 warped = uv;
+  for (int index = 0; index < 4; index++) {
+    if (float(index) >= u_singularityCount) continue;
+    vec2 center = u_singularityCenters[index];
+    float radius = max(u_singularityRadii[index], 1.0);
+    float strength = u_singularityStrengths[index];
+    vec2 delta = warped * u_resolution - center;
+    float distanceToCenter = length(delta);
+    vec2 direction = delta / max(distanceToCenter, 0.001);
+    vec2 tangent = vec2(-direction.y, direction.x);
+    float normalizedDistance = distanceToCenter / radius;
+    float field = (1.0 - smoothstep(0.12, 1.0, normalizedDistance)) * strength;
+    float lens = exp(-pow((normalizedDistance - 0.42) * 5.2, 2.0)) * strength;
+    float inwardRefraction = lens * (7.5 + field * 3.5) * u_pixelRatio;
+    float swirl = field * sin(normalizedDistance * 18.0 - u_time * 3.2) * 2.4 * u_pixelRatio;
+    warped = clamp(
+      warped - (direction * inwardRefraction + tangent * swirl) / u_resolution,
+      vec2(0.001),
+      vec2(0.999)
+    );
+    horizonMask = max(
+      horizonMask,
+      (1.0 - smoothstep(0.05, 0.24, normalizedDistance)) * strength
+    );
+    lensMask = max(lensMask, lens);
+  }
+  return warped;
+}
+
 void main() {
   float shieldSurface;
   float shieldStripe;
   vec2 sceneUv = shieldDistortion(v_uv, shieldSurface, shieldStripe);
   float splitBlur;
   sceneUv = splitRippleDistortion(sceneUv, splitBlur);
+  float singularityHorizon;
+  float singularityLens;
+  sceneUv = singularityDistortion(sceneUv, singularityHorizon, singularityLens);
   vec3 scene = texture2D(u_scene, sceneUv).rgb;
   if (u_splitActive > 0.5 && splitBlur > 0.001) {
     vec2 delta = sceneUv * u_resolution - u_splitCenter;
@@ -155,6 +194,13 @@ void main() {
       + texture2D(u_scene, clamp(sceneUv + blurStep, vec2(0.001), vec2(0.999))).rgb
     ) / 3.0;
     scene = mix(scene, softened, clamp(splitBlur * 0.78, 0.0, 0.78));
+  }
+  if (singularityLens > 0.001) {
+    vec2 pixel = 1.25 * u_pixelRatio / u_resolution;
+    vec3 refracted = scene;
+    refracted.r = texture2D(u_scene, clamp(sceneUv - pixel, vec2(0.001), vec2(0.999))).r;
+    refracted.b = texture2D(u_scene, clamp(sceneUv + pixel, vec2(0.001), vec2(0.999))).b;
+    scene = mix(scene, refracted, clamp(singularityLens * 0.52, 0.0, 0.52));
   }
   vec4 wideGlow = texture2D(u_bloom, v_uv);
   vec4 hotGlow = texture2D(u_emissive, v_uv);
@@ -174,6 +220,8 @@ void main() {
   float surfaceTint = shieldSurface * 0.018 + shieldStripe * (0.085 + u_shieldHit * 0.035);
   result = mix(result, u_shieldColor, clamp(surfaceTint, 0.0, 0.14));
   result = mix(result, u_splitColor, clamp(splitBlur * 0.075, 0.0, 0.075));
+  result = mix(result, vec3(0.027, 0.012, 0.065), clamp(singularityHorizon * 0.92, 0.0, 0.92));
+  result = mix(result, vec3(0.435, 0.290, 0.847), clamp(singularityLens * 0.10, 0.0, 0.10));
   gl_FragColor = vec4(result, 1.0);
 }
 `;
@@ -204,6 +252,13 @@ export interface SplitDistortion {
   radius: number;
   phase: number;
   color: readonly [number, number, number];
+}
+
+export interface SingularityDistortion {
+  centerX: number;
+  centerY: number;
+  radius: number;
+  strength: number;
 }
 
 export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderingContext | null {
@@ -300,6 +355,8 @@ export class WebGLBloomPipeline {
     scene: HTMLCanvasElement,
     shield: ShieldDistortion | null = null,
     split: SplitDistortion | null = null,
+    singularities: readonly SingularityDistortion[] = [],
+    time = 0,
   ): void {
     if (this.contextLost) return;
     const gl = this.gl;
@@ -312,7 +369,7 @@ export class WebGLBloomPipeline {
 
     this.blur(this.emissiveTexture, this.pingFramebuffer, 1 / this.blurWidth, 0);
     this.blur(this.pingTexture, this.pongFramebuffer, 0, 1 / this.blurHeight);
-    this.composite(shield, split);
+    this.composite(shield, split, singularities, time);
   }
 
   dispose(): void {
@@ -371,7 +428,12 @@ export class WebGLBloomPipeline {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  private composite(shield: ShieldDistortion | null, split: SplitDistortion | null): void {
+  private composite(
+    shield: ShieldDistortion | null,
+    split: SplitDistortion | null,
+    singularities: readonly SingularityDistortion[],
+    time: number,
+  ): void {
     const gl = this.gl;
     const program = this.compositeProgram.program;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -417,7 +479,23 @@ export class WebGLBloomPipeline {
       split?.color[1] ?? 0.91,
       split?.color[2] ?? 0.95,
     );
-    gl.uniform1f(this.uniform(program, 'u_time'), shield?.time ?? 0);
+    const singularityCenters = new Float32Array(8);
+    const singularityRadii = new Float32Array(4);
+    const singularityStrengths = new Float32Array(4);
+    const singularityCount = Math.min(4, singularities.length);
+    for (let index = 0; index < singularityCount; index += 1) {
+      const singularity = singularities[index];
+      if (!singularity) continue;
+      singularityCenters[index * 2] = singularity.centerX;
+      singularityCenters[index * 2 + 1] = singularity.centerY;
+      singularityRadii[index] = singularity.radius;
+      singularityStrengths[index] = singularity.strength;
+    }
+    gl.uniform2fv(this.uniform(program, 'u_singularityCenters[0]'), singularityCenters);
+    gl.uniform1fv(this.uniform(program, 'u_singularityRadii[0]'), singularityRadii);
+    gl.uniform1fv(this.uniform(program, 'u_singularityStrengths[0]'), singularityStrengths);
+    gl.uniform1f(this.uniform(program, 'u_singularityCount'), singularityCount);
+    gl.uniform1f(this.uniform(program, 'u_time'), time);
     gl.uniform1f(this.uniform(program, 'u_pixelRatio'), this.dpr);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }

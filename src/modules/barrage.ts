@@ -23,7 +23,7 @@ export const barrageModule: ModuleDefinition = {
   id: 'barrage',
   kind: 'logic',
   meta: {
-    name: 'Four-Beat Clock', shortName: 'Fourfold', symbol: 'Ⅳ', color, tint: '#ffe7ed', energy: 38, rarity: 'legendary',
+    name: 'Four-Beat Clock', shortName: 'Fourfold', symbol: 'Ⅳ', color, tint: '#ffe7ed', energy: 32, rarity: 'legendary',
     description: 'Rapidly repeats the next shot', detail: '4 consecutive casts · 0.09 second interval',
   },
   effects,

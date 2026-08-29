@@ -15,7 +15,7 @@ export const proximityMineModule: ModuleDefinition = {
   id: 'proximity-mine',
   kind: 'static',
   meta: {
-    name: 'Hex Proximity Mine', shortName: 'Mine', symbol: '⬢', color, tint: '#ffe7ed', energy: 34, rarity: 'rare',
+    name: 'Hex Proximity Mine', shortName: 'Mine', symbol: '⬢', color, tint: '#ffe7ed', energy: 28, rarity: 'rare',
     description: 'Deploys at the trigger point and waits for enemies', detail: 'Trigger payload only · 52 area damage',
   },
   effects,
@@ -64,6 +64,6 @@ export const proximityMineModule: ModuleDefinition = {
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawnMany(['module:mine:blast-a', 'module:mine:blast-b', 'module:mine:debris'], { position, color });
     if (!projectile) return;
-    for (const enemy of combat.nearbyEnemies(position, 88)) combat.dealDamage(enemy, projectile.damage, color);
+    for (const enemy of combat.nearbyEnemies(position, 88)) combat.dealDamage(enemy, projectile.damage, color, projectile);
   },
 };

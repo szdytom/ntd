@@ -27,7 +27,7 @@ export const seekerModule: ModuleDefinition = {
   id: 'seeker',
   kind: 'logic',
   meta: {
-    name: 'Seeker Protocol', shortName: 'Seeker', symbol: '⌁', color, tint: '#e2f4f8', energy: 6, rarity: 'common',
+    name: 'Seeker Protocol', shortName: 'Seeker', symbol: '⌁', color, tint: '#e2f4f8', energy: 10, rarity: 'uncommon',
     description: 'Makes the next projectile track its target', detail: 'Strong guidance · No direct damage bonus',
   },
   effects,

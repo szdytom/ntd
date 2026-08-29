@@ -11,7 +11,7 @@ export function EnemyPreview({ engine, wave }: { engine: GameEngine; wave: numbe
   engine.getWaveBlueprint(wave).forEach((type) => counts.set(type, (counts.get(type) ?? 0) + 1));
   return <div className="enemy-preview">{[...counts.entries()].slice(0, 4).map(([type, count]) => {
     const enemy = ENEMIES[type as keyof typeof ENEMIES];
-    const shape = enemy.shape === 'star' ? 'star' : enemy.shape === 'ring' ? 'ring' : enemy.sides === 3 ? 'tri' : enemy.sides >= 6 ? 'hex' : 'square';
+    const shape = enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.sides === 3 ? 'tri' : enemy.sides >= 6 ? 'hex' : 'square';
     return <span key={type} title={`${enemyName(t, type as keyof typeof ENEMIES)} × ${count}`}><i className={shape} style={{ '--preview-color': enemy.color } as CSSProperties} /><b>×{count}</b></span>;
   })}</div>;
 }

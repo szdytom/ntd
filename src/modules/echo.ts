@@ -24,7 +24,7 @@ export const echoModule: ModuleDefinition = {
   id: 'echo',
   kind: 'logic',
   meta: {
-    name: 'Echo Command', shortName: 'Echo', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 13, rarity: 'uncommon',
+    name: 'Echo Command', shortName: 'Echo', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 18, rarity: 'rare',
     description: 'Executes the next shot again after a delay', detail: 'Double cast · 0.16 second interval',
   },
   effects,

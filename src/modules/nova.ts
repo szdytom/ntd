@@ -45,7 +45,8 @@ export const novaModule: ModuleDefinition = {
     ctx.restore();
   },
   onCast: ({ effects: engine, position, rotation }) => engine.spawn('module:nova:muzzle', { position, rotation, color }),
-  onHit: ({ effects: engine, position }) => {
+  onHit: ({ effects: engine, position, projectile }) => {
+    if (projectile?.splash === 0) return;
     engine.spawnMany(['module:nova:blast-a', 'module:nova:blast-b', 'module:nova:debris'], { position, color });
   },
 };

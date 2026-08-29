@@ -82,17 +82,33 @@ describe('engine command and view boundary', () => {
     expect(engine.towers[0].slots).toEqual(before);
   });
 
-  it('allows multiple crown enemies in setup and live spawning', () => {
-    const engine = new GameEngine({
-      mode: 'creative',
-      seed: 5,
-      creative: { wave: { crown: 40 } },
-    });
+  it('allows multiple enemies to be injected during a creative run', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
 
-    expect(engine.getCreativeSetup().wave.crown).toBe(40);
     engine.spawnCreativeEnemy('crown');
     engine.spawnCreativeEnemy('crown');
     expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(2);
+  });
+
+  it('configures creative core stability and repeats the final designed wave', () => {
+    const engine = new GameEngine({
+      mode: 'creative',
+      levelId: 'starter-elbow',
+      seed: 5,
+      creative: { coreStability: 37, waveCount: 5 },
+    });
+    const finalDesignedWave = engine.level.waves.at(-1);
+
+    expect(engine.getSnapshot()).toMatchObject({ core: 37, maxCore: 37, maxWaves: 5 });
+    expect(engine.getCreativeSetup()).toMatchObject({ coreStability: 37, waveCount: 5 });
+    expect(engine.getWaveBlueprint(0)).toEqual(engine.level.waves[0]);
+    expect(engine.getWaveBlueprint(1)).toEqual(finalDesignedWave);
+    expect(engine.getWaveBlueprint(2)).toEqual(finalDesignedWave);
+    expect(engine.getWaveBlueprint(4)).toEqual(finalDesignedWave);
+
+    engine.core = 1;
+    engine.reset();
+    expect(engine.core).toBe(37);
   });
 
   it('keeps creative-mode shards infinite across spending and reset', () => {
@@ -114,13 +130,12 @@ describe('engine command and view boundary', () => {
       mode: 'creative',
       levelId: 'starter-elbow',
       seed: 5,
-      creative: { wave: { spark: 1, kite: 0, block: 0, hex: 0, crown: 0 } },
+      creative: { waveCount: 2 },
     });
     engine.startWave();
-    while (engine.enemies.length === 0) engine.update(FIXED_SIMULATION_STEP);
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected the wave enemy to spawn');
-    enemy.dead = true;
+    const expectedEnemies = engine.getWaveBlueprint(0).length;
+    while (engine.enemies.length < expectedEnemies) engine.update(FIXED_SIMULATION_STEP);
+    engine.enemies.forEach((enemy) => { enemy.dead = true; });
 
     engine.update(FIXED_SIMULATION_STEP);
     expect(engine.status).toBe('wave');

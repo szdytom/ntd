@@ -2,24 +2,18 @@ import {
   createBloomWebGLContext,
   WebGLBloomPipeline,
   type ShieldDistortion,
+  type SingularityDistortion,
   type SplitDistortion,
 } from '../effects/bloom';
 import { ECONOMY_BALANCE } from './balance';
 import i18n from '../i18n';
 import { ENEMIES, WORLD } from './config';
 import { clamp, distance, seededNoise } from './math';
+import { drawEnemyBody, drawEnemyShield, hexToRgb, traceRegularPolygon } from './enemy-visuals';
+import { drawSuppressionLink, drawSuppressionSource } from './suppression-visuals';
+import { drawTowerBody } from './tower-visuals';
 import type { GameEngine } from './engine';
-import type { Enemy, Point, Tower } from './types';
-
-function hexToRgb(color: string): readonly [number, number, number] {
-  const value = Number.parseInt(color.replace('#', ''), 16);
-  if (!Number.isFinite(value)) return [0.27, 0.72, 1];
-  return [
-    ((value >> 16) & 0xff) / 255,
-    ((value >> 8) & 0xff) / 255,
-    (value & 0xff) / 255,
-  ];
-}
+import type { Enemy, Point, Projectile, Tower } from './types';
 
 export class GameRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -108,7 +102,8 @@ export class GameRenderer {
 
     this.drawDecorations();
     this.engine.effects.render(ctx, 'ground', bloomCtx);
-    this.drawEnemyAuras(bloomCtx ?? null);
+    this.drawEnemyAuraSources(bloomCtx ?? null);
+    this.drawSingularityFields(bloomCtx ?? null);
     this.drawTowerPads();
     this.drawSelectionRange();
     this.drawTowers();
@@ -116,6 +111,7 @@ export class GameRenderer {
     this.drawProjectiles();
     this.engine.effects.render(ctx, 'projectile', bloomCtx);
     this.drawEnemies();
+    this.drawEnemyAuraLinks(bloomCtx ?? null);
     this.engine.effects.render(ctx, 'air', bloomCtx);
     this.drawFloatingText();
     this.drawCore();
@@ -125,7 +121,13 @@ export class GameRenderer {
 
     if (bloomCtx && this.bloom) {
       this.drawBloomSources(bloomCtx);
-      this.bloom.render(this.scene, this.getShieldDistortion(), this.getSplitDistortion());
+      this.bloom.render(
+        this.scene,
+        this.getShieldDistortion(),
+        this.getSplitDistortion(),
+        this.getSingularityDistortions(),
+        this.engine.visualElapsed,
+      );
     } else if (this.fallbackCtx) {
       this.fallbackCtx.setTransform(1, 0, 0, 1, 0, 0);
       this.fallbackCtx.drawImage(this.scene, 0, 0);
@@ -189,6 +191,31 @@ export class GameRenderer {
     };
   }
 
+  private getActiveSingularities(): Projectile[] {
+    return this.engine.projectiles.filter((projectile) => (
+      projectile.behavior === 'static'
+      && projectile.shot.source === 'singularity'
+      && projectile.age >= (projectile.shot.static?.armTime ?? 0)
+      && projectile.life > 0
+    ));
+  }
+
+  private getSingularityDistortions(): SingularityDistortion[] {
+    return this.getActiveSingularities().slice(-4).map((projectile) => {
+      const screenX = this.offsetX + projectile.position.x * this.scale;
+      const screenY = this.offsetY + projectile.position.y * this.scale;
+      const armTime = projectile.shot.static?.armTime ?? 0;
+      const fadeIn = clamp((projectile.age - armTime) / 0.28, 0, 1);
+      const fadeOut = clamp(projectile.life / 0.4, 0, 1);
+      return {
+        centerX: screenX * this.dpr,
+        centerY: (this.cssHeight - screenY) * this.dpr,
+        radius: 72 * this.scale * this.dpr,
+        strength: fadeIn * fadeOut,
+      };
+    });
+  }
+
   private drawBloomSources(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -210,6 +237,7 @@ export class GameRenderer {
     }
 
     for (const projectile of this.engine.projectiles) {
+      const isSingularity = projectile.behavior === 'static' && projectile.shot.source === 'singularity';
       const staticPulse = projectile.behavior === 'static'
         ? 0.78 + Math.sin(projectile.age * 4 + projectile.id) * 0.18
         : 1;
@@ -222,6 +250,15 @@ export class GameRenderer {
         ctx.beginPath();
         ctx.arc(trail.x, trail.y, projectile.radius * (0.5 + fade * 0.5), 0, Math.PI * 2);
         ctx.fill();
+      }
+      if (isSingularity) {
+        ctx.globalAlpha = 0.34 * staticPulse;
+        ctx.strokeStyle = '#6f4ad8';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(projectile.position.x, projectile.position.y, 18, 0, Math.PI * 2);
+        ctx.stroke();
+        continue;
       }
       ctx.globalAlpha = 0.82 * staticPulse;
       ctx.fillStyle = projectile.color;
@@ -251,7 +288,7 @@ export class GameRenderer {
       const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
       ctx.globalAlpha = 0.045 + enemy.shieldHitFlash * 0.34;
       ctx.fillStyle = shield.color;
-      this.tracePolygon(ctx, enemy.position.x, enemy.position.y + bob, radius, shield.sides, shield.rotation);
+      traceRegularPolygon(ctx, enemy.position.x, enemy.position.y + bob, radius, shield.sides, shield.rotation);
       ctx.fill();
     }
 
@@ -425,34 +462,27 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  private drawEnemyAuras(bloomCtx: CanvasRenderingContext2D | null): void {
-    const sources = this.engine.enemies.filter((enemy) => !enemy.dead && ENEMIES[enemy.type].aura);
+  private getSuppressionSources(): Enemy[] {
+    return this.engine.enemies.filter((enemy) => !enemy.dead && ENEMIES[enemy.type].aura);
+  }
+
+  private drawEnemyAuraSources(bloomCtx: CanvasRenderingContext2D | null): void {
+    const sources = this.getSuppressionSources();
     if (sources.length === 0) return;
     const ctx = this.ctx;
-    const flickerFrame = Math.floor(this.engine.visualElapsed * 22);
 
     for (const source of sources) {
       const aura = ENEMIES[source.type].aura;
       if (!aura) continue;
-      const pulse = 0.62 + Math.sin(this.engine.visualElapsed * 5 + source.id) * 0.18;
-      ctx.save();
-      ctx.globalAlpha = pulse * 0.26;
-      ctx.fillStyle = aura.color;
-      ctx.beginPath();
-      ctx.arc(source.position.x, source.position.y, source.radius + 13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      if (bloomCtx) {
-        bloomCtx.save();
-        bloomCtx.globalAlpha = pulse * 0.72;
-        bloomCtx.fillStyle = aura.color;
-        bloomCtx.beginPath();
-        bloomCtx.arc(source.position.x, source.position.y, source.radius + 5, 0, Math.PI * 2);
-        bloomCtx.fill();
-        bloomCtx.restore();
-      }
+      drawSuppressionSource(ctx, source.position, source.radius, aura, this.engine.visualElapsed, source.id, false);
+      if (bloomCtx) drawSuppressionSource(bloomCtx, source.position, source.radius, aura, this.engine.visualElapsed, source.id, true);
     }
+  }
 
+  private drawEnemyAuraLinks(bloomCtx: CanvasRenderingContext2D | null): void {
+    const sources = this.getSuppressionSources();
+    if (sources.length === 0) return;
+    const ctx = this.ctx;
     for (const tower of this.engine.towers) {
       let source: Enemy | null = null;
       let nearestDistance = Number.POSITIVE_INFINITY;
@@ -467,137 +497,80 @@ export class GameRenderer {
       if (!source) continue;
       const aura = ENEMIES[source.type].aura;
       if (!aura) continue;
-      const points = this.createLightningPoints(source.position, tower.position, source.id, tower.id, flickerFrame);
-      this.strokeLightning(ctx, points, aura.lightningColor, 7, 0.2);
-      this.strokeLightning(ctx, points, aura.lightningColor, 2.8, 0.94);
-      this.strokeLightning(ctx, points, aura.lightningCoreColor, 1, 1);
-      this.drawSuppressionCollapse(ctx, tower.position, tower.id, false);
-      if (bloomCtx) {
-        this.strokeLightning(bloomCtx, points, aura.lightningColor, 5, 0.86);
-        this.strokeLightning(bloomCtx, points, aura.lightningCoreColor, 1.5, 0.96);
-        this.drawSuppressionCollapse(bloomCtx, tower.position, tower.id, true);
-      }
+      drawSuppressionLink(ctx, source.position, tower.position, aura, this.engine.visualElapsed, source.id, tower.id, false);
+      if (bloomCtx) drawSuppressionLink(bloomCtx, source.position, tower.position, aura, this.engine.visualElapsed, source.id, tower.id, true);
     }
   }
 
-  private drawSuppressionCollapse(
+  private drawSingularityFields(bloomCtx: CanvasRenderingContext2D | null): void {
+    for (const projectile of this.getActiveSingularities()) {
+      this.drawSingularityParticles(this.ctx, projectile, false);
+      if (bloomCtx) this.drawSingularityParticles(bloomCtx, projectile, true);
+    }
+  }
+
+  private drawSingularityParticles(
     ctx: CanvasRenderingContext2D,
-    position: Point,
-    towerId: number,
+    projectile: Projectile,
     emissive: boolean,
   ): void {
-    const phase = (this.engine.visualElapsed * 0.72 + towerId * 0.071) % 1;
-    const radius = 8 + (1 - phase * phase * phase) * 70;
-    const alpha = phase * (emissive ? 0.82 : 0.76);
+    const fieldRadius = projectile.shot.static?.gravity?.radius ?? 150;
+    const armTime = projectile.shot.static?.armTime ?? 0;
+    const lifeFade = Math.min(
+      clamp((projectile.age - armTime) / 0.22, 0, 1),
+      clamp(projectile.life / 0.35, 0, 1),
+    );
+    const time = this.engine.visualElapsed;
     ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = '#ff5c5c';
-    ctx.lineWidth = emissive ? 5 : 0.4 + phase * 4.6;
-    ctx.beginPath();
-    ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-    if (!emissive) {
-      ctx.globalAlpha = alpha * 0.78;
-      ctx.strokeStyle = '#fff2f2';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
+    ctx.lineCap = 'round';
+    if (emissive) ctx.globalCompositeOperation = 'lighter';
 
-    for (let index = 0; index < 10; index += 1) {
-      const angle = index * Math.PI * 2 / 10 + (seededNoise(towerId * 101 + index) - 0.5) * 0.24;
-      const travel = 15 + (1 - phase * phase) * (35 + seededNoise(towerId * 211 + index * 13) * 35);
-      const length = 15 * phase;
-      const x = position.x + Math.cos(angle) * travel;
-      const y = position.y + Math.sin(angle) * travel;
-      ctx.globalAlpha = phase * (emissive ? 0.76 : 0.82);
-      ctx.strokeStyle = index % 2 === 0 ? '#ffffff' : '#ff5c5c';
-      ctx.lineWidth = emissive ? 3 : 0.5 + phase * 1.7;
-      ctx.lineCap = 'round';
+    for (let index = 0; index < 18; index += 1) {
+      const seed = projectile.id * 409 + index * 67;
+      const speed = 0.34 + seededNoise(seed + 3) * 0.22;
+      const phase = (time * speed + seededNoise(seed + 7)) % 1;
+      const previousPhase = Math.max(0, phase - (0.025 + phase * 0.055));
+      const outerRadius = fieldRadius * (0.72 + seededNoise(seed + 11) * 0.26);
+      const innerRadius = 14 + seededNoise(seed + 13) * 5;
+      const acceleration = phase * phase * phase;
+      const previousAcceleration = previousPhase * previousPhase * previousPhase;
+      const radius = outerRadius - (outerRadius - innerRadius) * acceleration;
+      const previousRadius = outerRadius - (outerRadius - innerRadius) * previousAcceleration;
+      const baseAngle = seededNoise(seed + 17) * Math.PI * 2;
+      const curl = (seededNoise(seed + 19) - 0.5) * 1.3;
+      const angle = baseAngle + curl * phase * phase;
+      const previousAngle = baseAngle + curl * previousPhase * previousPhase;
+      const alpha = clamp(phase / 0.1, 0, 1) * clamp((1 - phase) / 0.08, 0, 1) * lifeFade;
+      const x = projectile.position.x + Math.cos(angle) * radius;
+      const y = projectile.position.y + Math.sin(angle) * radius;
+      const previousX = projectile.position.x + Math.cos(previousAngle) * previousRadius;
+      const previousY = projectile.position.y + Math.sin(previousAngle) * previousRadius;
+
+      ctx.globalAlpha = alpha * (emissive ? 0.72 : 0.88);
+      ctx.strokeStyle = index % 3 === 0 ? '#ffffff' : index % 2 === 0 ? '#cbb8ff' : '#6f4ad8';
+      ctx.lineWidth = emissive ? 3.8 : 0.8 + acceleration * 2.1;
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+      ctx.lineTo(previousX, previousY);
       ctx.stroke();
-    }
-    if (!emissive) {
-      for (let index = 0; index < 6; index += 1) {
-        const seed = towerId * 307 + index * 53;
-        const shapePhase = (this.engine.visualElapsed * 0.58 + seededNoise(seed)) % 1;
-        const fade = Math.sin(shapePhase * Math.PI);
-        const startRadius = 82 + seededNoise(seed + 7) * 34;
-        const travelRadius = 18 + (1 - shapePhase * shapePhase) * (startRadius - 18);
-        const baseAngle = seededNoise(seed + 13) * Math.PI * 2;
-        const curve = (seededNoise(seed + 19) - 0.5) * 0.8 * Math.sin(shapePhase * Math.PI);
-        const angle = baseAngle + curve;
-        const size = 6 + seededNoise(seed + 23) * 2;
-        const sides = seededNoise(seed + 29) < 0.5 ? 3 : 4;
-        const rotationDirection = seededNoise(seed + 31) < 0.5 ? -1 : 1;
-        const rotation = seededNoise(seed + 37) * Math.PI * 2
-          + this.engine.visualElapsed * rotationDirection * (0.65 + seededNoise(seed + 41) * 0.55);
-        ctx.globalAlpha = fade * 0.64;
-        ctx.strokeStyle = '#292534';
-        ctx.lineWidth = 1.25;
-        this.tracePolygon(
-          ctx,
-          position.x + Math.cos(angle) * travelRadius,
-          position.y + Math.sin(angle) * travelRadius,
-          size,
-          sides,
-          rotation,
-        );
-        ctx.stroke();
+
+      if (!emissive && index % 3 === 0) {
+        const size = 1.8 + acceleration * 2.6;
+        ctx.globalAlpha = alpha * 0.78;
+        ctx.fillStyle = index % 2 === 0 ? '#160d2b' : '#6f4ad8';
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + time * (0.8 + seededNoise(seed + 23)));
+        ctx.fillRect(-size * 0.5, -size * 0.5, size, size);
+        ctx.restore();
       }
     }
-    ctx.restore();
-  }
 
-  private createLightningPoints(
-    from: Point,
-    to: Point,
-    sourceId: number,
-    towerId: number,
-    flickerFrame: number,
-  ): Point[] {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const length = Math.hypot(dx, dy) || 1;
-    const normalX = -dy / length;
-    const normalY = dx / length;
-    const segments = Math.max(4, Math.min(9, Math.ceil(length / 42)));
-    const points: Point[] = [];
-    for (let index = 0; index <= segments; index += 1) {
-      const progress = index / segments;
-      const envelope = Math.sin(progress * Math.PI);
-      const seed = sourceId * 997 + towerId * 67 + flickerFrame * 13 + index * 31;
-      const offset = (seededNoise(seed) - 0.5) * (22 + length * 0.035) * envelope;
-      points.push({
-        x: from.x + dx * progress + normalX * offset,
-        y: from.y + dy * progress + normalY * offset,
-      });
-    }
-    return points;
-  }
-
-  private strokeLightning(
-    ctx: CanvasRenderingContext2D,
-    points: readonly Point[],
-    color: string,
-    width: number,
-    alpha: number,
-  ): void {
-    const first = points[0];
-    if (!first) return;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.globalAlpha = (emissive ? 0.32 : 0.24) * lifeFade;
+    ctx.strokeStyle = emissive ? '#6f4ad8' : '#cbb8ff';
+    ctx.lineWidth = emissive ? 4 : 1;
     ctx.beginPath();
-    ctx.moveTo(first.x, first.y);
-    for (let index = 1; index < points.length; index += 1) {
-      const point = points[index];
-      if (point) ctx.lineTo(point.x, point.y);
-    }
+    ctx.arc(projectile.position.x, projectile.position.y, 26 + Math.sin(time * 3.4) * 2, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -613,89 +586,16 @@ export class GameRenderer {
     const programHasProjectile = tower.slots.some((id) => id && this.engine.modules.get(id)?.kind === 'projectile');
     ctx.save();
     ctx.translate(tower.position.x, tower.position.y);
-
-    ctx.shadowColor = 'rgba(44, 38, 76, 0.16)';
-    ctx.shadowBlur = 13;
-    ctx.shadowOffsetY = 5;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, 0, 29, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowColor = 'transparent';
-
-    ctx.strokeStyle = selected ? color : '#dad8e2';
-    ctx.lineWidth = selected ? 3 : 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, 29, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#e8e6ee';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(0, 0, 35, -Math.PI / 2, Math.PI * 1.5);
-    ctx.stroke();
-    ctx.strokeStyle = color;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.arc(0, 0, 35, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (tower.energy / tower.maxEnergy));
-    ctx.stroke();
-
-    for (let level = 0; level < tower.level; level += 1) {
-      const angle = Math.PI * 0.78 + level * Math.PI * 0.11;
-      ctx.fillStyle = level === tower.level - 1 ? '#ffffff' : color;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.arc(Math.cos(angle) * 35, Math.sin(angle) * 35, 2.6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.rotate(tower.rotation);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.16 + tower.flash * 0.22;
-    ctx.beginPath();
-    ctx.roundRect(-3, -10, 36 + tower.flash * 5, 20, 8);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#332f48';
-    ctx.beginPath();
-    ctx.roundRect(-2, -7, 28, 14, 6);
-    ctx.fill();
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(23, 0, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.rotate(-tower.rotation);
-
-    ctx.fillStyle = color;
-    this.polygon(0, 0, 15, 6, Math.PI / 6);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (!programHasProjectile) {
-      ctx.fillStyle = '#ff5c5c';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(23, -23, 9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.font = '800 11px Manrope, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('!', 23, -23);
-    }
-
-    ctx.fillStyle = '#312d43';
-    ctx.font = '800 10px Manrope, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`T${String(tower.id).padStart(2, '0')} · L${tower.level}`, 0, 48);
+    drawTowerBody(ctx, {
+      color,
+      selected,
+      energyRatio: tower.energy / tower.maxEnergy,
+      level: tower.level,
+      rotation: tower.rotation,
+      flash: tower.flash,
+      programHasProjectile,
+      label: `T${String(tower.id).padStart(2, '0')} · L${tower.level}`,
+    });
     ctx.restore();
   }
 
@@ -727,65 +627,26 @@ export class GameRenderer {
     const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
     ctx.save();
     ctx.translate(enemy.position.x, enemy.position.y + bob);
-    ctx.rotate(enemy.type === 'fracture' || enemy.type === 'radiant'
-      ? this.engine.elapsed * (enemy.type === 'fracture' ? 0.55 : -0.38) + enemy.id * 0.17
-      : enemy.angle + (enemy.type === 'kite' ? Math.PI / 4 : 0));
-    ctx.shadowColor = 'rgba(37, 31, 65, 0.18)';
-    ctx.shadowBlur = 9;
-    ctx.shadowOffsetY = 4;
-    const fillColor = enemy.hitFlash > 0 ? '#ffffff' : config.color;
-    if (enemy.type === 'fracture') {
-      this.drawFractureBody(enemy.radius, fillColor);
-    } else {
-      ctx.fillStyle = fillColor;
-      if (config.shape === 'star') this.star(0, 0, enemy.radius, enemy.radius * 0.34, config.sides, -Math.PI / 2);
-      else if (config.shape === 'ring') this.ring(0, 0, enemy.radius, enemy.radius * 0.48);
-      else this.polygon(0, 0, enemy.radius, config.sides, enemy.type === 'spark' ? Math.PI / 2 : 0);
-      ctx.fill(config.shape === 'ring' ? 'evenodd' : 'nonzero');
-      ctx.shadowColor = 'transparent';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = enemy.type === 'crown' ? 4 : 3;
-      ctx.stroke();
-    }
-    ctx.shadowColor = 'transparent';
-
-    if (enemy.type === 'hex' || enemy.type === 'crown') {
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-      ctx.lineWidth = 2;
-      this.polygon(0, 0, enemy.radius * 0.48, config.sides, 0);
-      ctx.stroke();
-    }
-    if (enemy.type === 'crown') {
-      ctx.rotate(-enemy.angle - this.engine.elapsed * 0.9);
-      ctx.strokeStyle = '#ffcf4a';
-      ctx.lineWidth = 3;
-      this.polygon(0, 0, enemy.radius + 7, 8, this.engine.elapsed * 0.9);
-      ctx.stroke();
-    }
-    if (enemy.type === 'fracture') {
-      ctx.strokeStyle = 'rgba(255,255,255,0.88)';
-      ctx.lineWidth = Math.max(1.4, enemy.radius * 0.075);
-      ctx.beginPath();
-      ctx.arc(0, 0, enemy.radius * 0.38, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = '#d8fbff';
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.max(2.5, enemy.radius * 0.12), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    if (enemy.type === 'radiant') {
-      for (let index = 0; index < 3; index += 1) {
-        const angle = index * Math.PI * 2 / 3;
-        const orbit = enemy.radius * 0.72;
-        ctx.fillStyle = '#f4ffc2';
-        ctx.beginPath();
-        ctx.arc(Math.cos(angle) * orbit, Math.sin(angle) * orbit, enemy.radius * 0.13, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    drawEnemyBody(ctx, {
+      type: enemy.type,
+      radius: enemy.radius,
+      time: this.engine.elapsed,
+      travelAngle: enemy.angle,
+      phase: enemy.id * 0.17,
+      hitStrength: enemy.hitFlash,
+    });
     ctx.restore();
 
-    this.drawEnemyShield(enemy, bob);
+    if (config.shield) {
+      ctx.save();
+      ctx.translate(enemy.position.x, enemy.position.y + bob);
+      drawEnemyShield(ctx, config.shield, {
+        charge: enemy.maxShield > 0 ? enemy.shield / enemy.maxShield : 0,
+        radiusScale: enemy.shieldRadiusScale,
+        hitStrength: enemy.shieldHitFlash,
+      });
+      ctx.restore();
+    }
 
     const barWidth = enemy.radius * 2.15;
     const barY = enemy.position.y - enemy.radius - 10 + bob;
@@ -852,47 +713,6 @@ export class GameRenderer {
     });
   }
 
-  private drawEnemyShield(enemy: Enemy, bob: number): void {
-    const shield = ENEMIES[enemy.type].shield;
-    if (!shield || enemy.shield <= 0 || enemy.shieldRadiusScale <= 0) return;
-    const ctx = this.ctx;
-    const radius = shield.radius * enemy.shieldRadiusScale;
-    const rotation = shield.rotation;
-    const hit = enemy.shieldHitFlash;
-    const charge = clamp(enemy.shield / enemy.maxShield, 0, 1);
-
-    ctx.save();
-    ctx.translate(enemy.position.x, enemy.position.y + bob);
-    ctx.globalAlpha = 0.045 + charge * 0.025 + hit * 0.18;
-    ctx.fillStyle = shield.color;
-    this.tracePolygon(ctx, 0, 0, radius, shield.sides, rotation);
-    ctx.fill();
-
-    ctx.globalAlpha = 0.38 + charge * 0.14 + hit * 0.4;
-    ctx.strokeStyle = shield.color;
-    ctx.lineWidth = 1.4 + hit * 3.2;
-    this.tracePolygon(ctx, 0, 0, radius, shield.sides, rotation);
-    ctx.stroke();
-
-    if (hit > 0) {
-      ctx.globalAlpha = hit * 0.82;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1 + hit * 1.7;
-      this.tracePolygon(ctx, 0, 0, radius - 2, shield.sides, rotation);
-      ctx.stroke();
-    }
-
-    ctx.globalAlpha = 0.22 + hit * 0.72;
-    ctx.fillStyle = hit > 0.15 ? '#ffffff' : shield.color;
-    for (let index = 0; index < shield.sides; index += 1) {
-      const angle = rotation + index * Math.PI * 2 / shield.sides;
-      ctx.beginPath();
-      ctx.arc(Math.cos(angle) * radius, Math.sin(angle) * radius, 1.5 + hit * 1.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
   private drawFloatingText(): void {
     const ctx = this.ctx;
     for (const text of this.engine.floatingTexts) {
@@ -931,102 +751,7 @@ export class GameRenderer {
   }
 
   private polygon(x: number, y: number, radius: number, sides: number, rotation: number): void {
-    this.tracePolygon(this.ctx, x, y, radius, sides, rotation);
+    traceRegularPolygon(this.ctx, x, y, radius, sides, rotation);
   }
 
-  private star(
-    x: number,
-    y: number,
-    outerRadius: number,
-    innerRadius: number,
-    points: number,
-    rotation: number,
-  ): void {
-    const ctx = this.ctx;
-    ctx.beginPath();
-    for (let index = 0; index < points * 2; index += 1) {
-      const radius = index % 2 === 0 ? outerRadius : innerRadius;
-      const angle = rotation + index * Math.PI / points;
-      const px = x + Math.cos(angle) * radius;
-      const py = y + Math.sin(angle) * radius;
-      if (index === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-  }
-
-  private drawFractureBody(radius: number, fillColor: string): void {
-    const ctx = this.ctx;
-    const coreRadius = radius * 0.72;
-    const spikeBaseRadius = radius * 0.56;
-    const spikeHalfWidth = radius * 0.17;
-
-    const traceSpike = (angle: number): void => {
-      const radialX = Math.cos(angle);
-      const radialY = Math.sin(angle);
-      const tangentX = -radialY;
-      const tangentY = radialX;
-      ctx.beginPath();
-      ctx.moveTo(radialX * radius, radialY * radius);
-      ctx.lineTo(
-        radialX * spikeBaseRadius + tangentX * spikeHalfWidth,
-        radialY * spikeBaseRadius + tangentY * spikeHalfWidth,
-      );
-      ctx.lineTo(
-        radialX * spikeBaseRadius - tangentX * spikeHalfWidth,
-        radialY * spikeBaseRadius - tangentY * spikeHalfWidth,
-      );
-      ctx.closePath();
-    };
-
-    ctx.fillStyle = fillColor;
-    for (let index = 0; index < 4; index += 1) {
-      traceSpike(-Math.PI / 2 + index * Math.PI / 2);
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 3;
-    for (let index = 0; index < 4; index += 1) {
-      traceSpike(-Math.PI / 2 + index * Math.PI / 2);
-      ctx.stroke();
-    }
-    ctx.fillStyle = fillColor;
-    ctx.beginPath();
-    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  private ring(x: number, y: number, outerRadius: number, innerRadius: number): void {
-    const ctx = this.ctx;
-    ctx.beginPath();
-    ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
-    ctx.moveTo(x + innerRadius, y);
-    ctx.arc(x, y, innerRadius, 0, Math.PI * 2, true);
-    ctx.closePath();
-  }
-
-  private tracePolygon(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    radius: number,
-    sides: number,
-    rotation: number,
-  ): void {
-    ctx.beginPath();
-    for (let index = 0; index < sides; index += 1) {
-      const angle = rotation + (index / sides) * Math.PI * 2;
-      const px = x + Math.cos(angle) * radius;
-      const py = y + Math.sin(angle) * radius;
-      if (index === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-  }
 }

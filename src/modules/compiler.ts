@@ -21,7 +21,16 @@ interface PendingState {
   bonusPierce: number;
   sizeMultiplier: number;
   splashBonus: number;
+  splashSet?: number;
   energyMultiplier: number;
+  energyRefundMultiplier: number;
+  focusConversion?: {
+    damagePerCharge: number;
+    speedPerCharge: number;
+  };
+  condenseSplash?: {
+    damagePerRadius: number;
+  };
   energy: number;
   moduleIds: ModuleId[];
   moduleNames: string[];
@@ -50,6 +59,7 @@ const freshPending = (): PendingState => ({
   sizeMultiplier: 1,
   splashBonus: 0,
   energyMultiplier: 1,
+  energyRefundMultiplier: 0,
   energy: 0,
   moduleIds: [],
   moduleNames: [],
@@ -92,26 +102,62 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       pending.bonusPierce += patch.bonusPierce ?? 0;
       pending.sizeMultiplier *= patch.sizeMultiplier ?? 1;
       pending.splashBonus += patch.splashBonus ?? 0;
+      if (patch.splashSet !== undefined) pending.splashSet = Math.max(0, patch.splashSet);
       pending.energyMultiplier *= patch.energyMultiplier ?? 1;
+      pending.energyRefundMultiplier += patch.energyRefundMultiplier ?? 0;
+      if (patch.focusConversion) {
+        pending.focusConversion = {
+          damagePerCharge: (pending.focusConversion?.damagePerCharge ?? 0) + patch.focusConversion.damagePerCharge,
+          speedPerCharge: (pending.focusConversion?.speedPerCharge ?? 0) + patch.focusConversion.speedPerCharge,
+        };
+      }
+      if (patch.condenseSplash) {
+        pending.condenseSplash = {
+          damagePerRadius: (pending.condenseSplash?.damagePerRadius ?? 0) + patch.condenseSplash.damagePerRadius,
+        };
+      }
     };
 
     const emitProjectile = (spec: ProjectileSpec): void => {
+      let damageMultiplier = pending.damageMultiplier;
+      let speedMultiplier = pending.speedMultiplier;
+      let count = pending.count;
+      let spread = pending.spread;
+      let pierce = (spec.pierce ?? 0) + pending.bonusPierce;
+      let repeats = pending.repeats;
+      let repeatDelay = pending.repeatDelay;
+      let splash = (spec.splash ?? 0) + pending.splashBonus;
+      if (pending.focusConversion) {
+        const charge = Math.max(0, pierce) + Math.max(0, count - 1) + Math.max(0, repeats - 1);
+        damageMultiplier *= 1 + charge * pending.focusConversion.damagePerCharge;
+        speedMultiplier *= 1 + charge * pending.focusConversion.speedPerCharge;
+        count = 1;
+        spread = 0;
+        pierce = 0;
+        repeats = 1;
+        repeatDelay = 0;
+      }
+      if (pending.condenseSplash) {
+        damageMultiplier *= 1 + Math.max(0, splash) * pending.condenseSplash.damagePerRadius;
+      }
+      if (pending.splashSet !== undefined) splash = pending.splashSet;
       const shot: ShotBlueprint = {
         source: moduleId,
         modules: [...pending.moduleIds, moduleId],
-        damage: Math.round(spec.damage * pending.damageMultiplier),
-        speed: spec.speed * pending.speedMultiplier,
-        count: pending.count,
-        spread: pending.spread,
+        damage: Math.round(spec.damage * damageMultiplier),
+        speed: spec.speed * speedMultiplier,
+        count,
+        spread,
         size: spec.size * pending.sizeMultiplier,
         color: definition.meta.color,
-        pierce: (spec.pierce ?? 0) + pending.bonusPierce,
+        pierce,
         slow: pending.slow,
         slowDuration: pending.slowDuration,
-        splash: (spec.splash ?? 0) + pending.splashBonus,
+        splash,
         seeking: pending.seeking,
-        repeats: pending.repeats,
-        repeatDelay: pending.repeatDelay,
+        repeats,
+        repeatDelay,
+        energyRefundMultiplier: pending.energyRefundMultiplier,
         energyCost: Math.max(1, Math.round((definition.meta.energy + pending.energy) * pending.energyMultiplier)),
         lifetime: spec.lifetime ?? 1.7,
         ...(spec.static ? { static: spec.static } : {}),

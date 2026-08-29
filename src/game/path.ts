@@ -4,6 +4,7 @@ import type { Point } from './types';
 export interface PathSampler {
   readonly length: number;
   pointAtDistance(distance: number): { position: Point; angle: number };
+  nearestDistance(point: Point): number;
 }
 
 export function createPathSampler(path: readonly Point[]): PathSampler {
@@ -42,6 +43,28 @@ export function createPathSampler(path: readonly Point[]): PathSampler {
         position: { ...last.end },
         angle: Math.atan2(last.end.y - last.start.y, last.end.x - last.start.x),
       };
+    },
+    nearestDistance(point) {
+      let bestDistanceSquared = Number.POSITIVE_INFINITY;
+      let bestPathDistance = 0;
+      let traversed = 0;
+      for (const segment of segments) {
+        const dx = segment.end.x - segment.start.x;
+        const dy = segment.end.y - segment.start.y;
+        const lengthSquared = segment.length * segment.length;
+        const projection = Math.max(0, Math.min(1,
+          ((point.x - segment.start.x) * dx + (point.y - segment.start.y) * dy) / lengthSquared,
+        ));
+        const nearestX = segment.start.x + dx * projection;
+        const nearestY = segment.start.y + dy * projection;
+        const distanceSquared = (point.x - nearestX) ** 2 + (point.y - nearestY) ** 2;
+        if (distanceSquared < bestDistanceSquared) {
+          bestDistanceSquared = distanceSquared;
+          bestPathDistance = traversed + segment.length * projection;
+        }
+        traversed += segment.length;
+      }
+      return bestPathDistance;
     },
   };
 }

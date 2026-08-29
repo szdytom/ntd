@@ -15,10 +15,10 @@ export function CreativeLab({ engine, setup }: { engine: GameEngine; setup: Crea
     <div className="creative-enemy-grid">{ENEMY_TYPES.map((type) => {
       const enemy = ENEMIES[type];
       const name = enemyName(t, type);
-      return <div key={type}><span style={{ '--enemy-color': enemy.color } as CSSProperties}><i className={enemy.shape === 'star' ? 'star' : enemy.shape === 'ring' ? 'ring' : ''} />{name}</span>
-        <input type="number" min="0" max="40" value={setup.wave[type]}
-          onChange={(event) => engine.configureCreativeEnemy(type, Number(event.target.value))} aria-label={t('creativeLab.nextWaveCount', { enemy: name })} />
-        <button onClick={() => engine.spawnCreativeEnemy(type)} title={t('creativeLab.spawnNow', { enemy: name })}>＋</button></div>;
+      return <button key={type} onClick={() => engine.spawnCreativeEnemy(type)} title={t('creativeLab.spawnNow', { enemy: name })}>
+        <span style={{ '--enemy-color': enemy.color } as CSSProperties}><i className={enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : ''} />{name}</span>
+        <b aria-hidden="true">＋</b>
+      </button>;
     })}</div>
     <div className="creative-scales">
       <label><span>{t('levelSelect.healthScale')}</span><input type="range" min="0.25" max="5" step="0.25" value={setup.healthScale} onChange={(event) => engine.configureCreativeScales(Number(event.target.value), setup.speedScale)} /><b>{setup.healthScale.toFixed(2)}×</b></label>

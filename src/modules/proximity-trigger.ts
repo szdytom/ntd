@@ -24,7 +24,7 @@ export const proximityTriggerModule: ModuleDefinition = {
   id: 'proximity-trigger',
   kind: 'logic',
   meta: {
-    name: 'Proximity Trigger', shortName: 'Proximity', symbol: '◉', color, tint: '#ddfff9', energy: 9, rarity: 'uncommon',
+    name: 'Proximity Trigger', shortName: 'Proximity', symbol: '◉', color, tint: '#ddfff9', energy: 7, rarity: 'uncommon',
     description: 'Releases the payload when a static carrier detects an enemy', detail: 'Pairs with a proximity mine or Tesla sentry',
   },
   effects,

@@ -60,6 +60,6 @@ export const resonantTrailModule: ModuleDefinition = {
     if (ticks % 4 !== 0) return;
     engine.spawn('module:resonant-trail:pulse', { position, color });
     const pulseDamage = Math.max(5, Math.round(projectile.damage * 0.3));
-    for (const target of combat.nearbyEnemies(position, 56)) combat.dealDamage(target, pulseDamage, color);
+    for (const target of combat.nearbyEnemies(position, 56)) combat.dealDamage(target, pulseDamage, color, projectile);
   },
 };

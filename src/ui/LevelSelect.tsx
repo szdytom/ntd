@@ -4,16 +4,20 @@ import { useTranslation } from 'react-i18next';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
 import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
-import { difficultyName, enemyName, levelDescription, levelName } from '../i18n/presentation';
+import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
 import { LevelMap } from './LevelMap';
 import './LevelSelect.css';
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
 const VISIBLE_LEVEL_COUNT = 3;
+const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const positiveInteger = (value: number, fallback: number): number => Number.isFinite(value)
+  ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
+  : fallback;
 const initialCreativeSetup = (): CreativeSetup => ({
-  wave: { spark: 8, kite: 5, block: 2, hex: 1, crown: 0, fracture: 0, radiant: 0 },
   healthScale: 1,
   speedScale: 1,
+  coreStability: 20,
+  waveCount: getLevel(DEFAULT_LEVEL_ID).waves.length,
 });
 
 export interface LevelSelection {
@@ -23,7 +27,10 @@ export interface LevelSelection {
   difficultyId: DifficultyId;
 }
 
-export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) => void }) {
+export function LevelSelect({ onStart, onOpenArchive }: {
+  onStart: (selection: LevelSelection) => void;
+  onOpenArchive: () => void;
+}) {
   const { t } = useTranslation();
   const [levelId, setLevelId] = useState<string>(DEFAULT_LEVEL_ID);
   const [mode, setMode] = useState<GameMode>('standard');
@@ -35,10 +42,10 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
   const selectedDifficulty = getDifficulty(difficultyId);
   const maximumCarouselStart = Math.max(0, LEVELS.length - VISIBLE_LEVEL_COUNT);
   const visibleLevels = LEVELS.slice(carouselStart, carouselStart + VISIBLE_LEVEL_COUNT);
-  const setEnemyCount = (type: EnemyType, count: number): void => setCreative((current) => ({
-    ...current,
-    wave: { ...current.wave, [type]: Math.max(0, Math.min(40, Math.round(count))) },
-  }));
+  const selectLevel = (nextLevelId: string): void => {
+    setLevelId(nextLevelId);
+    setCreative((current) => ({ ...current, waveCount: getLevel(nextLevelId).waves.length }));
+  };
   const focusSelectedOption = (element: HTMLElement): void => {
     const group = element.parentElement;
     requestAnimationFrame(() => {
@@ -63,7 +70,7 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
     event.preventDefault();
     const next = LEVELS[(index + offset + LEVELS.length) % LEVELS.length];
     if (!next) return;
-    setLevelId(next.id);
+    selectLevel(next.id);
     const nextIndex = LEVELS.indexOf(next);
     if (nextIndex < carouselStart) {
       setCarouselDirection('previous');
@@ -83,7 +90,7 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
     const selectedIndex = LEVELS.findIndex((level) => level.id === levelId);
     if (selectedIndex < nextStart || selectedIndex >= nextStart + VISIBLE_LEVEL_COUNT) {
       const nextSelection = LEVELS[nextStart];
-      if (nextSelection) setLevelId(nextSelection.id);
+      if (nextSelection) selectLevel(nextSelection.id);
     }
   };
 
@@ -101,8 +108,18 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
           <button aria-pressed={mode === 'standard'} className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>{t('levelSelect.standardTitle')}</strong><small>{t('levelSelect.standardDetail')}</small></button>
           <button aria-pressed={mode === 'creative'} className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>{t('levelSelect.creativeTitle')}</strong><small>{t('levelSelect.creativeDetail')}</small></button>
         </div>
-        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}><span>{t('levelSelect.deployTo', { difficulty: difficultyName(t, selectedDifficulty.id) })}</span><strong>{levelName(t, selectedLevel.id)} →</strong></button>
+        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}><span>{mode === 'creative'
+          ? t('levelSelect.creativeDeployTo')
+          : t('levelSelect.deployTo', { difficulty: difficultyName(t, selectedDifficulty.id) })}</span><strong>{levelName(t, selectedLevel.id)} →</strong></button>
       </header>
+
+      <button className="enemy-archive-entry" onClick={onOpenArchive} aria-label={t('enemyArchive.entryAria')}>
+        <span className="enemy-archive-entry-spectrum" aria-hidden="true">
+          {ARCHIVE_ENEMY_TYPES.map((type) => <i key={type} style={{ '--signal-color': ENEMIES[type].color } as CSSProperties} />)}
+        </span>
+        <span><strong>{t('enemyArchive.entry')}</strong><small>{t('enemyArchive.entryDetail', { count: ARCHIVE_ENEMY_TYPES.length })}</small></span>
+        <b aria-hidden="true">→</b>
+      </button>
 
       <section className="difficulty-select" aria-label={t('levelSelect.difficultyLabel')}>
         <div className="difficulty-select-head">
@@ -142,7 +159,7 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
             aria-checked={level.id === levelId}
             tabIndex={level.id === levelId ? 0 : -1}
             onKeyDown={(event) => cycleLevel(event, index)}
-            onClick={() => setLevelId(level.id)}
+            onClick={() => selectLevel(level.id)}
           >
             <div className="level-map-wrap"><LevelMap level={level} /><span>{level.sector}</span></div>
             <div className="level-card-copy">
@@ -168,8 +185,23 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
       ) : (
         <section className="creative-setup-card">
           <div><span>{t('levelSelect.creativeEyebrow')}</span><h2>{t('levelSelect.creativeHeading')}</h2><p>{t('levelSelect.creativeDescription')}</p></div>
-          <div className="setup-enemies">
-            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i className={ENEMIES[type].shape === 'star' ? 'star' : ENEMIES[type].shape === 'ring' ? 'ring' : ''} />{enemyName(t, type)}</span><input type="number" min="0" max="40" value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
+          <div className="setup-rules">
+            <label className="core-rule">
+              <span>{t('levelSelect.coreStability')}</span>
+              <div><input aria-label={t('levelSelect.coreStability')} type="number" min="1" value={creative.coreStability} onChange={(event) => {
+                const value = Number(event.currentTarget.value);
+                setCreative((current) => ({ ...current, coreStability: positiveInteger(value, current.coreStability) }));
+              }} /><b>♥</b></div>
+              <small>{t('levelSelect.coreStabilityDescription')}</small>
+            </label>
+            <label className="wave-rule">
+              <span>{t('levelSelect.waveCount')}</span>
+              <div><input aria-label={t('levelSelect.waveCount')} type="number" min="1" value={creative.waveCount} onChange={(event) => {
+                const value = Number(event.currentTarget.value);
+                setCreative((current) => ({ ...current, waveCount: positiveInteger(value, current.waveCount) }));
+              }} /><b>≋</b></div>
+              <small>{t('levelSelect.waveCountDescription', { count: selectedLevel.waves.length })}</small>
+            </label>
           </div>
           <div className="setup-scales">
             <label><span>{t('levelSelect.healthScale')}</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>

@@ -15,6 +15,17 @@ describe('path sampler', () => {
     expect(path.pointAtDistance(100).position).toEqual({ x: 30, y: 40 });
   });
 
+  it('projects points onto the nearest path segment', () => {
+    const path = createPathSampler([
+      { x: 0, y: 0 },
+      { x: 30, y: 0 },
+      { x: 30, y: 40 },
+    ]);
+
+    expect(path.nearestDistance({ x: 12, y: 8 })).toBe(12);
+    expect(path.nearestDistance({ x: 36, y: 25 })).toBe(55);
+  });
+
   it('rejects paths without a segment', () => {
     expect(() => createPathSampler([{ x: 0, y: 0 }])).toThrow('at least two points');
   });

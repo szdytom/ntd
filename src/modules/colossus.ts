@@ -26,7 +26,7 @@ export const colossusModule: ModuleDefinition = {
   id: 'colossus',
   kind: 'modifier',
   meta: {
-    name: 'Colossus Core', shortName: 'Colossus', symbol: '⬡', color, tint: '#fff0df', energy: 22, rarity: 'rare',
+    name: 'Colossus Core', shortName: 'Colossus', symbol: '⬡', color, tint: '#fff0df', energy: 9, rarity: 'rare',
     description: 'Enlarges the next projectile', detail: '+55% damage · +75% size · +32 blast radius',
   },
   effects,

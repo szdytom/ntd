@@ -37,7 +37,7 @@ export const teslaNodeModule: ModuleDefinition = {
   id: 'tesla-node',
   kind: 'static',
   meta: {
-    name: 'Tesla Sentry', shortName: 'Sentry', symbol: '⌾', color, tint: '#e2f8ff', energy: 48, rarity: 'legendary',
+    name: 'Tesla Sentry', shortName: 'Sentry', symbol: '⌾', color, tint: '#e2f8ff', energy: 22, rarity: 'legendary',
     description: 'Deploys at the trigger point and repeatedly shocks targets', detail: 'Trigger payload only · 6 chained shocks',
   },
   effects,
@@ -85,11 +85,11 @@ export const teslaNodeModule: ModuleDefinition = {
   onTrigger: ({ effects: engine, position, projectile, triggerTarget, combat }) => {
     if (!projectile || !triggerTarget) return;
     engine.spawn('module:tesla:zap', { position, color, data: { ...triggerTarget.position } });
-    combat.dealDamage(triggerTarget, projectile.damage, color);
+    combat.dealDamage(triggerTarget, projectile.damage, color, projectile);
     const secondary = combat.nearbyEnemies(triggerTarget.position, 72, [triggerTarget.id])[0];
     if (secondary) {
       engine.spawn('module:tesla:zap', { position: triggerTarget.position, color, data: { ...secondary.position } });
-      combat.dealDamage(secondary, projectile.damage * 0.58, color);
+      combat.dealDamage(secondary, projectile.damage * 0.58, color, projectile);
     }
   },
 };

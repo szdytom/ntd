@@ -25,7 +25,7 @@ export const economizerModule: ModuleDefinition = {
   id: 'economizer',
   kind: 'logic',
   meta: {
-    name: 'Economizer Circuit', shortName: 'Economizer', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'common',
+    name: 'Economizer Circuit', shortName: 'Economizer', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'uncommon',
     description: 'Reduces the total energy cost of the next cast', detail: '-38% energy · -22% damage',
   },
   effects,

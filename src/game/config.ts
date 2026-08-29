@@ -12,7 +12,7 @@ export interface EnemyConfig {
   color: string;
   sides: number;
   name: string;
-  shape?: 'polygon' | 'star' | 'ring';
+  shape?: 'polygon' | 'fracture' | 'ring';
   shield?: EnemyShieldConfig;
   split?: EnemySplitConfig;
   aura?: EnemyAuraConfig;
@@ -74,7 +74,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#00a8cc',
     sides: 4,
     name: 'Fracture Star',
-    shape: 'star',
+    shape: 'fracture',
     split: {
       count: 3,
       healthScale: 0.3,

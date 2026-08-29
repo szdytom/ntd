@@ -1,5 +1,5 @@
 import { EffectEngine } from '../effects/engine';
-import { gameEffects } from '../effects/game-effects';
+import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
 import { createModuleRegistry, DRAFT_BALANCE } from '../modules';
 import type { ModuleCombatApi, StatusApplication } from '../modules/types';
 import i18n from '../i18n';
@@ -43,25 +43,15 @@ export interface GameEngineOptions {
   levelId?: string;
   difficultyId?: DifficultyId;
   mode?: GameMode;
-  creative?: Partial<Omit<CreativeSetup, 'wave'>> & { wave?: Partial<Record<EnemyType, number>> };
+  creative?: Partial<CreativeSetup>;
 }
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
 const TUTORIAL_LEVEL_ID = 'starter-elbow';
 const TUTORIAL_MODULES: Readonly<Record<ModuleId, number>> = {
   frost: 1,
   pulse: 2,
   'impact-trigger': 1,
   'proximity-mine': 1,
-};
-const DEFAULT_CREATIVE_WAVE: Record<EnemyType, number> = {
-  spark: 8,
-  kite: 5,
-  block: 2,
-  hex: 1,
-  crown: 0,
-  fracture: 0,
-  radiant: 0,
 };
 const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
@@ -77,10 +67,12 @@ const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
 
-const normalizeCreativeEnemyCount = (value: number): number => {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(40, Math.round(value)));
-};
+const normalizeCreativeCoreStability = (value: number): number => Number.isFinite(value)
+  ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
+  : 20;
+const normalizeCreativeWaveCount = (value: number): number => Number.isFinite(value)
+  ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
+  : 1;
 
 interface PendingEnemySplit extends SplitRift {
   parent: Enemy;
@@ -103,8 +95,8 @@ export class GameEngine {
   status: GameSnapshot['status'] = 'planning';
   wave = 0;
   readonly maxWaves: number;
-  core = 20;
-  readonly maxCore = 20;
+  core: number;
+  readonly maxCore: number;
   shards = 0;
   score = 0;
   selectedTowerId: number | null = null;
@@ -135,7 +127,10 @@ export class GameEngine {
   private creativeSetup: CreativeSetup;
   private readonly combatApi: ModuleCombatApi = {
     nearbyEnemies: (position, radius, excludeIds = []) => this.enemyIndex.nearestWithinRadius(position, radius, excludeIds),
-    dealDamage: (enemy, damage, color) => this.applyDamage(enemy, Math.max(1, Math.round(damage)), color),
+    dealDamage: (enemy, damage, color, source) => {
+      const result = this.applyDamage(enemy, Math.max(1, Math.round(damage)), color);
+      if (source) this.refundProjectileEnergy(source, result.healthDamage);
+    },
     applyStatus: (enemy, status) => this.applyStatus(enemy, status),
     retarget: (projectile, enemy) => {
       const direction = normalize({
@@ -145,6 +140,7 @@ export class GameEngine {
       projectile.targetId = enemy.id;
       projectile.velocity = { x: direction.x * projectile.speed, y: direction.y * projectile.speed };
     },
+    displace: (enemy, distanceDelta) => this.displaceEnemy(enemy, distanceDelta),
   };
 
   constructor(options: GameEngineOptions | number = {}) {
@@ -154,17 +150,21 @@ export class GameEngine {
     this.tutorialEnabled = this.mode === 'standard' && this.level.id === TUTORIAL_LEVEL_ID;
     this.difficulty = getDifficulty(normalized.difficultyId ?? DEFAULT_DIFFICULTY_ID);
     this.path = createPathSampler(this.level.path);
-    this.maxWaves = this.level.waves.length;
+    this.maxWaves = this.mode === 'creative'
+      ? normalizeCreativeWaveCount(normalized.creative?.waveCount ?? this.level.waves.length)
+      : this.level.waves.length;
+    this.maxCore = this.mode === 'creative'
+      ? normalizeCreativeCoreStability(normalized.creative?.coreStability ?? 20)
+      : 20;
+    this.core = this.maxCore;
     this.shards = this.mode === 'creative'
       ? Number.POSITIVE_INFINITY
       : Math.round(this.level.startingShards * this.difficulty.economy);
     this.creativeSetup = {
-      wave: Object.fromEntries(ENEMY_TYPES.map((type) => [
-        type,
-        normalizeCreativeEnemyCount(normalized.creative?.wave?.[type] ?? DEFAULT_CREATIVE_WAVE[type]),
-      ])) as Record<EnemyType, number>,
       healthScale: Math.max(0.25, Math.min(5, normalized.creative?.healthScale ?? 1)),
       speedScale: Math.max(0.25, Math.min(3, normalized.creative?.speedScale ?? 1)),
+      coreStability: this.maxCore,
+      waveCount: this.maxWaves,
     };
     this.towerRandom = createSeededRandom(normalized.seed ?? Math.floor(Math.random() * 0x1_0000_0000));
     this.effects.registerMany(gameEffects);
@@ -268,7 +268,6 @@ export class GameEngine {
       selectedProgram: selected ? this.modules.compile(selected.slots) : null,
       creativeSetup: Object.freeze({
         ...this.creativeSetup,
-        wave: Object.freeze({ ...this.creativeSetup.wave }),
       }) as CreativeSetup,
       moduleInventory: Object.freeze(moduleInventory),
     });
@@ -310,9 +309,6 @@ export class GameEngine {
   }
 
   getWaveBlueprint(index: number): readonly EnemyType[] {
-    if (this.mode === 'creative') {
-      return ENEMY_TYPES.flatMap((type) => Array.from({ length: this.creativeSetup.wave[type] }, () => type));
-    }
     return this.level.waves[Math.min(Math.max(0, index), this.level.waves.length - 1)] ?? [];
   }
 
@@ -387,13 +383,7 @@ export class GameEngine {
   }
 
   getCreativeSetup(): CreativeSetup {
-    return { ...this.creativeSetup, wave: { ...this.creativeSetup.wave } };
-  }
-
-  configureCreativeEnemy(type: EnemyType, count: number): void {
-    if (this.mode !== 'creative' || !Number.isFinite(count)) return;
-    this.creativeSetup.wave[type] = normalizeCreativeEnemyCount(count);
-    this.emitState();
+    return { ...this.creativeSetup };
   }
 
   configureCreativeScales(healthScale: number, speedScale: number): void {
@@ -693,7 +683,7 @@ export class GameEngine {
       const shieldUpdate = updateEnemyShield(enemy, shieldConfig, delta);
       if (shieldUpdate.restored && shieldConfig) {
         enemy.shieldRippleAge = 0;
-        this.effects.spawn('game:shield-restore', {
+        this.effects.spawn(GAME_EFFECT_IDS.shieldRestore, {
           position: enemy.position,
           rotation: shieldConfig.rotation,
           color: shieldConfig.color,
@@ -906,6 +896,14 @@ export class GameEngine {
           continue;
         }
         projectile.triggerCooldown = Math.max(0, projectile.triggerCooldown - delta);
+        if (projectile.age >= config.armTime && config.gravity) {
+          const fieldDistance = this.path.nearestDistance(projectile.position);
+          for (const enemy of this.findProximityTargets(projectile.position, config.gravity.radius)) {
+            const offset = fieldDistance - enemy.distance;
+            const displacement = Math.sign(offset) * Math.min(Math.abs(offset), config.gravity.pull * delta);
+            this.combatApi.displace(enemy, displacement);
+          }
+        }
         const nearbyTarget = this.findProximityTarget(projectile.position, config.triggerRadius);
         if (projectile.age < config.armTime) {
           if (nearbyTarget) projectile.moduleState[PROXIMITY_ARM_TARGET_KEY] = nearbyTarget.id;
@@ -998,6 +996,7 @@ export class GameEngine {
       projectile.life = 0;
       return;
     }
+    this.refundProjectileEnergy(projectile, damage.healthDamage);
     this.modules.dispatch('onHit', projectile.modules, {
       effects: this.effects,
       position: { ...enemy.position },
@@ -1006,6 +1005,7 @@ export class GameEngine {
       shot: projectile.shot,
       projectile,
       enemy,
+      damageDealt: damage.healthDamage,
       combat: this.combatApi,
     });
     if (
@@ -1021,7 +1021,12 @@ export class GameEngine {
     }
     if (projectile.splash > 0) {
       for (const nearby of this.enemyIndex.withinRadius(enemy.position, projectile.splash, [enemy.id])) {
-        this.applyDamage(nearby, Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor), projectile.color);
+        const splashDamage = this.applyDamage(
+          nearby,
+          Math.round(projectile.damage * COMBAT_BALANCE.splashDamageFactor),
+          projectile.color,
+        );
+        this.refundProjectileEnergy(projectile, splashDamage.healthDamage);
       }
     }
     projectile.pierce -= 1;
@@ -1056,14 +1061,19 @@ export class GameEngine {
   }
 
   private findProximityTarget(position: Point, triggerRadius: number): Enemy | null {
+    return this.findProximityTargets(position, triggerRadius)[0] ?? null;
+  }
+
+  private findProximityTargets(position: Point, triggerRadius: number): Enemy[] {
     return this.enemyIndex.nearestWithinRadius(position, triggerRadius + MAX_ENEMY_COLLISION_RADIUS)
-      .find((enemy) => {
-        const shield = ENEMIES[enemy.type].shield;
-        const collisionRadius = shield && enemy.shield > 0
-          ? Math.max(enemy.radius, shield.radius * enemy.shieldRadiusScale)
-          : enemy.radius;
-        return distance(position, enemy.position) <= triggerRadius + collisionRadius;
-      }) ?? null;
+      .filter((enemy) => distance(position, enemy.position) <= triggerRadius + this.enemyCollisionRadius(enemy));
+  }
+
+  private enemyCollisionRadius(enemy: Enemy): number {
+    const shield = ENEMIES[enemy.type].shield;
+    return shield && enemy.shield > 0
+      ? Math.max(enemy.radius, shield.radius * enemy.shieldRadiusScale)
+      : enemy.radius;
   }
 
   private findFirstProjectileHit(
@@ -1140,6 +1150,25 @@ export class GameEngine {
     });
   }
 
+  private refundProjectileEnergy(projectile: Projectile, damageDealt: number): void {
+    if (damageDealt <= 0 || projectile.shot.energyRefundMultiplier <= 0) return;
+    const tower = this.towers.find((item) => item.id === projectile.towerId);
+    if (!tower) return;
+    tower.energy = Math.min(
+      tower.maxEnergy,
+      tower.energy + damageDealt * projectile.shot.energyRefundMultiplier,
+    );
+  }
+
+  private displaceEnemy(enemy: Enemy, distanceDelta: number): void {
+    if (enemy.dead || !Number.isFinite(distanceDelta)) return;
+    enemy.distance = Math.max(0, Math.min(this.path.length, enemy.distance + distanceDelta));
+    enemy.progress = enemy.distance / this.path.length;
+    const at = this.path.pointAtDistance(enemy.distance);
+    enemy.position = at.position;
+    enemy.angle = at.angle;
+  }
+
   private applyDamage(enemy: Enemy, damage: number, color: string) {
     if (enemy.dead) return { absorbed: 0, healthDamage: 0, broke: false };
     const shieldConfig = ENEMIES[enemy.type].shield;
@@ -1155,7 +1184,7 @@ export class GameEngine {
         color: shieldConfig.color,
         life: 0.65,
       });
-      this.effects.spawn(result.broke ? 'game:shield-break' : 'game:shield-hit', {
+      this.effects.spawn(result.broke ? GAME_EFFECT_IDS.shieldBreak : GAME_EFFECT_IDS.shieldHit, {
         position: enemy.position,
         rotation: shieldConfig.rotation,
         color: shieldConfig.color,
@@ -1195,7 +1224,7 @@ export class GameEngine {
       duration: FRACTURE_RIPPLE_DURATION,
       spawned: false,
     });
-    this.effects.spawn('game:fracture-split-ripple', {
+    this.effects.spawn(GAME_EFFECT_IDS.fractureSplitRipple, {
       position: parent.position,
       color: '#73e7f2',
     });

@@ -1,10 +1,12 @@
 import { arcboltModule } from './arcbolt';
 import { barrageModule } from './barrage';
 import { colossusModule } from './colossus';
+import { condenseCoreModule } from './condense-core';
 import { economizerModule } from './economizer';
 import { echoModule } from './echo';
 import { forkModule } from './fork';
 import { frostModule } from './frost';
+import { focusCoreModule } from './focus-core';
 import { impactTriggerModule } from './impact-trigger';
 import { needleModule } from './needle';
 import { novaModule } from './nova';
@@ -13,10 +15,12 @@ import { resonantTrailModule } from './resonant-trail';
 import { pulseModule } from './pulse';
 import { proximityMineModule } from './proximity-mine';
 import { proximityTriggerModule } from './proximity-trigger';
+import { reclaimCircuitModule } from './reclaim-circuit';
 import { razorModule } from './razor';
 import { ricochetModule } from './ricochet';
 import { ModuleRegistry } from './registry';
 import { seekerModule } from './seeker';
+import { singularityModule } from './singularity';
 import { teslaNodeModule } from './tesla-node';
 import { timerTriggerModule } from './timer-trigger';
 import { toxicCloudModule } from './toxic-cloud';
@@ -38,9 +42,13 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(ricochetModule)
     .register(toxinModule)
     .register(colossusModule)
+    .register(focusCoreModule)
+    .register(condenseCoreModule)
     .register(barrageModule)
     .register(economizerModule)
+    .register(reclaimCircuitModule)
     .register(proximityMineModule)
+    .register(singularityModule)
     .register(teslaNodeModule)
     .register(toxicCloudModule)
     .register(impactTriggerModule)

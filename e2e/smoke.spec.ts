@@ -41,16 +41,78 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Standard/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Creative/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Deploy to/ })).toBeVisible();
+  await page.getByRole('button', { name: /Creative/ }).click();
+  await expect(page.getByRole('button', { name: /Creative · Deploy to/ })).toBeVisible();
   await page.getByRole('combobox', { name: 'Language' }).selectOption('zh-CN');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
+  await expect(page.getByRole('button', { name: /\u521b\u9020 · \u90e8\u7f72\u81f3/ })).toBeVisible();
+});
+
+test('signal compendium exposes every signal profile from its own entry', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open signal compendium' }).click();
+  await expect(page.getByRole('heading', { name: 'Signal Compendium' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+  const index = page.getByRole('navigation', { name: 'Enemy signal index' });
+  const consoleFrame = page.locator('.enemy-archive-console');
+  const initialFrameHeight = await consoleFrame.evaluate((element) => element.getBoundingClientRect().height);
+  await expect(index.getByRole('button')).toHaveCount(7);
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('01');
+  await index.getByRole('button', { name: /Prism Crown/ }).click();
+  await expect(page.getByRole('heading', { name: 'Prism Crown' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('05');
+  await expect(page.getByText('Regenerating shield lattice')).toBeVisible();
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-has-shield', 'true');
+  expect(await page.locator('.enemy-archive-specimen').evaluate((canvas) => (
+    canvas instanceof HTMLCanvasElement && canvas.getContext('webgl') instanceof WebGLRenderingContext
+  ))).toBe(true);
+  await page.waitForTimeout(1_400);
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-projectile-visible', 'true');
+  await index.getByRole('button', { name: /Fracture Star/ }).click();
+  await expect(page.getByRole('heading', { name: 'Fracture Star' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
+  await page.getByRole('button', { name: 'Show fragments' }).click();
+  await expect(page.getByRole('heading', { name: 'Fracture Fragments' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '3');
+  await expect(page.locator('[data-stat="health"] strong')).toHaveText('108');
+  await expect(page.locator('[data-stat="speed"] strong')).toHaveText('47.25 u/s');
+  await expect(page.locator('[data-stat="reward"] strong')).toHaveText('8 ◇');
+  await expect(page.locator('[data-stat="coreDamage"] strong')).toHaveText('2');
+  await page.getByRole('button', { name: 'Restore core' }).click();
+  await expect(page.getByRole('heading', { name: 'Fracture Star' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
+  await index.getByRole('button', { name: /Radiant Lag Ring/ }).click();
+  await expect(page.getByRole('heading', { name: 'Radiant Lag Ring' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-seal b')).toHaveText('07');
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'false');
+  await page.getByRole('button', { name: 'Suppress tower' }).click();
+  await expect(page.getByRole('heading', { name: 'Suppressed Tower' })).toBeVisible();
+  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'true');
+  await expect(page.locator('[data-stat="suppressedCooldown"] strong')).toHaveText('2×');
+  await expect(page.locator('[data-stat="suppressedRegen"] strong')).toHaveText('50%');
+  await expect(page.locator('[data-stat="health"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Return to signal' }).click();
+  await expect(page.getByRole('heading', { name: 'Radiant Lag Ring' })).toBeVisible();
+  const longNameFrameHeight = await consoleFrame.evaluate((element) => element.getBoundingClientRect().height);
+  expect(longNameFrameHeight).toBeCloseTo(initialFrameHeight, 0);
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('zh-CN');
+  await expect(page.getByRole('heading', { name: /\u4fe1\u53f7\u56fe\u9274/ })).toBeVisible();
+  await page.getByRole('button', { name: /\u8fd4\u56de\u9632\u533a\u9009\u62e9/ }).click();
+  await expect(page.getByRole('heading', { name: /\u9009\u62e9\u9632\u5fa1\u533a/ })).toBeVisible();
 });
 
 test('creative economy and signal controls are independent from the workshop', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Creative/ }).click();
-  await page.getByRole('button', { name: /Deploy to/ }).click();
+  await expect(page.getByRole('heading', { name: 'Creative Run Calibration' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Creative · Deploy to/ })).toBeVisible();
+  await page.getByRole('spinbutton', { name: 'Core stability' }).fill('35');
+  await page.getByRole('spinbutton', { name: 'Wave count' }).fill('5');
+  await page.getByRole('button', { name: /Creative · Deploy to/ }).click();
 
   await expect(page.getByText('∞', { exact: true })).toBeVisible();
+  await expect(page.locator('.core-metric strong')).toHaveText('35/35');
+  await expect(page.locator('.wave-metric strong')).toHaveText('0/5');
   const signalButton = page.getByRole('button', { name: 'Signal console' });
   await expect(signalButton).toBeVisible();
   await signalButton.click();

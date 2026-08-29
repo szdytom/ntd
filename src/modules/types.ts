@@ -50,7 +50,16 @@ export interface NextShotPatch {
   bonusPierce?: number;
   sizeMultiplier?: number;
   splashBonus?: number;
+  splashSet?: number;
   energyMultiplier?: number;
+  energyRefundMultiplier?: number;
+  focusConversion?: {
+    damagePerCharge: number;
+    speedPerCharge: number;
+  };
+  condenseSplash?: {
+    damagePerRadius: number;
+  };
 }
 
 export interface ModuleCompileContext {
@@ -70,6 +79,7 @@ export interface ModuleEffectContext {
   projectile?: Projectile;
   enemy?: Enemy;
   triggerTarget?: Enemy;
+  damageDealt?: number;
   combat: ModuleCombatApi;
 }
 
@@ -77,9 +87,10 @@ export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer'>;
 
 export interface ModuleCombatApi {
   nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Enemy[];
-  dealDamage(enemy: Enemy, damage: number, color: string): void;
+  dealDamage(enemy: Enemy, damage: number, color: string, source?: Projectile): void;
   applyStatus(enemy: Enemy, status: StatusApplication): void;
   retarget(projectile: Projectile, enemy: Enemy): void;
+  displace(enemy: Enemy, distanceDelta: number): void;
 }
 
 export interface ProjectileRenderContext {
