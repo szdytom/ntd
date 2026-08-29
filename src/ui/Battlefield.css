@@ -71,32 +71,6 @@
 .core-label { right: 0; border-right: 0; }
 .core-label i { width: 8px; height: 8px; border: 2px solid var(--purple); transform: rotate(45deg); }
 
-.battle-tip {
-  position: absolute;
-  z-index: 3;
-  bottom: 12px;
-  left: 12px;
-  display: flex;
-  max-width: min(360px, calc(100% - 24px));
-  align-items: center;
-  gap: 9px;
-  padding: 7px 10px 7px 8px;
-  border: 1px solid #aaa6b3;
-  border-left: 5px solid #ffd447;
-  color: var(--battle-ink);
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(5px);
-  pointer-events: none;
-}
-.tip-key { position: relative; display: block; width: 22px; height: 22px; flex: 0 0 auto; border: 1px solid #817b89; color: #817b89; background: #fff7d7; }
-.tip-key::before,
-.tip-key::after { content: ''; position: absolute; top: 50%; left: 50%; width: 9px; height: 1px; background: currentColor; transform: translate(-50%,-50%); }
-.tip-key::after { transform: translate(-50%,-50%) rotate(90deg); }
-.battle-tip strong,
-.battle-tip small { display: block; }
-.battle-tip strong { font-size: 14px; }
-.battle-tip small { margin-top: 1px; color: #756f7e; font-size: 14px; }
-
 .status-overlay { position: absolute; z-index: 5; inset: 0; display: grid; place-content: center; justify-items: center; padding: 24px; background: rgba(250,249,253,.9); backdrop-filter: blur(8px); text-align: center; }
 .status-shape { display: grid; width: 70px; height: 70px; margin-bottom: 14px; place-items: center; border: 3px solid var(--battle-ink); color: var(--purple); background: #ffd447; font-size: 32px; transform: rotate(4deg); }
 .status-overlay[data-tone='lost'] .status-shape { color: #fff; background: #ff637a; }
@@ -121,7 +95,6 @@
   .incoming > .enemy-preview { max-width: 145px; min-width: 0; justify-content: flex-start; overflow-x: auto; }
   .incoming .enemy-preview-tag { min-height: 26px; flex: 0 0 auto; }
   .creative-signal-panel { top: 61px; right: 7px; width: calc(100% - 14px); }
-  .battle-tip { right: 11px; bottom: 11px; left: 11px; min-width: 0; }
   .spawn-label,
   .core-label { font-size: 9px; }
   .battle-footer { gap: 6px; padding: 0 9px; }

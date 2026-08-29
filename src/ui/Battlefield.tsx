@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ECONOMY_BALANCE } from '../game/balance';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot } from '../game/types';
@@ -66,10 +65,6 @@ export function Battlefield({ engine, view, workshop, children }: {
           <GameCanvas engine={engine} />
           <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>{t('battlefield.spawn')}</span></div>
           <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>{t('battlefield.core')}</span><i /></div>
-          {snapshot.status === 'planning' && !view.selectedTower ? <div className="battle-tip" aria-live="polite">
-            <span className="tip-key" aria-hidden="true">+</span>
-            <div><strong>{t('battlefield.deployTitle')}</strong><small>{engine.mode === 'creative' ? t('battlefield.deployCreative') : t('battlefield.deployStandard', { cost: ECONOMY_BALANCE.towerCost })}</small></div>
-          </div> : null}
           {!terminal ? null : (
             <div className="status-overlay" data-tone={snapshot.status}>
               <div className="status-shape">✦</div>
