@@ -18,7 +18,7 @@ export function ModuleInspector({ definition }: { definition: ModuleDefinition }
       </div>
       <div className="inspector-cost"><small>{t('inspector.energy')}</small><strong>{definition.meta.energy}<span aria-hidden="true">⚡</span></strong></div>
     </div>
-    <p className="inspector-description">{moduleDescription(t, definition.id)}</p>
-    <p className="inspector-detail">{moduleDetail(t, definition.id)}</p>
+    <p className="inspector-description">{moduleDescription(t, definition)}</p>
+    <p className="inspector-detail">{moduleDetail(t, definition)}</p>
   </div>;
 }

@@ -14,6 +14,7 @@ import type {
 
 export type ModuleKind = 'projectile' | 'static' | 'modifier' | 'trail' | 'logic';
 export type ModuleRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type ModuleTextValues = Readonly<Record<string, string | number>>;
 
 export interface ModuleMeta {
   name: string;
@@ -23,8 +24,10 @@ export interface ModuleMeta {
   tint: string;
   energy: number;
   rarity: ModuleRarity;
-  description: string;
-  detail: string;
+  text?: {
+    description?: ModuleTextValues;
+    detail?: ModuleTextValues;
+  };
 }
 
 export interface ProjectileSpec {

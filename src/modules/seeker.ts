@@ -3,6 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#168aad';
+const stats = { seeking: 8 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -28,10 +29,9 @@ export const seekerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Seeker Protocol', shortName: 'Seeker', symbol: '⌁', color, tint: '#e2f4f8', energy: 10, rarity: 'uncommon',
-    description: 'Makes the next projectile track its target', detail: 'Strong guidance · No direct damage bonus',
   },
   effects,
-  compile: (context) => context.modifyNext({ seeking: 8 }),
+  compile: (context) => context.modifyNext(stats),
   renderProjectile: ({ ctx, projectile }) => {
     const phase = projectile.life * 7 + projectile.id;
     ctx.save();

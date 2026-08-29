@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#d1495b';
+const stats = { damagePerRadius: 0.015, splash: 0 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -23,12 +24,12 @@ export const condenseCoreModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Condense Core', shortName: 'Condense', symbol: '⊙', color, tint: '#ffe9ec', energy: 17, rarity: 'uncommon',
-    description: 'Compresses blast radius into single-target damage', detail: '+1.5% damage per consumed radius · Removes splash',
+    text: { detail: { damage: stats.damagePerRadius * 100 } },
   },
   effects,
   compile: (context) => context.modifyNext({
-    splashSet: 0,
-    condenseSplash: { damagePerRadius: 0.015 },
+    splashSet: stats.splash,
+    condenseSplash: { damagePerRadius: stats.damagePerRadius },
   }),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();

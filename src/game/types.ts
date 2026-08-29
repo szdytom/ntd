@@ -47,6 +47,7 @@ export interface TriggerSpec {
   type: TriggerType;
   payloadCount: number;
   delay?: number;
+  crossingTicks?: number;
 }
 
 export interface StaticProjectileSpec {

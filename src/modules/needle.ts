@@ -4,6 +4,7 @@ import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff4d8d';
+const stats = { damage: 14, speed: 620, size: 4, maxTargets: 3 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -27,10 +28,15 @@ export const needleModule: ModuleDefinition = {
   kind: 'projectile',
   meta: {
     name: 'Piercing Needle', shortName: 'Needle', symbol: '◆', color, tint: '#ffe9f1', energy: 22, rarity: 'uncommon',
-    description: 'Passes through several targets at high speed', detail: '14 damage · Hits up to 3 targets',
+    text: { detail: { damage: stats.damage, targets: stats.maxTargets } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: 14, speed: 620, size: 4, pierce: 2 }),
+  compile: (context) => context.emitProjectile({
+    damage: stats.damage,
+    speed: stats.speed,
+    size: stats.size,
+    pierce: stats.maxTargets - 1,
+  }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity);
     ctx.save();

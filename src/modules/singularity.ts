@@ -3,6 +3,16 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#4c2a85';
+const stats = {
+  damage: 1,
+  size: 10,
+  duration: 3,
+  armTime: 0.2,
+  radius: 150,
+  cooldown: 1.2,
+  maxTriggers: 5,
+  pull: 48,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   shockwave({ id: 'module:singularity:deploy', lifetime: 0.5, radius: 68, stroke: 3.2, sides: 10, layer: 'ground', bloom: 0.9 }),
@@ -35,21 +45,21 @@ export const singularityModule: ModuleDefinition = {
   kind: 'static',
   meta: {
     name: 'Collapse Singularity', shortName: 'Singularity', symbol: '●', color, tint: '#eee8ff', energy: 82, rarity: 'legendary',
-    description: 'Deploys a gravity well that drags nearby enemies backward', detail: 'Trigger payload only · 3 seconds · 150 radius',
+    text: { detail: { duration: stats.duration, radius: stats.radius } },
   },
   effects,
   compile: (context) => context.emitProjectile({
-    damage: 1,
+    damage: stats.damage,
     speed: 0,
-    size: 10,
-    lifetime: 3,
+    size: stats.size,
+    lifetime: stats.duration,
     static: {
-      duration: 3,
-      armTime: 0.2,
-      triggerRadius: 150,
-      cooldown: 1.2,
-      maxTriggers: 5,
-      gravity: { pull: 48, radius: 150 },
+      duration: stats.duration,
+      armTime: stats.armTime,
+      triggerRadius: stats.radius,
+      cooldown: stats.cooldown,
+      maxTriggers: stats.maxTriggers,
+      gravity: { pull: stats.pull, radius: stats.radius },
     },
   }),
   renderProjectile: ({ ctx, projectile }) => {
@@ -78,7 +88,7 @@ export const singularityModule: ModuleDefinition = {
     ctx.lineWidth = 1.3;
     ctx.setLineDash([5, 7]);
     ctx.beginPath();
-    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.gravity?.radius ?? 150, 0, Math.PI * 2);
+    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.gravity?.radius ?? stats.radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   },
@@ -90,7 +100,7 @@ export const singularityModule: ModuleDefinition = {
       color,
     });
     if (!projectile) return;
-    for (const enemy of combat.nearbyEnemies(position, projectile.shot.static?.gravity?.radius ?? 150)) {
+    for (const enemy of combat.nearbyEnemies(position, projectile.shot.static?.gravity?.radius ?? stats.radius)) {
       combat.affectTarget(enemy, projectile, 'static');
     }
   },

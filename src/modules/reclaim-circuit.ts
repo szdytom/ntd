@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#15b86a';
+const stats = { damageMultiplier: 0.88, energyRefundMultiplier: 0.22 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -27,13 +28,13 @@ export const reclaimCircuitModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Reclaim Circuit', shortName: 'Reclaim', symbol: '↺', color, tint: '#e4fff1', energy: 4, rarity: 'uncommon',
-    description: 'Returns part of dealt health damage as tower energy', detail: '-12% damage · Refunds 22% of health damage',
+    text: { detail: {
+      damage: Math.round((1 - stats.damageMultiplier) * 100),
+      refund: Math.round(stats.energyRefundMultiplier * 100),
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({
-    damageMultiplier: 0.88,
-    energyRefundMultiplier: 0.22,
-  }),
+  compile: (context) => context.modifyNext(stats),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.strokeStyle = color;

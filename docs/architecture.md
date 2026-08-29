@@ -14,7 +14,7 @@
 
 每个模块文件导出一个 `ModuleDefinition`，并共同表达：
 
-- `meta`：工作台名称、图标、颜色、描述、能耗和稀有度；
+- `meta`：工作台名称、图标、颜色、文案插值、能耗和稀有度；
 - `compile`：如何修改下一发，或如何生成弹射物蓝图；
 - `renderProjectile`：弹体本身或叠加层的 Canvas 绘制；
 - `effects`：该模块拥有的效果定义；
@@ -24,16 +24,20 @@
 简化示例：
 
 ```ts
+const stats = {
+  speedMultiplier: 1.2,
+} as const;
+
 export const ionModule: ModuleDefinition = {
   id: 'ion',
   kind: 'modifier',
   meta: {
     name: '离子透镜', shortName: '离子', symbol: 'ϟ',
     color: '#00c2ff', tint: '#e4f9ff', energy: 9,
-    description: '强化下一枚弹体', detail: '+20% 弹速',
+    text: { detail: { speed: Math.round((stats.speedMultiplier - 1) * 100) } },
   },
   effects: [ionHitEffect],
-  compile: (context) => context.modifyNext({ speedMultiplier: 1.2 }),
+  compile: (context) => context.modifyNext(stats),
   targetEffect: {
     channels: ['damage'],
     apply: ({ enemy, combat }) => {
@@ -48,6 +52,8 @@ export const ionModule: ModuleDefinition = {
   },
 };
 ```
+
+模块玩法数值只在模块文件的 `stats` 中定义一次。`compile`、运行时钩子与绘制逻辑直接读取这份数据，`meta.text` 也从同一份数据派生展示值；语言文件仅保留诸如 `+{{speed}}% 弹速` 的文案模板。禁止在 `modules.*.description` 和 `modules.*.detail` 中写入具体数字，语言校验会同时检查这一点以及不同语言的占位符是否一致。
 
 文件完成后只需在 `src/modules/index.ts` 导入并调用 `.register(ionModule)`。注册表会自动完成：
 

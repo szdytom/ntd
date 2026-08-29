@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff8c42';
+const stats = { payloadCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -32,9 +33,9 @@ export const expirationTriggerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Expiration Trigger', shortName: 'Expiration', symbol: '✺', color, tint: '#fff0e3', energy: 12, rarity: 'rare',
-    description: 'Releases the payload when the carrier disappears', detail: 'Last hit or lifetime end · Ignores world bounds · 1 payload',
+    text: { detail: { payloads: stats.payloadCount } },
   },
   effects,
-  compile: (context) => context.wrapNext({ type: 'expiration', payloadCount: 1 }),
+  compile: (context) => context.wrapNext({ type: 'expiration', payloadCount: stats.payloadCount }),
   onTrigger: ({ effects: engine, position, rotation }) => engine.spawn('module:expiration-trigger:release', { position, rotation, color }),
 };

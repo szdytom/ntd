@@ -4,6 +4,14 @@ import { drawProjectileGlow } from './render-utils';
 import type { ModuleDefinition } from './types';
 
 const color = '#4361ee';
+const stats = {
+  damage: 22,
+  speed: 500,
+  size: 5,
+  maxChains: 4,
+  chainDamageMultiplier: 0.78,
+  chainRadius: 118,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -55,10 +63,10 @@ export const arcboltModule: ModuleDefinition = {
   kind: 'projectile',
   meta: {
     name: 'Arcbolt Core', shortName: 'Arcbolt', symbol: 'ϟ', color, tint: '#e9edff', energy: 25, rarity: 'legendary',
-    description: 'Chains to nearby enemies on impact', detail: '22 damage · Up to 4 chains',
+    text: { detail: { damage: stats.damage, chains: stats.maxChains } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: 22, speed: 500, size: 5 }),
+  compile: (context) => context.emitProjectile({ damage: stats.damage, speed: stats.speed, size: stats.size }),
   renderProjectile: ({ ctx, projectile }) => {
     drawProjectileGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius, color);
     ctx.save();
@@ -77,15 +85,15 @@ export const arcboltModule: ModuleDefinition = {
     if (!projectile || !enemy) return;
     const visited = [enemy.id];
     let origin = { ...enemy.position };
-    let damage = projectile.damage * 0.78;
-    for (let index = 0; index < 4; index += 1) {
-      const target = combat.nearbyEnemies(origin, 118, visited)[0];
+    let damage = projectile.damage * stats.chainDamageMultiplier;
+    for (let index = 0; index < stats.maxChains; index += 1) {
+      const target = combat.nearbyEnemies(origin, stats.chainRadius, visited)[0];
       if (!target) break;
       engine.spawn('module:arcbolt:chain', { position: origin, color, data: { ...target.position } });
       combat.dealDamage(target, damage, color, projectile);
       visited.push(target.id);
       origin = { ...target.position };
-      damage *= 0.78;
+      damage *= stats.chainDamageMultiplier;
     }
   },
 };

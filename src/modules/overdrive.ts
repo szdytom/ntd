@@ -3,6 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff5c5c';
+const stats = { damageMultiplier: 1.5, speedMultiplier: 1.2 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -33,10 +34,13 @@ export const overdriveModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Overdrive Prism', shortName: 'Overdrive', symbol: '▲', color, tint: '#ffebeb', energy: 8, rarity: 'uncommon',
-    description: 'Empowers the next projectile', detail: '+50% damage · +20% projectile speed',
+    text: { detail: {
+      damage: Math.round((stats.damageMultiplier - 1) * 100),
+      speed: Math.round((stats.speedMultiplier - 1) * 100),
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: 1.5, speedMultiplier: 1.2 }),
+  compile: (context) => context.modifyNext(stats),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.globalAlpha = 0.5;

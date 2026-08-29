@@ -3,6 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#70e000';
+const stats = { damageMultiplier: 0.9, damage: 3, duration: 3, interval: 0.5 } as const;
 
 const effects: readonly EffectDefinition[] = [
   shockwave({ id: 'module:toxin:infect', lifetime: 0.42, radius: 34, stroke: 2, sides: 6 }),
@@ -24,16 +25,20 @@ export const toxinModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Corrosive Spore', shortName: 'Corrosion', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
-    description: 'Corrodes every target damaged by the next projectile', detail: '3×6 corrosion damage · Lasts 3 seconds',
+    text: { detail: {
+      damage: stats.damage,
+      ticks: stats.duration / stats.interval,
+      duration: stats.duration,
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: 0.9 }),
+  compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
   targetEffect: {
     channels: ['damage'],
     apply: ({ effects: engine, position, enemy, combat }) => {
       if (!enemy) return;
       const enteredCorrosion = combat.applyStatus(enemy, {
-        id: 'toxin', duration: 3, interval: 0.5, damage: 3, color,
+        id: 'toxin', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
       });
       if (enteredCorrosion) {
         engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });

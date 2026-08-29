@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#00b894';
+const stats = { count: 3, spreadDegrees: 12 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -32,9 +33,12 @@ export const forkModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Triple Fork', shortName: 'Fork', symbol: 'Y', color, tint: '#e1f8f1', energy: 24, rarity: 'rare',
-    description: 'Turns the next shot into three projectiles', detail: '3 projectiles · 12° spread',
+    text: {
+      description: { count: stats.count },
+      detail: { count: stats.count, spread: stats.spreadDegrees },
+    },
   },
   effects,
-  compile: (context) => context.modifyNext({ count: 3, spread: 12 * Math.PI / 180 }),
+  compile: (context) => context.modifyNext({ count: stats.count, spread: stats.spreadDegrees * Math.PI / 180 }),
   onCast: ({ effects: engine, position, rotation }) => engine.spawn('module:fork:split', { position, rotation, color }),
 };

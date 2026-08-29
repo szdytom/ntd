@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#06d6a0';
+const stats = { damageMultiplier: 0.78, energyMultiplier: 0.62 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -26,10 +27,13 @@ export const economizerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Economizer Circuit', shortName: 'Economizer', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'uncommon',
-    description: 'Reduces the total energy cost of the next cast', detail: '-38% energy · -22% damage',
+    text: { detail: {
+      energy: Math.round((1 - stats.energyMultiplier) * 100),
+      damage: Math.round((1 - stats.damageMultiplier) * 100),
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: 0.78, energyMultiplier: 0.62 }),
+  compile: (context) => context.modifyNext(stats),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.strokeStyle = color;

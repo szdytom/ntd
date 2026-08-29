@@ -4,6 +4,7 @@ import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 
 const color = '#00b4d8';
+const stats = { damage: 14, speed: 400, size: 8, maxTargets: 5, lifetime: 2 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -25,10 +26,16 @@ export const razorModule: ModuleDefinition = {
   kind: 'projectile',
   meta: {
     name: 'Returning Razor', shortName: 'Razor', symbol: '✥', color, tint: '#e3f8fc', energy: 24, rarity: 'rare',
-    description: 'A wide multi-target cutting projectile', detail: '14 damage · Hits up to 5 targets',
+    text: { detail: { damage: stats.damage, targets: stats.maxTargets } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: 14, speed: 400, size: 8, pierce: 4, lifetime: 2 }),
+  compile: (context) => context.emitProjectile({
+    damage: stats.damage,
+    speed: stats.speed,
+    size: stats.size,
+    pierce: stats.maxTargets - 1,
+    lifetime: stats.lifetime,
+  }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity) + projectile.life * 8;
     ctx.save();

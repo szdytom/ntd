@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#8e44ad';
+const stats = { repeats: 2, repeatDelay: 0.16 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -9,7 +10,7 @@ const effects: readonly EffectDefinition[] = [
     lifetime: 0.46,
     layer: 'ground',
     render: (frame, painter) => {
-      for (let index = 0; index < 2; index += 1) {
+      for (let index = 0; index < stats.repeats; index += 1) {
         const local = Math.max(0, Math.min(1, frame.fin * 1.55 - index * 0.34));
         if (local <= 0) continue;
         const fade = 1 - local;
@@ -25,9 +26,9 @@ export const echoModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Echo Command', shortName: 'Echo', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 18, rarity: 'rare',
-    description: 'Executes the next shot again after a delay', detail: 'Double cast · 0.16 second interval',
+    text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } },
   },
   effects,
-  compile: (context) => context.modifyNext({ repeats: 2, repeatDelay: 0.16 }),
+  compile: (context) => context.modifyNext(stats),
   onCast: ({ effects: engine, position, rotation }) => engine.spawn('module:echo:ripple', { position, rotation, color }),
 };

@@ -3,6 +3,15 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff3d6e';
+const stats = {
+  damage: 52,
+  size: 8,
+  duration: 7,
+  armTime: 0.38,
+  triggerRadius: 72,
+  blastRadius: 88,
+  maxTriggers: 1,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   shockwave({ id: 'module:mine:deploy', lifetime: 0.42, radius: 45, stroke: 2.5, sides: 6, layer: 'ground' }),
@@ -16,15 +25,21 @@ export const proximityMineModule: ModuleDefinition = {
   kind: 'static',
   meta: {
     name: 'Hex Proximity Mine', shortName: 'Mine', symbol: '⬢', color, tint: '#ffe7ed', energy: 28, rarity: 'rare',
-    description: 'Deploys at the trigger point and waits for enemies', detail: 'Trigger payload only · 52 area damage',
+    text: { detail: { damage: stats.damage } },
   },
   effects,
   compile: (context) => context.emitProjectile({
-    damage: 52,
+    damage: stats.damage,
     speed: 0,
-    size: 8,
-    lifetime: 7,
-    static: { duration: 7, armTime: 0.38, triggerRadius: 72, cooldown: 0, maxTriggers: 1 },
+    size: stats.size,
+    lifetime: stats.duration,
+    static: {
+      duration: stats.duration,
+      armTime: stats.armTime,
+      triggerRadius: stats.triggerRadius,
+      cooldown: 0,
+      maxTriggers: stats.maxTriggers,
+    },
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const armed = projectile.age >= (projectile.shot.static?.armTime ?? 0);
@@ -56,7 +71,7 @@ export const proximityMineModule: ModuleDefinition = {
     ctx.lineWidth = armed ? 1.7 : 1;
     ctx.setLineDash([4, 5]);
     ctx.beginPath();
-    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.triggerRadius ?? 72, 0, Math.PI * 2);
+    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.triggerRadius ?? stats.triggerRadius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   },
@@ -64,6 +79,8 @@ export const proximityMineModule: ModuleDefinition = {
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawnMany(['module:mine:blast-a', 'module:mine:blast-b', 'module:mine:debris'], { position, color });
     if (!projectile) return;
-    for (const enemy of combat.nearbyEnemies(position, 88)) combat.dealDamage(enemy, projectile.damage, color, projectile);
+    for (const enemy of combat.nearbyEnemies(position, stats.blastRadius)) {
+      combat.dealDamage(enemy, projectile.damage, color, projectile);
+    }
   },
 };

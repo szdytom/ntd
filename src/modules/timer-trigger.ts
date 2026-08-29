@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#fee440';
+const stats = { delay: 0.55, payloadCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -25,9 +26,9 @@ export const timerTriggerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Timer Trigger', shortName: 'Timer', symbol: '◷', color, tint: '#fff9d9', energy: 7, rarity: 'common',
-    description: 'Releases the payload when the carrier timer ends or collides early', detail: 'Up to 0.55 second delay · 1 payload',
+    text: { detail: { delay: stats.delay, payloads: stats.payloadCount } },
   },
   effects,
-  compile: (context) => context.wrapNext({ type: 'timer', payloadCount: 1, delay: 0.55 }),
+  compile: (context) => context.wrapNext({ type: 'timer', payloadCount: stats.payloadCount, delay: stats.delay }),
   onTrigger: ({ effects: engine, position }) => engine.spawn('module:timer-trigger:release', { position, color }),
 };

@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#3a86ff';
+const stats = { crossingTicks: 1, payloadCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -22,9 +23,13 @@ export const terrainTriggerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Terrain Trigger', shortName: 'Terrain', symbol: '⌖', color, tint: '#e8f1ff', energy: 9, rarity: 'uncommon',
-    description: 'Releases the payload after first crossing the channel centerline', detail: 'First centerline crossing · 1 payload',
+    text: { detail: { ticks: stats.crossingTicks, payloads: stats.payloadCount } },
   },
   effects,
-  compile: (context) => context.wrapNext({ type: 'terrain', payloadCount: 1 }),
+  compile: (context) => context.wrapNext({
+    type: 'terrain',
+    payloadCount: stats.payloadCount,
+    crossingTicks: stats.crossingTicks,
+  }),
   onTrigger: ({ effects: engine, position, rotation }) => engine.spawn('module:terrain-trigger:release', { position, rotation, color }),
 };

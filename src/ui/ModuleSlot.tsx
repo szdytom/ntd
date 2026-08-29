@@ -50,7 +50,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
             onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
             aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
             aria-label={t('moduleSlot.filledAria', { slot: index + 1, module: moduleName(t, definition.id) })}
-            title={t('moduleSlot.filledTitle', { module: moduleName(t, definition.id), description: moduleDescription(t, definition.id) })}>
+            title={t('moduleSlot.filledTitle', { module: moduleName(t, definition.id), description: moduleDescription(t, definition) })}>
             <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span><strong>{definition.meta.symbol}</strong><small>{moduleShortName(t, definition.id)}</small>
           </button>
           <button className="slot-remove" onClick={() => engine.installModule(index, null)} aria-label={t('moduleSlot.remove', { slot: index + 1, module: moduleName(t, definition.id) })}>×</button>

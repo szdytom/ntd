@@ -33,8 +33,8 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
         return <button key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={() => engine.chooseDraftModule(moduleId)}>
           <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><b>{definition.meta.symbol}</b>
           <strong>{moduleName(t, definition.id)}</strong>
-          <small>{moduleDescription(t, definition.id)}</small>
-          <span className="reward-detail">{moduleDetail(t, definition.id)}</span>
+          <small>{moduleDescription(t, definition)}</small>
+          <span className="reward-detail">{moduleDetail(t, definition)}</span>
           <em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
         </button>;
       })}</div>

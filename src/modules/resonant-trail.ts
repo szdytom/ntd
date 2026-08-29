@@ -3,6 +3,13 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#9b5de5';
+const stats = {
+  speedMultiplier: 0.96,
+  pulseEveryTicks: 4,
+  damageMultiplier: 0.3,
+  minimumDamage: 5,
+  radius: 56,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -37,10 +44,13 @@ export const resonantTrailModule: ModuleDefinition = {
   kind: 'trail',
   meta: {
     name: 'Resonant Trail', shortName: 'Resonance', symbol: '〰', color, tint: '#f1eaff', energy: 24, rarity: 'legendary',
-    description: 'Leaves damage waves along the next projectile path', detail: 'Pulse every 4 trail ticks · 30% projectile damage',
+    text: { detail: {
+      ticks: stats.pulseEveryTicks,
+      damage: Math.round(stats.damageMultiplier * 100),
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({ speedMultiplier: 0.96 }),
+  compile: (context) => context.modifyNext({ speedMultiplier: stats.speedMultiplier }),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.strokeStyle = color;
@@ -57,9 +67,11 @@ export const resonantTrailModule: ModuleDefinition = {
     const key = 'resonant-trail:ticks';
     const ticks = ((projectile.moduleState[key] as number | undefined) ?? 0) + 1;
     projectile.moduleState[key] = ticks;
-    if (ticks % 4 !== 0) return;
+    if (ticks % stats.pulseEveryTicks !== 0) return;
     engine.spawn('module:resonant-trail:pulse', { position, color });
-    const pulseDamage = Math.max(5, Math.round(projectile.damage * 0.3));
-    for (const target of combat.nearbyEnemies(position, 56)) combat.dealDamage(target, pulseDamage, color, projectile);
+    const pulseDamage = Math.max(stats.minimumDamage, Math.round(projectile.damage * stats.damageMultiplier));
+    for (const target of combat.nearbyEnemies(position, stats.radius)) {
+      combat.dealDamage(target, pulseDamage, color, projectile);
+    }
   },
 };

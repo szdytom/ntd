@@ -64,7 +64,7 @@ const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
-const TERRAIN_TRIGGER_PENDING_CROSSING = 'terrain-trigger:pending-crossing';
+const TERRAIN_TRIGGER_CROSSING_TICKS = 'terrain-trigger:crossing-ticks';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
@@ -1019,21 +1019,22 @@ export class GameEngine {
 
       if (projectile.shot.trigger?.type === 'terrain' && !projectile.triggered) {
         const moved = distance(movementStart, projectile.position) > SIMULATION_TIME_EPSILON;
-        const pendingCrossing = projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] === true;
+        const delayedTicks = projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] as number | undefined;
         const crossingTime = this.path.centerlineIntersectionTime(movementStart, projectile.position);
-        if (
-          moved && (
-            pendingCrossing ||
-            (crossingTime !== null &&
-              crossingTime > SIMULATION_TIME_EPSILON &&
-              crossingTime < 1 - SIMULATION_TIME_EPSILON)
-          )
-        ) {
+        const configuredTicks = Math.max(1, Math.round(projectile.shot.trigger.crossingTicks ?? 1));
+        const crossedWithinTick = crossingTime !== null &&
+          crossingTime > SIMULATION_TIME_EPSILON &&
+          crossingTime < 1 - SIMULATION_TIME_EPSILON;
+        if (moved && (delayedTicks !== undefined ? delayedTicks <= 1 : crossedWithinTick && configuredTicks <= 1)) {
           projectile.triggered = true;
-          projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] = false;
+          delete projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS];
           this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+        } else if (moved && delayedTicks !== undefined) {
+          projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] = delayedTicks - 1;
+        } else if (crossedWithinTick) {
+          projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] = configuredTicks - 1;
         } else if (crossingTime !== null && crossingTime >= 1 - SIMULATION_TIME_EPSILON) {
-          projectile.moduleState[TERRAIN_TRIGGER_PENDING_CROSSING] = true;
+          projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] = configuredTicks;
         }
       }
 

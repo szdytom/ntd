@@ -4,6 +4,16 @@ import type { ModuleDefinition } from './types';
 
 const color = '#51cf66';
 const darkColor = '#2f9e44';
+const stats = {
+  damage: 3,
+  size: 10,
+  duration: 5,
+  radius: 86,
+  pulseInterval: 0.5,
+  maxTriggers: 10,
+  statusDuration: 1.25,
+  damageInterval: 0.4,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   shockwave({ id: 'module:toxic-cloud:spawn', lifetime: 0.52, radius: 82, stroke: 3, sides: 8, layer: 'ground' }),
@@ -42,15 +52,26 @@ export const toxicCloudModule: ModuleDefinition = {
   kind: 'static',
   meta: {
     name: 'Emerald Toxic Cloud', shortName: 'Toxic Cloud', symbol: '☁', color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
-    description: 'Creates a persistent corrosive area at the trigger point', detail: 'Trigger payload only · Lasts 5 seconds',
+    text: { detail: {
+      pulseInterval: stats.pulseInterval,
+      damage: stats.damage,
+      damageInterval: stats.damageInterval,
+      duration: stats.duration,
+    } },
   },
   effects,
   compile: (context) => context.emitProjectile({
-    damage: 3,
+    damage: stats.damage,
     speed: 0,
-    size: 10,
-    lifetime: 5,
-    static: { duration: 5, armTime: 0, triggerRadius: 86, cooldown: 0.5, maxTriggers: 10 },
+    size: stats.size,
+    lifetime: stats.duration,
+    static: {
+      duration: stats.duration,
+      armTime: 0,
+      triggerRadius: stats.radius,
+      cooldown: stats.pulseInterval,
+      maxTriggers: stats.maxTriggers,
+    },
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const { x, y } = projectile.position;
@@ -73,7 +94,7 @@ export const toxicCloudModule: ModuleDefinition = {
     ctx.lineWidth = 1.4;
     ctx.setLineDash([3, 7]);
     ctx.beginPath();
-    ctx.arc(x, y, projectile.shot.static?.triggerRadius ?? 86, 0, Math.PI * 2);
+    ctx.arc(x, y, projectile.shot.static?.triggerRadius ?? stats.radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.fillStyle = '#fff';
     ctx.globalAlpha = 0.75;
@@ -87,13 +108,13 @@ export const toxicCloudModule: ModuleDefinition = {
   },
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawn('module:toxic-cloud:pulse', { position, color });
-    for (const enemy of combat.nearbyEnemies(position, 86)) {
+    for (const enemy of combat.nearbyEnemies(position, stats.radius)) {
       if (projectile) combat.affectTarget(enemy, projectile, 'static');
       combat.applyStatus(enemy, {
         id: 'toxic-cloud',
-        duration: 1.25,
-        interval: 0.4,
-        damage: 3,
+        duration: stats.statusDuration,
+        interval: stats.damageInterval,
+        damage: stats.damage,
         color: darkColor,
       });
     }

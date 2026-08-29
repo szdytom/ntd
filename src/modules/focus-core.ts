@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#e63973';
+const stats = { damagePerCharge: 0.55, speedPerCharge: 0.12, projectileCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -33,11 +34,17 @@ export const focusCoreModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Focus Core', shortName: 'Focus', symbol: '⌁', color, tint: '#ffe6ef', energy: 16, rarity: 'rare',
-    description: 'Condenses extra pierce, projectiles, and repeats into one heavy shot', detail: '+55% damage · +12% speed per consumed bonus',
+    text: {
+      description: { count: stats.projectileCount },
+      detail: {
+        damage: Math.round(stats.damagePerCharge * 100),
+        speed: Math.round(stats.speedPerCharge * 100),
+      },
+    },
   },
   effects,
   compile: (context) => context.modifyNext({
-    focusConversion: { damagePerCharge: 0.55, speedPerCharge: 0.12 },
+    focusConversion: { damagePerCharge: stats.damagePerCharge, speedPerCharge: stats.speedPerCharge },
   }),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();

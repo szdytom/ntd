@@ -73,7 +73,7 @@ describe('expiration and terrain trigger modules', () => {
     const terrain = registry.compile(['terrain-trigger', 'pulse', 'proximity-mine']);
 
     expect(expiration.shots[0]?.trigger).toEqual({ type: 'expiration', payloadCount: 1 });
-    expect(terrain.shots[0]?.trigger).toEqual({ type: 'terrain', payloadCount: 1 });
+    expect(terrain.shots[0]?.trigger).toEqual({ type: 'terrain', payloadCount: 1, crossingTicks: 1 });
     expect(expiration.energyCost).toBe(55);
     expect(terrain.energyCost).toBe(52);
   });

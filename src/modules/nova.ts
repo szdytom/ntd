@@ -4,6 +4,7 @@ import { drawProjectileGlow } from './render-utils';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff9f43';
+const stats = { damage: 24, speed: 350, size: 8, splash: 64 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -30,10 +31,10 @@ export const novaModule: ModuleDefinition = {
   kind: 'projectile',
   meta: {
     name: 'Micro Nova', shortName: 'Nova', symbol: '✦', color, tint: '#fff1df', energy: 30, rarity: 'uncommon',
-    description: 'Creates an area explosion on impact', detail: '24 damage · 64 radius',
+    text: { detail: { damage: stats.damage, radius: stats.splash } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: 24, speed: 350, size: 8, splash: 64 }),
+  compile: (context) => context.emitProjectile(stats),
   renderProjectile: ({ ctx, projectile }) => {
     drawProjectileGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius, color);
     ctx.save();

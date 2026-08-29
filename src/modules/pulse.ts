@@ -4,6 +4,7 @@ import { drawProjectileGlow } from './render-utils';
 import type { ModuleDefinition } from './types';
 
 const color = '#6c5ce7';
+const stats = { damage: 18, speed: 440, size: 5 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -37,10 +38,10 @@ export const pulseModule: ModuleDefinition = {
   kind: 'projectile',
   meta: {
     name: 'Pulse Round', shortName: 'Pulse', symbol: '●', color, tint: '#eeeaff', energy: 15, rarity: 'common',
-    description: 'A stable baseline projectile', detail: '18 damage · Medium speed · Single target',
+    text: { detail: { damage: stats.damage } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: 18, speed: 440, size: 5 }),
+  compile: (context) => context.emitProjectile(stats),
   renderProjectile: ({ ctx, projectile }) => {
     drawProjectileGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius, color);
   },

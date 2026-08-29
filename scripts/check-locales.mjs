@@ -6,6 +6,12 @@ const locales = localePaths.map((path) => ({
   entries: JSON.parse(readFileSync(path, 'utf8')),
 }));
 const errors = [];
+const moduleTextKey = /^modules\.[^.]+\.(description|detail)$/;
+const placeholderPattern = /\{\{\s*([^},\s]+).*?\}\}/g;
+
+const placeholders = (value) => (
+  [...value.matchAll(placeholderPattern)].map((match) => match[1]).sort()
+);
 
 for (const { path, entries } of locales) {
   if (!entries || Array.isArray(entries) || typeof entries !== 'object') {
@@ -17,6 +23,12 @@ for (const { path, entries } of locales) {
   }
   for (const [key, value] of Object.entries(entries)) {
     if (typeof value !== 'string') errors.push(`${path}: ${key} must map directly to a string`);
+    if (typeof value === 'string' && moduleTextKey.test(key)) {
+      const literalText = value.replace(placeholderPattern, '');
+      if (/\d/.test(literalText)) {
+        errors.push(`${path}: ${key} must express numeric values through interpolation placeholders`);
+      }
+    }
   }
 }
 
@@ -30,6 +42,14 @@ if (reference) {
     }
     for (const key of translationKeys) {
       if (!referenceKeys.has(key)) errors.push(`${translation.path}: unexpected ${key}`);
+    }
+    for (const key of referenceKeys) {
+      if (!moduleTextKey.test(key) || !translationKeys.has(key)) continue;
+      const expected = placeholders(reference.entries[key]);
+      const actual = placeholders(translation.entries[key]);
+      if (expected.join('\0') !== actual.join('\0')) {
+        errors.push(`${translation.path}: ${key} placeholders must match ${reference.path}`);
+      }
     }
   }
 }

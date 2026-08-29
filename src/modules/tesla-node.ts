@@ -3,6 +3,17 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#00bbf9';
+const stats = {
+  damage: 20,
+  size: 7,
+  duration: 5.5,
+  armTime: 0.24,
+  triggerRadius: 120,
+  cooldown: 0.7,
+  maxTriggers: 6,
+  chainRadius: 72,
+  chainDamageMultiplier: 0.58,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   shockwave({ id: 'module:tesla:deploy', lifetime: 0.48, radius: 52, stroke: 2.5, sides: 8, layer: 'ground' }),
@@ -38,15 +49,26 @@ export const teslaNodeModule: ModuleDefinition = {
   kind: 'static',
   meta: {
     name: 'Tesla Sentry', shortName: 'Sentry', symbol: '⌾', color, tint: '#e2f8ff', energy: 22, rarity: 'legendary',
-    description: 'Deploys at the trigger point and repeatedly shocks targets', detail: 'Trigger payload only · 6 chained shocks',
+    text: { detail: {
+      damage: stats.damage,
+      chainDamage: Math.round(stats.damage * stats.chainDamageMultiplier),
+      interval: stats.cooldown,
+      attacks: stats.maxTriggers,
+    } },
   },
   effects,
   compile: (context) => context.emitProjectile({
-    damage: 20,
+    damage: stats.damage,
     speed: 0,
-    size: 7,
-    lifetime: 5.5,
-    static: { duration: 5.5, armTime: 0.24, triggerRadius: 120, cooldown: 0.7, maxTriggers: 6 },
+    size: stats.size,
+    lifetime: stats.duration,
+    static: {
+      duration: stats.duration,
+      armTime: stats.armTime,
+      triggerRadius: stats.triggerRadius,
+      cooldown: stats.cooldown,
+      maxTriggers: stats.maxTriggers,
+    },
   }),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
@@ -77,7 +99,7 @@ export const teslaNodeModule: ModuleDefinition = {
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.triggerRadius ?? 120, 0, Math.PI * 2);
+    ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.triggerRadius ?? stats.triggerRadius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   },
@@ -86,10 +108,10 @@ export const teslaNodeModule: ModuleDefinition = {
     if (!projectile || !triggerTarget) return;
     engine.spawn('module:tesla:zap', { position, color, data: { ...triggerTarget.position } });
     combat.dealDamage(triggerTarget, projectile.damage, color, projectile);
-    const secondary = combat.nearbyEnemies(triggerTarget.position, 72, [triggerTarget.id])[0];
+    const secondary = combat.nearbyEnemies(triggerTarget.position, stats.chainRadius, [triggerTarget.id])[0];
     if (secondary) {
       engine.spawn('module:tesla:zap', { position: triggerTarget.position, color, data: { ...secondary.position } });
-      combat.dealDamage(secondary, projectile.damage * 0.58, color, projectile);
+      combat.dealDamage(secondary, projectile.damage * stats.chainDamageMultiplier, color, projectile);
     }
   },
 };

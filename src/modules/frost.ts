@@ -3,6 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#00a8e8';
+const stats = { slow: 0.3, duration: 1.6 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -24,10 +25,10 @@ export const frostModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Condensing Lens', shortName: 'Frost', symbol: '✣', color, tint: '#e4f7ff', energy: 5, rarity: 'common',
-    description: 'Slows every target affected by the next payload', detail: '30% slow · Lasts 1.6 seconds',
+    text: { detail: { slow: Math.round(stats.slow * 100), duration: stats.duration } },
   },
   effects,
-  compile: (context) => context.modifyNext({ slow: 0.3, slowDuration: 1.6 }),
+  compile: (context) => context.modifyNext({ slow: stats.slow, slowDuration: stats.duration }),
   targetEffect: {
     channels: ['damage', 'static'],
     apply: ({ effects: engine, position, enemy, shot, combat }) => {

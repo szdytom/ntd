@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#f15bb5';
+const stats = { carrierCount: 1, payloadCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -24,9 +25,9 @@ export const impactTriggerModule: ModuleDefinition = {
   kind: 'logic',
   meta: {
     name: 'Impact Trigger', shortName: 'Impact', symbol: '⊛', color, tint: '#ffe7f7', energy: 6, rarity: 'common',
-    description: 'Releases the next projectile when the carrier hits', detail: '1 carrier · 1 payload',
+    text: { detail: { carriers: stats.carrierCount, payloads: stats.payloadCount } },
   },
   effects,
-  compile: (context) => context.wrapNext({ type: 'impact', payloadCount: 1 }),
+  compile: (context) => context.wrapNext({ type: 'impact', payloadCount: stats.payloadCount }),
   onTrigger: ({ effects: engine, position, rotation }) => engine.spawn('module:impact-trigger:release', { position, rotation, color }),
 };

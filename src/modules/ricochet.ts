@@ -2,6 +2,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#f72585';
+const stats = { maxRicochets: 2, radius: 140 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -32,7 +33,7 @@ export const ricochetModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Ricochet Mirror', shortName: 'Ricochet', symbol: '↗', color, tint: '#ffe7f2', energy: 19, rarity: 'rare',
-    description: 'Redirects the projectile after impact', detail: 'Up to 2 ricochets · 140 radius',
+    text: { detail: { ricochets: stats.maxRicochets, radius: stats.radius } },
   },
   effects,
   compile: (context) => context.modifyNext({}),
@@ -51,8 +52,8 @@ export const ricochetModule: ModuleDefinition = {
     if (!projectile || !enemy) return;
     const used = (projectile.moduleState['ricochet:used'] as number | undefined) ?? 0;
     const visited = (projectile.moduleState['ricochet:visited'] as number[] | undefined) ?? [enemy.id];
-    if (used >= 2) return;
-    const target = combat.nearbyEnemies(position, 140, [...visited, enemy.id])[0];
+    if (used >= stats.maxRicochets) return;
+    const target = combat.nearbyEnemies(position, stats.radius, [...visited, enemy.id])[0];
     if (!target) return;
     projectile.moduleState['ricochet:used'] = used + 1;
     projectile.moduleState['ricochet:visited'] = [...visited, enemy.id, target.id];

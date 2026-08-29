@@ -2,6 +2,12 @@ import type { EffectDefinition } from '../effects/types';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff7b00';
+const stats = {
+  damageMultiplier: 1.55,
+  speedMultiplier: 0.8,
+  sizeMultiplier: 1.75,
+  splashBonus: 32,
+} as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -27,15 +33,14 @@ export const colossusModule: ModuleDefinition = {
   kind: 'modifier',
   meta: {
     name: 'Colossus Core', shortName: 'Colossus', symbol: '⬡', color, tint: '#fff0df', energy: 9, rarity: 'rare',
-    description: 'Enlarges the next projectile', detail: '+55% damage · +75% size · +32 blast radius',
+    text: { detail: {
+      damage: Math.round((stats.damageMultiplier - 1) * 100),
+      size: Math.round((stats.sizeMultiplier - 1) * 100),
+      radius: stats.splashBonus,
+    } },
   },
   effects,
-  compile: (context) => context.modifyNext({
-    damageMultiplier: 1.55,
-    speedMultiplier: 0.8,
-    sizeMultiplier: 1.75,
-    splashBonus: 32,
-  }),
+  compile: (context) => context.modifyNext(stats),
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.strokeStyle = color;
