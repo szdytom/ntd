@@ -30,14 +30,21 @@ export function Battlefield({ engine, view, workshop, children }: {
           ? t('battlefield.intercepting')
           : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
   const terminal = snapshot.status === 'won' || snapshot.status === 'lost';
+  const runIndicator = snapshot.mode === 'creative'
+    ? t('battlefield.creativeIndicator')
+    : difficultyName(t, engine.difficulty.id);
   const spawn = engine.path.pointAtDistance(44).position;
   const core = engine.path.pointAtDistance(engine.path.length).position;
   return (
-    <section className="battle-card" data-phase={snapshot.status} aria-label={t('battlefield.aria')}>
+    <section className="battle-card" data-phase={snapshot.status} data-mode={snapshot.mode} aria-label={t('battlefield.aria')}>
       <div className="battle-stage">
         <div className="battle-head">
           <div>
-            <h1>{levelName(t, engine.level.id)} <Tag className="battle-sector-tag" tone="purple" borderless monospace>{engine.level.sector.replace('SECTOR ', '')}</Tag></h1>
+            <h1>
+              {levelName(t, engine.level.id)}{' '}
+              <Tag className="battle-sector-tag" tone="purple" borderless monospace>{engine.level.sector.replace('SECTOR ', '')}</Tag>
+              <span className="battle-run-indicator">· {runIndicator}</span>
+            </h1>
           </div>
           <div className="incoming">
             <div className="incoming-title">

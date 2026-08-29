@@ -208,6 +208,7 @@
 	"battlefield.intercepting": "INTERCEPTING MODULE",
 	"battlefield.paused": "SYSTEM PAUSED",
 	"battlefield.planning": "PLANNING PHASE",
+	"battlefield.creativeIndicator": "Creative",
 	"battlefield.nextWave": "Next-wave signals",
 	"battlefield.signalConsole": "Signal console",
 	"battlefield.spawn": "Signal entry",

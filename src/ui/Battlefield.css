@@ -33,8 +33,9 @@
 }
 
 .battle-head > div:first-child { min-width: 180px; }
-.battle-head h1 { margin: 0; color: var(--battle-ink); font-size: 23px; letter-spacing: -.035em; }
+.battle-head h1 { margin: 0; color: var(--battle-ink); font-size: 23px; letter-spacing: -.035em; white-space: nowrap; }
 .battle-head h1 .battle-sector-tag { min-height: 20px; margin-left: 7px; padding: 3px 6px; font-size: 13px; vertical-align: middle; }
+.battle-run-indicator { margin-left: 8px; color: #8b8592; font-size: 14px; font-weight: 700; letter-spacing: 0; white-space: nowrap; }
 .live-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #13b88e; }
 .live-dot.combat { background: #ff637a; animation: battle-pulse .8s ease infinite alternate; }
 @keyframes battle-pulse { to { opacity: .35; transform: scale(.72); } }
@@ -91,8 +92,10 @@
   .battle-head > div:first-child { min-width: 70px; }
   .battle-head h1 { font-size: 17px; }
   .battle-head h1 .battle-sector-tag { font-size: 11px; }
+  .battle-run-indicator { margin-left: 5px; font-size: 12px; }
   .incoming { gap: 4px; overflow: hidden; }
   .incoming-title { gap: 4px; }
+  .battle-card[data-mode='creative'] .incoming-title > small { display: none; }
   .creative-signal-toggle { padding: 4px 6px; font-size: 11px; white-space: nowrap; }
   .incoming > .enemy-preview { max-width: 145px; min-width: 0; justify-content: flex-start; overflow-x: auto; }
   .incoming .enemy-preview-tag { min-height: 26px; flex: 0 0 auto; }
