@@ -57,9 +57,15 @@ export function GameHeader({
         <button disabled={drafting} className={`icon-button pause-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.paused ? t('header.resume') : t('header.pause')}>
           <span className="pause-glyph">{snapshot.paused ? '▶' : 'Ⅱ'}</span>
         </button>
-        <button className="launch-button" data-tutorial-launch onClick={() => engine.startWave()} disabled={waveDisabled}>
+        <button
+          className="launch-button"
+          data-tutorial-launch
+          onClick={() => engine.startWave()}
+          disabled={waveDisabled}
+          aria-label={`${launchLabel} · ${launchWave}`}
+        >
           <span className="launch-icon">▶</span>
-          <span><small>{launchLabel}</small><strong>{launchWave}</strong></span>
+          <span className="launch-copy"><small>{launchLabel}</small><strong>{launchWave}</strong></span>
         </button>
       </div>
     </header>

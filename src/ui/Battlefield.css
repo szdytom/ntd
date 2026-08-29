@@ -22,11 +22,11 @@
 
 .battle-head {
   display: flex;
-  min-height: 76px;
+  min-height: 68px;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 10px 17px 10px 22px;
+  gap: 16px;
+  padding: 8px 15px 8px 20px;
   border-bottom: 2px solid var(--battle-ink);
   background: #fff;
   flex: 0 0 auto;
@@ -39,9 +39,9 @@
 .live-dot.combat { background: #ff637a; animation: battle-pulse .8s ease infinite alternate; }
 @keyframes battle-pulse { to { opacity: .35; transform: scale(.72); } }
 
-.incoming { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 8px; text-align: right; }
+.incoming { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; text-align: right; }
 .incoming-title { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; }
-.incoming-title > small { color: #756f7e; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.incoming-title > small { color: #756f7e; font-size: 14px; font-weight: 800; white-space: nowrap; }
 .creative-signal-toggle { padding: 5px 9px; border: 2px solid var(--battle-ink); color: var(--battle-ink); background: #a8ead7; cursor: pointer; font-size: 11px; font-weight: 800; }
 .creative-signal-toggle[aria-expanded='true'] { color: #fff; background: #0ba881; }
 .creative-signal-panel { position: absolute; z-index: 24; top: 68px; right: 14px; width: min(720px, calc(100% - 28px)); padding-top: 8px; }
@@ -78,19 +78,20 @@
 .status-overlay p { margin: 0 0 18px; color: #716b79; font-size: 13px; }
 .status-overlay button { padding: 10px 18px; border: 2px solid var(--battle-ink); color: #fff; background: var(--purple); box-shadow: 4px 4px 0 var(--battle-ink); cursor: pointer; font-size: 13px; font-weight: 800; }
 
-.battle-footer { display: flex; min-height: 44px; align-items: center; gap: 12px; padding: 0 15px; border-top: 2px solid var(--battle-ink); background: #fff; }
-.battle-footer-state { display: flex; align-items: center; gap: 7px; color: #6e6876; font-size: 10px; font-weight: 800; }
-.score-line { margin-left: auto; color: #7e7886; font-size: 10px; font-weight: 800; }
-.score-line strong { margin-left: 5px; color: var(--battle-ink); font-family: var(--font-mono); font-size: 13px; }
+.battle-footer { display: flex; min-height: 52px; align-items: center; gap: 12px; padding: 0 15px; border-top: 2px solid var(--battle-ink); background: #fff; }
+.battle-footer-state { display: flex; align-items: center; gap: 7px; color: #6e6876; font-size: 13px; font-weight: 800; }
+.score-line { margin-left: auto; color: #7e7886; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.score-line strong { margin-left: 5px; color: var(--battle-ink); font-family: var(--font-mono); font-size: 14px; }
+.battle-footer .mode-chip,
+.battle-footer .difficulty-chip { min-height: 26px; font-size: 13px; }
 
 @media (max-width: 620px) {
   .battle-card { border-radius: 11px; }
-  .battle-head { min-height: 68px; padding: 8px 10px 8px 13px; }
+  .battle-head { min-height: 62px; padding: 6px 9px 6px 12px; }
   .battle-head > div:first-child { min-width: 70px; }
   .battle-head h1 { font-size: 17px; }
   .incoming { gap: 4px; overflow: hidden; }
   .incoming-title { gap: 4px; }
-  .incoming-title > small { font-size: 8px; }
   .creative-signal-toggle { padding: 4px 6px; font-size: 9px; white-space: nowrap; }
   .incoming > .enemy-preview { max-width: 145px; min-width: 0; justify-content: flex-start; overflow-x: auto; }
   .incoming .enemy-preview-tag { min-height: 26px; flex: 0 0 auto; }
@@ -98,6 +99,6 @@
   .spawn-label,
   .core-label { font-size: 9px; }
   .battle-footer { gap: 6px; padding: 0 9px; }
-  .battle-footer-state { font-size: 9px; white-space: nowrap; }
+  .battle-footer-state { font-size: 13px; white-space: nowrap; }
   .score-line { margin-left: auto; }
 }

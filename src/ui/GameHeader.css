@@ -27,7 +27,7 @@
   cursor: pointer;
 }
 .exit-button span { font-size: 23px; }
-.exit-button strong { font-size: 13px; }
+.exit-button strong { font-size: 14px; white-space: nowrap; }
 .exit-button:hover { color: #fff; background: var(--purple); }
 
 .top-stats {
@@ -59,9 +59,10 @@
 .wave-icon { color: #fff; background: var(--purple); font-size: 18px; }
 .metric small,
 .metric strong { display: block; }
-.metric small { color: #77717f; font-size: 10px; font-weight: 800; }
-.metric strong { margin-top: 1px; color: var(--bar-ink); font-family: var(--font-mono); font-size: 17px; }
-.metric strong em { color: #9b96a2; font-size: 11px; font-style: normal; font-weight: 500; }
+.metric > div:not(.micro-bar) { display: flex; min-width: 0; align-items: baseline; gap: 8px; white-space: nowrap; }
+.metric small { color: #77717f; font-size: 14px; font-weight: 800; }
+.metric strong { color: var(--bar-ink); font-family: var(--font-mono); font-size: 17px; }
+.metric strong em { color: #9b96a2; font-size: 14px; font-style: normal; font-weight: 500; }
 .micro-bar { position: absolute; right: 10px; bottom: 6px; left: 12px; height: 4px; overflow: hidden; background: #eeeaf1; }
 .micro-bar i { display: block; height: 100%; background: #ff637a; transition: width .2s ease; }
 
@@ -107,10 +108,10 @@
 .launch-button:hover:not(:disabled) { background: #5547d2; transform: none; box-shadow: none; }
 .launch-button:disabled { color: #77717f; background: #e7e4ea; box-shadow: none; cursor: default; }
 .launch-icon { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border: 2px solid currentColor; font-size: 11px; }
-.launch-button small,
-.launch-button strong { display: block; }
-.launch-button small { font-size: 10px; opacity: .76; }
-.launch-button strong { margin-top: 2px; font-size: 14px; }
+.launch-copy { display: flex; min-width: 0; align-items: baseline; gap: 5px; white-space: nowrap; }
+.launch-copy small { font-size: 14px; opacity: .8; }
+.launch-copy strong { font-size: 14px; }
+.launch-copy strong::before { margin-right: 5px; content: '·'; opacity: .68; }
 
 .mode-chip,
 .difficulty-chip {
@@ -119,29 +120,46 @@
   font-size: 10px;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1100px) {
   .topbar { grid-template-columns: 54px minmax(0, 1fr) auto; }
   .exit-button { width: auto; justify-content: center; padding: 0; }
-  .exit-button strong { display: none; }
-  .top-stats { grid-template-columns: repeat(3, 1fr); }
+  .exit-button strong,
+  .metric small { display: none; }
+  .top-stats { grid-template-columns: 1.2fr 1fr 1fr; }
+}
+
+@media (max-width: 980px) {
   .metric { grid-template-columns: 24px minmax(0, 1fr); padding: 5px 8px; }
   .metric-icon { width: 24px; height: 28px; }
   .micro-bar { right: 6px; left: 8px; }
   .speed-switch { display: none; }
 }
 
+@media (max-width: 860px) {
+  .topbar {
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: 54px 64px;
+    height: 118px;
+  }
+  .exit-button { grid-column: 1; grid-row: 1; }
+  .top-actions { grid-column: 2; grid-row: 1; }
+  .top-stats { grid-column: 1 / -1; grid-row: 2; border-top: 2px solid var(--bar-ink); border-right: 0; }
+  .metric { padding-top: 5px; padding-bottom: 8px; }
+  .micro-bar { bottom: 5px; }
+}
+
 @media (max-width: 620px) {
-  .topbar { height: 74px; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 0; }
-  .exit-button,
+  .topbar { grid-template-columns: 42px minmax(0, 1fr); grid-template-rows: 52px 64px; height: 116px; gap: 0; }
+  .exit-button span { font-size: 20px; }
   .icon-button { width: 42px; height: auto; border-radius: 0; }
-  .top-stats { height: auto; grid-template-columns: 1fr 1fr; border-radius: 0; }
-  .wave-metric { display: none; }
-  .metric:nth-child(2) { border-right: 0; }
-  .metric small { display: none; }
-  .metric strong { font-size: 14px; }
-  .launch-button { min-width: 118px; height: auto; padding: 0 10px; border-radius: 0; box-shadow: none; }
-  .launch-icon { display: none; }
-  .launch-button small { font-size: 9px; }
-  .launch-button strong { font-size: 12px; }
+  .top-stats { height: auto; grid-template-columns: 1.2fr 1fr 1fr; border-radius: 0; }
+  .metric { padding: 5px 4px 8px; }
+  .metric strong,
+  .metric strong em { font-size: 14px; }
+  .launch-button { min-width: 128px; height: auto; padding: 0 8px; border-radius: 0; box-shadow: none; }
+  .launch-copy { gap: 3px; }
+  .launch-copy small { display: none; }
+  .launch-copy strong { font-size: 14px; }
+  .launch-copy strong::before { content: none; }
   .pause-button { display: none; }
 }
