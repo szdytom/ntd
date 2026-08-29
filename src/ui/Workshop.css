@@ -292,6 +292,10 @@
 .workshop-side {
   grid-column: 1;
   grid-row: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-gutter: stable;
 }
 
 .workshop-main {
@@ -389,15 +393,9 @@
 }
 
 .workshop .module-inspector {
-  min-height: 78px;
-  padding: 8px 10px;
-}
-
-.workshop .inspector-copy > small {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  min-height: max-content;
+  flex: 0 0 auto;
+  padding: 12px;
 }
 
 .workshop .program-section,

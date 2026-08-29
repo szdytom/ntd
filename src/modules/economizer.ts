@@ -25,8 +25,8 @@ export const economizerModule: ModuleDefinition = {
   id: 'economizer',
   kind: 'logic',
   meta: {
-    name: '节能回路', shortName: '节能', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'common',
-    description: '降低下一段施法的总耗能', detail: '-38% 能耗 · -22% 伤害',
+    name: 'Economizer Circuit', shortName: 'Economizer', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'common',
+    description: 'Reduces the total energy cost of the next cast', detail: '-38% energy · -22% damage',
   },
   effects,
   compile: (context) => context.modifyNext({ damageMultiplier: 0.78, energyMultiplier: 0.62 }),

@@ -1,5 +1,6 @@
 import type { GameEngine } from '../game/engine';
 import type { GameSnapshot } from '../game/types';
+import { useTranslation } from 'react-i18next';
 import './GameHeader.css';
 
 export function GameHeader({
@@ -11,15 +12,16 @@ export function GameHeader({
   snapshot: GameSnapshot;
   onExit: () => void;
 }) {
+  const { t } = useTranslation();
   const waveDisabled = snapshot.status !== 'planning';
   const launchLabel = snapshot.status === 'wave'
-    ? `${snapshot.enemiesAlive + snapshot.waveQueue} 个信号`
+    ? t('header.signals', { count: snapshot.enemiesAlive + snapshot.waveQueue })
     : snapshot.status === 'reward'
-      ? '等待模块选择'
-      : '启动信号';
+      ? t('header.awaitingDraft')
+      : t('header.launch');
   const launchWave = snapshot.wave >= snapshot.maxWaves
-    ? '已完成'
-    : `波次 ${String(snapshot.wave + 1).padStart(2, '0')}`;
+    ? t('header.complete')
+    : t('header.waveNumber', { wave: String(snapshot.wave + 1).padStart(2, '0') });
 
   return (
     <header className="topbar">
@@ -31,30 +33,30 @@ export function GameHeader({
         </div>
       </div>
 
-      <div className="top-stats" aria-label="游戏状态">
+      <div className="top-stats" aria-label={t('header.gameStatus')}>
         <div className="metric core-metric">
           <span className="metric-icon heart-icon">♥</span>
-          <div><small>核心稳定度</small><strong>{snapshot.core}<em>/{snapshot.maxCore}</em></strong></div>
+          <div><small>{t('header.core')}</small><strong>{snapshot.core}<em>/{snapshot.maxCore}</em></strong></div>
           <div className="micro-bar"><i style={{ width: `${snapshot.core / snapshot.maxCore * 100}%` }} /></div>
         </div>
         <div className="metric shard-metric">
           <span className="metric-icon shard-icon">◇</span>
-          <div><small>晶片</small><strong>{snapshot.mode === 'creative' ? '∞' : snapshot.shards}</strong></div>
+          <div><small>{t('header.shards')}</small><strong>{snapshot.mode === 'creative' ? '∞' : snapshot.shards}</strong></div>
         </div>
         <div className="metric wave-metric">
           <span className="metric-icon wave-icon">≋</span>
-          <div><small>信号波次</small><strong>{snapshot.wave}<em>/{snapshot.maxWaves}</em></strong></div>
+          <div><small>{t('header.wave')}</small><strong>{snapshot.wave}<em>/{snapshot.maxWaves}</em></strong></div>
         </div>
       </div>
 
       <div className="top-actions">
-        <button className="icon-button exit-button" onClick={onExit} aria-label="返回关卡选择">←</button>
-        <div className="speed-switch" role="group" aria-label="游戏速度">
+        <button className="icon-button exit-button" onClick={onExit} aria-label={t('header.exit')}>←</button>
+        <div className="speed-switch" role="group" aria-label={t('header.speed')}>
           {[1, 2].map((speed) => (
             <button key={speed} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
           ))}
         </div>
-        <button className={`icon-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label="暂停游戏">
+        <button className={`icon-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.paused ? t('header.resume') : t('header.pause')}>
           <span className="pause-glyph">{snapshot.paused ? '▶' : 'Ⅱ'}</span>
         </button>
         <button className="launch-button" data-tutorial-launch onClick={() => engine.startWave()} disabled={waveDisabled}>

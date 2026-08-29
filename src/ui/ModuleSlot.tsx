@@ -1,7 +1,9 @@
 import type { DragEvent, KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import type { ModuleId } from '../game/types';
 import type { ModuleDefinition } from '../modules';
+import { moduleDescription, moduleName, moduleShortName } from '../i18n/presentation';
 import { KIND_SYMBOL, moduleVariableStyle } from './modulePresentation';
 import './ModuleSlot.css';
 
@@ -12,6 +14,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
   selectedModule: ModuleId | null;
   engine: GameEngine;
 }) {
+  const { t } = useTranslation();
   const dragStart = (event: DragEvent<HTMLButtonElement>): void => {
     event.dataTransfer.setData('text/slot', String(index));
     event.dataTransfer.effectAllowed = 'move';
@@ -36,8 +39,8 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
           onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
           onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
           onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')}
-          onDrop={drop} aria-label={`空槽位 ${index + 1}`}>
-          <span>+</span><small>槽 {index + 1}</small>
+          onDrop={drop} aria-label={t('moduleSlot.emptyAria', { slot: index + 1 })}>
+          <span>+</span><small>{t('moduleSlot.slot', { slot: index + 1 })}</small>
         </button>
       ) : (
         <div className="filled-slot">
@@ -46,11 +49,11 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
             onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')} onDrop={drop} onKeyDown={keyDown}
             onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
             aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
-            aria-label={`槽位 ${index + 1}：${definition.meta.name}。按 Alt 加左右方向键移动`}
-            title={`${definition.meta.name}：${definition.meta.description}；Alt+方向键调整顺序`}>
-            <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span><strong>{definition.meta.symbol}</strong><small>{definition.meta.shortName}</small>
+            aria-label={t('moduleSlot.filledAria', { slot: index + 1, module: moduleName(t, definition.id) })}
+            title={t('moduleSlot.filledTitle', { module: moduleName(t, definition.id), description: moduleDescription(t, definition.id) })}>
+            <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span><strong>{definition.meta.symbol}</strong><small>{moduleShortName(t, definition.id)}</small>
           </button>
-          <button className="slot-remove" onClick={() => engine.installModule(index, null)} aria-label={`从槽位 ${index + 1} 移除${definition.meta.name}`}>×</button>
+          <button className="slot-remove" onClick={() => engine.installModule(index, null)} aria-label={t('moduleSlot.remove', { slot: index + 1, module: moduleName(t, definition.id) })}>×</button>
         </div>
       )}
       {!isLast ? <span className="flow-arrow">›</span> : null}

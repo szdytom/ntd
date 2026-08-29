@@ -15,8 +15,8 @@ export const proximityMineModule: ModuleDefinition = {
   id: 'proximity-mine',
   kind: 'static',
   meta: {
-    name: '六角感应雷', shortName: '感应雷', symbol: '⬢', color, tint: '#ffe7ed', energy: 34, rarity: 'rare',
-    description: '在触发点生成并等待敌人接近', detail: '仅能作为触发载荷 · 52 范围伤害',
+    name: 'Hex Proximity Mine', shortName: 'Mine', symbol: '⬢', color, tint: '#ffe7ed', energy: 34, rarity: 'rare',
+    description: 'Deploys at the trigger point and waits for enemies', detail: 'Trigger payload only · 52 area damage',
   },
   effects,
   compile: (context) => context.emitProjectile({

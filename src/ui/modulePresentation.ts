@@ -9,14 +9,6 @@ export const KIND_SYMBOL: Record<ModuleKind, string> = {
   logic: 'L',
 };
 
-export const KIND_LABEL: Record<ModuleKind, string> = {
-  projectile: '弹射物',
-  static: '静态载荷',
-  modifier: '修正',
-  trail: '尾迹修正',
-  logic: '逻辑',
-};
-
 export const moduleVariableStyle = (definition: ModuleDefinition): CSSProperties => ({
   '--module-color': definition.meta.color,
   '--module-tint': definition.meta.tint,

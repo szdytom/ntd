@@ -1,25 +1,28 @@
-# Prism Bastion / 棱镜堡垒
+# Prism Bastion
+
+[English](README.md) | [简体中文](README.zh-CN.md)
 
 [![CI and GitHub Pages](https://github.com/szdytom/ntd/actions/workflows/ci.yml/badge.svg)](https://github.com/szdytom/ntd/actions/workflows/ci.yml)
 [![GitHub Pages](https://img.shields.io/badge/play-GitHub%20Pages-6c5ce7)](https://szdytom.github.io/ntd/)
 
-一款以模块编程为核心的几何风格塔防游戏。把弹体、修正器、逻辑、尾迹和触发器装入炮塔槽位，系统会从左到右编译出攻击程序；同一批模块因为顺序不同，可以形成完全不同的施法结果。
+Prism Bastion is a geometric tower-defense game built around modular programming. Load projectiles, modifiers, logic, trails, and triggers into tower slots; the compiler reads them from left to right and turns their order into an attack program. The same modules can produce radically different results when rearranged.
 
-**[在线试玩](https://szdytom.github.io/ntd/)**
+**[Play online](https://szdytom.github.io/ntd/)**
 
-## 游戏特色
+## Highlights
 
-- **模块化构筑**：22 个内置模块，覆盖穿透、分叉、制导、弹跃、范围伤害、持续伤害与嵌套触发。
-- **顺序即规则**：修正与逻辑模块影响右侧的下一枚弹体，未闭合的法术块可以回绕读取一次。
-- **两种模式**：正式模式包含库存、开局抽卡、波后奖励和经济成长；创造模式开放无限模块、无限晶片与自定义敌人信号台。
-- **四张独立地图**：每关拥有自己的路径、部署节点、敌人倍率与波次配置，并提供五档数值难度。
-- **差异化首领**：棱镜领主依靠可再生护盾，裂变星核死亡后分成三个子体，迟滞辐环则用局部辐射场压低炮塔射速与能量回复；正式关卡会逐步引入并最终组合这些机制，创造模式也可随时投放。
-- **可靠弹道**：固定步长模拟、连续碰撞检测、路径提前量、穿透和制导重新锁定共同处理高速战斗。
-- **轻量图形栈**：React 负责界面，Canvas 2D 负责战场，WebGL 提供可选泛光与护盾折射；不支持 WebGL 时自动回退。
+- **Programmable builds:** 22 built-in modules cover piercing, forking, seeking, ricochet, area damage, damage over time, and nested triggers.
+- **Order is the rule:** modifiers and logic affect the next projectile to their right, while an unfinished cast block may wrap once to the beginning.
+- **Two game modes:** Standard mode includes inventory limits, opening drafts, post-wave rewards, and economic progression. Creative mode provides unlimited modules and shards plus a custom signal console.
+- **Four distinct maps and five difficulties:** every sector has its own route, deployment nodes, enemy multipliers, and wave plan.
+- **Mechanically distinct bosses:** shields, death splitting, and local cooldown suppression are introduced separately and later combined.
+- **Reliable ballistics:** fixed-step simulation, continuous collision detection, path interception, piercing, and seeker retargeting support fast combat.
+- **Lightweight rendering stack:** React drives the interface, Canvas 2D renders the battlefield, and WebGL adds optional bloom and shield refraction with automatic fallback.
+- **English and Simplified Chinese UI:** powered by `i18next` and `react-i18next`, with a persistent in-game language switcher.
 
-## 快速开始
+## Quick start
 
-需要 Node.js 22 或更新版本。
+Node.js 22 or newer is required.
 
 ```bash
 git clone https://github.com/szdytom/ntd.git
@@ -28,77 +31,76 @@ npm ci
 npm run dev
 ```
 
-浏览器打开 <http://localhost:4173>。
-
-生产构建：
+Open <http://localhost:4173>. To create a production build:
 
 ```bash
 npm run build
 ```
 
-构建结果位于 `dist/`，可以由任意静态文件服务托管。
+Static output is written to `dist/` and can be served by any static file host.
 
-## 基础玩法
+## How to play
 
-1. 选择关卡、模式和难度。
-2. 正式模式开局先完成三轮四选一，为第一波补充模块。
-3. 点击地图上的虚线节点部署炮塔，点击炮塔打开模块工作台。
-4. 从左到右排列模块；只有形成有效弹体程序的炮塔才会攻击。
-5. 调整目标策略、升级炮塔并启动下一波。
+1. Choose a sector, mode, and difficulty.
+2. In Standard mode, complete three four-card picks before the first wave.
+3. Select a dashed node to deploy a tower, then select the tower to open its module workshop.
+4. Arrange modules from left to right. A tower attacks only when its sequence compiles into a valid projectile program.
+5. Adjust targeting, upgrade towers, and launch the next signal wave.
 
-推荐组合：
+Example combinations:
 
-- `寻路 → 穿刺`：制导穿透弹会绕回存活目标，目标死亡后重新锁定附近敌人。
-- `弹跃 → 巨化 → 刃片`：大型刃片在敌群间改道并连续切割。
-- `命中触发 → 脉冲 → 接近触发 → 感应雷 → 新星`：脉冲命中后部署地雷，敌人靠近时释放新星载荷。
+- `Seeker → Needle`: a guided piercing projectile can retarget nearby survivors.
+- `Ricochet → Colossus → Razor`: a large blade redirects through enemy packs.
+- `Impact → Pulse → Proximity → Mine → Nova`: Pulse deploys a mine on impact, and approaching enemies release the Nova payload.
 
-静态载荷不能直接从炮塔射出，必须放在碰撞、计时或接近触发器的载荷位置。工作台会对不完整或非法的模块序列显示诊断。
+Static payloads cannot be fired directly. They must occupy a payload position behind an impact, timer, or proximity trigger. The workshop reports incomplete and invalid sequences.
 
-## 常用命令
+## Commands
 
-| 命令 | 用途 |
+| Command | Purpose |
 | --- | --- |
-| `npm run dev` | 启动 esbuild 监听与本地开发服务器 |
-| `npm run build` | 生成压缩后的生产静态资源 |
-| `npm run lint` | 执行 ESLint |
-| `npm run typecheck` | 执行 TypeScript 严格类型检查 |
-| `npm test` | 运行 Vitest 单元与组件测试 |
-| `npm run test:e2e` | 使用 Playwright/Chromium 运行浏览器冒烟测试 |
-| `npm run check` | 依次执行 lint、类型检查、测试和生产构建 |
-| `npm run balance:report` | 从当前配置生成数值平衡报告 |
-| `npm run perf:report` | 运行空间索引性能报告 |
+| `npm run dev` | Start esbuild watch mode and the local development server |
+| `npm run build` | Produce minified static assets |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run strict TypeScript checking |
+| `npm test` | Run Vitest unit and component tests |
+| `npm run test:e2e` | Run Playwright browser smoke tests |
+| `npm run check` | Run lint, type checking, tests, and a production build |
+| `npm run balance:report` | Generate a balance report from current configuration |
+| `npm run perf:report` | Run the spatial-index performance report |
 
-## 技术架构
+## Architecture
 
 ```text
 src/
-├── game/       战斗引擎、路径、碰撞、目标策略、关卡与数值模型
-├── modules/    模块定义、注册表、稀有度与顺序编译器
-├── effects/    特效生命周期、Canvas 绘制器与效果工厂
-├── ui/         React 组件；每个组件拥有同名独立样式表
-└── styles/     全局基础与响应式样式
+├── game/       Combat engine, paths, collision, targeting, levels, and balance
+├── modules/    Module definitions, registry, rarity, and sequence compiler
+├── effects/    Effect lifecycle, Canvas painters, and effect factories
+├── i18n/       Shared i18next instance, presentation helpers, and locale resources
+├── ui/         React components with one colocated stylesheet per component
+└── styles/     Global foundations and responsive rules
 ```
 
-战斗引擎以 120 Hz 固定步长运行，并通过只读快照向 React 发布状态。模块只能通过受限战斗 API 查询目标、造成伤害、施加状态或改变弹体目标，因此模块实现不会直接耦合波次、经济或 UI。
+The combat engine runs at a fixed 120 Hz and publishes immutable snapshots to React. Modules interact through a restricted combat API for target queries, damage, status effects, and retargeting, keeping them independent from waves, economy, and UI code.
 
-进一步阅读：
+Chinese technical documentation is retained in the repository:
 
-- [架构与扩展模块](docs/architecture.md)
-- [内置模块目录](docs/modules.md)
-- [数值平衡基线](docs/balance.md)
+- [Architecture and module extension](docs/architecture.md)
+- [Built-in module catalog](docs/modules.md)
+- [Balance baseline](docs/balance.md)
 
-## CI 与 GitHub Pages
+## Internationalization
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 负责验证和发布：
+All user-facing text is resolved through the shared i18next instance, including React components, tutorial copy, engine toasts, and Canvas labels. English is the fallback language; the initial locale follows a saved preference or the browser language.
 
-- 每次 push 和 pull request 都运行 ESLint、TypeScript、Vitest、生产构建、平衡报告和 Playwright 冒烟测试。
-- `main` 分支验证通过后，重新构建 `dist/`，上传 GitHub Pages artifact，并部署到 `github-pages` 环境。
-- 工作流也支持从 Actions 页面手动触发；只有在 `main` 上触发时才会部署。
+Translation resources live in `src/i18n/locales/` as flat JSON objects. Every key maps directly to a string, for example `"levels.starter-elbow.name": "Launch Elbow"`; this keeps entries easy to search and edit without programming knowledge. Each file describes only its own language through `"lang.name"`—the English resource says `English`, while another locale supplies its own native name. The language selector reads these self-descriptions and automatically renders every registered resource as an option. Add matching keys to all locale files instead of embedding UI copy in components or game logic. `npm run check:locales` verifies that the files remain flat, aligned, and self-described. Outside documentation and locale files, source and test files intentionally contain no CJK characters.
 
-首次启用时，在仓库 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。之后推送到 `main` 即会发布到：
+## CI and GitHub Pages
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) validates pushes and pull requests with ESLint, TypeScript, Vitest, a production build, balance reporting, and Playwright smoke tests. A successful `main` build is deployed to GitHub Pages:
 
 ```text
 https://szdytom.github.io/ntd/
 ```
 
-页面入口和构建资源使用相对路径，因此无需为仓库子路径额外设置 base URL。
+Entry points and assets use relative paths, so no repository-specific base URL is required.

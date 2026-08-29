@@ -23,8 +23,8 @@ export const frostModule: ModuleDefinition = {
   id: 'frost',
   kind: 'modifier',
   meta: {
-    name: '冷凝透镜', shortName: '冷凝', symbol: '✣', color, tint: '#e4f7ff', energy: 5, rarity: 'common',
-    description: '为下一枚弹射物附加减速', detail: '减速 30% · 持续 1.6 秒',
+    name: 'Condensing Lens', shortName: 'Frost', symbol: '✣', color, tint: '#e4f7ff', energy: 5, rarity: 'common',
+    description: 'Adds a slow to the next projectile', detail: '30% slow · Lasts 1.6 seconds',
   },
   effects,
   compile: (context) => context.modifyNext({ slow: 0.3, slowDuration: 1.6 }),

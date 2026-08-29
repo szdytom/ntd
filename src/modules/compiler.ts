@@ -73,7 +73,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       diagnose({
         code: 'unknown-module',
         severity: 'error',
-        message: `未注册模块 ${moduleId}`,
+        message: `Unregistered module: ${moduleId}`,
         moduleId,
       });
       return;
@@ -124,7 +124,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         diagnose({
           code: 'static-at-root',
           severity: 'error',
-          message: `静态投射物“${definition.meta.shortName}”必须作为触发载荷，不能直接施放`,
+          message: `Static projectile "${definition.meta.shortName}" must be a trigger payload and cannot be cast directly`,
           moduleId,
         });
         pending = freshPending();
@@ -148,7 +148,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         diagnose({
           code: 'trigger-conflict',
           severity: 'error',
-          message: `${pending.triggerModuleName ?? pending.triggerModuleId} 与 ${definition.meta.shortName} 不能同时包裹同一枚弹射物；采用更靠近弹射物的 ${definition.meta.shortName}`,
+          message: `${pending.triggerModuleName ?? pending.triggerModuleId} and ${definition.meta.shortName} cannot wrap the same projectile; using the nearer ${definition.meta.shortName}`,
           moduleId,
         });
         pending.energy -= pending.triggerEnergy;
@@ -187,15 +187,15 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       code: 'unresolved-modifier',
       severity: 'error',
       message: wraps > 0
-        ? `${pending.moduleNames.join(' + ')} 回绕一周后仍没有弹射物，暂时不会生效`
-        : `${pending.moduleNames.join(' + ')} 后没有弹射物，暂时不会生效`,
+        ? `${pending.moduleNames.join(' + ')} still has no projectile after wrapping and will not take effect`
+        : `${pending.moduleNames.join(' + ')} has no following projectile and will not take effect`,
     });
   }
   if (shots.length === 0) {
     diagnose({
       code: 'missing-projectile',
       severity: 'error',
-      message: '缺少可直接施放的弹射物模块：这座塔不会攻击',
+      message: 'No directly castable projectile is present, so this tower cannot attack',
     });
   }
   for (const capture of captureStack) {
@@ -203,7 +203,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     diagnose({
       code: 'missing-payload',
       severity: 'error',
-      message: `${carrier} 的触发器${wraps > 0 ? '回绕后仍' : ''}缺少 ${capture.remaining} 个载荷`,
+      message: `${carrier} trigger ${wraps > 0 ? 'still ' : ''}needs ${capture.remaining} payloads`,
       moduleId: capture.shot.source,
     });
   }
@@ -232,8 +232,8 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     energyCost,
     wraps,
     summary: shots.length === 0
-      ? '空程序'
-      : `${shots.length} 段施法 · ${energyCost}⚡/轮 · ${projectileCount} 弹体${triggers > 0 ? ` · ${triggers} 触发` : ''}${wraps > 0 ? ' · ↻ 回绕' : ''}`,
+      ? 'Empty program'
+      : `${shots.length} casts · ${energyCost}⚡/cycle · ${projectileCount} projectiles${triggers > 0 ? ` · ${triggers} triggers` : ''}${wraps > 0 ? ' · ↻ wrap' : ''}`,
     warnings: diagnostics.map((diagnostic) => diagnostic.message),
     diagnostics,
   };

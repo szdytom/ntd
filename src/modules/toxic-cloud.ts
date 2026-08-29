@@ -41,8 +41,8 @@ export const toxicCloudModule: ModuleDefinition = {
   id: 'toxic-cloud',
   kind: 'static',
   meta: {
-    name: '翡翠毒雾', shortName: '毒雾', symbol: '☁', color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
-    description: '在触发位置生成持续腐蚀区域', detail: '仅能作为触发载荷 · 存在 5 秒',
+    name: 'Emerald Toxic Cloud', shortName: 'Toxic Cloud', symbol: '☁', color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
+    description: 'Creates a persistent corrosive area at the trigger point', detail: 'Trigger payload only · Lasts 5 seconds',
   },
   effects,
   compile: (context) => context.emitProjectile({

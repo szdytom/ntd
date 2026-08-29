@@ -37,8 +37,8 @@ export const teslaNodeModule: ModuleDefinition = {
   id: 'tesla-node',
   kind: 'static',
   meta: {
-    name: '静电哨戒点', shortName: '电哨', symbol: '⌾', color, tint: '#e2f8ff', energy: 48, rarity: 'legendary',
-    description: '在触发点生成并反复电击目标', detail: '仅能作为触发载荷 · 6 次连锁电击',
+    name: 'Tesla Sentry', shortName: 'Sentry', symbol: '⌾', color, tint: '#e2f8ff', energy: 48, rarity: 'legendary',
+    description: 'Deploys at the trigger point and repeatedly shocks targets', detail: 'Trigger payload only · 6 chained shocks',
   },
   effects,
   compile: (context) => context.emitProjectile({

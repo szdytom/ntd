@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import { GameRenderer } from '../game/renderer';
 import './GameCanvas.css';
 
 export function GameCanvas({ engine }: { engine: GameEngine }) {
+  const { t, i18n } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rendererError, setRendererError] = useState<string | null>(null);
 
@@ -42,10 +44,10 @@ export function GameCanvas({ engine }: { engine: GameEngine }) {
       canvas.removeEventListener('click', click);
       renderer.dispose();
     };
-  }, [engine]);
+  }, [engine, i18n.resolvedLanguage]);
 
   if (rendererError) {
-    return <div className="renderer-error" role="alert">图形渲染器无法启动：{rendererError}</div>;
+    return <div className="renderer-error" role="alert">{t('canvas.error', { error: rendererError })}</div>;
   }
-  return <canvas ref={canvasRef} id="game-canvas" role="img" aria-label="塔防游戏战场" />;
+  return <canvas ref={canvasRef} id="game-canvas" role="img" aria-label={t('canvas.aria')} />;
 }

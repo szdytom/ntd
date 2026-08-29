@@ -24,8 +24,8 @@ export const timerTriggerModule: ModuleDefinition = {
   id: 'timer-trigger',
   kind: 'logic',
   meta: {
-    name: '延时触发器', shortName: '延时触发', symbol: '◷', color, tint: '#fff9d9', energy: 7, rarity: 'common',
-    description: '载体计时结束或提前碰撞时释放载荷', detail: '最长延时 0.55 秒 · 1 个载荷',
+    name: 'Timer Trigger', shortName: 'Timer', symbol: '◷', color, tint: '#fff9d9', energy: 7, rarity: 'common',
+    description: 'Releases the payload when the carrier timer ends or collides early', detail: 'Up to 0.55 second delay · 1 payload',
   },
   effects,
   compile: (context) => context.wrapNext({ type: 'timer', payloadCount: 1, delay: 0.55 }),

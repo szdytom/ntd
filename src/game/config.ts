@@ -48,10 +48,10 @@ export interface EnemyShieldConfig {
 }
 
 export const ENEMIES: Record<EnemyType, EnemyConfig> = {
-  spark: { hp: 28, speed: 105, spawnDelay: 0.42, reward: 3, coreDamage: 1, radius: 13, color: '#ffcf4a', sides: 3, name: '火花' },
-  kite: { hp: 62, speed: 74, spawnDelay: 0.58, reward: 5, coreDamage: 1, radius: 15, color: '#ff6b9d', sides: 4, name: '风筝' },
-  block: { hp: 125, speed: 53, spawnDelay: 0.72, reward: 8, coreDamage: 2, radius: 17, color: '#20c997', sides: 4, name: '方阵' },
-  hex: { hp: 235, speed: 43, spawnDelay: 0.86, reward: 14, coreDamage: 3, radius: 21, color: '#7257fa', sides: 6, name: '六角重甲' },
+  spark: { hp: 28, speed: 105, spawnDelay: 0.42, reward: 3, coreDamage: 1, radius: 13, color: '#ffcf4a', sides: 3, name: 'Spark' },
+  kite: { hp: 62, speed: 74, spawnDelay: 0.58, reward: 5, coreDamage: 1, radius: 15, color: '#ff6b9d', sides: 4, name: 'Kite' },
+  block: { hp: 125, speed: 53, spawnDelay: 0.72, reward: 8, coreDamage: 2, radius: 17, color: '#20c997', sides: 4, name: 'Phalanx' },
+  hex: { hp: 235, speed: 43, spawnDelay: 0.86, reward: 14, coreDamage: 3, radius: 21, color: '#7257fa', sides: 6, name: 'Hex Armor' },
   crown: {
     hp: 420,
     speed: 31,
@@ -61,7 +61,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     radius: 29,
     color: '#ff774d',
     sides: 8,
-    name: '棱镜领主',
+    name: 'Prism Crown',
     shield: { capacity: 240, regen: 4, cooldown: 9, radius: 72, sides: 6, rotation: Math.PI / 6, color: '#45b7ff' },
   },
   fracture: {
@@ -73,7 +73,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     radius: 32,
     color: '#00a8cc',
     sides: 4,
-    name: '裂变星核',
+    name: 'Fracture Star',
     shape: 'star',
     split: {
       count: 3,
@@ -94,7 +94,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     radius: 31,
     color: '#9aae18',
     sides: 3,
-    name: '迟滞辐环',
+    name: 'Radiant Lag Ring',
     shape: 'ring',
     aura: {
       radius: 290,
@@ -128,9 +128,9 @@ const wave = (...groups: Array<[EnemyType, number]>): EnemyType[] => groups.flat
 export const LEVELS = [
   {
     id: 'starter-elbow',
-    name: '启航折线',
+    name: 'Launch Elbow',
     sector: 'SECTOR T-0',
-    description: '固定模块与两波基础信号，通过手把手引导学习修正、弹射物、触发器和静态载荷。',
+    description: 'A guided two-wave exercise with fixed modules.',
     difficulty: 1,
     accent: '#168aad',
     path: [
@@ -151,9 +151,9 @@ export const LEVELS = [
   },
   {
     id: 'white-prism',
-    name: '白棱镜区',
+    name: 'White Prism',
     sector: 'SECTOR A-7',
-    description: '折线路径与均衡节点，适合熟悉模块编排；首波检验护盾破坏，末波引入死亡分裂。',
+    description: 'A balanced angular route with shields and splitting enemies.',
     difficulty: 1,
     accent: '#6c5ce7',
     path: [
@@ -178,9 +178,9 @@ export const LEVELS = [
   },
   {
     id: 'rose-circuit',
-    name: '玫红回路',
+    name: 'Rose Circuit',
     sector: 'SECTOR C-3',
-    description: '长距离蛇形通道聚集出密集敌群，末波辐射压制要求分散节点并及时转移火力。',
+    description: 'A serpentine route with dense packs and suppression fields.',
     difficulty: 2,
     accent: '#ff5c8a',
     path: [
@@ -207,9 +207,9 @@ export const LEVELS = [
   },
   {
     id: 'verdant-fold',
-    name: '翠光折返',
+    name: 'Verdant Fold',
     sector: 'SECTOR E-9',
-    description: '高速信号沿大幅纵向折返逼近核心，最终信号会同时施加死亡分裂与局部冷却压制。',
+    description: 'A fast folded route combining splitting and local suppression.',
     difficulty: 3,
     accent: '#00b894',
     path: [

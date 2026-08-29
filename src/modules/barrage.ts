@@ -23,8 +23,8 @@ export const barrageModule: ModuleDefinition = {
   id: 'barrage',
   kind: 'logic',
   meta: {
-    name: '四拍时钟', shortName: '四连', symbol: 'Ⅳ', color, tint: '#ffe7ed', energy: 38, rarity: 'legendary',
-    description: '快速重复执行下一发', detail: '连续释放 4 次 · 间隔 0.09 秒',
+    name: 'Four-Beat Clock', shortName: 'Fourfold', symbol: 'Ⅳ', color, tint: '#ffe7ed', energy: 38, rarity: 'legendary',
+    description: 'Rapidly repeats the next shot', detail: '4 consecutive casts · 0.09 second interval',
   },
   effects,
   compile: (context) => context.modifyNext({ repeats: 4, repeatDelay: 0.09 }),

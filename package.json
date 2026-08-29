@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "balance:report": "node --import tsx scripts/balance-report.ts",
+    "check:cjk": "node scripts/check-cjk.mjs",
+    "check:locales": "node scripts/check-locales.mjs",
     "dev": "node dev.mjs",
     "lint": "eslint .",
     "perf:report": "node --import tsx scripts/performance-report.ts",
@@ -13,11 +15,13 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "check": "npm run check:cjk && npm run check:locales && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "i18next": "^26.4.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-i18next": "^17.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot } from '../game/types';
@@ -17,38 +18,21 @@ interface TutorialDrag {
 
 interface TutorialStep {
   id: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  instruction?: string;
   selector?: string;
   action?: TutorialAction;
   drag?: TutorialDrag;
-  continueLabel?: string;
 }
 
 const STEPS: readonly TutorialStep[] = [
   {
     id: 'welcome',
-    eyebrow: '基础校准 · 1/2',
-    title: '欢迎来到启航折线',
-    body: '这是一场两波的操作教学。你的模块和炮塔槽位已经固定，我们会一起完成第一套施法序列。',
-    continueLabel: '开始校准',
   },
   {
     id: 'tower',
-    eyebrow: '选择炮塔',
-    title: '先打开折射塔',
-    body: '炮塔是模块的运行节点。被选中后，弧光工作台会显示它的槽位、能量和攻击方式。',
-    instruction: '点击高亮的炮塔',
     action: 'select-tower',
   },
   {
     id: 'frost-drag',
-    eyebrow: '模块 1 · 修正',
-    title: '把冷凝拖到槽位 1',
-    body: '修正模块本身不会发射，而是修改右侧遇到的下一枚弹射物。拖动模块可以直接表达你要把它装到哪个槽位。',
-    instruction: '从黄色来源框拖到黄色目标框',
     drag: {
       sourceSelector: '[data-tutorial-module="frost"]',
       targetSelector: '[data-tutorial-slot="0"]',
@@ -58,10 +42,6 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'pulse-drag-first',
-    eyebrow: '模块 2 · 弹射物',
-    title: '把脉冲拖到槽位 2',
-    body: '弹射物是炮塔真正发射的攻击载体。槽位从左向右执行，现在程序会自然读成“冷凝 → 脉冲”。',
-    instruction: '拖动脉冲模块到槽位 2',
     drag: {
       sourceSelector: '[data-tutorial-module="pulse"]',
       targetSelector: '[data-tutorial-slot="1"]',
@@ -71,35 +51,19 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'first-program',
-    eyebrow: '读取编译结果',
-    title: '第一套程序已经有效',
-    body: '程序摘要会显示每轮能耗和弹体数量。现在冷凝修正被右侧脉冲弹消耗，每次射击都会发出一枚减速脉冲。',
     selector: '[data-tutorial-program]',
-    continueLabel: '明白了',
   },
   {
     id: 'close-first-workshop',
-    eyebrow: '查看战场',
-    title: '关闭 ARC 工作台',
-    body: '配置已经保存。战斗时关闭工作台可以完整查看路径、敌人和弹射物效果。需要调整时，再点击炮塔即可重新打开。',
-    instruction: '点击工作台右上角的关闭按钮',
     selector: '[data-tutorial-workshop-close]',
     action: 'click-element',
   },
   {
     id: 'build-second-tower',
-    eyebrow: '扩大火力覆盖',
-    title: '建造第二座炮塔',
-    body: '一座炮塔无法稳定拦住整波火花。启航折线在路径另一侧预留了第二个节点，用它形成交叉火力。',
-    instruction: '点击高亮的空节点建造炮塔',
     action: 'place-tower',
   },
   {
     id: 'second-pulse-drag',
-    eyebrow: '配置第二座炮塔',
-    title: '给新炮塔安装脉冲',
-    body: '库存中还有一枚脉冲弹。把它拖入新炮塔的槽位 1，让两座炮塔都具备基础攻击能力。',
-    instruction: '拖动脉冲模块到槽位 1',
     drag: {
       sourceSelector: '[data-tutorial-module="pulse"]',
       targetSelector: '[data-tutorial-slot="0"]',
@@ -109,42 +73,23 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'close-second-workshop',
-    eyebrow: '查看交叉火力',
-    title: '关闭第二座塔的工作台',
-    body: '两座炮塔都已能够攻击。关闭工作台后启动第一波，观察它们分别覆盖路径的两段。',
-    instruction: '点击工作台右上角的关闭按钮',
     selector: '[data-tutorial-workshop-close]',
     action: 'click-element',
   },
   {
     id: 'launch-one',
-    eyebrow: '实战校验',
-    title: '启动第一波信号',
-    body: '火花速度快但生命很低。观察减速脉冲如何为炮塔争取更多攻击时间。',
-    instruction: '点击“启动信号”',
     selector: '[data-tutorial-launch]',
     action: 'click-element',
   },
   {
     id: 'wait-first-wave',
-    eyebrow: '波次 1 · 运行中',
-    title: '观察模块组合的效果',
-    body: '击退这一波后，教学会自动继续。',
   },
   {
     id: 'ensure-tower',
-    eyebrow: '再次配置',
-    title: '重新打开教程炮塔',
-    body: '第二波要继续扩展刚才的程序。请重新点击第一座炮塔，打开它的 ARC 工作台。',
-    instruction: '点击高亮的初始炮塔',
     action: 'select-tower',
   },
   {
     id: 'move-pulse',
-    eyebrow: '为触发器腾出位置',
-    title: '把脉冲从槽位 2 移到槽位 3',
-    body: '第二波要把触发器插在修正与载体之间。直接拖动已安装的脉冲到空槽位 3，槽位 2 就会空出来。',
-    instruction: '把槽位 2 的脉冲拖到槽位 3',
     drag: {
       sourceSelector: '[data-tutorial-slot="1"]',
       targetSelector: '[data-tutorial-slot="2"]',
@@ -155,10 +100,6 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'trigger-drag',
-    eyebrow: '基础校准 · 2/2',
-    title: '把命中触发拖到槽位 2',
-    body: '触发器会包裹右侧的下一枚弹射物。载体满足条件时，才会释放再右侧的载荷。',
-    instruction: '拖动命中触发到空出的槽位 2',
     drag: {
       sourceSelector: '[data-tutorial-module="impact-trigger"]',
       targetSelector: '[data-tutorial-slot="1"]',
@@ -168,10 +109,6 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'static-drag',
-    eyebrow: '模块 3 · 静态弹射物',
-    title: '把感应雷拖到槽位 4',
-    body: '静态弹射物不会作为普通子弹飞行。它必须由触发器部署到战场，并在原地等待敌人接近。',
-    instruction: '拖动感应雷到槽位 4，补全触发载荷',
     drag: {
       sourceSelector: '[data-tutorial-module="proximity-mine"]',
       targetSelector: '[data-tutorial-slot="3"]',
@@ -181,27 +118,15 @@ const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'final-program',
-    eyebrow: '完整触发链',
-    title: '读懂载荷关系',
-    body: '最终顺序是“修正 → 触发器 → 载体弹射物 → 静态载荷”。工作台下方的 PAYLOAD 链会把这种嵌套关系画出来。',
     selector: '[data-tutorial-program]',
-    continueLabel: '准备迎敌',
   },
   {
     id: 'close-final-workshop',
-    eyebrow: '查看最终防御',
-    title: '关闭 ARC 工作台',
-    body: '完整触发链已经保存。关闭工作台，腾出战场视野来观察脉冲命中、感应雷部署和敌群触发的全过程。',
-    instruction: '点击工作台右上角的关闭按钮',
     selector: '[data-tutorial-workshop-close]',
     action: 'click-element',
   },
   {
     id: 'launch-two',
-    eyebrow: '教程最终波',
-    title: '启动第二波信号',
-    body: '这次会混入风筝。让减速脉冲命中敌群，并观察部署在路径上的感应雷。完成后你就掌握了基础编排。',
-    instruction: '点击“启动信号”完成教程',
     selector: '[data-tutorial-launch]',
     action: 'click-element',
   },
@@ -209,10 +134,6 @@ const STEPS: readonly TutorialStep[] = [
 
 const WRONG_TOWER_STEP: TutorialStep = {
   id: 'ensure-wrong-tower',
-  eyebrow: '节点校验',
-  title: '当前不是教程炮塔',
-  body: '第二阶段必须继续编辑第一波使用的初始炮塔。先关闭当前工作台，我们随后会标出正确节点。',
-  instruction: '先关闭当前 ARC 工作台',
   selector: '[data-tutorial-workshop-close]',
   action: 'click-element',
 };
@@ -243,6 +164,7 @@ const elementBox = (element: Element): TargetBox => {
 };
 
 export function TutorialGuide({ engine, view }: { engine: GameEngine; view: GameViewSnapshot }) {
+  const { t, i18n } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [target, setTarget] = useState<TargetBox | null>(null);
@@ -257,6 +179,9 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
     && view.selectedTower !== null
     && view.selectedTower.id !== tutorialTowerId;
   const step = wrongTowerSelected ? WRONG_TOWER_STEP : rawStep;
+  const stepKey = (field: 'eyebrow' | 'title' | 'body' | 'instruction' | 'continue'): string => `tutorial.steps.${step?.id}.${field}`;
+  const stepText = (field: 'eyebrow' | 'title' | 'body' | 'instruction' | 'continue'): string => t(stepKey(field));
+  const hasStepText = (field: 'instruction' | 'continue'): boolean => i18n.exists(stepKey(field));
 
   useEffect(() => {
     if (rawStep?.id === 'wait-first-wave' && view.game.wave >= 1 && view.game.status === 'planning') {
@@ -395,8 +320,8 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
   };
   const dragHandle = <button
     className="tutorial-drag-handle"
-    aria-label="拖动教程提示框"
-    title="拖动提示框 · 方向键微调"
+    aria-label={t('tutorial.dragAria')}
+    title={t('tutorial.dragTitle')}
     onPointerDown={beginPanelDrag}
     onPointerMove={dragPanel}
     onPointerUp={endPanelDrag}
@@ -410,7 +335,7 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
   if (!engine.tutorialEnabled || dismissed || !step) return null;
   if (step.id === 'wait-first-wave') {
     return <aside ref={panelRef} data-tutorial-panel className="tutorial-observer" style={panelStyle} aria-live="polite">
-      {dragHandle}<span>{step.eyebrow}</span><strong>{step.title}</strong><small>{step.body}</small>
+      {dragHandle}<span>{stepText('eyebrow')}</span><strong>{stepText('title')}</strong><small>{stepText('body')}</small>
     </aside>;
   }
 
@@ -439,25 +364,26 @@ export function TutorialGuide({ engine, view }: { engine: GameEngine; view: Game
     width: secondaryTarget.width + 14,
     height: secondaryTarget.height + 14,
   } : undefined;
-  return <div className="tutorial-layer" role="region" aria-label="启航折线教程">
+  const instruction = hasStepText('instruction') ? stepText('instruction') : undefined;
+  return <div className="tutorial-layer" role="region" aria-label={t('tutorial.aria')}>
     {target ? <>
-      <div className={`tutorial-spotlight ${step.drag ? 'drag-source' : ''}`} style={targetStyle} />
+      <div className={`tutorial-spotlight ${step.drag ? 'drag-source' : ''}`} data-label={step.drag ? t('tutorial.dragSource') : undefined} style={targetStyle} />
       {step.action ? <button
         ref={primaryRef}
         className="tutorial-hit-target"
         style={targetStyle}
         onClick={activateTarget}
-        aria-label={step.instruction ?? step.title}
+        aria-label={instruction ?? stepText('title')}
       /> : null}
     </> : null}
-    {secondaryTarget ? <div className="tutorial-spotlight drag-destination" style={secondaryTargetStyle} /> : null}
+    {secondaryTarget ? <div className="tutorial-spotlight drag-destination" data-label={t('tutorial.dragDestination')} style={secondaryTargetStyle} /> : null}
     <section ref={panelRef} data-tutorial-panel className="tutorial-card" style={panelStyle}>
-      <div className="tutorial-card-head"><span>{step.eyebrow}</span>{dragHandle}<button className="tutorial-skip" onClick={() => setDismissed(true)}>跳过教程</button></div>
-      <h2>{step.title}</h2>
-      <p>{step.body}</p>
-      {step.instruction ? <div className="tutorial-instruction"><i />{step.instruction}</div> : null}
-      {!step.action && !step.drag ? <button ref={primaryRef} className="tutorial-continue" onClick={advance}>{step.continueLabel ?? '继续'}</button> : null}
-      <div className="tutorial-progress" aria-label={`教程进度 ${stepIndex + 1}/${STEPS.length}`}>
+      <div className="tutorial-card-head"><span>{stepText('eyebrow')}</span>{dragHandle}<button className="tutorial-skip" onClick={() => setDismissed(true)}>{t('tutorial.skip')}</button></div>
+      <h2>{stepText('title')}</h2>
+      <p>{stepText('body')}</p>
+      {instruction ? <div className="tutorial-instruction"><i />{instruction}</div> : null}
+      {!step.action && !step.drag ? <button ref={primaryRef} className="tutorial-continue" onClick={advance}>{hasStepText('continue') ? stepText('continue') : t('common.continue')}</button> : null}
+      <div className="tutorial-progress" aria-label={t('tutorial.progress', { current: stepIndex + 1, total: STEPS.length })}>
         {STEPS.map((item, index) => <i key={item.id} className={index <= stepIndex ? 'active' : ''} />)}
       </div>
     </section>

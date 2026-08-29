@@ -26,8 +26,8 @@ export const needleModule: ModuleDefinition = {
   id: 'needle',
   kind: 'projectile',
   meta: {
-    name: '穿刺针', shortName: '穿刺', symbol: '◆', color, tint: '#ffe9f1', energy: 22, rarity: 'uncommon',
-    description: '高速穿过多个目标', detail: '14 伤害 · 最多命中 3 个目标',
+    name: 'Piercing Needle', shortName: 'Needle', symbol: '◆', color, tint: '#ffe9f1', energy: 22, rarity: 'uncommon',
+    description: 'Passes through several targets at high speed', detail: '14 damage · Hits up to 3 targets',
   },
   effects,
   compile: (context) => context.emitProjectile({ damage: 14, speed: 620, size: 4, pierce: 2 }),

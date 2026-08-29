@@ -38,8 +38,8 @@
   transform: translateX(-50%);
 }
 
-.tutorial-spotlight.drag-source::after { content: '拖动'; }
-.tutorial-spotlight.drag-destination::after { content: '放入'; }
+.tutorial-spotlight.drag-source::after,
+.tutorial-spotlight.drag-destination::after { content: attr(data-label); }
 
 .tutorial-hit-target {
   z-index: 6;

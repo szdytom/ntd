@@ -24,8 +24,8 @@ export const razorModule: ModuleDefinition = {
   id: 'razor',
   kind: 'projectile',
   meta: {
-    name: '回旋刃片', shortName: '刃片', symbol: '✥', color, tint: '#e3f8fc', energy: 34, rarity: 'rare',
-    description: '宽大的多目标切割弹体', detail: '14 伤害 · 最多命中 5 个目标',
+    name: 'Returning Razor', shortName: 'Razor', symbol: '✥', color, tint: '#e3f8fc', energy: 34, rarity: 'rare',
+    description: 'A wide multi-target cutting projectile', detail: '14 damage · Hits up to 5 targets',
   },
   effects,
   compile: (context) => context.emitProjectile({ damage: 14, speed: 400, size: 8, pierce: 4, lifetime: 2 }),

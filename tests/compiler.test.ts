@@ -42,14 +42,14 @@ describe('module compiler', () => {
     const program = registry.compile(['proximity-mine']);
 
     expect(program.shots).toEqual([]);
-    expect(program.warnings).toContain('静态投射物“感应雷”必须作为触发载荷，不能直接施放');
+    expect(program.warnings).toContain('Static projectile "Mine" must be a trigger payload and cannot be cast directly');
   });
 
   it('terminates unresolved trigger programs with a diagnostic', () => {
     const program = registry.compile(['impact-trigger', 'pulse']);
 
     expect(program.wraps).toBe(1);
-    expect(program.warnings.some((warning) => warning.includes('缺少 1 个载荷'))).toBe(true);
+    expect(program.warnings.some((warning) => warning.includes('needs 1 payload'))).toBe(true);
   });
 
   it('diagnoses conflicting triggers and keeps only the trigger nearest the projectile', () => {
@@ -64,7 +64,7 @@ describe('module compiler', () => {
   it('counts payload instances for every repeated carrier', () => {
     const program = registry.compile(['fork', 'impact-trigger', 'pulse', 'pulse']);
 
-    expect(program.summary).toContain('6 弹体');
+    expect(program.summary).toContain('6 projectiles');
   });
 
   it('caches immutable programs by loadout', () => {

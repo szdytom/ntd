@@ -54,8 +54,8 @@ export const arcboltModule: ModuleDefinition = {
   id: 'arcbolt',
   kind: 'projectile',
   meta: {
-    name: '弧链电核', shortName: '弧链', symbol: 'ϟ', color, tint: '#e9edff', energy: 42, rarity: 'legendary',
-    description: '命中后向附近敌人传导', detail: '22 伤害 · 最多传导 4 次',
+    name: 'Arcbolt Core', shortName: 'Arcbolt', symbol: 'ϟ', color, tint: '#e9edff', energy: 42, rarity: 'legendary',
+    description: 'Chains to nearby enemies on impact', detail: '22 damage · Up to 4 chains',
   },
   effects,
   compile: (context) => context.emitProjectile({ damage: 22, speed: 500, size: 5 }),

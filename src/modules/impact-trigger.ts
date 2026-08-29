@@ -23,8 +23,8 @@ export const impactTriggerModule: ModuleDefinition = {
   id: 'impact-trigger',
   kind: 'logic',
   meta: {
-    name: '碰撞触发器', shortName: '命中触发', symbol: '⊛', color, tint: '#ffe7f7', energy: 6, rarity: 'common',
-    description: '载体命中时释放下一枚弹体', detail: '1 个载体 · 1 个载荷',
+    name: 'Impact Trigger', shortName: 'Impact', symbol: '⊛', color, tint: '#ffe7f7', energy: 6, rarity: 'common',
+    description: 'Releases the next projectile when the carrier hits', detail: '1 carrier · 1 payload',
   },
   effects,
   compile: (context) => context.wrapNext({ type: 'impact', payloadCount: 1 }),

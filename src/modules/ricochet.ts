@@ -31,8 +31,8 @@ export const ricochetModule: ModuleDefinition = {
   id: 'ricochet',
   kind: 'modifier',
   meta: {
-    name: '折跃镜面', shortName: '弹跃', symbol: '↗', color, tint: '#ffe7f2', energy: 19, rarity: 'rare',
-    description: '弹体命中后转向新目标', detail: '最多弹跃 2 次 · 140 范围',
+    name: 'Ricochet Mirror', shortName: 'Ricochet', symbol: '↗', color, tint: '#ffe7f2', energy: 19, rarity: 'rare',
+    description: 'Redirects the projectile after impact', detail: 'Up to 2 ricochets · 140 radius',
   },
   effects,
   compile: (context) => context.modifyNext({}),

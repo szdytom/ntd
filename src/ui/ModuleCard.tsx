@@ -1,5 +1,7 @@
 import type { DragEvent } from 'react';
-import { MODULE_RARITIES, type ModuleDefinition } from '../modules';
+import { useTranslation } from 'react-i18next';
+import type { ModuleDefinition } from '../modules';
+import { moduleShortName, rarityLabel } from '../i18n/presentation';
 import { KIND_SYMBOL, moduleVariableStyle } from './modulePresentation';
 import './ModuleCard.css';
 
@@ -12,6 +14,7 @@ export function ModuleCard({ definition, tutorialId, selected, exhausted, invent
   onSelect: () => void;
   onQuickInstall: () => void;
 }) {
+  const { t } = useTranslation();
   const dragStart = (event: DragEvent<HTMLButtonElement>): void => {
     if (exhausted) { event.preventDefault(); return; }
     event.dataTransfer.setData('text/module', definition.id);
@@ -22,11 +25,11 @@ export function ModuleCard({ definition, tutorialId, selected, exhausted, invent
       data-tutorial-module={tutorialId}
       style={moduleVariableStyle(definition)} draggable={!exhausted} onDragStart={dragStart} onClick={onSelect}
       onDoubleClick={() => { if (!exhausted) onQuickInstall(); }}
-      title={exhausted ? '库存份数已全部装配；拆下后可再次安装' : '双击安装到第一个空槽位'}>
+      title={exhausted ? t('moduleCard.exhaustedTitle') : t('moduleCard.installTitle')}>
       <span className={`kind-badge ${definition.kind}`}>{KIND_SYMBOL[definition.kind]}</span>
-      <span className="rarity-mark">{MODULE_RARITIES[definition.meta.rarity].label}</span>
+      <span className="rarity-mark">{rarityLabel(t, definition.meta.rarity)}</span>
       <span className="module-symbol">{definition.meta.symbol}</span>
-      <span className="module-text"><strong>{definition.meta.shortName}</strong><small>{inventoryLabel ?? `${definition.meta.energy} ⚡`}</small></span>
+      <span className="module-text"><strong>{moduleShortName(t, definition.id)}</strong><small>{inventoryLabel ?? `${definition.meta.energy} ⚡`}</small></span>
     </button>
   );
 }

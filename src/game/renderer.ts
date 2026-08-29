@@ -5,6 +5,7 @@ import {
   type SplitDistortion,
 } from '../effects/bloom';
 import { ECONOMY_BALANCE } from './balance';
+import i18n from '../i18n';
 import { ENEMIES, WORLD } from './config';
 import { clamp, distance, seededNoise } from './math';
 import type { GameEngine } from './engine';
@@ -164,7 +165,7 @@ export class GameRenderer {
       radiusScale: enemy.shieldRadiusScale,
       active: enemy.shield > 0,
       sides: shield.sides,
-      // Canvas 的 Y 轴朝下，而 WebGL 屏幕坐标的 Y 轴朝上。
+      // Canvas Y coordinates point down, while WebGL screen coordinates point up.
       rotation: -shield.rotation,
       hitStrength: enemy.shieldHitFlash,
       color: hexToRgb(shield.color),
@@ -398,7 +399,7 @@ export class GameRenderer {
         ctx.font = '700 11px Manrope, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.engine.mode === 'creative' ? '无限晶片' : `${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
+        ctx.fillText(this.engine.mode === 'creative' ? i18n.t('canvas.unlimitedShards') : `${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
       }
       ctx.restore();
     }

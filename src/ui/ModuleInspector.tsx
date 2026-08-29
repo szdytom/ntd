@@ -1,14 +1,24 @@
 import { MODULE_RARITIES, type ModuleDefinition } from '../modules';
-import { KIND_LABEL, moduleVariableStyle } from './modulePresentation';
+import { useTranslation } from 'react-i18next';
+import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } from '../i18n/presentation';
+import { moduleVariableStyle } from './modulePresentation';
 import './ModuleInspector.css';
 
 export function ModuleInspector({ definition }: { definition: ModuleDefinition }) {
+  const { t } = useTranslation();
   return <div className="module-inspector" style={moduleVariableStyle(definition)}>
-    <div className="inspector-symbol">{definition.meta.symbol}</div>
-    <div className="inspector-copy">
-      <span><i>{KIND_LABEL[definition.kind]}</i><b style={{ color: MODULE_RARITIES[definition.meta.rarity].color }}>{MODULE_RARITIES[definition.meta.rarity].label}</b></span>
-      <strong>{definition.meta.name}</strong><small>{definition.meta.description} · {definition.meta.detail}</small>
+    <div className="inspector-summary">
+      <div className="inspector-symbol">{definition.meta.symbol}</div>
+      <div className="inspector-copy">
+        <div className="inspector-meta">
+          <span>{kindLabel(t, definition.kind)}</span>
+          <b style={{ color: MODULE_RARITIES[definition.meta.rarity].color }}>{rarityLabel(t, definition.meta.rarity)}</b>
+        </div>
+        <h3>{moduleName(t, definition.id)}</h3>
+      </div>
+      <div className="inspector-cost"><small>{t('inspector.energy')}</small><strong>{definition.meta.energy}<span aria-hidden="true">⚡</span></strong></div>
     </div>
-    <div className="inspector-cost"><small>耗能</small><strong>{definition.meta.energy}</strong></div>
+    <p className="inspector-description">{moduleDescription(t, definition.id)}</p>
+    <p className="inspector-detail">{moduleDetail(t, definition.id)}</p>
   </div>;
 }

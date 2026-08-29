@@ -23,8 +23,8 @@ export const toxinModule: ModuleDefinition = {
   id: 'toxin',
   kind: 'modifier',
   meta: {
-    name: '腐蚀孢子', shortName: '腐蚀', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
-    description: '附加可刷新的持续伤害', detail: '3×6 腐蚀伤害 · 持续 3 秒',
+    name: 'Corrosive Spore', shortName: 'Corrosion', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
+    description: 'Adds refreshable damage over time', detail: '3×6 corrosion damage · Lasts 3 seconds',
   },
   effects,
   compile: (context) => context.modifyNext({ damageMultiplier: 0.9 }),

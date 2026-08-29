@@ -27,8 +27,8 @@ export const seekerModule: ModuleDefinition = {
   id: 'seeker',
   kind: 'logic',
   meta: {
-    name: '寻路协议', shortName: '制导', symbol: '⌁', color, tint: '#e2f4f8', energy: 6, rarity: 'common',
-    description: '让下一枚弹射物追踪目标', detail: '高强度制导 · 不增加直接伤害',
+    name: 'Seeker Protocol', shortName: 'Seeker', symbol: '⌁', color, tint: '#e2f4f8', energy: 6, rarity: 'common',
+    description: 'Makes the next projectile track its target', detail: 'Strong guidance · No direct damage bonus',
   },
   effects,
   compile: (context) => context.modifyNext({ seeking: 8 }),

@@ -36,8 +36,8 @@ export const pulseModule: ModuleDefinition = {
   id: 'pulse',
   kind: 'projectile',
   meta: {
-    name: '脉冲弹', shortName: '脉冲', symbol: '●', color, tint: '#eeeaff', energy: 15, rarity: 'common',
-    description: '稳定的基础弹射物', detail: '18 伤害 · 中速 · 单目标',
+    name: 'Pulse Round', shortName: 'Pulse', symbol: '●', color, tint: '#eeeaff', energy: 15, rarity: 'common',
+    description: 'A stable baseline projectile', detail: '18 damage · Medium speed · Single target',
   },
   effects,
   compile: (context) => context.emitProjectile({ damage: 18, speed: 440, size: 5 }),

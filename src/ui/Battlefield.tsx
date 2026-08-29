@@ -1,41 +1,44 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ECONOMY_BALANCE } from '../game/balance';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot } from '../game/types';
+import { difficultyName, levelName } from '../i18n/presentation';
 import { GameCanvas } from './GameCanvas';
 import { EnemyPreview } from './EnemyPreview';
 import { CreativeLab } from './CreativeLab';
 import './Battlefield.css';
 
 export function Battlefield({ engine, view }: { engine: GameEngine; view: GameViewSnapshot }) {
+  const { t } = useTranslation();
   const [creativePanelOpen, setCreativePanelOpen] = useState(false);
   const { game: snapshot } = view;
   const phase = snapshot.status === 'wave'
-    ? '信号接触中'
+    ? t('battlefield.contact')
     : snapshot.status === 'reward'
-      ? '截获模块中'
-      : snapshot.paused ? '系统暂停' : '规划阶段';
+      ? t('battlefield.intercepting')
+      : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
   const terminal = snapshot.status === 'won' || snapshot.status === 'lost';
   const spawn = engine.path.pointAtDistance(44).position;
   const core = engine.path.pointAtDistance(engine.path.length - 54).position;
   return (
-    <section className="battle-card" aria-label="防御战场">
+    <section className="battle-card" aria-label={t('battlefield.aria')}>
       <div className="battle-head">
         <div>
           <div className="eyebrow"><i className={`live-dot ${snapshot.status === 'wave' && !snapshot.paused ? 'combat' : ''}`} /><span>{phase}</span></div>
-          <h1>{engine.level.name} <span>/ {engine.level.sector}</span></h1>
+          <h1>{levelName(t, engine.level.id)} <span>/ {engine.level.sector}</span></h1>
         </div>
         <div className="incoming">
           <div className="incoming-title">
-            <small>下一波信号</small>
+            <small>{t('battlefield.nextWave')}</small>
             {engine.mode === 'creative' ? (
               <button
                 className="creative-signal-toggle"
                 aria-expanded={creativePanelOpen}
                 aria-controls="creative-signal-panel"
                 onClick={() => setCreativePanelOpen((open) => !open)}
-              >信号台</button>
+              >{t('battlefield.signalConsole')}</button>
             ) : null}
           </div>
           <EnemyPreview engine={engine} wave={snapshot.wave} />
@@ -50,45 +53,45 @@ export function Battlefield({ engine, view }: { engine: GameEngine; view: GameVi
 
       <div className="canvas-wrap">
         <GameCanvas engine={engine} />
-        <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>信号入口</span></div>
-        <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>棱镜核心</span><i /></div>
+        <div className="spawn-label" style={{ top: `${spawn.y / WORLD.height * 100}%` }}><i /><span>{t('battlefield.spawn')}</span></div>
+        <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>{t('battlefield.core')}</span><i /></div>
         <div className="battle-tip">
           <span className="tip-key" aria-hidden="true">+</span>
-          <div><strong>部署新节点</strong><small>{engine.mode === 'creative' ? '点击虚线圆环 · 无限晶片' : `点击虚线圆环 · 消耗 ${ECONOMY_BALANCE.towerCost} ◇`}</small></div>
+          <div><strong>{t('battlefield.deployTitle')}</strong><small>{engine.mode === 'creative' ? t('battlefield.deployCreative') : t('battlefield.deployStandard', { cost: ECONOMY_BALANCE.towerCost })}</small></div>
         </div>
         {!terminal ? null : (
           <div className="status-overlay" data-tone={snapshot.status}>
             <div className="status-shape">✦</div>
-            <h2>{snapshot.status === 'won' ? '区域净化完成' : '棱镜核心离线'}</h2>
+            <h2>{snapshot.status === 'won' ? t('battlefield.won') : t('battlefield.lost')}</h2>
             <p>{snapshot.status === 'won'
-              ? `最终净化值 ${snapshot.score} · 核心稳定度 ${snapshot.core}/${snapshot.maxCore}`
-              : `坚持到波次 ${snapshot.wave} · 调整模块序列后再次尝试`}</p>
-            <button onClick={() => engine.reset()}>重新校准</button>
+              ? t('battlefield.wonDetail', { score: snapshot.score, core: snapshot.core, maxCore: snapshot.maxCore })
+              : t('battlefield.lostDetail', { wave: snapshot.wave })}</p>
+            <button onClick={() => engine.reset()}>{t('battlefield.recalibrate')}</button>
           </div>
         )}
       </div>
 
       <footer className="battle-footer">
         <div className="legend">
-          <span><i className="tri swatch-yellow" />火花</span>
-          <span><i className="square swatch-pink" />风筝</span>
-          <span><i className="hex swatch-purple" />重甲</span>
+          <span><i className="tri swatch-yellow" />{t('enemies.spark')}</span>
+          <span><i className="square swatch-pink" />{t('enemies.kite')}</span>
+          <span><i className="hex swatch-purple" />{t('enemies.hex')}</span>
         </div>
         <div className="score-line">
-          <span className="mode-chip">{snapshot.mode === 'standard' ? '正式模式' : '创造模式'}</span>
-          <span className="difficulty-chip">{engine.difficulty.name}</span>
-          净化值 <strong>{String(snapshot.score).padStart(5, '0')}</strong>
+          <span className="mode-chip">{t(`modes.${snapshot.mode}`)}</span>
+          <span className="difficulty-chip">{difficultyName(t, engine.difficulty.id)}</span>
+          {t('battlefield.score')} <strong>{String(snapshot.score).padStart(5, '0')}</strong>
         </div>
         <details className="battle-access-controls">
-          <summary>键盘战场控制</summary>
+          <summary>{t('battlefield.keyboardControls')}</summary>
           <div>
             {view.towers.map((tower) => (
-              <button key={tower.id} onClick={() => engine.selectTower(tower.id)}>选择节点 T{String(tower.id).padStart(2, '0')}</button>
+              <button key={tower.id} onClick={() => engine.selectTower(tower.id)}>{t('battlefield.selectNode', { id: String(tower.id).padStart(2, '0') })}</button>
             ))}
             {engine.level.towerPads.map((_, padIndex) => (
               view.towers.some((tower) => tower.padIndex === padIndex)
                 ? null
-                : <button key={`pad-${padIndex}`} onClick={() => engine.placeTower(padIndex)}>部署节点 {padIndex + 1}</button>
+                : <button key={`pad-${padIndex}`} onClick={() => engine.placeTower(padIndex)}>{t('battlefield.deployNode', { index: padIndex + 1 })}</button>
             ))}
           </div>
         </details>

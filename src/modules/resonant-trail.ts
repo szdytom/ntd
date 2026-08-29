@@ -36,8 +36,8 @@ export const resonantTrailModule: ModuleDefinition = {
   id: 'resonant-trail',
   kind: 'trail',
   meta: {
-    name: '共振尾迹', shortName: '共振尾迹', symbol: '〰', color, tint: '#f1eaff', energy: 24, rarity: 'legendary',
-    description: '让下一枚弹体沿途留下伤害波', detail: '每 4 个尾迹刻度脉冲 · 30% 弹体伤害',
+    name: 'Resonant Trail', shortName: 'Resonance', symbol: '〰', color, tint: '#f1eaff', energy: 24, rarity: 'legendary',
+    description: 'Leaves damage waves along the next projectile path', detail: 'Pulse every 4 trail ticks · 30% projectile damage',
   },
   effects,
   compile: (context) => context.modifyNext({ speedMultiplier: 0.96 }),

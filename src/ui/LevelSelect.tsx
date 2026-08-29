@@ -1,21 +1,15 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
 import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
+import { difficultyName, enemyName, levelDescription, levelName } from '../i18n/presentation';
 import { LevelMap } from './LevelMap';
 import './LevelSelect.css';
 
 const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
 const VISIBLE_LEVEL_COUNT = 3;
-const DIFFICULTY_TONE: Record<DifficultyId, string> = {
-  relaxed: '最轻松',
-  easy: '较轻松',
-  normal: '推荐',
-  hard: '更困难',
-  extreme: '最困难',
-};
-
 const initialCreativeSetup = (): CreativeSetup => ({
   wave: { spark: 8, kite: 5, block: 2, hex: 1, crown: 0, fracture: 0, radiant: 0 },
   healthScale: 1,
@@ -30,6 +24,7 @@ export interface LevelSelection {
 }
 
 export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) => void }) {
+  const { t } = useTranslation();
   const [levelId, setLevelId] = useState<string>(DEFAULT_LEVEL_ID);
   const [mode, setMode] = useState<GameMode>('standard');
   const [difficultyId, setDifficultyId] = useState<DifficultyId>(DEFAULT_DIFFICULTY_ID);
@@ -100,20 +95,20 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
           <div><div className="brand-name">PRISM <span>BASTION</span></div><div className="brand-sub">MODULAR DEFENSE NETWORK</div></div>
         </div>
         <section className="level-select-intro">
-          <div><span>SELECT SIGNAL SECTOR</span><h1>选择防御区</h1><p>不同路径会改变密度、覆盖范围与目标策略的价值。</p></div>
+          <div><span>{t('levelSelect.eyebrow')}</span><h1>{t('levelSelect.title')}</h1><p>{t('levelSelect.intro')}</p></div>
         </section>
-        <div className="mode-selector" role="group" aria-label="游戏模式">
-          <button aria-pressed={mode === 'standard'} className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>正式模式</strong><small>选牌 · 库存</small></button>
-          <button aria-pressed={mode === 'creative'} className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>创造模式</strong><small>无限模块</small></button>
+        <div className="mode-selector" role="group" aria-label={t('levelSelect.modeLabel')}>
+          <button aria-pressed={mode === 'standard'} className={mode === 'standard' ? 'active' : ''} onClick={() => setMode('standard')}><strong>{t('levelSelect.standardTitle')}</strong><small>{t('levelSelect.standardDetail')}</small></button>
+          <button aria-pressed={mode === 'creative'} className={mode === 'creative' ? 'active' : ''} onClick={() => setMode('creative')}><strong>{t('levelSelect.creativeTitle')}</strong><small>{t('levelSelect.creativeDetail')}</small></button>
         </div>
-        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}><span>{selectedDifficulty.name} · 部署至</span><strong>{selectedLevel.name} →</strong></button>
+        <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}><span>{t('levelSelect.deployTo', { difficulty: difficultyName(t, selectedDifficulty.id) })}</span><strong>{levelName(t, selectedLevel.id)} →</strong></button>
       </header>
 
-      <section className="difficulty-select" aria-label="难度修正">
+      <section className="difficulty-select" aria-label={t('levelSelect.difficultyLabel')}>
         <div className="difficulty-select-head">
-          <div><span>NUMERIC DIFFICULTY</span><strong>难度修正</strong></div>
+          <div><span>{t('levelSelect.difficultyEyebrow')}</span><strong>{t('levelSelect.difficultyHeading')}</strong></div>
         </div>
-        <div className="difficulty-options" role="radiogroup" aria-label="选择难度">
+        <div className="difficulty-options" role="radiogroup" aria-label={t('levelSelect.chooseDifficulty')}>
           {DIFFICULTIES.map((difficulty, index) => (
             <button
               key={difficulty.id}
@@ -126,16 +121,16 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
               onClick={() => setDifficultyId(difficulty.id)}
             >
               <span>{difficulty.rank < 0 ? '◇'.repeat(-difficulty.rank) : difficulty.rank > 0 ? '◆'.repeat(difficulty.rank) : '—'}</span>
-              <strong>{difficulty.name}</strong>
-              <small>{DIFFICULTY_TONE[difficulty.id]}</small>
+              <strong>{difficultyName(t, difficulty.id)}</strong>
+              <small>{t(`difficulties.${difficulty.id}.tone`)}</small>
             </button>
           ))}
         </div>
       </section>
 
       <div className="level-carousel">
-        <button className="level-carousel-arrow previous" onClick={() => moveCarousel(-1)} disabled={carouselStart === 0} aria-label="显示上一组关卡" />
-        <section key={carouselStart} className={`level-grid ${carouselDirection ? `slide-${carouselDirection}` : ''}`} role="radiogroup" aria-label="选择防御区">
+        <button className="level-carousel-arrow previous" onClick={() => moveCarousel(-1)} disabled={carouselStart === 0} aria-label={t('levelSelect.previousLevels')} />
+        <section key={carouselStart} className={`level-grid ${carouselDirection ? `slide-${carouselDirection}` : ''}`} role="radiogroup" aria-label={t('levelSelect.chooseLevel')}>
         {visibleLevels.map((level, visibleIndex) => {
           const index = carouselStart + visibleIndex;
           return (
@@ -151,34 +146,34 @@ export function LevelSelect({ onStart }: { onStart: (selection: LevelSelection) 
           >
             <div className="level-map-wrap"><LevelMap level={level} /><span>{level.sector}</span></div>
             <div className="level-card-copy">
-              <div><small>{'◆'.repeat(level.difficulty)}{'◇'.repeat(3 - level.difficulty)}</small><b>{level.waves.length} 波</b></div>
-              <h2>{level.name}</h2>
-              <p>{level.description}</p>
-              <footer><span>{level.towerPads.length} 个炮塔节点</span></footer>
+              <div><small>{'◆'.repeat(level.difficulty)}{'◇'.repeat(3 - level.difficulty)}</small><b>{t('levelSelect.waves', { count: level.waves.length })}</b></div>
+              <h2>{levelName(t, level.id)}</h2>
+              <p>{levelDescription(t, level.id)}</p>
+              <footer><span>{t('levelSelect.towerNodes', { count: level.towerPads.length })}</span></footer>
             </div>
           </button>
           );
         })}
         </section>
-        <button className="level-carousel-arrow next" onClick={() => moveCarousel(1)} disabled={carouselStart === maximumCarouselStart} aria-label="显示下一组关卡" />
+        <button className="level-carousel-arrow next" onClick={() => moveCarousel(1)} disabled={carouselStart === maximumCarouselStart} aria-label={t('levelSelect.nextLevels')} />
       </div>
 
       {mode !== 'creative' ? (
         <section className="standard-brief">
-          <strong>正式模式规则</strong>
-          <span>起始仅持有脉冲与冷凝模块</span><i />
-          <span>开局及每波后进行 3 次四选一</span><i />
-          <span>模块份数限制同时装配数量</span>
+          <strong>{t('levelSelect.standardRules')}</strong>
+          <span>{t('levelSelect.ruleStarting')}</span><i />
+          <span>{t('levelSelect.ruleDraft')}</span><i />
+          <span>{t('levelSelect.ruleInventory')}</span>
         </section>
       ) : (
         <section className="creative-setup-card">
-          <div><span>CREATIVE SIGNAL MIXER</span><h2>自定义重复波次</h2><p>这些参数仍可在游戏中随时修改。</p></div>
+          <div><span>{t('levelSelect.creativeEyebrow')}</span><h2>{t('levelSelect.creativeHeading')}</h2><p>{t('levelSelect.creativeDescription')}</p></div>
           <div className="setup-enemies">
-            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i className={ENEMIES[type].shape === 'star' ? 'star' : ENEMIES[type].shape === 'ring' ? 'ring' : ''} />{ENEMIES[type].name}</span><input type="number" min="0" max="40" value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
+            {ENEMY_TYPES.map((type) => <label key={type}><span style={{ '--enemy-color': ENEMIES[type].color } as CSSProperties}><i className={ENEMIES[type].shape === 'star' ? 'star' : ENEMIES[type].shape === 'ring' ? 'ring' : ''} />{enemyName(t, type)}</span><input type="number" min="0" max="40" value={creative.wave[type]} onChange={(event) => setEnemyCount(type, Number(event.target.value))} /></label>)}
           </div>
           <div className="setup-scales">
-            <label><span>生命倍率</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>
-            <label><span>速度倍率</span><input type="range" min="0.25" max="3" step="0.25" value={creative.speedScale} onChange={(event) => setCreative((current) => ({ ...current, speedScale: Number(event.target.value) }))} /><b>{creative.speedScale.toFixed(2)}×</b></label>
+            <label><span>{t('levelSelect.healthScale')}</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>
+            <label><span>{t('levelSelect.speedScale')}</span><input type="range" min="0.25" max="3" step="0.25" value={creative.speedScale} onChange={(event) => setCreative((current) => ({ ...current, speedScale: Number(event.target.value) }))} /><b>{creative.speedScale.toFixed(2)}×</b></label>
           </div>
         </section>
       )}

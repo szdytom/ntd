@@ -31,8 +31,8 @@ export const forkModule: ModuleDefinition = {
   id: 'fork',
   kind: 'modifier',
   meta: {
-    name: '三分叉', shortName: '分叉', symbol: 'Y', color, tint: '#e1f8f1', energy: 24, rarity: 'rare',
-    description: '下一次发射变为三枚', detail: '3 弹体 · 12° 散射',
+    name: 'Triple Fork', shortName: 'Fork', symbol: 'Y', color, tint: '#e1f8f1', energy: 24, rarity: 'rare',
+    description: 'Turns the next shot into three projectiles', detail: '3 projectiles · 12° spread',
   },
   effects,
   compile: (context) => context.modifyNext({ count: 3, spread: 12 * Math.PI / 180 }),

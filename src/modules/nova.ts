@@ -29,8 +29,8 @@ export const novaModule: ModuleDefinition = {
   id: 'nova',
   kind: 'projectile',
   meta: {
-    name: '微型新星', shortName: '新星', symbol: '✦', color, tint: '#fff1df', energy: 30, rarity: 'uncommon',
-    description: '命中后造成范围爆炸', detail: '24 伤害 · 64 范围',
+    name: 'Micro Nova', shortName: 'Nova', symbol: '✦', color, tint: '#fff1df', energy: 30, rarity: 'uncommon',
+    description: 'Creates an area explosion on impact', detail: '24 damage · 64 radius',
   },
   effects,
   compile: (context) => context.emitProjectile({ damage: 24, speed: 350, size: 8, splash: 64 }),

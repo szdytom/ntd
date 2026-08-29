@@ -81,8 +81,8 @@ vec2 shieldDistortion(vec2 uv, out float surfaceMask, out float brightStripe) {
   float distanceToCenter = length(delta);
   vec2 direction = delta / max(distanceToCenter, 0.001);
 
-  // Mindustry 式的常驻护盾表面：两组交错相位在整个力场内持续折射场景，
-  // 而不是等待受击才启动。窄亮纹同步扫过护盾表面，使白底上也清晰可见。
+  // Mindustry-style persistent shield surface: two interleaved phases continuously
+  // refract the scene across the field. Narrow highlights keep it visible on white.
   float fieldRadius = u_shieldRadius * u_shieldScale;
   surfaceMask = shieldSurfaceMask(delta, fieldRadius);
   vec2 flow = vec2(
@@ -100,7 +100,7 @@ vec2 shieldDistortion(vec2 uv, out float surfaceMask, out float brightStripe) {
   );
   brightStripe = smoothstep(0.74, 1.0, stripeWave) * surfaceMask;
 
-  // 受击波从力场内部越过边界向外扩散，位移在 0.72 秒内衰减。
+  // The impact wave crosses the field boundary and fades over 0.72 seconds.
   float phase = clamp(u_rippleAge / 0.72, 0.0, 1.0);
   float rippleLife = 1.0 - smoothstep(0.0, 1.0, phase);
   float hitDistance = regularPolygonDistance(delta, u_shieldRadius);
@@ -159,18 +159,18 @@ void main() {
   vec4 wideGlow = texture2D(u_bloom, v_uv);
   vec4 hotGlow = texture2D(u_emissive, v_uv);
 
-  // 白底上单纯 additive 会消失，因此宽光晕先进行有上限的色彩侵染。
+  // Pure additive light vanishes on white, so the broad halo uses bounded tinting first.
   vec3 bloomColor = clamp(unpremultiply(wideGlow), 0.0, 1.0);
   float bloomStrength = clamp(wideGlow.a * 0.92, 0.0, 0.34);
   vec3 tintedScene = mix(scene, bloomColor, bloomStrength);
 
-  // 核心仍使用 screen，保留 Mindustry 式的高亮能量中心。
+  // The core still uses screen blending to preserve its bright energy center.
   vec3 hotColor = clamp(unpremultiply(hotGlow), 0.0, 1.0);
   float hotStrength = clamp(hotGlow.a * 0.68, 0.0, 0.72);
   vec3 hot = hotColor * hotStrength;
   vec3 result = 1.0 - (1.0 - tintedScene) * (1.0 - hot);
 
-  // 白底下为持续折射面补一层低强度色彩，并让移动亮纹保持可读性。
+  // A low-intensity tint keeps the refractive surface and moving highlights legible on white.
   float surfaceTint = shieldSurface * 0.018 + shieldStripe * (0.085 + u_shieldHit * 0.035);
   result = mix(result, u_shieldColor, clamp(surfaceTint, 0.0, 0.14));
   result = mix(result, u_splitColor, clamp(splitBlur * 0.075, 0.0, 0.075));
@@ -219,8 +219,8 @@ export function createBloomWebGLContext(output: HTMLCanvasElement): WebGLRenderi
 }
 
 /**
- * GPU 后处理器。游戏主体仍可使用 Canvas 2D 绘制，但最终场景、模块特效的
- * emissive 层都会作为纹理上传，由 WebGL 完成两次高斯模糊和白底友好的合成。
+ * GPU postprocessor. The game can remain on Canvas 2D, while the final scene and
+ * emissive effect layer are uploaded as textures for two-pass blur and compositing.
  */
 export class WebGLBloomPipeline {
   private readonly emissive = document.createElement('canvas');

@@ -26,8 +26,8 @@ export const colossusModule: ModuleDefinition = {
   id: 'colossus',
   kind: 'modifier',
   meta: {
-    name: '巨像核心', shortName: '巨化', symbol: '⬡', color, tint: '#fff0df', energy: 22, rarity: 'rare',
-    description: '将下一枚弹体巨型化', detail: '+55% 伤害 · +75% 尺寸 · +32 爆炸范围',
+    name: 'Colossus Core', shortName: 'Colossus', symbol: '⬡', color, tint: '#fff0df', energy: 22, rarity: 'rare',
+    description: 'Enlarges the next projectile', detail: '+55% damage · +75% size · +32 blast radius',
   },
   effects,
   compile: (context) => context.modifyNext({

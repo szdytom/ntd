@@ -2,6 +2,7 @@ import { EffectEngine } from '../effects/engine';
 import { gameEffects } from '../effects/game-effects';
 import { createModuleRegistry, DRAFT_BALANCE } from '../modules';
 import type { ModuleCombatApi, StatusApplication } from '../modules/types';
+import i18n from '../i18n';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, WORLD, type LevelDefinition } from './config';
@@ -358,12 +359,12 @@ export class GameEngine {
     const tower = this.getSelectedTower();
     if (!tower || this.status === 'wave') return;
     if (tower.level >= MAX_TOWER_LEVEL) {
-      this.emit({ type: 'toast', message: '该节点已达到最高等级', tone: 'info' });
+      this.emit({ type: 'toast', message: i18n.t('toast.maxLevel'), tone: 'info' });
       return;
     }
     const cost = this.getTowerUpgradeCost(tower);
     if (this.shards < cost) {
-      this.emit({ type: 'toast', message: `升级需要 ${cost} 晶片`, tone: 'warn' });
+      this.emit({ type: 'toast', message: i18n.t('toast.upgradeNeeds', { cost }), tone: 'warn' });
       return;
     }
     this.shards -= cost;
@@ -379,7 +380,7 @@ export class GameEngine {
       color: this.getTowerColor(tower),
       lifetimeScale: 1.25,
     });
-    this.emit({ type: 'toast', message: `节点升级至 Lv.${tower.level}`, tone: 'good' });
+    this.emit({ type: 'toast', message: i18n.t('toast.upgraded', { level: tower.level }), tone: 'good' });
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -411,8 +412,7 @@ export class GameEngine {
     if (this.status !== 'reward' || !this.draft?.choices.includes(moduleId)) return;
     this.moduleInventory.set(moduleId, (this.moduleInventory.get(moduleId) ?? 0) + 1);
     this.configurationRevision += 1;
-    const definition = this.modules.require(moduleId);
-    this.emit({ type: 'toast', message: `获得模块：${definition.meta.name}`, tone: 'good' });
+    this.emit({ type: 'toast', message: i18n.t('toast.moduleAcquired', { module: i18n.t(`modules.${moduleId}.name`) }), tone: 'good' });
     if (this.draft.round >= this.draft.totalRounds) {
       this.draft = null;
       this.status = 'planning';
@@ -464,12 +464,12 @@ export class GameEngine {
 
   placeTower(padIndex: number): void {
     if (!Number.isInteger(padIndex) || padIndex < 0 || padIndex >= this.level.towerPads.length) {
-      this.emit({ type: 'toast', message: '无效的炮塔节点', tone: 'warn' });
+      this.emit({ type: 'toast', message: i18n.t('toast.invalidPad'), tone: 'warn' });
       return;
     }
     if (this.towers.some((tower) => tower.padIndex === padIndex)) return;
     if (this.shards < ECONOMY_BALANCE.towerCost) {
-      this.emit({ type: 'toast', message: `晶片不足：建造需要 ${ECONOMY_BALANCE.towerCost}`, tone: 'warn' });
+      this.emit({ type: 'toast', message: i18n.t('toast.buildNeeds', { cost: ECONOMY_BALANCE.towerCost }), tone: 'warn' });
       return;
     }
     this.shards -= ECONOMY_BALANCE.towerCost;
@@ -480,7 +480,7 @@ export class GameEngine {
     this.effects.spawnMany(['game:tower-build-ring', 'game:tower-build-sparks'], { position: tower.position, color });
     this.emit({
       type: 'toast',
-      message: `新节点构型完成：${tower.slots.length} 槽 · ${tower.maxEnergy} 能量上限`,
+      message: i18n.t('toast.built', { slots: tower.slots.length, energy: tower.maxEnergy }),
       tone: 'good',
     });
     this.markConfigurationChanged();
@@ -491,7 +491,7 @@ export class GameEngine {
     const tower = this.getSelectedTower();
     if (!tower || !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= tower.slots.length) return;
     if (moduleId && !this.modules.get(moduleId)) {
-      this.emit({ type: 'toast', message: `未知模块：${moduleId}`, tone: 'warn' });
+      this.emit({ type: 'toast', message: i18n.t('toast.unknownModule', { module: moduleId }), tone: 'warn' });
       return;
     }
     if (moduleId && this.mode === 'standard') {
@@ -500,7 +500,7 @@ export class GameEngine {
         0,
       ), 0);
       if (installedElsewhere >= this.getModuleCount(moduleId)) {
-        this.emit({ type: 'toast', message: '该模块的库存份数已全部装配', tone: 'warn' });
+        this.emit({ type: 'toast', message: i18n.t('toast.inventoryUsed'), tone: 'warn' });
         return;
       }
     }
@@ -545,7 +545,7 @@ export class GameEngine {
     this.waveClearDelayLeft = null;
     this.spawnQueue = [...this.getWaveBlueprint(this.wave - 1)];
     this.spawnTimer = 0.25;
-    this.emit({ type: 'toast', message: `波次 ${this.wave} / ${this.maxWaves} 已启动`, tone: 'info' });
+    this.emit({ type: 'toast', message: i18n.t('toast.waveStarted', { wave: this.wave, maxWaves: this.maxWaves }), tone: 'info' });
     this.emitState();
   }
 
@@ -717,7 +717,7 @@ export class GameEngine {
           position: this.path.pointAtDistance(this.path.length - 54).position,
           color: '#ff5c5c',
         });
-        this.emit({ type: 'toast', message: `核心受到 ${damage} 点伤害`, tone: 'warn' });
+        this.emit({ type: 'toast', message: i18n.t('toast.coreDamaged', { damage }), tone: 'warn' });
         if (this.core <= 0) {
           this.status = 'lost';
           this.emitState();
@@ -1316,13 +1316,13 @@ export class GameEngine {
     this.shards += bonus;
     if (this.wave >= this.maxWaves) {
       this.status = 'won';
-      this.emit({ type: 'toast', message: '所有信号已净化，棱镜核心稳定！', tone: 'good' });
+      this.emit({ type: 'toast', message: i18n.t('toast.victory'), tone: 'good' });
     } else if (this.mode === 'standard' && !this.tutorialEnabled) {
       this.beginModuleDraft();
-      this.emit({ type: 'toast', message: `波次完成 · +${bonus} 晶片 · 选择模块奖励`, tone: 'good' });
+      this.emit({ type: 'toast', message: i18n.t('toast.waveReward', { bonus }), tone: 'good' });
     } else {
       this.status = 'planning';
-      this.emit({ type: 'toast', message: `波次完成 · 规划奖励 +${bonus} 晶片`, tone: 'good' });
+      this.emit({ type: 'toast', message: i18n.t('toast.wavePlan', { bonus }), tone: 'good' });
     }
     this.emitState();
   }

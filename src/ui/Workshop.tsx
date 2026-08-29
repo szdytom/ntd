@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot, ModuleId, Tower } from '../game/types';
 import type { ModuleKind } from '../modules';
-import { KIND_LABEL } from './modulePresentation';
+import { kindLabel } from '../i18n/presentation';
 import { ModuleCard } from './ModuleCard';
 import { ModuleInspector } from './ModuleInspector';
 import { ModuleSlot } from './ModuleSlot';
@@ -12,6 +13,7 @@ import { TowerOverview } from './TowerOverview';
 import './Workshop.css';
 
 export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot }) {
+  const { t } = useTranslation();
   const { revision } = view;
   const definitions = useMemo(() => engine.getLibraryModules(), [engine, revision]);
   const [selectedModule, setSelectedModule] = useState<ModuleId | null>(() => definitions[0]?.id ?? null);
@@ -30,7 +32,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
   const selectedDefinition = selectedModule
     ? definitions.find((definition) => definition.id === selectedModule)
     : undefined;
-  const filterLabel = kindFilter === 'all' ? '全部模块' : KIND_LABEL[kindFilter];
+  const filterLabel = kindFilter === 'all' ? t('kinds.all') : kindLabel(t, kindFilter);
   const program = view.selectedProgram ?? engine.modules.compile(tower.slots);
 
   const quickInstall = (id: ModuleId): void => {
@@ -39,12 +41,12 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
   };
 
   return (
-    <aside className="workshop" aria-label="炮塔模块工作台">
+    <aside className="workshop" aria-label={t('workshop.aria')}>
       <div className="workshop-head">
-        <h2>ARC WORKSHOP <span>弧光工作台</span></h2>
+        <h2>{t('workshop.title')} <span>{t('workshop.subtitle')}</span></h2>
         <div className="workshop-head-actions">
           <div className="tower-id">NODE T{String(tower.id).padStart(2, '0')}</div>
-          <button className="workshop-close" data-tutorial-workshop-close onClick={() => engine.selectTower(null)} aria-label="关闭工作台">×</button>
+          <button className="workshop-close" data-tutorial-workshop-close onClick={() => engine.selectTower(null)} aria-label={t('workshop.close')}>×</button>
         </div>
       </div>
 
@@ -57,8 +59,8 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
         <div className="workshop-main">
           <section className="program-section">
             <div className="section-title">
-              <div><span className="step-number">01</span><div><h3>编排施法序列</h3><small>从左到右 · {tower.slots.length} 槽</small></div></div>
-              <button onClick={() => engine.clearLoadout()}>清空</button>
+              <div><span className="step-number">01</span><div><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
+              <button onClick={() => engine.clearLoadout()}>{t('workshop.clear')}</button>
             </div>
             <div className="slot-flow" style={{ '--slot-count': tower.slots.length } as CSSProperties}>
               {tower.slots.map((moduleId, index) => (
@@ -77,15 +79,15 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
 
           <section className="library-section">
             <div className="section-title library-title">
-              <div><span className="step-number">02</span><div><h3>{filterLabel} · {visibleDefinitions.length}</h3><small>选择后点击槽位安装</small></div></div>
-              <div className="module-filters" aria-label="模块类型筛选">
+              <div><span className="step-number">02</span><div><h3>{filterLabel} · {visibleDefinitions.length}</h3><small>{t('workshop.installHint')}</small></div></div>
+              <div className="module-filters" aria-label={t('workshop.filterAria')}>
                 {([
                   ['all', 'ALL'],
-                  ['projectile', KIND_LABEL.projectile],
-                  ['static', KIND_LABEL.static],
-                  ['modifier', KIND_LABEL.modifier],
-                  ['trail', KIND_LABEL.trail],
-                  ['logic', KIND_LABEL.logic],
+                  ['projectile', kindLabel(t, 'projectile')],
+                  ['static', kindLabel(t, 'static')],
+                  ['modifier', kindLabel(t, 'modifier')],
+                  ['trail', kindLabel(t, 'trail')],
+                  ['logic', kindLabel(t, 'logic')],
                 ] as const).map(([kind, label]) => (
                   <button key={kind} className={kindFilter === kind ? `active ${kind}` : kind} onClick={() => setKindFilter(kind)}>{label}</button>
                 ))}
@@ -105,7 +107,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                     selected={definition.id === selectedModule}
                     exhausted={exhausted}
                     inventoryLabel={engine.mode === 'standard'
-                      ? exhausted ? `已用完 · 共 ${total}` : `可用 ${available} / ${total}`
+                      ? exhausted ? t('workshop.inventoryExhausted', { total }) : t('workshop.inventoryAvailable', { available, total })
                       : undefined}
                     onSelect={() => setSelectedModule(definition.id)}
                     onQuickInstall={() => quickInstall(definition.id)}
@@ -113,7 +115,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                 );
               })}
               {visibleDefinitions.length === 0 ? (
-                <div className="module-library-empty">尚未拥有{filterLabel}</div>
+                <div className="module-library-empty">{t('workshop.emptyLibrary', { kind: filterLabel })}</div>
               ) : null}
             </div>
           </section>

@@ -24,8 +24,8 @@ export const echoModule: ModuleDefinition = {
   id: 'echo',
   kind: 'logic',
   meta: {
-    name: '回响指令', shortName: '回响', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 13, rarity: 'uncommon',
-    description: '延迟后再次执行下一发', detail: '双重释放 · 间隔 0.16 秒',
+    name: 'Echo Command', shortName: 'Echo', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 13, rarity: 'uncommon',
+    description: 'Executes the next shot again after a delay', detail: 'Double cast · 0.16 second interval',
   },
   effects,
   compile: (context) => context.modifyNext({ repeats: 2, repeatDelay: 0.16 }),

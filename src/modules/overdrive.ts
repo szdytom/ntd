@@ -32,8 +32,8 @@ export const overdriveModule: ModuleDefinition = {
   id: 'overdrive',
   kind: 'modifier',
   meta: {
-    name: '过载棱镜', shortName: '过载', symbol: '▲', color, tint: '#ffebeb', energy: 8, rarity: 'uncommon',
-    description: '强化下一枚弹射物', detail: '+50% 伤害 · +20% 弹速',
+    name: 'Overdrive Prism', shortName: 'Overdrive', symbol: '▲', color, tint: '#ffebeb', energy: 8, rarity: 'uncommon',
+    description: 'Empowers the next projectile', detail: '+50% damage · +20% projectile speed',
   },
   effects,
   compile: (context) => context.modifyNext({ damageMultiplier: 1.5, speedMultiplier: 1.2 }),
