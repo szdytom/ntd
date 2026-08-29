@@ -188,6 +188,8 @@
 .subject-scale {
   position: absolute;
   z-index: 4;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .subject-code { top: 17px; left: 17px; }
 .subject-scale { right: 17px; bottom: 17px; }

@@ -157,8 +157,8 @@ export function EnemyArchive({ onBack }: { onBack: () => void }) {
             <i aria-hidden="true" />
             {t(radiantSuppression ? 'enemyArchive.suppressedTower.restore' : 'enemyArchive.suppressedTower.show')}
           </button> : null}
-          <Tag className="subject-code" tone="yellow" monospace>{t('enemyArchive.signalNumber', { number: String(selectedIndex + 1).padStart(2, '0') })}</Tag>
-          <Tag className="subject-scale" tone="accent" contrast={selectedType === 'spark' ? 'dark' : 'light'} monospace>{showingSuppressedTower
+          <Tag className="subject-code" tone="yellow">{t('enemyArchive.signalNumber', { number: String(selectedIndex + 1).padStart(2, '0') })}</Tag>
+          <Tag className="subject-scale" tone="accent" contrast={selectedType === 'spark' ? 'dark' : 'light'}>{showingSuppressedTower
             ? `${Math.round((config.aura?.energyRegenMultiplier ?? 1) * 100)}%`
             : t('enemyArchive.radius', { value: formatValue(profile.radius) })}</Tag>
         </div>
