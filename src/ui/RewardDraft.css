@@ -75,9 +75,11 @@
 .reward-card > b { display: grid; width: 72px; height: 72px; margin: 0 auto 16px; place-items: center; border: 2px solid #252134; color: var(--module-color); background: var(--module-tint); font-family: var(--font-mono); font-size: 34px; }
 .reward-card > strong,
 .reward-card > small,
+.reward-card > .reward-detail,
 .reward-card > em { display: block; }
 .reward-card > strong { color: #252134; font-size: 18px; }
-.reward-card > small { min-height: 52px; margin: 9px 0 18px; color: #77717f; font-size: 11px; line-height: 1.5; }
+.reward-card > small { min-height: 36px; margin: 9px 0 7px; color: #77717f; font-size: 11px; line-height: 1.5; }
+.reward-card > .reward-detail { min-height: 34px; margin: 0 0 16px; padding: 7px 9px; border-left: 3px solid var(--module-color); color: #625d6d; background: var(--module-tint); font-family: var(--font-mono); font-size: 10px; line-height: 1.4; }
 .reward-card > em { color: var(--module-color); font-family: var(--font-mono); font-size: 10px; font-style: normal; font-weight: 800; }
 
 .reward-foot {
@@ -113,7 +115,8 @@
   .reward-kind { top: 18px; left: 8px; padding: 4px 5px; font-size: 9px; }
   .reward-card > b { width: 52px; height: 52px; margin-bottom: 10px; font-size: 26px; }
   .reward-card > strong { font-size: 14px; }
-  .reward-card > small { min-height: 42px; margin: 6px 0 10px; font-size: 9px; }
+  .reward-card > small { min-height: 28px; margin: 6px 0 5px; font-size: 9px; }
+  .reward-card > .reward-detail { min-height: 30px; margin-bottom: 9px; padding: 5px 6px; font-size: 8px; }
   .reward-card > em { font-size: 9px; }
   .reward-foot { min-height: 40px; font-size: 9px; }
 }

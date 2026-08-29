@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import type { GameSnapshot, GameViewSnapshot } from '../game/types';
-import { kindLabel, moduleDescription, moduleName, rarityLabel } from '../i18n/presentation';
+import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } from '../i18n/presentation';
 import { moduleVariableStyle } from './modulePresentation';
 import { Tag } from './Tag';
 import './RewardDraft.css';
@@ -32,7 +32,10 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
         const definition = engine.modules.require(moduleId);
         return <button key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={() => engine.chooseDraftModule(moduleId)}>
           <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><b>{definition.meta.symbol}</b>
-          <strong>{moduleName(t, definition.id)}</strong><small>{moduleDescription(t, definition.id)}</small><em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
+          <strong>{moduleName(t, definition.id)}</strong>
+          <small>{moduleDescription(t, definition.id)}</small>
+          <span className="reward-detail">{moduleDetail(t, definition.id)}</span>
+          <em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
         </button>;
       })}</div>
     <footer className="reward-foot">{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</footer>
