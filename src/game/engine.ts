@@ -72,6 +72,7 @@ const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
+const PROXIMITY_ARM_TARGET_KEY = 'engine:proximity-arm-target';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
@@ -905,8 +906,18 @@ export class GameEngine {
           continue;
         }
         projectile.triggerCooldown = Math.max(0, projectile.triggerCooldown - delta);
+        const nearbyTarget = this.findProximityTarget(projectile.position, config.triggerRadius);
+        if (projectile.age < config.armTime) {
+          if (nearbyTarget) projectile.moduleState[PROXIMITY_ARM_TARGET_KEY] = nearbyTarget.id;
+          continue;
+        }
         if (projectile.age >= config.armTime && projectile.triggerCooldown <= 0) {
-          const target = this.combatApi.nearbyEnemies(projectile.position, config.triggerRadius)[0];
+          const armedTargetId = projectile.moduleState[PROXIMITY_ARM_TARGET_KEY];
+          const armedTarget = typeof armedTargetId === 'number'
+            ? this.enemies.find((enemy) => enemy.id === armedTargetId && !enemy.dead) ?? null
+            : null;
+          delete projectile.moduleState[PROXIMITY_ARM_TARGET_KEY];
+          const target = nearbyTarget ?? armedTarget;
           if (target) {
             projectile.triggerCooldown = config.cooldown;
             projectile.triggerCount += 1;
@@ -1042,6 +1053,17 @@ export class GameEngine {
       (best, enemy) => !best || enemy.progress > best.progress ? enemy : best,
       null,
     );
+  }
+
+  private findProximityTarget(position: Point, triggerRadius: number): Enemy | null {
+    return this.enemyIndex.nearestWithinRadius(position, triggerRadius + MAX_ENEMY_COLLISION_RADIUS)
+      .find((enemy) => {
+        const shield = ENEMIES[enemy.type].shield;
+        const collisionRadius = shield && enemy.shield > 0
+          ? Math.max(enemy.radius, shield.radius * enemy.shieldRadiusScale)
+          : enemy.radius;
+        return distance(position, enemy.position) <= triggerRadius + collisionRadius;
+      }) ?? null;
   }
 
   private findFirstProjectileHit(

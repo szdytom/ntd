@@ -67,6 +67,14 @@ describe('module compiler', () => {
     expect(program.summary).toContain('6 projectiles');
   });
 
+  it('stacks consecutive echo modifiers multiplicatively', () => {
+    const program = registry.compile(['echo', 'echo', 'pulse']);
+
+    expect(program.warnings).toEqual([]);
+    expect(program.shots[0]).toMatchObject({ repeats: 4, repeatDelay: 0.16 });
+    expect(program.summary).toContain('4 projectiles');
+  });
+
   it('caches immutable programs by loadout', () => {
     const first = registry.compile(['frost', 'pulse']);
     const second = registry.compile(['frost', 'pulse']);

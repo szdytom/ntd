@@ -86,7 +86,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       if (patch.spread !== undefined) pending.spread = Math.max(pending.spread, patch.spread);
       if (patch.slow !== undefined) pending.slow = Math.max(pending.slow, patch.slow);
       if (patch.slowDuration !== undefined) pending.slowDuration = Math.max(pending.slowDuration, patch.slowDuration);
-      if (patch.repeats !== undefined) pending.repeats = Math.max(pending.repeats, patch.repeats);
+      if (patch.repeats !== undefined) pending.repeats *= Math.max(1, Math.round(patch.repeats));
       if (patch.repeatDelay !== undefined) pending.repeatDelay = Math.max(pending.repeatDelay, patch.repeatDelay);
       if (patch.seeking !== undefined) pending.seeking = Math.max(pending.seeking, patch.seeking);
       pending.bonusPierce += patch.bonusPierce ?? 0;
