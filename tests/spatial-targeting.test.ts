@@ -73,6 +73,88 @@ describe('spatial targeting systems', () => {
       .toEqual([1, 2]);
   });
 
+  it('updates only when an enemy dirties its grid membership', () => {
+    const index = new EnemySpatialIndex(64);
+    const moving = enemy(11, 20, 100, 0);
+
+    expect(index.update(moving)).toBe(true);
+    expect(index.withinRadius({ x: 20, y: 0 }, 4)).toEqual([moving]);
+
+    moving.position.x = 48;
+    expect(index.update(moving)).toBe(false);
+    expect(index.withinRadius({ x: 20, y: 0 }, 4)).toEqual([]);
+    expect(index.withinRadius({ x: 48, y: 0 }, 4)).toEqual([moving]);
+
+    moving.position.x = 80;
+    expect(index.update(moving)).toBe(true);
+    expect(index.withinRadius({ x: 48, y: 0 }, 4)).toEqual([]);
+    expect(index.withinRadius({ x: 80, y: 0 }, 4)).toEqual([moving]);
+  });
+
+  it('incrementally inserts, removes, and clears enemy membership', () => {
+    const index = new EnemySpatialIndex(64);
+    const first = enemy(21, 20, 100, 0);
+    const second = enemy(22, 90, 100, 0);
+
+    index.update(first);
+    index.update(second);
+    first.dead = true;
+    expect(index.update(first)).toBe(true);
+    expect(index.withinRadius({ x: 0, y: 0 }, 200).map((item) => item.id)).toEqual([22]);
+    expect(index.remove(second.id)).toBe(true);
+    expect(index.remove(second.id)).toBe(false);
+
+    first.dead = false;
+    index.update(first);
+    index.update(second);
+    index.clear();
+    expect(index.withinRadius({ x: 0, y: 0 }, 200)).toEqual([]);
+  });
+
+  it('matches a rebuilt reference index across movement, death, spawn, and removal', () => {
+    const incremental = new EnemySpatialIndex(64);
+    const reference = new EnemySpatialIndex(64);
+    const moving = Array.from({ length: 36 }, (_, index) => (
+      enemy(index + 100, (index * 47) % 520 - 80, 100, 0)
+    ));
+    moving.forEach((item, index) => { item.position.y = (index * 71) % 380 - 60; });
+    moving.forEach((item) => incremental.update(item));
+
+    const sortedIds = (items: Enemy[]) => items.map((item) => item.id).sort((left, right) => left - right);
+    for (let step = 0; step < 160; step += 1) {
+      for (let index = 0; index < moving.length; index += 1) {
+        const item = moving[index];
+        if (!item || item.dead) continue;
+        item.position.x += ((index * 13 + step * 7) % 17) - 8;
+        item.position.y += ((index * 5 + step * 11) % 13) - 6;
+        if ((step + index * 19) % 137 === 0) item.dead = true;
+        incremental.update(item);
+      }
+      if (step % 29 === 0) {
+        const spawned = enemy(1_000 + step, 30 + step * 2, 100, 0);
+        spawned.position.y = 210 - step;
+        moving.push(spawned);
+        incremental.update(spawned);
+      }
+      if (step % 41 === 0) {
+        const removed = moving.shift();
+        if (removed) incremental.remove(removed.id);
+      }
+
+      reference.rebuild(moving);
+      const center = { x: (step * 31) % 520 - 80, y: (step * 23) % 380 - 60 };
+      const radius = 35 + (step % 6) * 27;
+      expect(sortedIds(incremental.withinRadius(center, radius)))
+        .toEqual(sortedIds(reference.withinRadius(center, radius)));
+      expect(incremental.countWithinRadius(center, radius)).toBe(reference.countWithinRadius(center, radius));
+      expect(incremental.findNearestWithinRadius(center, radius)?.id)
+        .toBe(reference.findNearestWithinRadius(center, radius)?.id);
+      const end = { x: center.x + 130, y: center.y - 75 };
+      expect(sortedIds(incremental.alongSegment(center, end, 24)))
+        .toEqual(sortedIds(reference.alongSegment(center, end, 24)));
+    }
+  });
+
   it('selects targets with a linear scan for each targeting strategy', () => {
     expect(selectTowerTarget(tower('core-nearest'), enemies)?.id).toBe(2);
     expect(selectTowerTarget(tower('hp-lowest'), enemies)?.id).toBe(2);

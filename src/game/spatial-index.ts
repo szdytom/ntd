@@ -2,34 +2,68 @@ import type { Enemy, Point } from './types';
 
 const NO_EXCLUDED_ENEMIES: readonly number[] = [];
 
+interface EnemyCell {
+  x: number;
+  y: number;
+  enemies: Enemy[];
+}
+
+interface IndexedEnemy {
+  enemy: Enemy;
+  cell: EnemyCell;
+  index: number;
+}
+
 export class EnemySpatialIndex {
-  private readonly columns = new Map<number, Map<number, Enemy[]>>();
-  private readonly occupiedCells: Enemy[][] = [];
+  private readonly columns = new Map<number, Map<number, EnemyCell>>();
+  private readonly indexedEnemies = new Map<number, IndexedEnemy>();
 
   constructor(private readonly cellSize = 128) {
     if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError('cellSize must be positive');
   }
 
   rebuild(enemies: readonly Enemy[]): void {
-    for (const cell of this.occupiedCells) cell.length = 0;
-    this.occupiedCells.length = 0;
-    for (const enemy of enemies) {
-      if (enemy.dead) continue;
-      const cellX = this.coordinate(enemy.position.x);
-      const cellY = this.coordinate(enemy.position.y);
-      let column = this.columns.get(cellX);
-      if (!column) {
-        column = new Map<number, Enemy[]>();
-        this.columns.set(cellX, column);
-      }
-      let cell = column.get(cellY);
-      if (!cell) {
-        cell = [];
-        column.set(cellY, cell);
-      }
-      if (cell.length === 0) this.occupiedCells.push(cell);
-      cell.push(enemy);
+    this.clear();
+    for (const enemy of enemies) this.update(enemy);
+  }
+
+  update(enemy: Enemy): boolean {
+    const indexed = this.indexedEnemies.get(enemy.id);
+    if (enemy.dead) return indexed ? this.remove(enemy.id) : false;
+
+    const cellX = this.coordinate(enemy.position.x);
+    const cellY = this.coordinate(enemy.position.y);
+    if (
+      indexed &&
+      indexed.enemy === enemy &&
+      indexed.cell.x === cellX &&
+      indexed.cell.y === cellY
+    ) {
+      return false;
     }
+
+    if (indexed) this.detach(indexed);
+    const cell = this.getOrCreateCell(cellX, cellY);
+    const next = indexed ?? { enemy, cell, index: 0 };
+    next.enemy = enemy;
+    next.cell = cell;
+    next.index = cell.enemies.length;
+    cell.enemies.push(enemy);
+    this.indexedEnemies.set(enemy.id, next);
+    return true;
+  }
+
+  remove(enemyId: number): boolean {
+    const indexed = this.indexedEnemies.get(enemyId);
+    if (!indexed) return false;
+    this.detach(indexed);
+    this.indexedEnemies.delete(enemyId);
+    return true;
+  }
+
+  clear(): void {
+    this.columns.clear();
+    this.indexedEnemies.clear();
   }
 
   withinRadius(position: Point, radius: number, excludeIds: readonly number[] = NO_EXCLUDED_ENEMIES): Enemy[] {
@@ -99,7 +133,7 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell) {
+        for (const enemy of cell.enemies) {
           if (enemy.dead || excludeIds.includes(enemy.id)) continue;
           const dx = enemy.position.x - position.x;
           const dy = enemy.position.y - position.y;
@@ -128,7 +162,7 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell) {
+        for (const enemy of cell.enemies) {
           if (enemy.dead) continue;
           const dx = enemy.position.x - position.x;
           const dy = enemy.position.y - position.y;
@@ -174,9 +208,39 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell) result.push(enemy);
+        for (const enemy of cell.enemies) result.push(enemy);
       }
     }
+  }
+
+  private getOrCreateCell(cellX: number, cellY: number): EnemyCell {
+    let column = this.columns.get(cellX);
+    if (!column) {
+      column = new Map<number, EnemyCell>();
+      this.columns.set(cellX, column);
+    }
+    let cell = column.get(cellY);
+    if (!cell) {
+      cell = { x: cellX, y: cellY, enemies: [] };
+      column.set(cellY, cell);
+    }
+    return cell;
+  }
+
+  private detach(indexed: IndexedEnemy): void {
+    const { cell, index } = indexed;
+    const lastIndex = cell.enemies.length - 1;
+    const replacement = cell.enemies[lastIndex];
+    if (index < lastIndex && replacement) {
+      cell.enemies[index] = replacement;
+      const replacementIndex = this.indexedEnemies.get(replacement.id);
+      if (replacementIndex) replacementIndex.index = index;
+    }
+    cell.enemies.pop();
+    if (cell.enemies.length > 0) return;
+    const column = this.columns.get(cell.x);
+    column?.delete(cell.y);
+    if (column?.size === 0) this.columns.delete(cell.x);
   }
 
   private coordinate(value: number): number {

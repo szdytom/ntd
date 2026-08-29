@@ -644,6 +644,7 @@ export class GameEngine {
   reset(): void {
     this.towers.length = 0;
     this.enemies.length = 0;
+    this.enemyIndex.clear();
     this.projectiles.length = 0;
     this.effects.clear();
     this.floatingTexts.length = 0;
@@ -712,7 +713,6 @@ export class GameEngine {
     this.spawnEnemies(delta);
     this.updateEnemies(delta);
     this.updatePendingEnemySplits(delta);
-    this.enemyIndex.rebuild(this.enemies);
     this.updateTowers(delta);
     this.updateScheduledCasts(delta);
     this.updateProjectiles(delta);
@@ -748,7 +748,7 @@ export class GameEngine {
       * creativeHealthScale;
     const route = this.routeFor(routeId);
     const at = route.pointAtDistance(0);
-    this.enemies.push({
+    const enemy: Enemy = {
       id: this.nextId++,
       type,
       routeId,
@@ -770,12 +770,17 @@ export class GameEngine {
       ...createEnemyShield(config.shield, scale),
       statuses: [],
       dead: false,
-    });
+    };
+    this.enemies.push(enemy);
+    this.enemyIndex.update(enemy);
   }
 
   private updateEnemies(delta: number): void {
     for (const enemy of this.enemies) {
-      if (enemy.dead) continue;
+      if (enemy.dead) {
+        this.enemyIndex.remove(enemy.id);
+        continue;
+      }
       const config = ENEMIES[enemy.type];
       const shieldConfig = config.shield;
       const shieldRestored = updateEnemyShield(enemy, shieldConfig, delta);
@@ -789,7 +794,10 @@ export class GameEngine {
         });
       }
       this.updateEnemyStatuses(enemy, delta);
-      if (enemy.dead) continue;
+      if (enemy.dead) {
+        this.enemyIndex.remove(enemy.id);
+        continue;
+      }
       enemy.slowTime = Math.max(0, enemy.slowTime - delta);
       if (enemy.slowTime <= 0) enemy.slowFactor = 0;
       const movementPhase = enemy.movementPhase ?? 0;
@@ -816,6 +824,7 @@ export class GameEngine {
           this.emitState();
         }
       }
+      this.enemyIndex.update(enemy);
     }
   }
 
@@ -1321,6 +1330,7 @@ export class GameEngine {
     enemy.distance = Math.max(0, Math.min(route.length, enemy.distance + distanceDelta));
     enemy.progress = enemy.distance / route.length;
     enemy.angle = route.sampleInto(enemy.distance, enemy.position);
+    this.enemyIndex.update(enemy);
   }
 
   private applyDamage(enemy: Enemy, damage: number, color: string) {
@@ -1360,6 +1370,7 @@ export class GameEngine {
     });
     if (enemy.hp <= 0) {
       enemy.dead = true;
+      this.enemyIndex.remove(enemy.id);
       this.shards += enemy.reward;
       this.score += enemy.maxHp;
       this.effects.spawnMany(['game:enemy-pop-ring', 'game:enemy-pop-sparks'], {
@@ -1414,7 +1425,7 @@ export class GameEngine {
       const childDistance = Math.max(0, Math.min(lastSafeDistance, parent.distance + offset));
       const at = route.pointAtDistance(childDistance);
       const maxHp = Math.max(1, Math.round(parent.maxHp * split.healthScale));
-      this.enemies.push({
+      const child: Enemy = {
         id: this.nextId++,
         type: parent.type,
         routeId: parent.routeId,
@@ -1435,7 +1446,9 @@ export class GameEngine {
         ...createEnemyShield(undefined, 1),
         statuses: [],
         dead: false,
-      });
+      };
+      this.enemies.push(child);
+      this.enemyIndex.update(child);
     }
   }
 
@@ -1499,6 +1512,7 @@ export class GameEngine {
   private cleanEntities(): void {
     let aliveEnemyCount = 0;
     for (const enemy of this.enemies) {
+      if (enemy.dead) this.enemyIndex.remove(enemy.id);
       let keep = !enemy.dead;
       if (!keep) {
         for (const split of this.pendingEnemySplits) {
