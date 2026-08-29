@@ -34,7 +34,7 @@
 
 .battle-head > div:first-child { min-width: 180px; }
 .battle-head h1 { margin: 0; color: var(--battle-ink); font-size: 23px; letter-spacing: -.035em; }
-.battle-head h1 .battle-sector-tag { min-height: 20px; margin-left: 7px; padding: 3px 6px; font-size: 10px; vertical-align: middle; }
+.battle-head h1 .battle-sector-tag { min-height: 20px; margin-left: 7px; padding: 3px 6px; font-size: 13px; vertical-align: middle; }
 .live-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #13b88e; }
 .live-dot.combat { background: #ff637a; animation: battle-pulse .8s ease infinite alternate; }
 @keyframes battle-pulse { to { opacity: .35; transform: scale(.72); } }
@@ -42,7 +42,7 @@
 .incoming { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; text-align: right; }
 .incoming-title { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; }
 .incoming-title > small { color: #756f7e; font-size: 14px; font-weight: 800; white-space: nowrap; }
-.creative-signal-toggle { padding: 5px 9px; border: 2px solid var(--battle-ink); color: var(--battle-ink); background: #a8ead7; cursor: pointer; font-size: 11px; font-weight: 800; }
+.creative-signal-toggle { padding: 5px 9px; border: 2px solid var(--battle-ink); color: var(--battle-ink); background: #a8ead7; cursor: pointer; font-size: 13px; font-weight: 800; }
 .creative-signal-toggle[aria-expanded='true'] { color: #fff; background: #0ba881; }
 .creative-signal-panel { position: absolute; z-index: 24; top: 68px; right: 14px; width: min(720px, calc(100% - 28px)); padding-top: 8px; }
 .creative-signal-panel .creative-lab { margin: 0; border: 2px solid var(--battle-ink); box-shadow: 8px 8px 0 rgba(37,33,52,.18); }
@@ -62,7 +62,7 @@
   color: var(--battle-ink);
   background: rgba(255,255,255,.88);
   backdrop-filter: blur(5px);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   pointer-events: none;
 }
@@ -75,7 +75,7 @@
 .status-shape { display: grid; width: 70px; height: 70px; margin-bottom: 14px; place-items: center; border: 3px solid var(--battle-ink); color: var(--purple); background: #ffd447; font-size: 32px; transform: rotate(4deg); }
 .status-overlay[data-tone='lost'] .status-shape { color: #fff; background: #ff637a; }
 .status-overlay h2 { margin: 0 0 7px; color: var(--battle-ink); font-size: 28px; }
-.status-overlay p { margin: 0 0 18px; color: #716b79; font-size: 13px; }
+.status-overlay p { margin: 0 0 18px; color: #716b79; font-size: 14px; }
 .status-overlay button { padding: 10px 18px; border: 2px solid var(--battle-ink); color: #fff; background: var(--purple); box-shadow: 4px 4px 0 var(--battle-ink); cursor: pointer; font-size: 13px; font-weight: 800; }
 
 .battle-footer { display: flex; min-height: 52px; align-items: center; gap: 12px; padding: 0 15px; border-top: 2px solid var(--battle-ink); background: #fff; }
@@ -90,14 +90,15 @@
   .battle-head { min-height: 62px; padding: 6px 9px 6px 12px; }
   .battle-head > div:first-child { min-width: 70px; }
   .battle-head h1 { font-size: 17px; }
+  .battle-head h1 .battle-sector-tag { font-size: 11px; }
   .incoming { gap: 4px; overflow: hidden; }
   .incoming-title { gap: 4px; }
-  .creative-signal-toggle { padding: 4px 6px; font-size: 9px; white-space: nowrap; }
+  .creative-signal-toggle { padding: 4px 6px; font-size: 11px; white-space: nowrap; }
   .incoming > .enemy-preview { max-width: 145px; min-width: 0; justify-content: flex-start; overflow-x: auto; }
   .incoming .enemy-preview-tag { min-height: 26px; flex: 0 0 auto; }
   .creative-signal-panel { top: 61px; right: 7px; width: calc(100% - 14px); }
   .spawn-label,
-  .core-label { font-size: 9px; }
+  .core-label { font-size: 11px; }
   .battle-footer { gap: 6px; padding: 0 9px; }
   .battle-footer-state { font-size: 13px; white-space: nowrap; }
   .score-line { margin-left: auto; }

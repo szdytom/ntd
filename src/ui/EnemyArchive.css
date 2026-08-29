@@ -84,7 +84,7 @@
 }
 .enemy-archive-seal::after { width: var(--seal-middle-size); height: var(--seal-middle-size); background: transparent; transform: translate(-50%, -50%) rotate(22.5deg); }
 .enemy-archive-seal i { width: var(--seal-center-size); height: var(--seal-center-size); border: 0; background: var(--archive-ink); }
-.enemy-archive-seal b { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; }
+.enemy-archive-seal b { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; }
 
 .enemy-archive-console {
   display: grid;
@@ -118,7 +118,7 @@
 .enemy-archive-analysis section > span,
 .enemy-archive-observed > span {
   color: var(--archive-ink);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: .07em;
 }
@@ -157,7 +157,7 @@
   background: var(--enemy-item-color);
 }
 .enemy-archive-index-list button strong { align-self: end; overflow: hidden; color: var(--archive-ink); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.enemy-archive-index-list button small { align-self: start; overflow: hidden; color: currentColor; font-size: 10px; opacity: .68; text-overflow: ellipsis; white-space: nowrap; }
+.enemy-archive-index-list button small { align-self: start; overflow: hidden; color: currentColor; font-size: 13px; opacity: .68; text-overflow: ellipsis; white-space: nowrap; }
 
 .enemy-archive-record {
   display: grid;
@@ -216,7 +216,7 @@
   background: #fff;
   box-shadow: 4px 4px 0 var(--archive-ink);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   transform: translateX(-50%);
 }
@@ -237,8 +237,8 @@
 .enemy-archive-data > header > div { display: contents; }
 .enemy-archive-data > header span { grid-column: 1; grid-row: 1; color: var(--enemy-accent); }
 .enemy-archive-data h2 { grid-column: 1 / -1; grid-row: 2; margin: 0; color: var(--archive-ink); font-size: clamp(32px, 3.4vw, 48px); line-height: .95; letter-spacing: -.055em; }
-.enemy-archive-data > header > .archive-role-tag { grid-column: 2; grid-row: 1; justify-self: end; font-size: 11px; }
-.enemy-archive-description { max-width: 680px; min-height: 24px; margin: 13px 0 18px; color: #716b79; font-size: 13px; line-height: 1.6; }
+.enemy-archive-data > header > .archive-role-tag { grid-column: 2; grid-row: 1; justify-self: end; font-size: 13px; }
+.enemy-archive-description { max-width: 680px; min-height: 24px; margin: 13px 0 18px; color: #716b79; font-size: 14px; line-height: 1.6; }
 
 .enemy-archive-stats {
   display: grid;
@@ -252,8 +252,8 @@
 .enemy-archive-stat:nth-child(2n) { border-right: 0; }
 .enemy-archive-stat:nth-child(n+3) { border-bottom: 0; }
 .enemy-archive-stat > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.enemy-archive-stat span { color: #716b79; font-size: 10px; font-weight: 800; }
-.enemy-archive-stat strong { color: var(--archive-ink); font-family: var(--font-mono); font-size: 11px; }
+.enemy-archive-stat span { color: #716b79; font-size: 13px; font-weight: 800; }
+.enemy-archive-stat strong { color: var(--archive-ink); font-family: var(--font-mono); font-size: 13px; }
 .enemy-archive-stat > i { display: block; height: 7px; overflow: hidden; border: 1px solid var(--archive-ink); background: #efedf3; }
 .enemy-archive-stat > i > b { display: block; height: 100%; background: var(--enemy-accent); }
 .suppressed-tower-stats { --enemy-accent: #ff5c5c; margin-top: 2px; }
@@ -271,7 +271,7 @@
 .counter-record { background: color-mix(in srgb, var(--archive-yellow) 30%, #fff); }
 .enemy-archive-analysis section > span { color: var(--archive-ink); }
 .enemy-archive-analysis strong { display: block; margin-top: 6px; color: var(--archive-ink); font-size: 14px; }
-.enemy-archive-analysis p { margin: 5px 0 0; color: #645e6b; font-size: 11px; line-height: 1.5; }
+.enemy-archive-analysis p { margin: 5px 0 0; color: #645e6b; font-size: 14px; line-height: 1.5; }
 
 .enemy-archive-observed { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 18px; }
 .enemy-archive-observed > span { color: var(--archive-ink); }

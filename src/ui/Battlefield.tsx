@@ -88,7 +88,9 @@ export function Battlefield({ engine, view, workshop, children }: {
         </div>
         <div className="score-line">
           <Tag className="mode-chip" tone="yellow" borderless>{t(`modes.${snapshot.mode}`)}</Tag>
-          <Tag className="difficulty-chip" tone="purple" borderless>{difficultyName(t, engine.difficulty.id)}</Tag>
+          {engine.difficulty.id === 'normal' ? null : (
+            <Tag className="difficulty-chip" tone="purple" borderless>{difficultyName(t, engine.difficulty.id)}</Tag>
+          )}
           {t('battlefield.score')} <strong>{String(snapshot.score).padStart(5, '0')}</strong>
         </div>
       </footer>

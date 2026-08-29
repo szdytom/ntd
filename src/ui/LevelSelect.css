@@ -88,7 +88,7 @@
 }
 
 .enemy-archive-entry-spectrum i:nth-child(2n) { border-radius: 50%; }
-.enemy-archive-entry > strong { font-size: 11px; white-space: nowrap; }
+.enemy-archive-entry > strong { font-size: 13px; white-space: nowrap; }
 
 .mission-controls {
   display: grid;
@@ -120,7 +120,7 @@
 .mode-selector button strong,
 .mode-selector button small { display: block; }
 .mode-selector button strong { font-size: 15px; }
-.mode-selector button small { margin-top: 3px; font-size: 11px; opacity: .65; }
+.mode-selector button small { margin-top: 3px; font-size: 13px; opacity: .65; }
 .mode-selector button.active { color: #fff; background: var(--select-ink); }
 
 .difficulty-select {
@@ -185,7 +185,7 @@
 
 .selection-heading-copy { display: flex; min-width: 0; align-items: baseline; gap: 14px; }
 .selection-heading-copy strong { color: var(--select-ink); font-size: 17px; }
-.selection-heading-copy span { overflow: hidden; color: #817b89; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.selection-heading-copy span { overflow: hidden; color: #817b89; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .level-select-utilities { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; }
 
 .level-carousel {
@@ -252,11 +252,11 @@
 .level-card-copy > div,
 .level-card-copy footer { display: flex; align-items: center; justify-content: space-between; }
 .level-card-copy > div small { color: var(--level-accent); font-size: 12px; letter-spacing: .12em; }
-.level-card-copy > div b { color: #706a79; font-size: 12px; }
+.level-card-copy > div b { color: #706a79; font-size: 13px; }
 .level-card-copy h2 { margin: 7px 0 5px; color: var(--select-ink); font-size: 21px; letter-spacing: -.025em; }
-.level-card-copy p { min-height: 42px; margin: 0 0 9px; color: #7e7886; font-size: 12px; line-height: 1.5; }
+.level-card-copy p { min-height: 42px; margin: 0 0 9px; color: #7e7886; font-size: 14px; line-height: 1.5; }
 .level-card-copy footer { justify-content: flex-start; }
-.level-card-copy footer .ui-tag { font-size: 11px; }
+.level-card-copy footer .ui-tag { font-size: 13px; }
 
 .creative-setup-card {
   margin-top: 0;
@@ -316,7 +316,7 @@
 .begin-run span,
 .begin-run small,
 .begin-run strong { display: block; }
-.begin-run small { margin-bottom: 5px; color: rgba(255,255,255,.72); font-size: 11px; font-weight: 700; }
+.begin-run small { margin-bottom: 5px; color: rgba(255,255,255,.72); font-size: 13px; font-weight: 700; }
 .begin-run strong { font-size: 20px; }
 .begin-run b { font-size: 28px; transition: transform .16s ease; }
 .begin-run:hover { background: #5547d2; }
@@ -343,7 +343,7 @@
   .level-select-intro { min-height: 96px; padding: 15px 12px 16px 23px; }
   .level-select-intro h1 { font-size: 27px; }
   .begin-run { padding: 0 12px; }
-  .begin-run small { margin-bottom: 4px; font-size: 9px; }
+  .begin-run small { margin-bottom: 4px; font-size: 11px; }
   .begin-run strong { font-size: 15px; }
   .begin-run b { font-size: 22px; }
   .mission-controls { display: block; }
@@ -361,6 +361,7 @@
   .level-card { display: block; }
   .level-map-wrap { min-height: 150px; }
   .level-card-copy { min-height: 0; }
+  .level-card-copy p { font-size: 12px; }
   .creative-setup-card,
   .setup-rules { grid-template-columns: 1fr; }
   .creative-setup-card .setup-scales { grid-column: auto; }

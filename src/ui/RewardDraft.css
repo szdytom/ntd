@@ -23,9 +23,9 @@
 }
 
 .reward-heading { min-width: 0; text-align: left; }
-.reward-kicker { margin-bottom: 10px; font-size: 11px; }
+.reward-kicker { margin-bottom: 10px; font-size: 13px; }
 .reward-heading h2 { margin: 0; color: #252134; font-size: 30px; letter-spacing: -.04em; }
-.reward-heading p { max-width: 680px; margin: 7px 0 0; color: #77717f; font-size: 12px; line-height: 1.55; }
+.reward-heading p { max-width: 680px; margin: 7px 0 0; color: #77717f; font-size: 14px; line-height: 1.55; }
 
 .reward-progress {
   display: flex;
@@ -38,7 +38,7 @@
 }
 .reward-progress i { min-width: 28px; flex: 1; border-right: 2px solid #252134; background: #efedf3; }
 .reward-progress i.active { background: #6558e8; }
-.reward-progress span { display: grid; min-width: 58px; place-items: center; color: #252134; font-family: var(--font-mono); font-size: 10px; white-space: nowrap; }
+.reward-progress span { display: grid; min-width: 58px; place-items: center; color: #252134; font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
 
 .reward-grid {
   display: grid;
@@ -71,16 +71,16 @@
 .reward-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 12px; background: var(--rarity-color); }
 .reward-card:hover,
 .reward-card:focus-visible { background: color-mix(in srgb, var(--module-tint) 46%, #fff); box-shadow: inset 0 -10px 0 var(--rarity-color); }
-.reward-kind { position: absolute; top: 24px; left: 18px; padding: 5px 7px; color: #fff; background: var(--rarity-color); font-size: 10px; font-weight: 800; }
+.reward-kind { position: absolute; top: 24px; left: 18px; padding: 5px 7px; color: #fff; background: var(--rarity-color); font-size: 13px; font-weight: 800; }
 .reward-card > b { display: grid; width: 72px; height: 72px; margin: 0 auto 16px; place-items: center; border: 2px solid #252134; color: var(--module-color); background: var(--module-tint); font-family: var(--font-mono); font-size: 34px; }
 .reward-card > strong,
 .reward-card > small,
 .reward-card > .reward-detail,
 .reward-card > em { display: block; }
 .reward-card > strong { color: #252134; font-size: 18px; }
-.reward-card > small { min-height: 36px; margin: 9px 0 7px; color: #77717f; font-size: 11px; line-height: 1.5; }
-.reward-card > .reward-detail { min-height: 34px; margin: 0 0 16px; padding: 7px 9px; border-left: 3px solid var(--module-color); color: #625d6d; background: var(--module-tint); font-family: var(--font-mono); font-size: 10px; line-height: 1.4; }
-.reward-card > em { color: var(--module-color); font-family: var(--font-mono); font-size: 10px; font-style: normal; font-weight: 800; }
+.reward-card > small { min-height: 36px; margin: 9px 0 7px; color: #77717f; font-size: 14px; line-height: 1.5; }
+.reward-card > .reward-detail { min-height: 34px; margin: 0 0 16px; padding: 7px 9px; border-left: 3px solid var(--module-color); color: #625d6d; background: var(--module-tint); font-family: var(--font-mono); font-size: 14px; line-height: 1.4; }
+.reward-card > em { color: var(--module-color); font-family: var(--font-mono); font-size: 13px; font-style: normal; font-weight: 800; }
 
 .reward-foot {
   display: grid;
@@ -89,7 +89,7 @@
   border-top: 2px solid #252134;
   color: #77717f;
   background: #fff;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 @media (max-width: 900px) {
@@ -105,18 +105,18 @@
 @media (max-width: 540px) {
   .reward-panel { grid-template-rows: auto minmax(0, 1fr) 40px; }
   .reward-head { grid-template-columns: minmax(0, 1fr) auto; min-height: 112px; gap: 9px; padding: 11px 10px; }
-  .reward-kicker { min-height: 21px; margin-bottom: 6px; font-size: 9px; }
+  .reward-kicker { min-height: 21px; margin-bottom: 6px; font-size: 11px; }
   .reward-heading h2 { font-size: 20px; }
-  .reward-heading p { max-width: 220px; margin-top: 4px; font-size: 9px; line-height: 1.35; }
+  .reward-heading p { max-width: 220px; margin-top: 4px; font-size: 12px; line-height: 1.35; }
   .reward-progress { width: 116px; min-height: 28px; }
   .reward-progress i { min-width: 15px; }
-  .reward-progress span { min-width: 44px; font-size: 9px; }
+  .reward-progress span { min-width: 44px; font-size: 11px; }
   .reward-card { min-height: 205px; padding: 42px 8px 19px; }
-  .reward-kind { top: 18px; left: 8px; padding: 4px 5px; font-size: 9px; }
+  .reward-kind { top: 18px; left: 8px; padding: 4px 5px; font-size: 11px; }
   .reward-card > b { width: 52px; height: 52px; margin-bottom: 10px; font-size: 26px; }
   .reward-card > strong { font-size: 14px; }
-  .reward-card > small { min-height: 28px; margin: 6px 0 5px; font-size: 9px; }
-  .reward-card > .reward-detail { min-height: 30px; margin-bottom: 9px; padding: 5px 6px; font-size: 8px; }
-  .reward-card > em { font-size: 9px; }
-  .reward-foot { min-height: 40px; font-size: 9px; }
+  .reward-card > small { min-height: 28px; margin: 6px 0 5px; font-size: 12px; }
+  .reward-card > .reward-detail { min-height: 30px; margin-bottom: 9px; padding: 5px 6px; font-size: 12px; }
+  .reward-card > em { font-size: 11px; }
+  .reward-foot { min-height: 40px; font-size: 12px; }
 }

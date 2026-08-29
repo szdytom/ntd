@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
@@ -27,15 +27,16 @@ describe('level selection accessibility', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: 'No, thanks' }));
 
-    const standardMode = screen.getByRole('button', { name: /Standard/ });
-    const creativeMode = screen.getByRole('button', { name: /Creative/ });
+    const modeGroup = screen.getByRole('group', { name: 'Game mode' });
+    const standardMode = within(modeGroup).getByRole('button', { name: /Standard/ });
+    const creativeMode = within(modeGroup).getByRole('button', { name: /Creative/ });
     expect(standardMode.getAttribute('aria-pressed')).toBe('true');
     await user.click(creativeMode);
     expect(creativeMode.getAttribute('aria-pressed')).toBe('true');
 
     const difficultyGroup = screen.getByRole('radiogroup', { name: 'Choose difficulty' });
     const selectedDifficulty = difficultyGroup.querySelector<HTMLElement>('[aria-checked="true"]');
-    expect(selectedDifficulty?.textContent).toContain('Normal');
+    expect(selectedDifficulty?.textContent).toContain('Standard');
     selectedDifficulty?.focus();
     await user.keyboard('{ArrowRight}');
     expect(difficultyGroup.querySelector('[aria-checked="true"]')?.textContent).toContain('Hard');

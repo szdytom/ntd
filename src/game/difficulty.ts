@@ -34,7 +34,7 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   },
   {
     id: 'normal',
-    name: 'Normal',
+    name: 'Standard',
     rank: 0,
     description: 'Uses the designed baseline and standard economy.',
     enemyHealth: 1,

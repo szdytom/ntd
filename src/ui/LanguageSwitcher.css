@@ -73,7 +73,7 @@
 .settings-section-copy strong,
 .settings-section-copy span { display: block; }
 .settings-section-copy strong { font-size: 15px; }
-.settings-section-copy span { margin-top: 5px; color: #77717f; font-size: 11px; line-height: 1.45; }
+.settings-section-copy span { margin-top: 5px; color: #77717f; font-size: 14px; line-height: 1.45; }
 
 .language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--ink, #252134); }
 .language-options button {
@@ -95,7 +95,7 @@
 .language-options button[aria-pressed='true'] { background: color-mix(in srgb, var(--purple, #6558e8) 18%, #fff); box-shadow: inset 0 -7px 0 var(--purple, #6558e8); }
 .language-options button > span { display: grid; width: 32px; height: 32px; place-items: center; color: #fff; background: var(--purple, #6558e8); font-size: 14px; font-weight: 900; }
 .language-options button:nth-child(2) > span { color: var(--ink, #252134); background: #ff637a; }
-.language-options button b { font-size: 12px; }
+.language-options button b { font-size: 13px; }
 .language-options button i { color: var(--purple, #6558e8); font-size: 15px; font-style: normal; font-weight: 900; text-align: center; }
 
 .enemy-archive-head > .language-switcher .language-trigger { border-radius: 0; }

@@ -61,8 +61,8 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.goto('/');
 
-  const normal = page.getByRole('radio', { name: /Normal/ });
-  await normal.focus();
+  const standardDifficulty = page.getByRole('radio', { name: /Standard/ });
+  await standardDifficulty.focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('radio', { name: /^◆ Hard/ })).toHaveAttribute('aria-checked', 'true');
 
@@ -84,10 +84,11 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.getByRole('button', { name: /Standard/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Creative/ })).toBeVisible();
+  const modeGroup = page.getByRole('group', { name: 'Game mode' });
+  await expect(modeGroup.getByRole('button', { name: /Standard/ })).toBeVisible();
+  await expect(modeGroup.getByRole('button', { name: /Creative/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Start deployment/ })).toBeVisible();
-  await page.getByRole('button', { name: /Creative/ }).click();
+  await modeGroup.getByRole('button', { name: /Creative/ }).click();
   await expect(page.getByRole('button', { name: /Creative .* Start deployment/ })).toBeVisible();
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: '\u4e2d\u6587' }).click();
