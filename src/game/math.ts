@@ -6,6 +6,12 @@ export const clamp = (value: number, min: number, max: number): number =>
 export const distance = (a: Point, b: Point): number =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
+export const distanceSquared = (a: Point, b: Point): number => {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+};
+
 export const normalize = (point: Point): Point => {
   const length = Math.hypot(point.x, point.y) || 1;
   return { x: point.x / length, y: point.y / length };

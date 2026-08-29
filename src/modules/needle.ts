@@ -1,5 +1,6 @@
 import { coneSparks, shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 
@@ -39,11 +40,10 @@ export const needleModule: ModuleDefinition = {
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity);
+    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 10, color, 0.9);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(angle);
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(11, 0);

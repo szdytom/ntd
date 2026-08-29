@@ -1,4 +1,5 @@
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 
 const color = '#e63973';
@@ -47,10 +48,9 @@ export const focusCoreModule: ModuleDefinition = {
     focusConversion: { damagePerCharge: stats.damagePerCharge, speedPerCharge: stats.speedPerCharge },
   }),
   renderProjectile: ({ ctx, projectile }) => {
+    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 17, color, 0.9);
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 12;
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.78;
     ctx.beginPath();

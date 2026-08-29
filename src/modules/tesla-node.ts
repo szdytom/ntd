@@ -1,5 +1,6 @@
 import { shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 
 const color = '#00bbf9';
@@ -71,13 +72,12 @@ export const teslaNodeModule: ModuleDefinition = {
     },
   }),
   renderProjectile: ({ ctx, projectile }) => {
+    drawGlow(ctx, projectile.position.x, projectile.position.y, 16 + 13, color, 0.9);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(projectile.age * 1.4);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 13;
     for (let index = 0; index < 3; index += 1) {
       ctx.rotate(Math.PI * 2 / 3);
       ctx.beginPath();
@@ -108,7 +108,7 @@ export const teslaNodeModule: ModuleDefinition = {
     if (!projectile || !triggerTarget) return;
     engine.spawn('module:tesla:zap', { position, color, data: { ...triggerTarget.position } });
     combat.dealDamage(triggerTarget, projectile.damage, color, projectile);
-    const secondary = combat.nearbyEnemies(triggerTarget.position, stats.chainRadius, [triggerTarget.id])[0];
+    const secondary = combat.nearestEnemy(triggerTarget.position, stats.chainRadius, [triggerTarget.id]);
     if (secondary) {
       engine.spawn('module:tesla:zap', { position: triggerTarget.position, color, data: { ...secondary.position } });
       combat.dealDamage(secondary, projectile.damage * stats.chainDamageMultiplier, color, projectile);

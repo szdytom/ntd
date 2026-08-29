@@ -88,6 +88,7 @@ Chinese technical documentation is retained in the repository:
 - [Architecture and module extension](docs/architecture.md)
 - [Built-in module catalog](docs/modules.md)
 - [Balance baseline](docs/balance.md)
+- [Rendering and frame performance](docs/perf-tips.md)
 
 ## Internationalization
 

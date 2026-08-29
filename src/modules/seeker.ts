@@ -4,6 +4,7 @@ import type { ModuleDefinition } from './types';
 
 const color = '#168aad';
 const stats = { seeking: 8 } as const;
+const SEEKER_ORBIT_OFFSETS = [0, Math.PI] as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -36,7 +37,7 @@ export const seekerModule: ModuleDefinition = {
     const phase = projectile.life * 7 + projectile.id;
     ctx.save();
     ctx.fillStyle = color;
-    for (const offset of [0, Math.PI]) {
+    for (const offset of SEEKER_ORBIT_OFFSETS) {
       ctx.beginPath();
       ctx.arc(
         projectile.position.x + Math.cos(phase + offset) * (projectile.radius + 5),

@@ -88,6 +88,7 @@ src/
 - [架构与扩展模块](docs/architecture.md)
 - [内置模块目录](docs/modules.md)
 - [数值平衡基线](docs/balance.md)
+- [渲染与帧性能](docs/perf-tips.md)
 
 ## 国际化约定
 

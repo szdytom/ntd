@@ -140,6 +140,7 @@ export class GameEngine {
   private readonly enemyIndex = new EnemySpatialIndex();
   private readonly routeCache = new Map<NodeId, PathSampler>();
   private readonly spatialCandidates: Enemy[] = [];
+  private readonly nearbyCandidates: Enemy[] = [];
   private readonly movementStart: Point = { x: 0, y: 0 };
   private readonly movementEnd: Point = { x: 0, y: 0 };
   private towerAuraCooldown = 1;
@@ -149,8 +150,12 @@ export class GameEngine {
   private draftsWithoutRare = 0;
   private creativeSetup: CreativeSetup;
   private readonly combatApi: ModuleCombatApi = {
+    // Unsorted, non-allocating: consumers must not retain the returned array.
     nearbyEnemies: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
-      this.enemyIndex.nearestWithinRadius(position, radius, excludeIds)
+      this.enemyIndex.collectWithinRadius(position, radius, this.nearbyCandidates, excludeIds)
+    ),
+    nearestEnemy: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
+      this.enemyIndex.findNearestWithinRadius(position, radius, excludeIds)
     ),
     dealDamage: (enemy, damage, color, source) => {
       const result = this.applyDamage(enemy, Math.max(1, Math.round(damage)), color);

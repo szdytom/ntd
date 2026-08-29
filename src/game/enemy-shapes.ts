@@ -27,15 +27,14 @@ export function surgeBodyPoints(radius: number): readonly [ShapePoint, ShapePoin
 }
 
 export function traceSurgeBody(ctx: CanvasRenderingContext2D, radius: number): void {
-  const points = surgeBodyPoints(radius);
-  const first = points[0];
-  if (!first) return;
+  const rearward = radius * SURGE_SHAPE.rearwardScale;
+  const halfWidth = radius * SURGE_SHAPE.halfWidthScale;
+  const notch = radius * SURGE_SHAPE.notchScale;
   ctx.beginPath();
-  ctx.moveTo(first.x, first.y);
-  for (let index = 1; index < points.length; index += 1) {
-    const point = points[index];
-    if (point) ctx.lineTo(point.x, point.y);
-  }
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(-rearward, halfWidth);
+  ctx.lineTo(-notch, 0);
+  ctx.lineTo(-rearward, -halfWidth);
   ctx.closePath();
 }
 

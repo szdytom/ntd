@@ -1,3 +1,5 @@
+import { drawGlow } from '../game/glow';
+
 export function drawProjectileGlow(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -5,14 +7,12 @@ export function drawProjectileGlow(
   radius: number,
   color: string,
 ): void {
+  drawGlow(ctx, x, y, radius * 2.2, color, 0.9);
   ctx.save();
-  ctx.shadowColor = color;
-  ctx.shadowBlur = radius * 2.2;
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowColor = 'transparent';
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.arc(x - radius * 0.25, y - radius * 0.25, Math.max(1.2, radius * 0.28), 0, Math.PI * 2);

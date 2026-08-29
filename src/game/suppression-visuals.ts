@@ -31,8 +31,27 @@ export function drawSuppressionLink(
   sourceId: number,
   towerId: number,
   emissive: boolean,
+  points?: Point[],
 ): void {
-  const points = createLightningPoints(source, target, sourceId, towerId, Math.floor(time * 22));
+  const linkPoints = buildSuppressionLinkPoints(
+    source,
+    target,
+    sourceId,
+    towerId,
+    Math.floor(time * 22),
+    points ?? [],
+  );
+  strokeSuppressionLink(ctx, linkPoints, aura, emissive);
+  drawSuppressionCollapse(ctx, target, towerId, time, emissive);
+}
+
+/** Strokes the precomputed lightning path into a single target. */
+export function strokeSuppressionLink(
+  ctx: CanvasRenderingContext2D,
+  points: readonly Point[],
+  aura: EnemyAuraConfig,
+  emissive: boolean,
+): void {
   if (emissive) {
     strokeLightning(ctx, points, aura.lightningColor, 5, 0.86);
     strokeLightning(ctx, points, aura.lightningCoreColor, 1.5, 0.96);
@@ -41,10 +60,9 @@ export function drawSuppressionLink(
     strokeLightning(ctx, points, aura.lightningColor, 2.8, 0.94);
     strokeLightning(ctx, points, aura.lightningCoreColor, 1, 1);
   }
-  drawSuppressionCollapse(ctx, target, towerId, time, emissive);
 }
 
-function drawSuppressionCollapse(
+export function drawSuppressionCollapse(
   ctx: CanvasRenderingContext2D,
   position: Point,
   towerId: number,
@@ -115,12 +133,18 @@ function drawSuppressionCollapse(
   ctx.restore();
 }
 
-function createLightningPoints(
+/**
+ * Fills `points` with the jagged lightning path (reusing the buffer to avoid a
+ * per-frame allocation) and returns it. The flicker is derived only from the
+ * flicker frame, so the path is identical for the scene and emissive channels.
+ */
+export function buildSuppressionLinkPoints(
   from: Point,
   to: Point,
   sourceId: number,
   towerId: number,
   flickerFrame: number,
+  points: Point[],
 ): Point[] {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -128,7 +152,7 @@ function createLightningPoints(
   const normalX = -dy / length;
   const normalY = dx / length;
   const segments = Math.max(4, Math.min(9, Math.ceil(length / 42)));
-  const points: Point[] = [];
+  points.length = 0;
   for (let index = 0; index <= segments; index += 1) {
     const progress = index / segments;
     const envelope = Math.sin(progress * Math.PI);

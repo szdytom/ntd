@@ -1,5 +1,35 @@
 import type { EffectPainter } from './types';
 
+interface ParsedColor {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+}
+
+const colorCache = new Map<string, ParsedColor>();
+
+function parseColor(color: string): ParsedColor | null {
+  if (!color.startsWith('#')) return null;
+  const hex = color.slice(1);
+  const normalized = hex.length === 3
+    ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+    : hex;
+  if (normalized.length !== 6) return null;
+  return {
+    red: Number.parseInt(normalized.slice(0, 2), 16),
+    green: Number.parseInt(normalized.slice(2, 4), 16),
+    blue: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function cachedColor(color: string): ParsedColor | null {
+  const cached = colorCache.get(color);
+  if (cached !== undefined) return cached;
+  const parsed = parseColor(color);
+  if (parsed) colorCache.set(color, parsed);
+  return parsed;
+}
+
 export class CanvasEffectPainter implements EffectPainter {
   constructor(readonly ctx: CanvasRenderingContext2D, private intensity = 1) {}
 
@@ -114,12 +144,9 @@ export class CanvasEffectPainter implements EffectPainter {
 
   private withAlpha(color: string, alpha: number): string {
     if (!color.startsWith('#')) return color;
-    const hex = color.slice(1);
-    const normalized = hex.length === 3 ? hex.split('').map((value) => value + value).join('') : hex;
-    const red = Number.parseInt(normalized.slice(0, 2), 16);
-    const green = Number.parseInt(normalized.slice(2, 4), 16);
-    const blue = Number.parseInt(normalized.slice(4, 6), 16);
-    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+    const parsed = cachedColor(color);
+    if (!parsed) return color;
+    return `rgba(${parsed.red}, ${parsed.green}, ${parsed.blue}, ${alpha})`;
   }
 }
 

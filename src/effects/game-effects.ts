@@ -6,14 +6,6 @@ interface ShieldEffectData {
   sides: number;
 }
 
-function shieldData(data: unknown): ShieldEffectData {
-  const value = data as Partial<ShieldEffectData> | undefined;
-  return {
-    radius: Math.max(12, value?.radius ?? 44),
-    sides: Math.max(3, Math.round(value?.sides ?? 6)),
-  };
-}
-
 export const GAME_EFFECT_IDS = {
   fractureSplitRipple: 'game:fracture-split-ripple',
   shieldHit: 'game:shield-hit',
@@ -56,7 +48,7 @@ export const gameEffects: readonly EffectDefinition[] = [
     layer: 'air',
     bloom: 0.95,
     render: (frame, painter) => {
-      const { radius } = shieldData(frame.data);
+      const radius = Math.max(12, (frame.data as ShieldEffectData | undefined)?.radius ?? 44);
       painter.light(frame.x, frame.y, radius * 1.35, frame.color, frame.fout * 0.3);
     },
   },
@@ -66,7 +58,8 @@ export const gameEffects: readonly EffectDefinition[] = [
     layer: 'air',
     bloom: 1,
     render: (frame, painter) => {
-      const { radius, sides } = shieldData(frame.data);
+      const radius = Math.max(12, (frame.data as ShieldEffectData | undefined)?.radius ?? 44);
+      const sides = Math.max(3, Math.round((frame.data as ShieldEffectData | undefined)?.sides ?? 6));
       const expanded = radius * (1 + frame.easeOut(3) * 0.42);
       painter.polygon(
         frame.x,
@@ -100,7 +93,8 @@ export const gameEffects: readonly EffectDefinition[] = [
     layer: 'air',
     bloom: 0.82,
     render: (frame, painter) => {
-      const { radius, sides } = shieldData(frame.data);
+      const radius = Math.max(12, (frame.data as ShieldEffectData | undefined)?.radius ?? 44);
+      const sides = Math.max(3, Math.round((frame.data as ShieldEffectData | undefined)?.sides ?? 6));
       const scale = 0.35 + frame.easeOut(3) * 0.65;
       painter.polygon(
         frame.x,

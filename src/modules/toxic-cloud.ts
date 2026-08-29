@@ -4,6 +4,7 @@ import type { ModuleDefinition } from './types';
 
 const color = '#51cf66';
 const darkColor = '#2f9e44';
+const TOXIC_DASH: number[] = [3, 7];
 const stats = {
   damage: 3,
   size: 10,
@@ -92,7 +93,7 @@ export const toxicCloudModule: ModuleDefinition = {
     ctx.globalAlpha = 0.42 + Math.sin(projectile.age * 3.4) * 0.08;
     ctx.strokeStyle = darkColor;
     ctx.lineWidth = 1.4;
-    ctx.setLineDash([3, 7]);
+    ctx.setLineDash(TOXIC_DASH);
     ctx.beginPath();
     ctx.arc(x, y, projectile.shot.static?.triggerRadius ?? stats.radius, 0, Math.PI * 2);
     ctx.stroke();

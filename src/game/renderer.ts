@@ -8,9 +8,14 @@ import {
 import { ECONOMY_BALANCE } from './balance';
 import i18n from '../i18n';
 import { ENEMIES, WORLD } from './config';
-import { clamp, distance, seededNoise } from './math';
+import { clamp, distanceSquared, seededNoise } from './math';
 import { drawEnemyBody, drawEnemyShield, hexToRgb, traceRegularPolygon } from './enemy-visuals';
-import { drawSuppressionLink, drawSuppressionSource } from './suppression-visuals';
+import {
+  buildSuppressionLinkPoints,
+  drawSuppressionCollapse,
+  drawSuppressionSource,
+  strokeSuppressionLink,
+} from './suppression-visuals';
 import { drawTowerBody, type TowerVisualOptions } from './tower-visuals';
 import type { GameEngine } from './engine';
 import type { Enemy, Point, Projectile, Tower } from './types';
@@ -50,6 +55,7 @@ export class GameRenderer {
   private readonly singularityDistortions: SingularityDistortion[] = [];
   private readonly suppressionSources: Enemy[] = [];
   private readonly orderedEnemies: Enemy[] = [];
+  private readonly lightningPoints: Point[] = [];
   private readonly shieldDistortion: ShieldDistortion = {
     centerX: 0,
     centerY: 0,
@@ -524,7 +530,7 @@ export class GameRenderer {
       if (occupied) continue;
       const pad = this.engine.level.towerPads[index];
       if (!pad) continue;
-      const hovered = this.engine.pointer ? distance(this.engine.pointer, pad) < 38 : false;
+      const hovered = this.engine.pointer ? distanceSquared(this.engine.pointer, pad) < 38 * 38 : false;
       ctx.save();
       ctx.translate(pad.x, pad.y);
       if (hovered) {
@@ -564,7 +570,7 @@ export class GameRenderer {
     let hoveredTower: Tower | null = null;
     if (this.engine.pointer) {
       for (const candidate of this.engine.towers) {
-        if (distance(candidate.position, this.engine.pointer) >= 35) continue;
+        if (distanceSquared(candidate.position, this.engine.pointer) >= 35 * 35) continue;
         hoveredTower = candidate;
         break;
       }
@@ -602,22 +608,39 @@ export class GameRenderer {
     const sources = this.suppressionSources;
     if (sources.length === 0) return;
     const ctx = this.ctx;
+    const time = this.engine.visualElapsed;
+    const points = this.lightningPoints;
     for (const tower of this.engine.towers) {
       let source: Enemy | null = null;
-      let nearestDistance = Number.POSITIVE_INFINITY;
+      let nearestDistanceSquared = Number.POSITIVE_INFINITY;
       for (const candidate of sources) {
         const aura = ENEMIES[candidate.type].aura;
         if (!aura) continue;
-        const candidateDistance = distance(tower.position, candidate.position);
-        if (candidateDistance > aura.radius || candidateDistance >= nearestDistance) continue;
+        const deltaX = tower.position.x - candidate.position.x;
+        const deltaY = tower.position.y - candidate.position.y;
+        const distSquared = deltaX * deltaX + deltaY * deltaY;
+        const radiusSquared = aura.radius * aura.radius;
+        if (distSquared > radiusSquared || distSquared >= nearestDistanceSquared) continue;
         source = candidate;
-        nearestDistance = candidateDistance;
+        nearestDistanceSquared = distSquared;
       }
       if (!source) continue;
       const aura = ENEMIES[source.type].aura;
       if (!aura) continue;
-      drawSuppressionLink(ctx, source.position, tower.position, aura, this.engine.visualElapsed, source.id, tower.id, false);
-      if (bloomCtx) drawSuppressionLink(bloomCtx, source.position, tower.position, aura, this.engine.visualElapsed, source.id, tower.id, true);
+      buildSuppressionLinkPoints(
+        source.position,
+        tower.position,
+        source.id,
+        tower.id,
+        Math.floor(time * 22),
+        points,
+      );
+      strokeSuppressionLink(ctx, points, aura, false);
+      drawSuppressionCollapse(ctx, tower.position, tower.id, time, false);
+      if (bloomCtx) {
+        strokeSuppressionLink(bloomCtx, points, aura, true);
+        drawSuppressionCollapse(bloomCtx, tower.position, tower.id, time, true);
+      }
     }
   }
 

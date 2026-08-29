@@ -1,8 +1,10 @@
 import { coneSparks, shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 
 const color = '#ff3d6e';
+const MINE_DASH: number[] = [4, 5];
 const stats = {
   damage: 52,
   size: 8,
@@ -44,11 +46,10 @@ export const proximityMineModule: ModuleDefinition = {
   renderProjectile: ({ ctx, projectile }) => {
     const armed = projectile.age >= (projectile.shot.static?.armTime ?? 0);
     const rotation = projectile.age * 0.8;
+    drawGlow(ctx, projectile.position.x, projectile.position.y, 11 + (armed ? 14 : 7), color, armed ? 1 : 0.8);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(rotation);
-    ctx.shadowColor = color;
-    ctx.shadowBlur = armed ? 14 : 7;
     ctx.fillStyle = armed ? color : '#ff9ab5';
     ctx.beginPath();
     for (let index = 0; index < 6; index += 1) {
@@ -69,7 +70,7 @@ export const proximityMineModule: ModuleDefinition = {
     ctx.globalAlpha = armed ? 0.36 + Math.sin(projectile.age * 7) * 0.12 : 0.16;
     ctx.strokeStyle = color;
     ctx.lineWidth = armed ? 1.7 : 1;
-    ctx.setLineDash([4, 5]);
+    ctx.setLineDash(MINE_DASH);
     ctx.beginPath();
     ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.triggerRadius ?? stats.triggerRadius, 0, Math.PI * 2);
     ctx.stroke();

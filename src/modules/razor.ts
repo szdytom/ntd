@@ -1,5 +1,6 @@
 import { coneSparks } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 
@@ -38,11 +39,10 @@ export const razorModule: ModuleDefinition = {
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity) + projectile.life * 8;
+    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 14, color, 0.9);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(angle);
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 9;
     ctx.fillStyle = color;
     for (let index = 0; index < 4; index += 1) {
       ctx.rotate(Math.PI / 2);

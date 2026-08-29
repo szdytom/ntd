@@ -1,8 +1,10 @@
 import { shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 
 const color = '#4c2a85';
+const SINGULARITY_DASH: number[] = [5, 7];
 const stats = {
   damage: 1,
   size: 10,
@@ -64,11 +66,10 @@ export const singularityModule: ModuleDefinition = {
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const armed = projectile.age >= (projectile.shot.static?.armTime ?? 0);
+    drawGlow(ctx, projectile.position.x, projectile.position.y, 13 + (armed ? 22 : 9), color, armed ? 1 : 0.85);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(projectile.age * 0.75);
-    ctx.shadowColor = color;
-    ctx.shadowBlur = armed ? 22 : 9;
     ctx.fillStyle = '#160d2b';
     ctx.beginPath();
     ctx.arc(0, 0, 13, 0, Math.PI * 2);
@@ -86,7 +87,7 @@ export const singularityModule: ModuleDefinition = {
     ctx.globalAlpha = armed ? 0.2 + Math.sin(projectile.age * 4) * 0.05 : 0.1;
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.3;
-    ctx.setLineDash([5, 7]);
+    ctx.setLineDash(SINGULARITY_DASH);
     ctx.beginPath();
     ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.gravity?.radius ?? stats.radius, 0, Math.PI * 2);
     ctx.stroke();

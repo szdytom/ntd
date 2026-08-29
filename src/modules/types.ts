@@ -100,7 +100,9 @@ export interface ModuleTargetEffect {
 }
 
 export interface ModuleCombatApi {
+  /** Unsorted, non-allocating; the returned array is reused and must not be retained. */
   nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Enemy[];
+  nearestEnemy(position: Point, radius: number, excludeIds?: readonly number[]): Enemy | null;
   dealDamage(enemy: Enemy, damage: number, color: string, source: Projectile): number;
   affectTarget(enemy: Enemy, source: Projectile, channel: TargetEffectChannel): void;
   applySlow(enemy: Enemy, factor: number, duration: number): boolean;
