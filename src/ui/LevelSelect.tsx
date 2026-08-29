@@ -13,7 +13,7 @@ import './LevelSelect.css';
 const DESKTOP_VISIBLE_LEVEL_COUNT = 3;
 const COMPACT_VISIBLE_LEVEL_COUNT = 1;
 const COMPACT_LEVEL_QUERY = '(max-width: 980px)';
-const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 const visibleLevelCountForViewport = (): number => globalThis.matchMedia?.(COMPACT_LEVEL_QUERY).matches
   ? COMPACT_VISIBLE_LEVEL_COUNT
   : DESKTOP_VISIBLE_LEVEL_COUNT;

@@ -96,6 +96,16 @@
   transform: none;
 }
 
+.creative-enemy-grid span i.anvil {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #6d4d1c;
+  border-radius: 0;
+  background: var(--enemy-color);
+  clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+  transform: none;
+}
+
 .creative-enemy-grid button b {
   display: grid;
   width: 32px;

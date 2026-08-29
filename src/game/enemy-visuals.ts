@@ -53,7 +53,7 @@ export function enemyVisualRotation(
   travelAngle = 0,
   phase = 0,
 ): number {
-  if (type === 'fracture') return time * 0.55 + phase;
+  if (type === 'fracture' || type === 'anvil') return time * 0.55 + phase;
   if (type === 'radiant') return -time * 0.38 + phase;
   return travelAngle + (type === 'kite' ? Math.PI / 4 : 0);
 }
@@ -73,6 +73,8 @@ export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyV
 
   if (config.shape === 'fracture') {
     drawFractureBody(ctx, radius, fillColor);
+  } else if (config.shape === 'anvil') {
+    drawAnvilBody(ctx, radius, fillColor);
   } else {
     ctx.fillStyle = fillColor;
     if (config.shape === 'ring') traceRing(ctx, radius, radius * 0.48);
@@ -121,6 +123,56 @@ export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyV
     }
   }
   ctx.restore();
+}
+
+function drawAnvilBody(ctx: CanvasRenderingContext2D, radius: number, fillColor: string): void {
+  const struck = fillColor === '#ffffff';
+  ctx.fillStyle = fillColor;
+  traceRegularPolygon(ctx, 0, 0, radius, 5, 0);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = struck ? '#ffffff' : '#5f451c';
+  ctx.lineWidth = Math.max(4, radius * 0.15);
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  ctx.fillStyle = struck ? '#ffffff' : '#d2a545';
+  ctx.strokeStyle = struck ? '#ffffff' : '#f2d27a';
+  ctx.lineWidth = Math.max(2.5, radius * 0.085);
+  traceRegularPolygon(ctx, 0, 0, radius * 0.76, 5, 0);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.strokeStyle = struck ? 'rgba(255,255,255,0.9)' : '#76551f';
+  ctx.lineWidth = Math.max(2, radius * 0.065);
+  for (let index = 0; index < 5; index += 1) {
+    const angle = index * Math.PI * 2 / 5;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * radius * 0.43, Math.sin(angle) * radius * 0.43);
+    ctx.lineTo(Math.cos(angle) * radius * 0.7, Math.sin(angle) * radius * 0.7);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = struck ? '#ffffff' : '#6d4d1c';
+  ctx.strokeStyle = struck ? '#ffffff' : '#f6dc91';
+  ctx.lineWidth = Math.max(2, radius * 0.06);
+  traceRegularPolygon(ctx, 0, 0, radius * 0.38, 5, Math.PI);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = struck ? '#ffffff' : '#fff0b2';
+  for (let index = 0; index < 5; index += 1) {
+    const angle = index * Math.PI * 2 / 5;
+    traceRegularPolygon(
+      ctx,
+      Math.cos(angle) * radius * 0.61,
+      Math.sin(angle) * radius * 0.61,
+      Math.max(2.5, radius * 0.085),
+      4,
+      Math.PI / 4,
+    );
+    ctx.fill();
+  }
 }
 
 export function drawEnemyShield(

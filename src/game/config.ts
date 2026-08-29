@@ -12,9 +12,10 @@ export interface EnemyConfig {
   color: string;
   sides: number;
   name: string;
-  shape?: 'polygon' | 'surge' | 'fracture' | 'ring';
+  shape?: 'polygon' | 'surge' | 'fracture' | 'anvil' | 'ring';
   movement?: EnemyWaveMovementConfig;
   shield?: EnemyShieldConfig;
+  armor?: EnemyArmorConfig;
   split?: EnemySplitConfig;
   aura?: EnemyAuraConfig;
 }
@@ -23,6 +24,10 @@ export interface EnemyWaveMovementConfig {
   cycle: number;
   peakSpeedMultiplier: number;
   wavePower: number;
+}
+
+export interface EnemyArmorConfig {
+  damageCap: number;
 }
 
 export interface EnemyAuraConfig {
@@ -104,6 +109,19 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
       radiusScale: 0.58,
       spacing: 25,
     },
+  },
+  anvil: {
+    hp: 480,
+    speed: 26,
+    spawnDelay: 1.5,
+    reward: 50,
+    coreDamage: 8,
+    radius: 34,
+    color: '#b88a35',
+    sides: 5,
+    name: 'Prism Anvil',
+    shape: 'anvil',
+    armor: { damageCap: 6 },
   },
   radiant: {
     hp: 390,
@@ -202,7 +220,7 @@ export const LEVELS = [
     id: 'rose-circuit',
     name: 'Rose Circuit',
     sector: 'SECTOR C-3',
-    description: 'A serpentine route with dense packs and suppression fields.',
+    description: 'A serpentine route with layered armor and suppression fields.',
     difficulty: 2,
     accent: '#ff5c8a',
     path: [
@@ -220,7 +238,7 @@ export const LEVELS = [
       wave(['kite', 10], ['block', 5]),
       wave(['spark', 4], ['surge', 4], ['block', 7], ['hex', 2]),
       wave(['kite', 10], ['block', 7], ['hex', 2]),
-      wave(['spark', 12], ['block', 8], ['hex', 5]),
+      wave(['spark', 12], ['block', 8], ['hex', 5], ['anvil', 1]),
       wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1]),
     ],
     startingShards: 250,

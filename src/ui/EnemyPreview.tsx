@@ -18,7 +18,7 @@ export function EnemyPreview({ engine, wave, onOpenArchive }: {
   return <div className="enemy-preview">{[...counts.entries()].slice(0, 4).map(([type, count]) => {
     const enemy = ENEMIES[type];
     const name = enemyName(t, type);
-    const shape = enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.shape === 'surge' ? 'surge' : enemy.sides === 3 ? 'tri' : enemy.sides >= 6 ? 'hex' : 'square';
+    const shape = enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.shape === 'surge' ? 'surge' : enemy.shape === 'anvil' ? 'anvil' : enemy.sides === 3 ? 'tri' : enemy.sides >= 6 ? 'hex' : 'square';
     return <button
       className="enemy-preview-button"
       key={type}

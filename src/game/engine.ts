@@ -8,6 +8,7 @@ import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision'
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, TOWER_COLORS, TUTORIAL_LEVEL_ID, WORLD, type LevelDefinition } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
+import { limitEnemyHealthDamage } from './enemy-armor';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
 import { enemyMovementSpeedMultiplier } from './enemy-movement';
 import { findPathInterception } from './interception';
@@ -1247,7 +1248,11 @@ export class GameEngine {
   private applyDamage(enemy: Enemy, damage: number, color: string) {
     if (enemy.dead) return { absorbed: 0, healthDamage: 0, broke: false };
     const shieldConfig = ENEMIES[enemy.type].shield;
-    const result = absorbShieldDamage(enemy, damage * this.difficulty.towerDamage, shieldConfig);
+    const shieldResult = absorbShieldDamage(enemy, damage * this.difficulty.towerDamage, shieldConfig);
+    const result = {
+      ...shieldResult,
+      healthDamage: limitEnemyHealthDamage(shieldResult.healthDamage, ENEMIES[enemy.type].armor),
+    };
     enemy.hitFlash = 1;
     if (result.absorbed > 0 && shieldConfig) {
       this.floatingTexts.push({

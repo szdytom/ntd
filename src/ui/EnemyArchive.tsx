@@ -9,7 +9,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { Tag } from './Tag';
 import './EnemyArchive.css';
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 const MAXIMUMS = {
   hp: Math.max(...ENEMY_TYPES.map((type) => ENEMIES[type].hp)),
   speed: Math.max(...ENEMY_TYPES.map((type) => ENEMIES[type].speed)),
@@ -58,6 +58,11 @@ export function EnemyArchive({ onBack, initialType = 'spark', backToBattlefield 
       count: config.split.count,
       health: Math.round(config.split.healthScale * 100),
       speed: Math.round(config.split.speedScale * 100),
+    }),
+  } : config.armor ? {
+    label: t('enemyArchive.abilities.layeredArmor'),
+    detail: t('enemyArchive.abilities.layeredArmorDetail', {
+      cap: config.armor.damageCap,
     }),
   } : config.aura ? {
     label: t('enemyArchive.abilities.suppression'),

@@ -6,7 +6,7 @@ import type { CreativeSetup, EnemyType } from '../game/types';
 import { enemyName } from '../i18n/presentation';
 import './CreativeLab.css';
 
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'radiant'];
+const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 
 export function CreativeLab({ engine, setup }: { engine: GameEngine; setup: CreativeSetup }) {
   const { t } = useTranslation();
@@ -16,7 +16,7 @@ export function CreativeLab({ engine, setup }: { engine: GameEngine; setup: Crea
       const enemy = ENEMIES[type];
       const name = enemyName(t, type);
       return <button key={type} onClick={() => engine.spawnCreativeEnemy(type)} title={t('creativeLab.spawnNow', { enemy: name })}>
-        <span style={{ '--enemy-color': enemy.color } as CSSProperties}><i className={enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.shape === 'surge' ? 'surge' : ''} />{name}</span>
+        <span style={{ '--enemy-color': enemy.color } as CSSProperties}><i className={enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.shape === 'surge' ? 'surge' : enemy.shape === 'anvil' ? 'anvil' : ''} />{name}</span>
         <b aria-hidden="true">＋</b>
       </button>;
     })}</div>
