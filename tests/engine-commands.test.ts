@@ -120,6 +120,37 @@ describe('engine command and view boundary', () => {
     expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(2);
   });
 
+  it('publishes complete live signal counts for the active wave', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 5 });
+    engine.wave = engine.level.waves.length - 1;
+    engine.startWave();
+
+    expect(engine.getSnapshot().waveSignalCounts).toEqual({
+      kite: 18,
+      block: 18,
+      hex: 18,
+      crown: 2,
+      fracture: 2,
+      radiant: 1,
+      anvil: 1,
+    });
+    expect(Object.isFrozen(engine.getSnapshot().waveSignalCounts)).toBe(true);
+  });
+
+  it('decrements live signal counts after an active enemy is removed', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 5 });
+    engine.status = 'wave';
+    engine.spawnCreativeEnemy('crown');
+    expect(engine.getSnapshot().waveSignalCounts).toEqual({ crown: 1 });
+
+    const enemy = engine.enemies[0];
+    if (!enemy) throw new Error('Expected a creative enemy');
+    enemy.dead = true;
+    engine.update(FIXED_SIMULATION_STEP);
+
+    expect(engine.getSnapshot().waveSignalCounts).toEqual({});
+  });
+
   it('resolves an enemy impact at the rendered core endpoint', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 5 });
     engine.spawnCreativeEnemy('spark');

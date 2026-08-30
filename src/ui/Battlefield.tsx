@@ -34,6 +34,8 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
   const runIndicator = snapshot.mode === 'creative'
     ? t('battlefield.creativeIndicator')
     : difficultyName(t, engine.difficulty.id);
+  const waveInProgress = snapshot.status === 'wave';
+  const previewWave = waveInProgress ? Math.max(0, snapshot.wave - 1) : snapshot.wave;
   const spawns = engine.level.graph.entrances.map((entrance) => engine.routeFor(entrance).pointAtDistance(44).position);
   const core = engine.getCorePosition();
   return (
@@ -49,7 +51,9 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
           </div>
           <div className="incoming">
             <div className="incoming-title">
-              <small>{t('battlefield.nextWave')}</small>
+              <small>{t(terminal
+                ? 'battlefield.noSignals'
+                : waveInProgress ? 'battlefield.currentWave' : 'battlefield.nextWave')}</small>
               {engine.mode === 'creative' ? (
                 <button
                   className="creative-signal-toggle"
@@ -59,7 +63,14 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
                 >{t('battlefield.signalConsole')}</button>
               ) : null}
             </div>
-            <EnemyPreview engine={engine} wave={snapshot.wave} onOpenArchive={onOpenArchive} />
+            {terminal ? null : (
+              <EnemyPreview
+                engine={engine}
+                wave={previewWave}
+                {...(waveInProgress ? { liveCounts: snapshot.waveSignalCounts } : {})}
+                onOpenArchive={onOpenArchive}
+              />
+            )}
           </div>
         </div>
 

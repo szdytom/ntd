@@ -259,6 +259,23 @@ export class GameEngine {
     return this.viewSnapshot?.game ?? this.createGameSnapshot();
   }
 
+  private countWaveSignals(): Readonly<Partial<Record<EnemyType, number>>> {
+    const counts: Partial<Record<EnemyType, number>> = {};
+    const increment = (type: EnemyType): void => {
+      counts[type] = (counts[type] ?? 0) + 1;
+    };
+    for (const lane of this.spawnLanes) {
+      for (const type of lane.queue) increment(type);
+    }
+    for (const enemy of this.enemies) {
+      if (!enemy.dead) increment(enemy.type);
+    }
+    for (const split of this.pendingEnemySplits) {
+      if (!split.spawned) increment(split.parent.type);
+    }
+    return Object.freeze(counts);
+  }
+
   private createGameSnapshot(): GameSnapshot {
     return {
       status: this.status,
@@ -274,6 +291,7 @@ export class GameEngine {
       enemiesAlive: this.enemies.filter((enemy) => !enemy.dead).length
         + this.pendingEnemySplits.filter((split) => !split.spawned).length,
       waveQueue: this.spawnLanes.reduce((total, lane) => total + lane.queue.length, 0),
+      waveSignalCounts: this.countWaveSignals(),
       selectedTowerId: this.selectedTowerId,
       speed: this.speed,
       paused: this.paused,

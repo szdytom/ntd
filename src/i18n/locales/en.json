@@ -224,6 +224,8 @@
 	"battlefield.paused": "SYSTEM PAUSED",
 	"battlefield.planning": "PLANNING PHASE",
 	"battlefield.creativeIndicator": "Creative",
+	"battlefield.currentWave": "Current-wave signals",
+	"battlefield.noSignals": "No signals",
 	"battlefield.nextWave": "Next-wave signals",
 	"battlefield.openSignalArchive": "Open {{signal}} in the signal compendium",
 	"battlefield.signalConsole": "Signal console",

@@ -229,6 +229,7 @@ export interface GameSnapshot {
   score: number;
   enemiesAlive: number;
   waveQueue: number;
+  waveSignalCounts: Readonly<Partial<Record<EnemyType, number>>>;
   selectedTowerId: number | null;
   speed: number;
   paused: boolean;

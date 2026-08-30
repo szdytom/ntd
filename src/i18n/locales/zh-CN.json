@@ -224,6 +224,8 @@
 	"battlefield.paused": "系统暂停",
 	"battlefield.planning": "规划阶段",
 	"battlefield.creativeIndicator": "创造",
+	"battlefield.currentWave": "本波信号",
+	"battlefield.noSignals": "无信号",
 	"battlefield.nextWave": "下一波信号",
 	"battlefield.openSignalArchive": "在信号图鉴中查看{{signal}}",
 	"battlefield.signalConsole": "信号台",
