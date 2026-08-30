@@ -137,7 +137,8 @@ describe('level selection accessibility', () => {
     expect(document.documentElement.lang).toBe('zh-CN');
     expect(screen.getByRole('dialog', { name: zhCN['settings.title'] })).toBeTruthy();
     expect(screen.getByRole('button', { name: zhCN['settings.close'] })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: zhCN['levelSelect.title'] })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: zhCN['levelSelect.gameTitle'] })).toBeTruthy();
+    expect(screen.getByText(zhCN['levelSelect.sectorSelectionHeading'])).toBeTruthy();
   });
 
   it('opens the selected next-wave signal in the compendium and returns to the same run', async () => {

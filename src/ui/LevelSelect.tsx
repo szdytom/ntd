@@ -172,7 +172,7 @@ export function LevelSelect({ onStart, onOpenArchive }: {
       <div className="level-select-frame">
       <header className="level-select-head">
         <section className="level-select-intro">
-          <h1>{t('levelSelect.title')}</h1>
+          <h1>{t('levelSelect.gameTitle')}</h1>
         </section>
         <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}>
           <span>
@@ -213,7 +213,7 @@ export function LevelSelect({ onStart, onOpenArchive }: {
       <section className="sector-selection" aria-label={t('levelSelect.chooseLevel')}>
         <header className="selection-section-head">
           <div className="selection-heading-copy">
-            <strong>{t('levelSelect.sectorHeading')}</strong>
+            <strong>{t('levelSelect.sectorSelectionHeading')}</strong>
             <span>{t('levelSelect.sectorHint')}</span>
           </div>
           <div className="level-select-utilities">
