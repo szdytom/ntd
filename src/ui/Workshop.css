@@ -327,9 +327,11 @@
 
 .workshop .module-card,
 .workshop .all-modules .module-card {
+  --module-card-edge-inset: 6px;
+  --module-card-rarity-strip-width: 7px;
   min-height: 74px;
   gap: 8px;
-  padding: 8px 32px 8px 8px;
+  padding: 8px 32px 8px calc(var(--module-card-rarity-strip-width) + var(--module-card-edge-inset));
   border: 2px solid var(--workshop-ink);
   border-radius: 0;
   background: #fff;
@@ -337,7 +339,9 @@
   box-shadow: none;
 }
 
-.workshop .module-card::before { width: 7px; }
+.workshop .module-card::before { width: var(--module-card-rarity-strip-width); }
+.workshop .kind-badge,
+.workshop .all-modules .kind-badge { right: var(--module-card-edge-inset); }
 .workshop .module-card:hover,
 .workshop .module-card.selected { background: var(--module-tint); transform: none; box-shadow: none; }
 .workshop .module-card.exhausted { border: 2px dashed var(--workshop-ink); background: #f4f2f6; }
