@@ -23,6 +23,7 @@ const effects: readonly EffectDefinition[] = [
 export const frostModule: ModuleDefinition = {
   id: 'frost',
   kind: 'modifier',
+  tags: ['status'],
   meta: {
     name: 'Condensing Lens', shortName: 'Frost', symbol: '✣', color, tint: '#e4f7ff', energy: 5, rarity: 'common',
     text: { detail: { slow: Math.round(stats.slow * 100), duration: stats.duration } },

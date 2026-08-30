@@ -26,6 +26,7 @@ const effects: readonly EffectDefinition[] = [
 export const reclaimCircuitModule: ModuleDefinition = {
   id: 'reclaim-circuit',
   kind: 'modifier',
+  tags: [],
   meta: {
     name: 'Reclaim Circuit', shortName: 'Reclaim', symbol: '↺', color, tint: '#e4fff1', energy: 4, rarity: 'uncommon',
     text: { detail: {

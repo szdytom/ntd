@@ -48,6 +48,7 @@ const effects: readonly EffectDefinition[] = [
 export const teslaNodeModule: ModuleDefinition = {
   id: 'tesla-node',
   kind: 'static',
+  tags: ['static', 'area'],
   meta: {
     name: 'Tesla Sentry', shortName: 'Sentry', symbol: '⌾', color, tint: '#e2f8ff', energy: 22, rarity: 'legendary',
     text: { detail: {

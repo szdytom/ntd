@@ -23,6 +23,7 @@ const effects: readonly EffectDefinition[] = [
 export const impactTriggerModule: ModuleDefinition = {
   id: 'impact-trigger',
   kind: 'logic',
+  tags: ['trigger'],
   meta: {
     name: 'Impact Trigger', shortName: 'Impact', symbol: '⊛', color, tint: '#ffe7f7', energy: 6, rarity: 'common',
     text: { detail: { carriers: stats.carrierCount, payloads: stats.payloadCount } },

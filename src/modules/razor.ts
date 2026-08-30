@@ -25,6 +25,7 @@ const effects: readonly EffectDefinition[] = [
 export const razorModule: ModuleDefinition = {
   id: 'razor',
   kind: 'projectile',
+  tags: ['projectile'],
   meta: {
     name: 'Returning Razor', shortName: 'Razor', symbol: '✥', color, tint: '#e3f8fc', energy: 24, rarity: 'rare',
     text: { detail: { damage: stats.damage, targets: stats.maxTargets } },

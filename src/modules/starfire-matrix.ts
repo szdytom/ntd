@@ -97,6 +97,7 @@ const effects: readonly EffectDefinition[] = [
 export const starfireMatrixModule: ModuleDefinition = {
   id: 'starfire-matrix',
   kind: 'modifier',
+  tags: ['status'],
   meta: {
     name: 'Starfire Matrix', shortName: 'Starfire', symbol: '✺', color, tint: '#f4e8ff', energy: 24, rarity: 'legendary',
     text: { detail: {

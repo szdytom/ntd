@@ -8,7 +8,11 @@ The module system has two phases. Compilation converts tower slots into immutabl
 
 `compileProgram()` scans the slot array from left to right. Modifier, trail, and logic modules update a short-lived pending state through `modifyNext()` or `wrapNext()`. The state holds multiplicative and additive projectile patches, energy contributions, participating module IDs, and at most one trigger.
 
-A projectile module calls `emitProjectile()`. The compiler applies the pending patches, records every participating module ID, creates a `ShotBlueprint`, and resets the pending state. A later projectile therefore starts with a clean state unless new modules modify it.
+Module definitions also declare capability tags. After a projectile is emitted, the compiler compares its tags with the pending modules through the data-driven rules in `compatibility.ts`. Ineffective combinations produce warnings, and runtime hook/render dispatch skips the ineffective module; new modules opt into a rule by declaring the matching tag rather than editing the compiler or UI.
+
+Tags may also opt a tower into a shared renderer capability. For example, `rift-space` enables the masked rift-space shader only while at least one fielded tower has a matching module installed and a live rift exists.
+
+A projectile module calls `emitProjectile()`. The compiler applies the pending patches, records every participating module ID, creates a `ShotBlueprint`, and resets the pending state. The blueprint retains the resolved damage multiplier separately from rounded projectile damage so attached continuous systems can scale their own authored damage. A later projectile therefore starts with a clean state unless new modules modify it.
 
 Patch fields do not all combine the same way:
 

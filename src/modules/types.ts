@@ -13,6 +13,17 @@ import type {
 } from '../game/types';
 
 export type ModuleKind = 'projectile' | 'static' | 'modifier' | 'trail' | 'logic';
+export type ModuleTag =
+  | 'area'
+  | 'fixed-route'
+  | 'projectile'
+  | 'repeat'
+  | 'rift-space'
+  | 'route'
+  | 'static'
+  | 'status'
+  | 'trail'
+  | 'trigger';
 export type ModuleRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 export type ModuleTextValues = Readonly<Record<string, string | number>>;
 
@@ -38,6 +49,10 @@ export interface ProjectileSpec {
   splash?: number;
   lifetime?: number;
   static?: StaticProjectileSpec;
+  collision?: 'enemy' | 'none';
+  trajectory?: 'steerable' | 'fixed';
+  aim?: 'intercept' | 'direct';
+  boundary?: 'margin' | 'world';
 }
 
 export interface NextShotPatch {
@@ -110,6 +125,20 @@ export interface ModuleCombatApi {
   applyStatus(enemy: Enemy, status: StatusApplication): boolean;
   retarget(projectile: Projectile, enemy: Enemy): void;
   displace(enemy: Enemy, distanceDelta: number): void;
+  extendRift(source: Projectile, key: string, position: Point, options: RiftOptions): void;
+}
+
+export interface RiftOptions {
+  /** Time retained after the carrier expires. */
+  duration: number;
+  width: number;
+  damagePerSecond: number;
+  settlementInterval: number;
+  modifierInterval: number;
+  effectInterval: number;
+  color: string;
+  jitter?: number;
+  hitEffectId?: string;
 }
 
 export interface ProjectileRenderContext {
@@ -120,11 +149,14 @@ export interface ProjectileRenderContext {
 export interface ModuleDefinition {
   readonly id: ModuleId;
   readonly kind: ModuleKind;
+  /** Self-declared capabilities used by data-driven compatibility rules. */
+  readonly tags: readonly ModuleTag[];
   readonly meta: ModuleMeta;
   readonly effects?: readonly EffectDefinition[];
   readonly targetEffect?: ModuleTargetEffect;
   compile(context: ModuleCompileContext): void;
   renderProjectile?(context: ProjectileRenderContext): void;
+  renderProjectileBloom?(context: ProjectileRenderContext): void;
   onCast?(context: ModuleEffectContext): void;
   onHit?(context: ModuleEffectContext): void;
   onTrail?(context: ModuleEffectContext): void;

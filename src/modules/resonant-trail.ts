@@ -6,7 +6,7 @@ const color = '#9b5de5';
 const stats = {
   speedMultiplier: 0.96,
   pulseEveryTicks: 4,
-  damageMultiplier: 0.3,
+  damageMultiplier: 2,
   minimumDamage: 5,
   radius: 56,
 } as const;
@@ -42,8 +42,9 @@ const effects: readonly EffectDefinition[] = [
 export const resonantTrailModule: ModuleDefinition = {
   id: 'resonant-trail',
   kind: 'trail',
+  tags: ['trail'],
   meta: {
-    name: 'Resonant Trail', shortName: 'Resonance', symbol: '〰', color, tint: '#f1eaff', energy: 24, rarity: 'legendary',
+    name: 'Resonant Trail', shortName: 'Resonance', symbol: '〰', color, tint: '#f1eaff', energy: 32, rarity: 'rare',
     text: { detail: {
       ticks: stats.pulseEveryTicks,
       damage: Math.round(stats.damageMultiplier * 100),

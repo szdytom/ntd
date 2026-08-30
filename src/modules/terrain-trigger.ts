@@ -21,6 +21,7 @@ const effects: readonly EffectDefinition[] = [
 export const terrainTriggerModule: ModuleDefinition = {
   id: 'terrain-trigger',
   kind: 'logic',
+  tags: ['trigger'],
   meta: {
     name: 'Terrain Trigger', shortName: 'Terrain', symbol: '⌖', color, tint: '#e8f1ff', energy: 9, rarity: 'uncommon',
     text: { detail: { ticks: stats.crossingTicks, payloads: stats.payloadCount } },

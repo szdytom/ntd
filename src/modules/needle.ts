@@ -27,6 +27,7 @@ const effects: readonly EffectDefinition[] = [
 export const needleModule: ModuleDefinition = {
   id: 'needle',
   kind: 'projectile',
+  tags: ['projectile'],
   meta: {
     name: 'Piercing Needle', shortName: 'Needle', symbol: '◆', color, tint: '#ffe9f1', energy: 22, rarity: 'uncommon',
     text: { detail: { damage: stats.damage, targets: stats.maxTargets } },

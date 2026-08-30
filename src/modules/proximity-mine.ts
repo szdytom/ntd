@@ -25,6 +25,7 @@ const effects: readonly EffectDefinition[] = [
 export const proximityMineModule: ModuleDefinition = {
   id: 'proximity-mine',
   kind: 'static',
+  tags: ['static', 'area'],
   meta: {
     name: 'Hex Proximity Mine', shortName: 'Mine', symbol: '⬢', color, tint: '#ffe7ed', energy: 28, rarity: 'rare',
     text: { detail: { damage: stats.damage } },

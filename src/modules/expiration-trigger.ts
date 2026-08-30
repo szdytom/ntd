@@ -31,6 +31,7 @@ const effects: readonly EffectDefinition[] = [
 export const expirationTriggerModule: ModuleDefinition = {
   id: 'expiration-trigger',
   kind: 'logic',
+  tags: ['trigger'],
   meta: {
     name: 'Expiration Trigger', shortName: 'Expiration', symbol: '✺', color, tint: '#fff0e3', energy: 12, rarity: 'rare',
     text: { detail: { payloads: stats.payloadCount } },

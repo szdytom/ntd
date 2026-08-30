@@ -5,6 +5,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-bolt',
     kind: 'projectile',
+    tags: ['projectile'],
     meta: {
       name: 'Test Bolt', shortName: 'Bolt', symbol: 'B', color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
     },
@@ -13,6 +14,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-power',
     kind: 'modifier',
+    tags: [],
     meta: {
       name: 'Test Power', shortName: 'Power', symbol: 'P', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
@@ -21,6 +23,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-fork',
     kind: 'modifier',
+    tags: [],
     meta: {
       name: 'Test Fork', shortName: 'Fork', symbol: 'F', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
@@ -29,6 +32,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-echo',
     kind: 'modifier',
+    tags: ['repeat'],
     meta: {
       name: 'Test Echo', shortName: 'Echo', symbol: 'E', color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
     },
@@ -37,6 +41,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-impact',
     kind: 'logic',
+    tags: ['trigger'],
     meta: {
       name: 'Test Impact', shortName: 'Impact', symbol: 'I', color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
     },
@@ -45,6 +50,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-timer',
     kind: 'logic',
+    tags: ['trigger'],
     meta: {
       name: 'Test Timer', shortName: 'Timer', symbol: 'T', color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
     },
@@ -53,6 +59,7 @@ const definitions: ModuleDefinition[] = [
   {
     id: 'test-field',
     kind: 'static',
+    tags: ['static'],
     meta: {
       name: 'Test Field', shortName: 'Field', symbol: 'S', color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
     },
@@ -62,6 +69,29 @@ const definitions: ModuleDefinition[] = [
       size: 6,
       lifetime: 2,
       static: { duration: 2, armTime: 0, tickRate: 1, triggerRadius: 6 },
+    }),
+  },
+  {
+    id: 'test-route',
+    kind: 'logic',
+    tags: ['route'],
+    meta: {
+      name: 'Test Route', shortName: 'Route', symbol: 'R', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+    },
+    compile: ({ modifyNext }) => modifyNext({ seeking: 4 }),
+  },
+  {
+    id: 'test-fixed',
+    kind: 'projectile',
+    tags: ['projectile', 'fixed-route'],
+    meta: {
+      name: 'Test Fixed', shortName: 'Fixed', symbol: 'X', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+    },
+    compile: ({ emitProjectile }) => emitProjectile({
+      damage: 1,
+      speed: 10,
+      size: 1,
+      trajectory: 'fixed',
     }),
   },
 ];
@@ -148,5 +178,15 @@ describe('module compiler', () => {
     expect(second).toBe(first);
     expect(Object.isFrozen(first)).toBe(true);
     expect(Object.isFrozen(first.shots[0])).toBe(true);
+  });
+
+  it('derives ineffective combinations from module-owned tags', () => {
+    const program = registry.compile(['test-route', 'test-fixed']);
+
+    expect(program.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'ineffective-combination',
+      moduleId: 'test-route',
+      relatedModuleId: 'test-fixed',
+    }));
   });
 });

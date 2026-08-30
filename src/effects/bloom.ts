@@ -152,12 +152,15 @@ export function createBloomWebGLContext(output: HTMLCanvasElement): WebGL2Render
 export class WebGLBloomPipeline {
   private readonly emissive = document.createElement('canvas');
   private readonly emissiveCtx: CanvasRenderingContext2D;
+  private readonly riftMask = document.createElement('canvas');
+  private readonly riftMaskCtx: CanvasRenderingContext2D;
   private gl: WebGL2RenderingContext;
   private blurProgram!: ProgramInfo;
   private compositeProgram!: ProgramInfo;
   private quad!: WebGLBuffer;
   private sceneTexture!: WebGLTexture;
   private emissiveTexture!: WebGLTexture;
+  private riftMaskTexture!: WebGLTexture;
   private pingTexture!: WebGLTexture;
   private pongTexture!: WebGLTexture;
   private pingFramebuffer!: WebGLFramebuffer;
@@ -172,6 +175,7 @@ export class WebGLBloomPipeline {
   private initializationError: Error | null = null;
   private initializationVersion = 0;
   private disposed = false;
+  private riftSpaceActive = false;
   private readonly uniformLocations = new WeakMap<WebGLProgram, Map<string, WebGLUniformLocation | null>>();
   private readonly shieldGeometry = new Float32Array(MAX_SHIELD_DISTORTIONS * 4);
   private readonly shieldShape = new Float32Array(MAX_SHIELD_DISTORTIONS * 4);
@@ -187,8 +191,11 @@ export class WebGLBloomPipeline {
     context?: WebGL2RenderingContext,
   ) {
     const emissiveCtx = this.emissive.getContext('2d', { alpha: true });
+    const riftMaskCtx = this.riftMask.getContext('2d', { alpha: true });
     if (!emissiveCtx) throw new Error('Emissive Canvas 2D context is unavailable');
+    if (!riftMaskCtx) throw new Error('Rift mask Canvas 2D context is unavailable');
     this.emissiveCtx = emissiveCtx;
+    this.riftMaskCtx = riftMaskCtx;
 
     const gl = context ?? createBloomWebGLContext(output);
     if (!gl) throw new Error('WebGL is required for the game renderer');
@@ -219,19 +226,41 @@ export class WebGLBloomPipeline {
       this.emissive.width = emissiveWidth;
       this.emissive.height = emissiveHeight;
     }
+    if (this.riftMask.width !== emissiveWidth || this.riftMask.height !== emissiveHeight) {
+      this.riftMask.width = emissiveWidth;
+      this.riftMask.height = emissiveHeight;
+    }
     if (!this.contextLost) this.allocateTargets();
   }
 
-  beginFrame(offsetX: number, offsetY: number, worldScale: number): CanvasRenderingContext2D {
+  beginFrame(
+    offsetX: number,
+    offsetY: number,
+    worldScale: number,
+    riftSpaceActive = false,
+  ): CanvasRenderingContext2D {
+    this.riftSpaceActive = riftSpaceActive;
     const ctx = this.emissiveCtx;
+    const pixelRatio = this.dpr * this.emissiveScale;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.emissive.width, this.emissive.height);
-    const pixelRatio = this.dpr * this.emissiveScale;
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.translate(offsetX, offsetY);
     ctx.scale(worldScale, worldScale);
     ctx.imageSmoothingEnabled = true;
+    if (riftSpaceActive) {
+      this.riftMaskCtx.setTransform(1, 0, 0, 1, 0, 0);
+      this.riftMaskCtx.clearRect(0, 0, this.riftMask.width, this.riftMask.height);
+      this.riftMaskCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      this.riftMaskCtx.translate(offsetX, offsetY);
+      this.riftMaskCtx.scale(worldScale, worldScale);
+      this.riftMaskCtx.imageSmoothingEnabled = true;
+    }
     return ctx;
+  }
+
+  getRiftMaskContext(): CanvasRenderingContext2D | null {
+    return this.riftSpaceActive ? this.riftMaskCtx : null;
   }
 
   render(
@@ -255,6 +284,7 @@ export class WebGLBloomPipeline {
 
     this.upload(this.sceneTexture, scene);
     this.upload(this.emissiveTexture, this.emissive);
+    if (this.riftSpaceActive) this.upload(this.riftMaskTexture, this.riftMask);
 
     this.blur(this.emissiveTexture, this.pingFramebuffer, 1 / this.blurWidth, 0);
     this.blur(this.pingTexture, this.pongFramebuffer, 0, 1 / this.blurHeight);
@@ -282,6 +312,7 @@ export class WebGLBloomPipeline {
 
     this.sceneTexture = this.createTexture();
     this.emissiveTexture = this.createTexture();
+    this.riftMaskTexture = this.createTexture();
     this.pingTexture = this.createTexture();
     this.pongTexture = this.createTexture();
     this.pingFramebuffer = this.createFramebuffer(this.pingTexture);
@@ -310,6 +341,7 @@ export class WebGLBloomPipeline {
   private allocateTargets(): void {
     this.allocateTexture(this.sceneTexture, this.output.width, this.output.height);
     this.allocateTexture(this.emissiveTexture, this.emissive.width, this.emissive.height);
+    this.allocateTexture(this.riftMaskTexture, this.riftMask.width, this.riftMask.height);
     this.allocateTexture(this.pingTexture, this.blurWidth, this.blurHeight);
     this.allocateTexture(this.pongTexture, this.blurWidth, this.blurHeight);
 
@@ -350,9 +382,12 @@ export class WebGLBloomPipeline {
     this.bindTexture(this.sceneTexture, 0);
     this.bindTexture(this.emissiveTexture, 1);
     this.bindTexture(this.pongTexture, 2);
+    this.bindTexture(this.riftMaskTexture, 3);
     gl.uniform1i(this.uniform(program, 'u_scene'), 0);
     gl.uniform1i(this.uniform(program, 'u_emissive'), 1);
     gl.uniform1i(this.uniform(program, 'u_bloom'), 2);
+    gl.uniform1i(this.uniform(program, 'u_riftMask'), 3);
+    gl.uniform1f(this.uniform(program, 'u_riftSpaceActive'), this.riftSpaceActive ? 1 : 0);
     gl.uniform2f(this.uniform(program, 'u_resolution'), this.output.width, this.output.height);
     const shieldGeometry = this.shieldGeometry;
     const shieldShape = this.shieldShape;
@@ -480,6 +515,7 @@ export class WebGLBloomPipeline {
     gl.deleteBuffer(this.quad);
     gl.deleteTexture(this.sceneTexture);
     gl.deleteTexture(this.emissiveTexture);
+    gl.deleteTexture(this.riftMaskTexture);
     gl.deleteTexture(this.pingTexture);
     gl.deleteTexture(this.pongTexture);
     gl.deleteFramebuffer(this.pingFramebuffer);

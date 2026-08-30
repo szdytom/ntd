@@ -61,6 +61,7 @@ const effects: readonly EffectDefinition[] = [
 export const arcboltModule: ModuleDefinition = {
   id: 'arcbolt',
   kind: 'projectile',
+  tags: ['projectile'],
   meta: {
     name: 'Arcbolt Core', shortName: 'Arcbolt', symbol: 'ϟ', color, tint: '#e9edff', energy: 25, rarity: 'legendary',
     text: { detail: { damage: stats.damage, chains: stats.maxChains } },

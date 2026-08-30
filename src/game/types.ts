@@ -21,6 +21,8 @@ export interface ShotBlueprint {
   source: ModuleId;
   modules: ModuleId[];
   damage: number;
+  /** Final multiplier applied to authored damage, reused by attached damage systems. */
+  damageMultiplier: number;
   speed: number;
   count: number;
   spread: number;
@@ -36,6 +38,10 @@ export interface ShotBlueprint {
   energyRefundMultiplier: number;
   energyCost: number;
   lifetime: number;
+  collision: 'enemy' | 'none';
+  trajectory: 'steerable' | 'fixed';
+  aim: 'intercept' | 'direct';
+  boundary: 'margin' | 'world';
   static?: StaticProjectileSpec;
   trigger?: TriggerSpec;
   payload: ShotBlueprint[];
@@ -77,13 +83,15 @@ export type ProgramDiagnosticCode =
   | 'trigger-conflict'
   | 'missing-projectile'
   | 'unresolved-modifier'
-  | 'missing-payload';
+  | 'missing-payload'
+  | 'ineffective-combination';
 
 export interface ProgramDiagnostic {
   code: ProgramDiagnosticCode;
   severity: 'warning' | 'error';
   message: string;
   moduleId?: ModuleId;
+  relatedModuleId?: ModuleId;
 }
 
 export interface TowerStatAllocation {
@@ -164,6 +172,33 @@ export interface SplitRift {
   position: Point;
   age: number;
   duration: number;
+}
+
+export interface SpaceRift {
+  id: number;
+  key: string;
+  points: Point[];
+  width: number;
+  damagePerSecond: number;
+  settlementInterval: number;
+  modifierInterval: number;
+  effectInterval: number;
+  color: string;
+  source: Projectile;
+  contacts: Map<number, SpaceRiftContact>;
+  remaining: number;
+  duration: number;
+  hitEffectId?: string;
+}
+
+export interface SpaceRiftContact {
+  pendingDamage: number;
+  pendingDuration: number;
+  pendingModifierDamage: number;
+  settlementTimer: number;
+  modifierTimer: number;
+  effectTimer: number;
+  lastPosition: Point;
 }
 
 export interface Projectile {

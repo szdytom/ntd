@@ -36,6 +36,7 @@ const effects: readonly EffectDefinition[] = [
 export const pulseModule: ModuleDefinition = {
   id: 'pulse',
   kind: 'projectile',
+  tags: ['projectile'],
   meta: {
     name: 'Pulse Round', shortName: 'Pulse', symbol: '●', color, tint: '#eeeaff', energy: 15, rarity: 'common',
     text: { detail: { damage: stats.damage } },

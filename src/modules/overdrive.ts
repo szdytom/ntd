@@ -32,6 +32,7 @@ const effects: readonly EffectDefinition[] = [
 export const overdriveModule: ModuleDefinition = {
   id: 'overdrive',
   kind: 'modifier',
+  tags: [],
   meta: {
     name: 'Overdrive Prism', shortName: 'Overdrive', symbol: '▲', color, tint: '#ffebeb', energy: 8, rarity: 'uncommon',
     text: { detail: {

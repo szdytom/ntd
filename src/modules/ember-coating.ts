@@ -77,6 +77,7 @@ const effects: readonly EffectDefinition[] = [
 export const emberCoatingModule: ModuleDefinition = {
   id: 'ember-coating',
   kind: 'modifier',
+  tags: ['status'],
   meta: {
     name: 'Ember Coating', shortName: 'Ember', symbol: '✶', color, tint: '#fff0e6', energy: 6, rarity: 'common',
     text: { detail: {

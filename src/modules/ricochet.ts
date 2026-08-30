@@ -32,6 +32,7 @@ const effects: readonly EffectDefinition[] = [
 export const ricochetModule: ModuleDefinition = {
   id: 'ricochet',
   kind: 'modifier',
+  tags: ['route'],
   meta: {
     name: 'Ricochet Mirror', shortName: 'Ricochet', symbol: '↗', color, tint: '#ffe7f2', energy: 19, rarity: 'rare',
     text: { detail: { ricochets: stats.maxRicochets, radius: stats.radius } },

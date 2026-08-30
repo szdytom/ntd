@@ -7,6 +7,7 @@ import type {
 } from '../game/types';
 import type { ModuleRegistry } from './registry';
 import type { NextShotPatch, ProjectileSpec } from './types';
+import { isIneffectiveCombination } from './compatibility';
 
 interface PendingState {
   damageMultiplier: number;
@@ -145,6 +146,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         source: moduleId,
         modules: [...pending.moduleIds, moduleId],
         damage: Math.round(spec.damage * damageMultiplier),
+        damageMultiplier,
         speed: spec.speed * speedMultiplier,
         count,
         spread,
@@ -160,10 +162,26 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         energyRefundMultiplier: pending.energyRefundMultiplier,
         energyCost: Math.max(1, Math.round((definition.meta.energy + pending.energy) * pending.energyMultiplier)),
         lifetime: spec.lifetime ?? 1.7,
+        collision: spec.collision ?? 'enemy',
+        trajectory: spec.trajectory ?? 'steerable',
+        aim: spec.aim ?? 'intercept',
+        boundary: spec.boundary ?? 'margin',
         ...(spec.static ? { static: spec.static } : {}),
         ...(pending.trigger ? { trigger: pending.trigger } : {}),
         payload: [],
       };
+
+      for (const pendingId of pending.moduleIds) {
+        const pendingDefinition = registry.get(pendingId);
+        if (!pendingDefinition || !isIneffectiveCombination(pendingDefinition, definition)) continue;
+        diagnose({
+          code: 'ineffective-combination',
+          severity: 'warning',
+          message: `${pendingDefinition.meta.shortName} has no effect on ${definition.meta.shortName}`,
+          moduleId: pendingId,
+          relatedModuleId: moduleId,
+        });
+      }
 
       const parent = captureStack[captureStack.length - 1];
       if (definition.kind === 'static' && !parent) {

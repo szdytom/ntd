@@ -95,6 +95,7 @@ const effects: readonly EffectDefinition[] = [
 export const emberFieldModule: ModuleDefinition = {
   id: 'ember-field',
   kind: 'static',
+  tags: ['static', 'area', 'status'],
   meta: {
     name: 'Ember Scorch Field', shortName: 'Scorch Field', symbol: '⊚', color, tint: '#fff1e8', energy: 18, rarity: 'common',
     text: { detail: {

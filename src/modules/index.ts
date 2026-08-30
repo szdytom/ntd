@@ -15,6 +15,7 @@ import { needleModule } from './needle';
 import { novaModule } from './nova';
 import { overdriveModule } from './overdrive';
 import { resonantTrailModule } from './resonant-trail';
+import { riftTrailModule } from './rift-trail';
 import { pulseModule } from './pulse';
 import { proximityMineModule } from './proximity-mine';
 import { reclaimCircuitModule } from './reclaim-circuit';
@@ -30,11 +31,13 @@ import { terrainTriggerModule } from './terrain-trigger';
 import { timerTriggerModule } from './timer-trigger';
 import { toxicCloudModule } from './toxic-cloud';
 import { toxinModule } from './toxin';
+import { voidBeamModule } from './void-beam';
 
 export function createModuleRegistry(): ModuleRegistry {
   return new ModuleRegistry()
     .register(pulseModule)
     .register(needleModule)
+    .register(voidBeamModule)
     .register(novaModule)
     .register(overdriveModule)
     .register(frostModule)
@@ -43,6 +46,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(seekerModule)
     .register(arcboltModule)
     .register(resonantTrailModule)
+    .register(riftTrailModule)
     .register(razorModule)
     .register(ricochetModule)
     .register(emberCoatingModule)
@@ -68,4 +72,4 @@ export function createModuleRegistry(): ModuleRegistry {
 
 export { ModuleRegistry } from './registry';
 export { DRAFT_BALANCE, MODULE_RARITIES } from './rarity';
-export type { ModuleDefinition, ModuleKind, ModuleRarity } from './types';
+export type { ModuleDefinition, ModuleKind, ModuleRarity, ModuleTag } from './types';

@@ -28,6 +28,7 @@ const effects: readonly EffectDefinition[] = [
 export const seekerModule: ModuleDefinition = {
   id: 'seeker',
   kind: 'logic',
+  tags: ['route'],
   meta: {
     name: 'Seeker Protocol', shortName: 'Seeker', symbol: '⌁', color, tint: '#e2f4f8', energy: 10, rarity: 'uncommon',
   },

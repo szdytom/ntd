@@ -33,7 +33,7 @@ An offscreen canvas is valuable only when it replaces more work than its draw an
 
 ## Treat WebGL as a bounded post-process
 
-The current pipeline uploads the Canvas scene and a lower-resolution emissive canvas, performs two blur passes, and composites bounded distortion arrays. Preserve those bounds when adding a new uniform array or distortion family.
+The current pipeline uploads the Canvas scene and a lower-resolution emissive canvas, performs two blur passes, and composites bounded distortion arrays. An active rift adds one lower-resolution reveal-mask upload; its shared moving filament field is generated directly in the composite shader. Mask work and the shader branch are gated by the module-owned `rift-space` tag and the presence of a live rift. Preserve those bounds and inactive paths when adding a new uniform array, texture, or distortion family.
 
 Every important shape and contrast cue must remain visible in Canvas fallback. Bloom should enhance feedback, not carry the only readable representation. Check context loss and resize paths when changing WebGL resources.
 

@@ -31,6 +31,7 @@ const effects: readonly EffectDefinition[] = [
 export const forkModule: ModuleDefinition = {
   id: 'fork',
   kind: 'modifier',
+  tags: [],
   meta: {
     name: 'Triple Fork', shortName: 'Fork', symbol: 'Y', color, tint: '#e1f8f1', energy: 24, rarity: 'rare',
     text: {

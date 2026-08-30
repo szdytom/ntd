@@ -80,6 +80,7 @@ const effects: readonly EffectDefinition[] = [
 export const searingSigilModule: ModuleDefinition = {
   id: 'searing-sigil',
   kind: 'modifier',
+  tags: ['status'],
   meta: {
     name: 'Searing Sigil', shortName: 'Searing', symbol: '✷', color, tint: '#ffe8e0', energy: 18, rarity: 'rare',
     text: { detail: {

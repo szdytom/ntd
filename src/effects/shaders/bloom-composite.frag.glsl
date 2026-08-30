@@ -8,6 +8,8 @@ const float TAU = 6.28318530718;
 uniform sampler2D u_scene;
 uniform sampler2D u_emissive;
 uniform sampler2D u_bloom;
+uniform sampler2D u_riftMask;
+uniform float u_riftSpaceActive;
 uniform vec2 u_resolution;
 uniform vec4 u_shieldGeometry[MAX_SHIELDS];
 uniform vec4 u_shieldShape[MAX_SHIELDS];
@@ -193,6 +195,36 @@ void main() {
     refracted.r = texture(u_scene, clamp(sceneUv - pixel, vec2(0.001), vec2(0.999))).r;
     refracted.b = texture(u_scene, clamp(sceneUv + pixel, vec2(0.001), vec2(0.999))).b;
     scene = mix(scene, refracted, clamp(singularityLens * 0.52, 0.0, 0.52));
+  }
+  if (u_riftSpaceActive > 0.5) {
+    float riftMask = texture(u_riftMask, v_uv).a;
+    if (riftMask > 0.002) {
+      vec3 voidColor = vec3(0.027, 0.020, 0.047);
+      float foreground = smoothstep(0.035, 0.120, length(scene - voidColor));
+      float reveal = riftMask * (1.0 - foreground);
+      vec2 riftPixel = v_uv * u_resolution / max(u_pixelRatio, 1.0);
+      float flow = riftPixel.y
+        + sin(riftPixel.x * 0.032 - u_time * 1.75) * 2.4
+        + sin(riftPixel.x * 0.071 + u_time * 0.90) * 0.85;
+      float lane = abs(mod(flow + u_time * 4.8, 13.0) - 6.5);
+      float filament = 1.0 - smoothstep(0.30, 1.15, lane);
+      float dash = smoothstep(
+        0.08,
+        0.72,
+        0.5 + 0.5 * sin(riftPixel.x * 0.083 - u_time * 2.10 + flow * 0.018)
+      );
+      float broadPulse = 0.5 + 0.5 * sin(
+        riftPixel.x * 0.025 + riftPixel.y * 0.016 - u_time * 1.25
+      );
+      vec3 riftColor = mix(
+        vec3(0.075, 0.010, 0.145),
+        vec3(0.430, 0.065, 0.730),
+        0.18 + broadPulse * 0.45
+      );
+      riftColor += vec3(0.64, 0.16, 0.92) * filament * (0.28 + dash * 0.38);
+      riftColor += vec3(1.00, 0.82, 1.00) * filament * dash * dash * 0.42;
+      scene = mix(scene, riftColor, reveal);
+    }
   }
   vec4 wideGlow = texture(u_bloom, v_uv);
   vec4 hotGlow = texture(u_emissive, v_uv);

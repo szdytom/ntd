@@ -1,6 +1,7 @@
 import type { GameEngine } from '../game/engine';
 import type { ShotBlueprint, TowerProgram } from '../game/types';
 import { useTranslation } from 'react-i18next';
+import { moduleShortName } from '../i18n/presentation';
 import { TriggerNode } from './TriggerNode';
 import './ProgramReadout.css';
 
@@ -8,8 +9,13 @@ export function ProgramReadout({ program, engine, maxEnergy }: { program: TowerP
   const { t } = useTranslation();
   const capacityWarning = program.shots.length > 0 && program.energyCost > maxEnergy
     ? t('program.capacity', { required: program.energyCost, capacity: maxEnergy }) : null;
-  const warning = program.diagnostics[0]
-    ? t(`program.diagnostics.${program.diagnostics[0].code}`)
+  const diagnostic = program.diagnostics.find((candidate) => candidate.severity === 'error')
+    ?? program.diagnostics[0];
+  const warning = diagnostic
+    ? t(`program.diagnostics.${diagnostic.code}`, {
+      module: diagnostic.moduleId ? moduleShortName(t, diagnostic.moduleId) : '',
+      related: diagnostic.relatedModuleId ? moduleShortName(t, diagnostic.relatedModuleId) : '',
+    })
     : capacityWarning;
   const hasTrigger = program.shots.some((shot) => shot.trigger);
   const countProjectiles = (shot: ShotBlueprint): number => {

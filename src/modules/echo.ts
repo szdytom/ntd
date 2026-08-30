@@ -24,6 +24,7 @@ const effects: readonly EffectDefinition[] = [
 export const echoModule: ModuleDefinition = {
   id: 'echo',
   kind: 'logic',
+  tags: ['repeat'],
   meta: {
     name: 'Echo Command', shortName: 'Echo', symbol: 'Ⅱ', color, tint: '#f1e7f7', energy: 18, rarity: 'rare',
     text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } },

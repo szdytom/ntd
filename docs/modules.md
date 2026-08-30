@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 31 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 33 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -15,6 +15,7 @@ Projectile modules emit a castable shot and consume all pending modifiers.
 | `nova` | Micro Nova | Impact projectile with area damage |
 | `arcbolt` | Arcbolt Core | Impact projectile that chains damage to nearby enemies |
 | `razor` | Returning Razor | Wide cutting projectile built for repeated contacts |
+| `void-beam` | Void Beam | Collisionless fixed-heading carrier for trail modules |
 
 ## Static payload modules
 
@@ -52,6 +53,7 @@ Modifiers patch the next emitted projectile.
 | ID | Display name | Role |
 | --- | --- | --- |
 | `resonant-trail` | Resonant Trail | Publishes damage waves along the carrier path |
+| `rift-trail` | Riftwake | Leaves persistent damaging spatial rifts along the carrier path |
 
 ## Logic and trigger modules
 

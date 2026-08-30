@@ -25,6 +25,7 @@ const effects: readonly EffectDefinition[] = [
 export const economizerModule: ModuleDefinition = {
   id: 'economizer',
   kind: 'logic',
+  tags: [],
   meta: {
     name: 'Economizer Circuit', shortName: 'Economizer', symbol: '♻', color, tint: '#e3fff7', energy: 3, rarity: 'uncommon',
     text: { detail: {

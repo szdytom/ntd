@@ -20,6 +20,8 @@ If the desired behavior cannot be expressed by `NextShotPatch`, `TriggerSpec`, r
 
 Put gameplay values in a local `stats` constant. Derive compile values, hook behavior, effect geometry where appropriate, and `meta.text` interpolation values from it.
 
+Declare the module's capability `tags` on its definition. Tags are module-owned properties used by compatibility rules; do not maintain reverse lists of module IDs inside a tag or compiler component.
+
 ```ts
 const stats = { speedMultiplier: 1.2 } as const;
 

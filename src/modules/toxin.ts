@@ -23,6 +23,7 @@ const effects: readonly EffectDefinition[] = [
 export const toxinModule: ModuleDefinition = {
   id: 'toxin',
   kind: 'modifier',
+  tags: ['status'],
   meta: {
     name: 'Corrosive Spore', shortName: 'Corrosion', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
     text: { detail: {

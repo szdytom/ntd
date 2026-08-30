@@ -29,6 +29,7 @@ const effects: readonly EffectDefinition[] = [
 export const novaModule: ModuleDefinition = {
   id: 'nova',
   kind: 'projectile',
+  tags: ['projectile', 'area'],
   meta: {
     name: 'Micro Nova', shortName: 'Nova', symbol: '✦', color, tint: '#fff1df', energy: 30, rarity: 'uncommon',
     text: { detail: { damage: stats.damage, radius: stats.splash } },

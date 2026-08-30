@@ -19,6 +19,8 @@ describe('module metadata', () => {
       expect(Number.isFinite(module.meta.energy)).toBe(true);
       expect(module.meta.energy).toBeGreaterThanOrEqual(0);
       expect(Object.keys(MODULE_RARITIES)).toContain(module.meta.rarity);
+      expect(Array.isArray(module.tags)).toBe(true);
+      expect(new Set(module.tags).size).toBe(module.tags.length);
     }
   });
 
@@ -31,5 +33,13 @@ describe('module metadata', () => {
       expect(payload?.lifetime).toBe(payload?.static?.duration);
       expect(payload?.lifetime).toBeGreaterThan(0);
     }
+  });
+
+  it('keeps resonant trail at its authored rare damage tier', () => {
+    const resonance = registry.require('resonant-trail');
+
+    expect(resonance.meta.rarity).toBe('rare');
+    expect(resonance.meta.energy).toBe(32);
+    expect(resonance.meta.text?.detail?.damage).toBe(200);
   });
 });

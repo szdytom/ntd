@@ -1,9 +1,11 @@
 import type { EffectEngine } from '../effects/engine';
 import type { ModuleId, TowerProgram } from '../game/types';
 import { compileProgram } from './compiler';
+import { isIneffectiveCombination } from './compatibility';
 import type {
   ModuleDefinition,
   ModuleEffectContext,
+  ModuleTag,
   ProjectileRenderContext,
   TargetEffectChannel,
 } from './types';
@@ -29,6 +31,10 @@ export class ModuleRegistry {
     const definition = this.get(id);
     if (!definition) throw new Error(`Unknown module: ${id}`);
     return definition;
+  }
+
+  hasTag(id: ModuleId, tag: ModuleTag): boolean {
+    return this.definitions.get(id)?.tags.includes(tag) ?? false;
   }
 
   list(): ModuleDefinition[] {
@@ -59,7 +65,11 @@ export class ModuleRegistry {
     moduleIds: readonly ModuleId[],
     context: ModuleEffectContext,
   ): void {
-    for (const id of moduleIds) this.definitions.get(id)?.[hook]?.(context);
+    for (const id of moduleIds) {
+      const definition = this.definitions.get(id);
+      if (!definition || !this.isEffectiveForShot(definition, context.shot.source)) continue;
+      definition[hook]?.(context);
+    }
   }
 
   dispatchTargetEffect(
@@ -68,7 +78,9 @@ export class ModuleRegistry {
     context: ModuleEffectContext,
   ): void {
     for (const id of moduleIds) {
-      const effect = this.definitions.get(id)?.targetEffect;
+      const definition = this.definitions.get(id);
+      if (!definition || !this.isEffectiveForShot(definition, context.shot.source)) continue;
+      const effect = definition.targetEffect;
       if (effect?.channels.includes(channel)) effect.apply(context);
     }
   }
@@ -77,7 +89,36 @@ export class ModuleRegistry {
     const source = context.projectile.shot.source;
     this.definitions.get(source)?.renderProjectile?.(context);
     for (const id of moduleIds) {
-      if (id !== source) this.definitions.get(id)?.renderProjectile?.(context);
+      const definition = this.definitions.get(id);
+      if (id !== source && definition && this.isEffectiveForShot(definition, source)) {
+        definition.renderProjectile?.(context);
+      }
     }
+  }
+
+  renderProjectileBloom(moduleIds: readonly ModuleId[], context: ProjectileRenderContext): boolean {
+    let rendered = false;
+    const source = context.projectile.shot.source;
+    const sourceRenderer = this.definitions.get(source)?.renderProjectileBloom;
+    if (sourceRenderer) {
+      sourceRenderer(context);
+      rendered = true;
+    }
+    for (const id of moduleIds) {
+      if (id === source) continue;
+      const definition = this.definitions.get(id);
+      if (!definition || !this.isEffectiveForShot(definition, source)) continue;
+      const renderer = definition.renderProjectileBloom;
+      if (!renderer) continue;
+      renderer(context);
+      rendered = true;
+    }
+    return rendered;
+  }
+
+  private isEffectiveForShot(definition: ModuleDefinition, sourceId: ModuleId): boolean {
+    if (definition.id === sourceId) return true;
+    const source = this.definitions.get(sourceId);
+    return !source || !isIneffectiveCombination(definition, source);
   }
 }

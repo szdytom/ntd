@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ENEMIES } from '../src/game/config';
-import { limitEnemyHealthDamage } from '../src/game/enemy-armor';
+import { limitEnemyContinuousHealthDamage, limitEnemyHealthDamage } from '../src/game/enemy-armor';
 import { enemyVisualRotation } from '../src/game/enemy-visuals';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Enemy, Projectile, ShotBlueprint } from '../src/game/types';
@@ -59,6 +59,9 @@ describe('Prism Anvil layered armor elite', () => {
     expect(limitEnemyHealthDamage(cap / 2, config.armor)).toBe(cap / 2);
     expect(limitEnemyHealthDamage(cap, config.armor)).toBe(cap);
     expect(limitEnemyHealthDamage(cap * 10, config.armor)).toBe(cap);
+    const continuousCap = config.armor.continuousDamageCapPerSecond;
+    expect(limitEnemyContinuousHealthDamage(continuousCap * 10, 0.5, config.armor)).toBe(continuousCap * 0.5);
+    expect(limitEnemyContinuousHealthDamage(continuousCap * 10, 1, config.armor)).toBe(continuousCap);
   });
 
   it('rotates slowly independent of its travel direction', () => {

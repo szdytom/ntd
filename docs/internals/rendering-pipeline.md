@@ -35,6 +35,8 @@ Expired instances are recycled up to a fixed pool limit. Rendering reuses painte
 
 When WebGL2 is available, `WebGLBloomPipeline` receives the scene plus a lower-resolution emissive canvas. The emissive texture is blurred horizontally and vertically, then composited with the scene. The composite shader also receives bounded arrays describing shield, singularity, and split distortions.
 
+Rift space uses a lower-resolution mask drawn from the current rift interiors. The composite shader reveals a shared screen-space field of regularly moving violet filaments through that mask, keeping the pattern spatially continuous between separated and crossing cracks without a full-resolution background texture. Mask painting, upload, and the shader branch are suspended unless a fielded tower equips a module with the `rift-space` tag and a rift currently exists.
+
 Shader programs are compiled asynchronously and cached per WebGL context. A tiny warm-up context can populate browser and driver caches before the game canvas needs its programs. Context loss, restoration, resource disposal, and target reallocation are handled inside the pipeline.
 
 If WebGL2 is unavailable, `GameRenderer` obtains a Canvas 2D context from the visible canvas and copies the finished scene directly. Gameplay and effect lifetimes remain unchanged; only bloom and shader distortion are absent.

@@ -33,6 +33,7 @@ const effects: readonly EffectDefinition[] = [
 export const focusCoreModule: ModuleDefinition = {
   id: 'focus-core',
   kind: 'modifier',
+  tags: [],
   meta: {
     name: 'Focus Core', shortName: 'Focus', symbol: '⌁', color, tint: '#ffe6ef', energy: 16, rarity: 'rare',
     text: {

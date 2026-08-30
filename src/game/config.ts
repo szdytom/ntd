@@ -30,6 +30,7 @@ export interface EnemyWaveMovementConfig {
 
 export interface EnemyArmorConfig {
   damageCap: number;
+  continuousDamageCapPerSecond: number;
 }
 
 export interface EnemyAuraConfig {
@@ -124,7 +125,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     sides: 5,
     name: 'Prism Anvil',
     shape: 'anvil',
-    armor: { damageCap: 6 },
+    armor: { damageCap: 6, continuousDamageCapPerSecond: 24 },
   },
   radiant: {
     hp: 390,

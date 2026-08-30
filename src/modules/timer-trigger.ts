@@ -24,6 +24,7 @@ const effects: readonly EffectDefinition[] = [
 export const timerTriggerModule: ModuleDefinition = {
   id: 'timer-trigger',
   kind: 'logic',
+  tags: ['trigger'],
   meta: {
     name: 'Timer Trigger', shortName: 'Timer', symbol: '◷', color, tint: '#fff9d9', energy: 7, rarity: 'common',
     text: { detail: { delay: stats.delay, payloads: stats.payloadCount } },

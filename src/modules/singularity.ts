@@ -45,6 +45,7 @@ const effects: readonly EffectDefinition[] = [
 export const singularityModule: ModuleDefinition = {
   id: 'singularity',
   kind: 'static',
+  tags: ['static', 'area'],
   meta: {
     name: 'Collapse Singularity', shortName: 'Singularity', symbol: '●', color, tint: '#eee8ff', energy: 82, rarity: 'legendary',
     text: { detail: { duration: stats.duration, radius: stats.radius } },

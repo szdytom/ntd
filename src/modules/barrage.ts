@@ -23,6 +23,7 @@ const effects: readonly EffectDefinition[] = [
 export const barrageModule: ModuleDefinition = {
   id: 'barrage',
   kind: 'logic',
+  tags: ['repeat'],
   meta: {
     name: 'Four-Beat Clock', shortName: 'Fourfold', symbol: 'Ⅳ', color, tint: '#ffe7ed', energy: 32, rarity: 'legendary',
     text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } },

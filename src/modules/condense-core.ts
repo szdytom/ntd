@@ -22,6 +22,7 @@ const effects: readonly EffectDefinition[] = [
 export const condenseCoreModule: ModuleDefinition = {
   id: 'condense-core',
   kind: 'modifier',
+  tags: ['area'],
   meta: {
     name: 'Condense Core', shortName: 'Condense', symbol: '⊙', color, tint: '#ffe9ec', energy: 17, rarity: 'uncommon',
     text: { detail: { damage: stats.damagePerRadius * 100 } },

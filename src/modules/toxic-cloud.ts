@@ -51,6 +51,7 @@ const effects: readonly EffectDefinition[] = [
 export const toxicCloudModule: ModuleDefinition = {
   id: 'toxic-cloud',
   kind: 'static',
+  tags: ['static', 'area', 'status'],
   meta: {
     name: 'Emerald Toxic Cloud', shortName: 'Toxic Cloud', symbol: '☁', color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
     text: { detail: {

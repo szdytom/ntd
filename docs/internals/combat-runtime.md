@@ -16,7 +16,7 @@ Slow and status helpers return whether the enemy newly entered the state. A modu
 
 ## Shield, armor, and health ordering
 
-All module damage enters one engine path. Shield absorption happens first. Any overflow is then limited by optional health armor before it reduces hit points and produces death rewards or splitting.
+All module damage enters one engine path. Shield absorption happens first. Any overflow is then limited by optional health armor before it reduces hit points and produces death rewards or splitting. Discrete hits use `damageCap`; continuous effects use `continuousDamageCapPerSecond` multiplied by measured exposure time, so changing their settlement frequency cannot change armor balance.
 
 An active shield participates in collision as a regular polygon rather than a circular approximation. The collision system considers both the shield boundary and enemy body and selects the earliest contact along the projectile's movement segment.
 
@@ -36,8 +36,10 @@ Enemy traits are optional configuration blocks rather than enemy-ID switches in 
 
 - `movement` supplies a periodic speed multiplier while preserving the configured speed as its cycle average;
 - `shield` supplies absorption, regeneration, cooldown, polygon, and visual parameters;
-- `armor` caps health damage after shield overflow;
+- `armor` caps discrete health damage after shield overflow and declares a rate cap for continuous damage;
 - `split` queues a visible rift, then creates one child generation on the parent's fixed route;
 - `aura` changes tower cooldown and energy regeneration inside a radius.
 
 Overlapping auras do not multiply. A tower uses the strongest cooldown penalty and strongest regeneration penalty among living sources. Split parents leave the targetable set immediately, but their pending rift counts as alive for wave completion until children have spawned.
+
+Overlapping spatial rifts likewise settle one continuous-damage stream per enemy. The strongest covering rift owns that tick's damage, target modifiers, hit effect, and energy refund; weaker overlaps retain their visual geometry but do not add another damage stream.

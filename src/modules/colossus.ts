@@ -31,6 +31,7 @@ const effects: readonly EffectDefinition[] = [
 export const colossusModule: ModuleDefinition = {
   id: 'colossus',
   kind: 'modifier',
+  tags: [],
   meta: {
     name: 'Colossus Core', shortName: 'Colossus', symbol: '⬡', color, tint: '#fff0df', energy: 9, rarity: 'rare',
     text: { detail: {

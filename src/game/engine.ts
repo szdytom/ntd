@@ -18,7 +18,7 @@ import {
 } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
-import { limitEnemyHealthDamage } from './enemy-armor';
+import { limitEnemyContinuousHealthDamage, limitEnemyHealthDamage } from './enemy-armor';
 import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
 import { enemyMovementSpeedMultiplier } from './enemy-movement';
 import { findPathInterception } from './interception';
@@ -42,6 +42,8 @@ import type {
   Projectile,
   ScheduledCast,
   ShotBlueprint,
+  SpaceRift,
+  SpaceRiftContact,
   SplitRift,
   TargetingMode,
   Tower,
@@ -101,6 +103,7 @@ export class GameEngine {
   readonly towers: Tower[] = [];
   readonly enemies: Enemy[] = [];
   readonly projectiles: Projectile[] = [];
+  readonly spaceRifts: SpaceRift[] = [];
   readonly floatingTexts: FloatingText[] = [];
   readonly effects = new EffectEngine();
   readonly modules = createModuleRegistry();
@@ -138,6 +141,10 @@ export class GameEngine {
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
   private readonly enemyIndex = new EnemySpatialIndex();
+  private readonly spaceRiftByKey = new Map<string, SpaceRift>();
+  private readonly spaceRiftCoverage = new Map<Enemy, SpaceRift>();
+  private readonly spaceRiftCrossings = new Map<Enemy, Point>();
+  private readonly spaceRiftEnemies = new Map<number, Enemy>();
   private readonly routeCache = new Map<NodeId, PathSampler>();
   private readonly spatialCandidates: Enemy[] = [];
   private readonly nearbyCandidates: Enemy[] = [];
@@ -184,6 +191,7 @@ export class GameEngine {
       projectile.velocity.y = direction.y * projectile.speed;
     },
     displace: (enemy, distanceDelta) => this.displaceEnemy(enemy, distanceDelta),
+    extendRift: (source, key, position, options) => this.extendSpaceRift(source, key, position, options),
   };
 
   constructor(options: GameEngineOptions | number = {}) {
@@ -664,6 +672,8 @@ export class GameEngine {
     this.enemies.length = 0;
     this.enemyIndex.clear();
     this.projectiles.length = 0;
+    this.spaceRifts.length = 0;
+    this.spaceRiftByKey.clear();
     this.effects.clear();
     this.floatingTexts.length = 0;
     this.scheduledCasts.length = 0;
@@ -734,6 +744,7 @@ export class GameEngine {
     this.updateTowers(delta);
     this.updateScheduledCasts(delta);
     this.updateProjectiles(delta);
+    this.updateSpaceRifts(delta);
     this.cleanEntities();
     this.checkWaveEnd(delta);
 
@@ -934,7 +945,7 @@ export class GameEngine {
     const launchOrigin = origin ?? tower.position;
     const triggeredCast = origin !== undefined;
     const spawnDistance = triggeredCast ? 4 : 27;
-    const interception = target && !isStatic
+    const interception = target && !isStatic && blueprint.aim !== 'direct'
       ? findPathInterception({
         origin: launchOrigin,
         path: this.routeForEnemy(target),
@@ -1078,7 +1089,7 @@ export class GameEngine {
         projectile.trail.unshift(trailPoint);
       } else projectile.trail.unshift({ ...projectile.position });
 
-      if (projectile.seeking > 0) {
+      if (projectile.shot.trajectory !== 'fixed' && projectile.seeking > 0) {
         const target = this.resolveSeekingTarget(projectile);
         if (target) {
           const desiredAngle = angleBetween(projectile.position, target.position);
@@ -1097,8 +1108,25 @@ export class GameEngine {
       movementStart.y = projectile.position.y;
       movementEnd.x = movementStart.x + projectile.velocity.x * delta;
       movementEnd.y = movementStart.y + projectile.velocity.y * delta;
+      let reachedWorldBoundary = false;
+      if (
+        projectile.shot.boundary === 'world' &&
+        (movementEnd.x < 0 || movementEnd.x > WORLD.width || movementEnd.y < 0 || movementEnd.y > WORLD.height)
+      ) {
+        let exitTime = 1;
+        const dx = movementEnd.x - movementStart.x;
+        const dy = movementEnd.y - movementStart.y;
+        if (dx < 0) exitTime = Math.min(exitTime, (0 - movementStart.x) / dx);
+        else if (dx > 0) exitTime = Math.min(exitTime, (WORLD.width - movementStart.x) / dx);
+        if (dy < 0) exitTime = Math.min(exitTime, (0 - movementStart.y) / dy);
+        else if (dy > 0) exitTime = Math.min(exitTime, (WORLD.height - movementStart.y) / dy);
+        movementEnd.x = movementStart.x + dx * Math.max(0, exitTime);
+        movementEnd.y = movementStart.y + dy * Math.max(0, exitTime);
+        reachedWorldBoundary = true;
+      }
       projectile.position.x = movementEnd.x;
       projectile.position.y = movementEnd.y;
+      if (reachedWorldBoundary) projectile.trailTimer = 0;
       projectile.trailTimer -= delta;
       if (projectile.trailTimer <= 0) {
         projectile.trailTimer = 0.065;
@@ -1113,7 +1141,9 @@ export class GameEngine {
         });
       }
 
-      const hit = this.findFirstProjectileHit(projectile, movementStart, movementEnd);
+      const hit = projectile.shot.collision !== 'none'
+        ? this.findFirstProjectileHit(projectile, movementStart, movementEnd)
+        : null;
       if (hit) {
         projectile.position.x = movementStart.x + (movementEnd.x - movementStart.x) * hit.time;
         projectile.position.y = movementStart.y + (movementEnd.y - movementStart.y) * hit.time;
@@ -1141,9 +1171,10 @@ export class GameEngine {
         }
       }
 
-      const outsideWorld =
+      const outsideWorld = reachedWorldBoundary || (
         projectile.position.x < -60 || projectile.position.x > WORLD.width + 60 ||
-        projectile.position.y < -60 || projectile.position.y > WORLD.height + 60;
+        projectile.position.y < -60 || projectile.position.y > WORLD.height + 60
+      );
       if (outsideWorld) projectile.life = 0;
       if (
         projectile.shot.trigger?.type === 'expiration' &&
@@ -1153,6 +1184,214 @@ export class GameEngine {
       ) {
         projectile.triggered = true;
         this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+      }
+    }
+  }
+
+  private extendSpaceRift(
+    source: Projectile,
+    localKey: string,
+    position: Point,
+    options: Parameters<ModuleCombatApi['extendRift']>[3],
+  ): void {
+    const key = `${source.id}:${localKey}`;
+    let rift = this.spaceRiftByKey.get(key);
+    if (!rift) {
+      const start = source.trail[0] ?? source.position;
+      rift = {
+        id: this.nextId++,
+        key,
+        points: [this.offsetRiftPoint(source, start, options.jitter ?? 0, 0)],
+        width: options.width,
+        damagePerSecond: options.damagePerSecond,
+        settlementInterval: Math.max(FIXED_SIMULATION_STEP, options.settlementInterval),
+        modifierInterval: Math.max(FIXED_SIMULATION_STEP, options.modifierInterval),
+        effectInterval: Math.max(FIXED_SIMULATION_STEP, options.effectInterval),
+        color: options.color,
+        source,
+        contacts: new Map(),
+        remaining: options.duration,
+        duration: options.duration,
+        ...(options.hitEffectId ? { hitEffectId: options.hitEffectId } : {}),
+      };
+      this.spaceRifts.push(rift);
+      this.spaceRiftByKey.set(key, rift);
+    }
+    rift.width = options.width;
+    rift.damagePerSecond = options.damagePerSecond;
+    rift.settlementInterval = Math.max(FIXED_SIMULATION_STEP, options.settlementInterval);
+    rift.modifierInterval = Math.max(FIXED_SIMULATION_STEP, options.modifierInterval);
+    rift.effectInterval = Math.max(FIXED_SIMULATION_STEP, options.effectInterval);
+    rift.duration = options.duration;
+    rift.remaining = options.duration;
+    const nextPoint = this.offsetRiftPoint(source, position, options.jitter ?? 0, rift.points.length);
+    const last = rift.points[rift.points.length - 1];
+    if (last && Math.hypot(nextPoint.x - last.x, nextPoint.y - last.y) < 0.25) return;
+    rift.points.push(nextPoint);
+  }
+
+  private offsetRiftPoint(source: Projectile, point: Point, jitter: number, index: number): Point {
+    if (jitter <= 0) return { ...point };
+    const velocityLength = Math.hypot(source.velocity.x, source.velocity.y) || 1;
+    const normalX = -source.velocity.y / velocityLength;
+    const normalY = source.velocity.x / velocityLength;
+    const forwardX = source.velocity.x / velocityLength;
+    const forwardY = source.velocity.y / velocityLength;
+    const lateral = (seededNoise(source.id * 997 + index * 67) - 0.5) * jitter * 2;
+    const longitudinal = (seededNoise(source.id * 613 + index * 43) - 0.5) * jitter * 0.35;
+    return {
+      x: point.x + normalX * lateral + forwardX * longitudinal,
+      y: point.y + normalY * lateral + forwardY * longitudinal,
+    };
+  }
+
+  private updateSpaceRifts(delta: number): void {
+    if (this.spaceRifts.length === 0) {
+      this.spaceRiftCoverage.clear();
+      this.spaceRiftCrossings.clear();
+      this.spaceRiftEnemies.clear();
+      return;
+    }
+    this.spaceRiftEnemies.clear();
+    for (const enemy of this.enemies) {
+      if (!enemy.dead) this.spaceRiftEnemies.set(enemy.id, enemy);
+    }
+    let aliveCount = 0;
+    for (const rift of this.spaceRifts) {
+      if (rift.source.life <= 0) rift.remaining -= delta;
+      if (rift.remaining <= 0) {
+        for (const [enemyId, contact] of rift.contacts) {
+          const enemy = this.spaceRiftEnemies.get(enemyId);
+          if (enemy) this.settleSpaceRiftContact(rift, enemy, contact, true);
+        }
+        this.spaceRiftByKey.delete(rift.key);
+        continue;
+      }
+      this.spaceRifts[aliveCount] = rift;
+      aliveCount += 1;
+    }
+    this.spaceRifts.length = aliveCount;
+    this.spaceRiftCoverage.clear();
+    this.spaceRiftCrossings.clear();
+
+    for (const enemy of this.spaceRiftEnemies.values()) {
+      for (const rift of this.spaceRifts) {
+        if (rift.points.length < 2) continue;
+        const coveredBy = this.spaceRiftCoverage.get(enemy);
+        if (coveredBy && coveredBy.damagePerSecond >= rift.damagePerSecond) continue;
+        const crossing = this.findSpaceRiftCrossing(rift, enemy);
+        if (!crossing) continue;
+        this.spaceRiftCoverage.set(enemy, rift);
+        this.spaceRiftCrossings.set(enemy, crossing);
+      }
+    }
+
+    for (const rift of this.spaceRifts) {
+      const nextContacts = new Map<number, SpaceRiftContact>();
+      for (const [enemyId, previousContact] of rift.contacts) {
+        const enemy = this.spaceRiftEnemies.get(enemyId);
+        if (enemy && this.spaceRiftCoverage.get(enemy) !== rift) {
+          this.settleSpaceRiftContact(rift, enemy, previousContact, true);
+        }
+      }
+      for (const [enemy, coveredBy] of this.spaceRiftCoverage) {
+        if (coveredBy !== rift || enemy.dead) continue;
+        const crossing = this.spaceRiftCrossings.get(enemy);
+        if (!crossing) continue;
+        const contact = rift.contacts.get(enemy.id) ?? {
+          pendingDamage: 0,
+          pendingDuration: 0,
+          pendingModifierDamage: 0,
+          settlementTimer: rift.settlementInterval,
+          modifierTimer: 0,
+          effectTimer: 0,
+          lastPosition: crossing,
+        };
+        contact.lastPosition = crossing;
+        contact.pendingDamage += rift.damagePerSecond * delta;
+        contact.pendingDuration += delta;
+        contact.settlementTimer -= delta;
+        contact.modifierTimer -= delta;
+        contact.effectTimer -= delta;
+        if (contact.settlementTimer <= SIMULATION_TIME_EPSILON) {
+          while (contact.settlementTimer <= SIMULATION_TIME_EPSILON) {
+            contact.settlementTimer += rift.settlementInterval;
+          }
+          this.settleSpaceRiftContact(rift, enemy, contact, false);
+        }
+        if (!enemy.dead) nextContacts.set(enemy.id, contact);
+      }
+      rift.contacts = nextContacts;
+    }
+  }
+
+  private findSpaceRiftCrossing(rift: SpaceRift, enemy: Enemy): Point | null {
+    const radius = enemy.radius + rift.width * 0.5;
+    const radiusSquared = radius * radius;
+    for (let index = 1; index < rift.points.length; index += 1) {
+      const start = rift.points[index - 1];
+      const end = rift.points[index];
+      if (!start || !end) continue;
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const lengthSquared = dx * dx + dy * dy;
+      const projection = lengthSquared <= Number.EPSILON ? 0 : Math.max(0, Math.min(1,
+        ((enemy.position.x - start.x) * dx + (enemy.position.y - start.y) * dy) / lengthSquared,
+      ));
+      const x = start.x + dx * projection;
+      const y = start.y + dy * projection;
+      const offsetX = enemy.position.x - x;
+      const offsetY = enemy.position.y - y;
+      if (offsetX * offsetX + offsetY * offsetY <= radiusSquared) return { x, y };
+    }
+    return null;
+  }
+
+  private settleSpaceRiftContact(
+    rift: SpaceRift,
+    enemy: Enemy,
+    contact: SpaceRiftContact,
+    flushModifier: boolean,
+  ): void {
+    if (contact.pendingDamage > SIMULATION_TIME_EPSILON && contact.pendingDuration > 0) {
+      const result = this.applyDamage(
+        enemy,
+        contact.pendingDamage,
+        rift.color,
+        contact.pendingDuration,
+      );
+      contact.pendingDamage = 0;
+      contact.pendingDuration = 0;
+      if (result.healthDamage > 0) {
+        this.refundProjectileEnergy(rift.source, result.healthDamage);
+        contact.pendingModifierDamage += result.healthDamage;
+        if (rift.hitEffectId && contact.effectTimer <= SIMULATION_TIME_EPSILON) {
+          this.effects.spawn(rift.hitEffectId, {
+            position: contact.lastPosition,
+            color: rift.color,
+          });
+          while (contact.effectTimer <= SIMULATION_TIME_EPSILON) {
+            contact.effectTimer += rift.effectInterval;
+          }
+        }
+      }
+    }
+    if (
+      contact.pendingModifierDamage > 0 &&
+      (flushModifier || contact.modifierTimer <= SIMULATION_TIME_EPSILON)
+    ) {
+      this.dispatchTargetEffect(
+        rift.source,
+        enemy,
+        'damage',
+        contact.pendingModifierDamage,
+      );
+      contact.pendingModifierDamage = 0;
+      if (flushModifier) contact.modifierTimer = rift.modifierInterval;
+      else {
+        while (contact.modifierTimer <= SIMULATION_TIME_EPSILON) {
+          contact.modifierTimer += rift.modifierInterval;
+        }
       }
     }
   }
@@ -1352,13 +1591,19 @@ export class GameEngine {
     this.enemyIndex.update(enemy);
   }
 
-  private applyDamage(enemy: Enemy, damage: number, color: string) {
+  private applyDamage(enemy: Enemy, damage: number, color: string, continuousDuration?: number) {
     if (enemy.dead) return { absorbed: 0, healthDamage: 0, broke: false };
     const shieldConfig = ENEMIES[enemy.type].shield;
     const shieldResult = absorbShieldDamage(enemy, damage * this.difficulty.towerDamage, shieldConfig);
     const result = {
       ...shieldResult,
-      healthDamage: limitEnemyHealthDamage(shieldResult.healthDamage, ENEMIES[enemy.type].armor),
+      healthDamage: continuousDuration === undefined
+        ? limitEnemyHealthDamage(shieldResult.healthDamage, ENEMIES[enemy.type].armor)
+        : limitEnemyContinuousHealthDamage(
+          shieldResult.healthDamage,
+          continuousDuration,
+          ENEMIES[enemy.type].armor,
+        ),
     };
     enemy.hitFlash = 1;
     if (result.absorbed > 0 && shieldConfig) {
