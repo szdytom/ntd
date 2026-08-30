@@ -86,12 +86,14 @@ describe('static proximity detection', () => {
       ...compiledShot,
       static: { ...compiledShot.static, armTime: 0 },
     };
-    placeEnemy(engine, enemy, 173, 0);
-    const projectile = createStaticProjectile(engine, shot, 100);
+    const mineDistance = 100;
+    const overlapWithoutCenterEntry = Math.min(enemy.radius / 2, shot.static.triggerRadius / 2);
+    placeEnemy(engine, enemy, mineDistance + shot.static.triggerRadius + overlapWithoutCenterEntry, 0);
+    const projectile = createStaticProjectile(engine, shot, mineDistance);
 
     engine.update(FIXED_SIMULATION_STEP);
 
-    expect(enemy.radius).toBeGreaterThan(173 - 100 - shot.static.triggerRadius);
+    expect(enemy.radius).toBeGreaterThan(overlapWithoutCenterEntry);
     expect(projectile.triggerCount).toBe(0);
   });
 
@@ -106,8 +108,9 @@ describe('static proximity detection', () => {
       ...compiledShot,
       static: { ...compiledShot.static, armTime: 0 },
     };
-    placeEnemy(engine, enemy, 171, 0);
-    const projectile = createStaticProjectile(engine, shot, 100);
+    const mineDistance = 100;
+    placeEnemy(engine, enemy, mineDistance + shot.static.triggerRadius - 1, 0);
+    const projectile = createStaticProjectile(engine, shot, mineDistance);
 
     engine.update(FIXED_SIMULATION_STEP);
 

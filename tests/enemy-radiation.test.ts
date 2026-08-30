@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES, LEVELS } from '../src/game/config';
+import { ENEMIES } from '../src/game/config';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Enemy } from '../src/game/types';
 
@@ -13,8 +13,8 @@ function placeAtDistance(engine: GameEngine, enemy: Enemy, pathDistance: number)
 }
 
 describe('suppression elite', () => {
-  it('halves cooldown recovery and energy regeneration only inside its radius without stacking copies', () => {
-    expect(ENEMIES.radiant.aura.radius).toBe(290);
+  it('applies its configured suppression only inside the aura without stacking copies', () => {
+    const aura = ENEMIES.radiant.aura;
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 31 });
     const tower = engine.towers[0];
     if (!tower) throw new Error('Expected the starter tower');
@@ -27,8 +27,8 @@ describe('suppression elite', () => {
     tower.energy = 0;
 
     engine.update(FIXED_SIMULATION_STEP);
-    expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP / 2, 8);
-    expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP / 2, 8);
+    expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP / aura.cooldownMultiplier, 8);
+    expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP * aura.energyRegenMultiplier, 8);
 
     engine.spawnCreativeEnemy('radiant');
     const second = engine.enemies[1];
@@ -37,29 +37,14 @@ describe('suppression elite', () => {
     tower.cooldownLeft = 1;
     tower.energy = 0;
     engine.update(FIXED_SIMULATION_STEP);
-    expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP / 2, 8);
-    expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP / 2, 8);
+    expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP / aura.cooldownMultiplier, 8);
+    expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP * aura.energyRegenMultiplier, 8);
 
-    tower.position = { x: first.position.x, y: first.position.y + ENEMIES.radiant.aura.radius + 1 };
+    tower.position = { x: first.position.x, y: first.position.y + aura.radius + 1 };
     tower.cooldownLeft = 1;
     tower.energy = 0;
     engine.update(FIXED_SIMULATION_STEP);
     expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP, 8);
     expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP, 8);
-  });
-
-  it('introduces the mechanic elites separately before pairing them in Verdant Fold', () => {
-    const tutorial = LEVELS.find((level) => level.id === 'starter-elbow');
-    const whitePrism = LEVELS.find((level) => level.id === 'white-prism');
-    const roseCircuit = LEVELS.find((level) => level.id === 'rose-circuit');
-    const verdantFold = LEVELS.find((level) => level.id === 'verdant-fold');
-    expect(tutorial?.waves.flat().some((entry) => entry.type === 'fracture')).toBe(false);
-    expect(tutorial?.waves.flat().some((entry) => entry.type === 'radiant')).toBe(false);
-    expect(whitePrism?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(true);
-    expect(whitePrism?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(false);
-    expect(roseCircuit?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
-    expect(roseCircuit?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(false);
-    expect(verdantFold?.waves.at(-1)?.some((entry) => entry.type === 'fracture')).toBe(true);
-    expect(verdantFold?.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
   });
 });

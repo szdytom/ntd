@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ENEMIES } from '../src/game/config';
 import { FIXED_SIMULATION_STEP, FRACTURE_SPLIT_DELAY, GameEngine } from '../src/game/engine';
 import type { Enemy, Projectile } from '../src/game/types';
 
@@ -48,7 +49,8 @@ function addLethalProjectile(engine: GameEngine, enemy: Enemy): void {
 }
 
 describe('splitting enemies', () => {
-  it('replaces a defeated fracture core with three smaller non-splitting copies', () => {
+  it('replaces a defeated fracture core with configured non-splitting copies', () => {
+    const split = ENEMIES.fracture.split;
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 29 });
     engine.spawnCreativeEnemy('fracture');
     const parent = engine.enemies[0];
@@ -73,16 +75,19 @@ describe('splitting enemies', () => {
     engine.update(FIXED_SIMULATION_STEP);
 
     const children = engine.enemies.filter((enemy) => enemy.type === 'fracture');
-    expect(children).toHaveLength(3);
+    expect(children).toHaveLength(split.count);
     expect(engine.enemies).not.toContain(parent);
     expect(engine.getSplitRifts()).toHaveLength(1);
     expect(children.every((enemy) => enemy.splitGeneration === 1)).toBe(true);
     expect(children.every((enemy) => enemy.routeId === parent.routeId)).toBe(true);
     expect(children.every((enemy) => enemy.radius < parentRadius)).toBe(true);
-    expect(children.every((enemy) => enemy.maxHp === Math.round(parentHp * 0.3))).toBe(true);
-    expect(children.map((enemy) => enemy.distance - parent.distance)).toEqual([-25, 0, 25]);
-    expect(children.every((enemy) => enemy.speed === parentSpeed * 1.35)).toBe(true);
-    expect(children.every((enemy) => enemy.reward === 8 && enemy.coreDamage === 2)).toBe(true);
+    expect(children.every((enemy) => enemy.maxHp === Math.round(parentHp * split.healthScale))).toBe(true);
+    expect(children.map((enemy) => enemy.distance - parent.distance)).toEqual(
+      Array.from({ length: split.count }, (_, index) => (index - (split.count - 1) / 2) * split.spacing),
+    );
+    expect(children.every((enemy) => enemy.speed === parentSpeed * split.speedScale)).toBe(true);
+    expect(children.every((enemy) => enemy.reward === Math.round(ENEMIES.fracture.reward * split.rewardScale))).toBe(true);
+    expect(children.every((enemy) => enemy.coreDamage === Math.max(1, Math.round(ENEMIES.fracture.coreDamage * split.coreDamageScale)))).toBe(true);
     expect(engine.status).toBe('wave');
 
     const [child, ...siblings] = children;

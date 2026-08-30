@@ -13,12 +13,12 @@ function shieldEnemy(): Enemy {
     distance: 0,
     position: { x: 0, y: 0 },
     angle: 0,
-    hp: 420,
-    maxHp: 420,
+    hp: 100,
+    maxHp: 100,
     speed: 0,
     reward: 0,
-    coreDamage: 8,
-    radius: 29,
+    coreDamage: 1,
+    radius: 10,
     splitGeneration: 0,
     slowFactor: 0,
     slowTime: 0,
@@ -32,9 +32,20 @@ function shieldEnemy(): Enemy {
 describe('enemy shield', () => {
   it('absorbs damage before health and carries overflow', () => {
     const enemy = shieldEnemy();
+    const firstHit = enemy.maxShield * 0.4;
+    const remainingShield = enemy.maxShield - firstHit;
+    const overflow = enemy.maxShield * 0.25;
 
-    expect(absorbShieldDamage(enemy, 100, shieldConfig)).toEqual({ absorbed: 100, healthDamage: 0, broke: false });
-    expect(absorbShieldDamage(enemy, 200, shieldConfig)).toEqual({ absorbed: 140, healthDamage: 60, broke: true });
+    expect(absorbShieldDamage(enemy, firstHit, shieldConfig)).toEqual({
+      absorbed: firstHit,
+      healthDamage: 0,
+      broke: false,
+    });
+    expect(absorbShieldDamage(enemy, remainingShield + overflow, shieldConfig)).toEqual({
+      absorbed: remainingShield,
+      healthDamage: overflow,
+      broke: true,
+    });
     expect(enemy.shield).toBe(-shieldConfig.cooldown * shieldConfig.regen);
   });
 

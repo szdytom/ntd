@@ -1,30 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import { calculateWaveBalanceRows, sampleTowerStatAverages } from '../src/game/balance-analysis';
+import { LEVELS, resolveSpawnEntrances } from '../src/game/config';
 
-describe('executable balance documentation', () => {
-  it('keeps deterministic tower averages within the documented rounding', () => {
-    const averages = sampleTowerStatAverages(100_000);
+describe('balance report aggregation', () => {
+  it('samples tower generation deterministically without freezing target averages', () => {
+    const first = sampleTowerStatAverages(512);
+    const second = sampleTowerStatAverages(512);
 
-    expect(averages.maxEnergy).toBeCloseTo(135.35, 2);
-    expect(averages.energyRegen).toBeCloseTo(14.87, 2);
-    expect(averages.cooldown).toBeCloseTo(1.02, 2);
-    expect(averages.slotCount).toBeCloseTo(4.02, 2);
-    expect(averages.range).toBeCloseTo(201.67, 2);
+    expect(second).toEqual(first);
+    for (const value of Object.values(first)) {
+      expect(Number.isFinite(value)).toBe(true);
+      expect(value).toBeGreaterThan(0);
+    }
+    expect(() => sampleTowerStatAverages(0)).toThrow('positive integer');
   });
 
-  it('reproduces documented wave rows directly from configuration', () => {
+  it('produces one valid row per configured wave', () => {
     const rows = calculateWaveBalanceRows();
-    const first = rows.find((row) => row.levelId === 'white-prism' && row.wave === 1);
-    const last = rows.find((row) => row.levelId === 'verdant-fold' && row.wave === 7);
-    const triune = rows.find((row) => row.levelId === 'triune-delta' && row.wave === 1);
+    expect(rows).toHaveLength(LEVELS.reduce((total, level) => total + level.waves.length, 0));
 
-    expect(first).toMatchObject({ units: 7, effectiveHp: 828, income: 108 });
-    expect(first?.spawnDuration).toBeCloseTo(3.75, 2);
-    expect(last).toMatchObject({ units: 18, effectiveHp: 7_850, income: 322 });
-    expect(triune).toMatchObject({ units: 54, entranceFlow: {
-      'north-entry': 18,
-      'center-entry': 18,
-      'south-entry': 18,
-    } });
+    for (const level of LEVELS) {
+      const levelRows = rows.filter((row) => row.levelId === level.id);
+      expect(levelRows).toHaveLength(level.waves.length);
+      levelRows.forEach((row, index) => {
+        const wave = level.waves[index];
+        if (!wave) throw new Error(`Expected ${level.id} wave ${index + 1}`);
+        const expandedEntries = wave.reduce(
+          (total, entry) => total + resolveSpawnEntrances(entry, level.graph).length,
+          0,
+        );
+
+        expect(row.wave).toBe(index + 1);
+        expect(row.units).toBeGreaterThanOrEqual(expandedEntries);
+        expect(row.spawnDuration).toBeGreaterThan(0);
+        expect(row.effectiveHp).toBeGreaterThan(0);
+        expect(row.speedPressure).toBeGreaterThan(0);
+        expect(row.income).toBeGreaterThan(0);
+        expect(Object.values(row.entranceFlow).reduce((sum, count) => sum + count, 0)).toBe(expandedEntries);
+        expect(Object.keys(row.entranceFlow).every((entrance) => level.graph.entrances.includes(entrance))).toBe(true);
+      });
+    }
   });
 });

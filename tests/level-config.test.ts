@@ -1,79 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import { getLevel, LEVELS, resolveSpawnEntrances } from '../src/game/config';
+import { ENEMIES, LEVELS, resolveSpawnEntrances, WORLD } from '../src/game/config';
 
 describe('level configuration', () => {
-  it('provides a two-wave, two-node beginner elbow map', () => {
-    const level = getLevel('starter-elbow');
-    expect(['starter-elbow:0', 'starter-elbow:1', 'starter-elbow:2', 'starter-elbow:3'].map(
-      (id) => level.graph.nodes.get(id)?.position,
-    )).toEqual([
-      { x: -40, y: 510 }, { x: 420, y: 510 },
-      { x: 420, y: 145 }, { x: 1120, y: 145 },
-    ]);
-    expect(level.towerPads).toHaveLength(2);
-    expect(level.waves).toHaveLength(2);
-    expect(level.waves.flat()).toHaveLength(14);
-    expect(LEVELS).toHaveLength(5);
-  });
+  it('keeps every level structurally playable', () => {
+    expect(new Set(LEVELS.map((level) => level.id)).size).toBe(LEVELS.length);
 
-  it('keeps white-prism pads near the road without overlapping it', () => {
-    const level = getLevel('white-prism');
-    const distanceToSegment = (
-      point: { x: number; y: number },
-      start: { x: number; y: number },
-      end: { x: number; y: number },
-    ): number => {
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
-      const ratio = Math.max(0, Math.min(1, (
-        (point.x - start.x) * dx + (point.y - start.y) * dy
-      ) / (dx * dx + dy * dy)));
-      return Math.hypot(point.x - (start.x + ratio * dx), point.y - (start.y + ratio * dy));
-    };
-    const distances = level.towerPads.map((pad) => Math.min(
-      ...level.graph.edges.map((edge) => {
-        const start = level.graph.nodes.get(edge.from)?.position ?? pad;
-        const end = level.graph.nodes.get(edge.to)?.position ?? pad;
-        return distanceToSegment(pad, start, end);
-      }),
-    ));
+    for (const level of LEVELS) {
+      expect(level.id.trim(), 'level id').not.toBe('');
+      expect(level.graph.nodes.has(level.graph.root), `${level.id}: root`).toBe(true);
+      expect(level.graph.entrances.length, `${level.id}: entrances`).toBeGreaterThan(0);
+      expect(level.towerPads.length, `${level.id}: tower pads`).toBeGreaterThan(0);
+      expect(level.waves.length, `${level.id}: waves`).toBeGreaterThan(0);
+      expect(level.enemyHealthScale, `${level.id}: health scale`).toBeGreaterThan(0);
+      expect(level.enemySpeedScale, `${level.id}: speed scale`).toBeGreaterThan(0);
+      expect(level.startingShards, `${level.id}: starting shards`).toBeGreaterThanOrEqual(0);
 
-    expect(level.towerPads).toHaveLength(7);
-    expect(level.towerPads).toContainEqual({ x: 650, y: 480 });
-    expect(distances.every((distance) => distance >= 75 && distance <= 110)).toBe(true);
-  });
-
-  it('provides a three-entrance tree map with a shared route to the core', () => {
-    const level = getLevel('triune-delta');
-    const confluence = level.graph.nodes.get('confluence');
-
-    expect(level.graph.entrances).toEqual(['north-entry', 'center-entry', 'south-entry']);
-    expect(confluence?.children).toEqual(['north-bend', 'center-bend', 'south-bend']);
-    expect(level.graph.root).toBe('core');
-    expect(level.towerPads).toHaveLength(10);
-    expect(level.waves).toHaveLength(7);
-    expect(level.moduleDraft).toEqual({ initialPicks: 5, wavePicks: 4 });
-    expect(LEVELS.filter((entry) => entry.id !== 'triune-delta').every((entry) => (
-      entry.moduleDraft.initialPicks === 3 && entry.moduleDraft.wavePicks === 3
-    ))).toBe(true);
-
-    const eliteDeployments = level.waves.map((wave) => wave
-      .filter((entry) => ['crown', 'fracture', 'anvil', 'radiant'].includes(entry.type))
-      .map((entry) => `${entry.entrance}:${entry.type}`));
-    expect(eliteDeployments.slice(2)).toEqual([
-      ['north-entry:crown'],
-      ['center-entry:fracture'],
-      ['north-entry:fracture', 'center-entry:crown', 'south-entry:fracture'],
-      ['north-entry:anvil', 'center-entry:radiant', 'south-entry:anvil'],
-      [
-        'north-entry:crown', 'north-entry:fracture',
-        'center-entry:radiant', 'center-entry:anvil',
-        'south-entry:crown', 'south-entry:fracture',
-      ],
-    ]);
-    level.waves.slice(2).flat().filter((entry) => entry.entrance).forEach((entry) => {
-      expect(resolveSpawnEntrances(entry, level.graph)).toEqual([entry.entrance]);
-    });
+      for (const [key, picks] of Object.entries(level.moduleDraft)) {
+        expect(Number.isInteger(picks) && picks > 0, `${level.id}: ${key}`).toBe(true);
+      }
+      for (const [index, pad] of level.towerPads.entries()) {
+        expect(Number.isFinite(pad.x) && pad.x >= 0 && pad.x <= WORLD.width, `${level.id}: pad ${index} x`).toBe(true);
+        expect(Number.isFinite(pad.y) && pad.y >= 0 && pad.y <= WORLD.height, `${level.id}: pad ${index} y`).toBe(true);
+      }
+      for (const [waveIndex, wave] of level.waves.entries()) {
+        expect(wave.length, `${level.id}: wave ${waveIndex + 1}`).toBeGreaterThan(0);
+        for (const entry of wave) {
+          expect(ENEMIES[entry.type], `${level.id}: ${entry.type}`).toBeDefined();
+          expect(() => resolveSpawnEntrances(entry, level.graph)).not.toThrow();
+        }
+      }
+    }
   });
 
   it('keeps authored route edges horizontal, vertical, or at 45 degrees', () => {

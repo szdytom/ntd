@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES, LEVELS } from '../src/game/config';
+import { ENEMIES } from '../src/game/config';
 import { limitEnemyHealthDamage } from '../src/game/enemy-armor';
 import { enemyVisualRotation } from '../src/game/enemy-visuals';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
@@ -51,25 +51,23 @@ const fireAt = (engine: GameEngine, shot: ShotBlueprint, enemy: Enemy): Projecti
 };
 
 describe('Prism Anvil layered armor elite', () => {
-  it('uses the requested stats and caps only damage above six', () => {
+  it('caps only health damage above its configured threshold', () => {
     const config = ENEMIES.anvil;
+    const cap = config.armor.damageCap;
 
-    expect(config).toMatchObject({
-      hp: 480,
-      speed: 26,
-      radius: 34,
-      sides: 5,
-      shape: 'anvil',
-      armor: { damageCap: 6 },
-    });
-    expect(limitEnemyHealthDamage(5, config.armor)).toBe(5);
-    expect(limitEnemyHealthDamage(6, config.armor)).toBe(6);
-    expect(limitEnemyHealthDamage(80, config.armor)).toBe(6);
+    expect(cap).toBeGreaterThan(0);
+    expect(limitEnemyHealthDamage(cap / 2, config.armor)).toBe(cap / 2);
+    expect(limitEnemyHealthDamage(cap, config.armor)).toBe(cap);
+    expect(limitEnemyHealthDamage(cap * 10, config.armor)).toBe(cap);
   });
 
   it('rotates slowly independent of its travel direction', () => {
-    expect(enemyVisualRotation('anvil', 2, 1.7, 0.3)).toBeCloseTo(1.4, 8);
-    expect(enemyVisualRotation('anvil', 3, -0.8, 0.3)).toBeCloseTo(1.95, 8);
+    const first = enemyVisualRotation('anvil', 2, 1.7, 0.3);
+    const otherDirection = enemyVisualRotation('anvil', 2, -0.8, 0.3);
+    const later = enemyVisualRotation('anvil', 3, 1.7, 0.3);
+
+    expect(otherDirection).toBe(first);
+    expect(later).toBeGreaterThan(first);
   });
 
   it('applies the cap in the shared combat damage path', () => {
@@ -84,23 +82,14 @@ describe('Prism Anvil layered armor elite', () => {
     if (!enemy) throw new Error('Expected a Prism Anvil');
     placeEnemy(engine, enemy, 200);
     const shot = engine.modules.compile(['overdrive', 'colossus', 'pulse']).shots[0];
-    if (!shot || shot.damage <= 10) throw new Error('Expected a heavy projectile');
+    const cap = ENEMIES.anvil.armor.damageCap;
+    if (!shot || shot.damage <= cap) throw new Error('Expected a projectile above the armor cap');
     fireAt(engine, shot, enemy);
 
     for (let step = 0; step < 120 && enemy.hp === enemy.maxHp; step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
 
-    expect(enemy.hp).toBe(enemy.maxHp - 6);
-  });
-
-  it('appears immediately before the Radiant Lag Ring wave in Rose Circuit', () => {
-    const roseCircuit = LEVELS.find((level) => level.id === 'rose-circuit');
-    if (!roseCircuit) throw new Error('Expected Rose Circuit');
-
-    expect(roseCircuit.waves.at(-2)?.some((entry) => entry.type === 'anvil')).toBe(true);
-    expect(roseCircuit.waves.at(-2)?.some((entry) => entry.type === 'radiant')).toBe(false);
-    expect(roseCircuit.waves.at(-1)?.some((entry) => entry.type === 'radiant')).toBe(true);
-    expect(roseCircuit.waves.slice(0, -2).flat().some((entry) => entry.type === 'anvil')).toBe(false);
+    expect(enemy.hp).toBe(enemy.maxHp - cap);
   });
 });

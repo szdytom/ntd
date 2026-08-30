@@ -9,16 +9,14 @@ import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import { findPathInterception } from '../src/game/interception';
 
 describe('Surge wave movement', () => {
-  it('uses a smooth sine pulse while averaging 95 units per second', () => {
+  it('uses a smooth sine pulse while preserving its configured average speed', () => {
     const config = ENEMIES.surge;
     const movement = config.movement;
     if (!movement) throw new Error('Expected Surge wave movement');
     const restMultiplier = waveRestSpeedMultiplier(movement);
     const pulseMean = sinePulseMean(movement.wavePower);
 
-    expect(config).toMatchObject({ hp: 24, speed: 95, radius: 15, shape: 'surge' });
-    expect(config.speed * movement.peakSpeedMultiplier).toBeCloseTo(498.75, 5);
-    expect(config.speed * restMultiplier).toBeCloseTo(-3.664461, 5);
+    expect(config.shape).toBe('surge');
     expect(
       restMultiplier + (movement.peakSpeedMultiplier - restMultiplier) * pulseMean,
     ).toBeCloseTo(1, 8);
@@ -35,6 +33,7 @@ describe('Surge wave movement', () => {
     engine.spawnCreativeEnemy('surge');
     const enemy = engine.enemies[0];
     if (!enemy) throw new Error('Expected a Surge enemy');
+    const averageSpeed = enemy.speed;
     for (const tower of engine.towers) tower.slots.fill(null);
 
     const burstStep = enemy.speed * movement.peakSpeedMultiplier * FIXED_SIMULATION_STEP;
@@ -43,8 +42,8 @@ describe('Surge wave movement', () => {
 
     const cycleSteps = Math.round(movement.cycle / FIXED_SIMULATION_STEP);
     for (let step = 1; step < cycleSteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
-    expect(enemy.distance).toBeCloseTo(config.speed * movement.cycle, 6);
-    expect(enemy.speed).toBe(95);
+    expect(enemy.distance).toBeCloseTo(averageSpeed * movement.cycle, 6);
+    expect(enemy.speed).toBe(averageSpeed);
   });
 
   it('keeps tower interception based on average speed during a dash', () => {

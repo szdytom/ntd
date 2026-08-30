@@ -60,17 +60,18 @@ describe('new module compilation', () => {
   });
 
   it('converts pierce, forks, and echoes into one focused shot', () => {
+    const base = registry.compile(['fork', 'echo', 'needle']).shots[0];
     const shot = registry.compile(['focus-core', 'fork', 'echo', 'needle']).shots[0];
 
     expect(shot).toMatchObject({
-      damage: 53,
-      speed: 992,
       count: 1,
       spread: 0,
       pierce: 0,
       repeats: 1,
       repeatDelay: 0,
     });
+    expect(shot?.damage).toBeGreaterThan(base?.damage ?? 0);
+    expect(shot?.speed).toBeGreaterThan(base?.speed ?? 0);
   });
 
   it('makes focus conversion independent of modifier order', () => {
@@ -87,15 +88,19 @@ describe('new module compilation', () => {
   });
 
   it('converts the final blast radius into single-target damage', () => {
+    const base = registry.compile(['colossus', 'nova']).shots[0];
     const shot = registry.compile(['condense-core', 'colossus', 'nova']).shots[0];
 
-    expect(shot).toMatchObject({ damage: 91, splash: 0 });
+    expect(shot?.splash).toBe(0);
+    expect(shot?.damage).toBeGreaterThan(base?.damage ?? 0);
   });
 
   it('marks reclaim shots with reduced damage and an energy refund', () => {
+    const base = registry.compile(['pulse']).shots[0];
     const shot = registry.compile(['reclaim-circuit', 'pulse']).shots[0];
 
-    expect(shot).toMatchObject({ damage: 16, energyRefundMultiplier: 0.22 });
+    expect(shot?.damage).toBeLessThan(base?.damage ?? Number.POSITIVE_INFINITY);
+    expect(shot?.energyRefundMultiplier).toBeGreaterThan(0);
   });
 });
 

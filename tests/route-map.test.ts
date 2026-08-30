@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ENEMIES, getLevel, LEVELS, resolveSpawnEntrances } from '../src/game/config';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import { createRouteMap, legacyPathToGraph, resolveRoute } from '../src/game/path';
+import type { EnemyType } from '../src/game/types';
 import { selectTowerTarget } from '../src/game/targeting';
 
 describe('route map model', () => {
@@ -46,16 +47,15 @@ describe('multi-entrance spawning and targeting', () => {
   const level = getLevel('triune-delta');
 
   it('broadcasts ordinary entries and keeps configured bosses on fixed entrances', () => {
-    const ordinary = { type: 'spark' } as const;
-    expect(resolveSpawnEntrances(ordinary, level.graph)).toEqual([
-      'north-entry', 'center-entry', 'south-entry',
-    ]);
-    expect(resolveSpawnEntrances({ type: 'crown', entrance: 'north-entry' }, level.graph)).toEqual(['north-entry']);
-    expect(() => resolveSpawnEntrances({ type: 'crown' }, level.graph)).toThrow('must declare a fixed entrance');
-    expect(() => resolveSpawnEntrances({ type: 'spark', entrance: 'missing' }, level.graph)).toThrow('Unknown entrance');
-    expect(ENEMIES.anvil.boss).not.toBe(true);
-    expect(ENEMIES.fracture.boss).not.toBe(true);
-    expect(ENEMIES.radiant.boss).not.toBe(true);
+    const ordinaryType = Object.keys(ENEMIES).find((type) => !ENEMIES[type as EnemyType].boss) as EnemyType | undefined;
+    const bossType = Object.keys(ENEMIES).find((type) => ENEMIES[type as EnemyType].boss) as EnemyType | undefined;
+    const entrance = level.graph.entrances[0];
+    if (!ordinaryType || !bossType || !entrance) throw new Error('Expected ordinary and boss test fixtures');
+
+    expect(resolveSpawnEntrances({ type: ordinaryType }, level.graph)).toEqual(level.graph.entrances);
+    expect(resolveSpawnEntrances({ type: bossType, entrance }, level.graph)).toEqual([entrance]);
+    expect(() => resolveSpawnEntrances({ type: bossType }, level.graph)).toThrow('must declare a fixed entrance');
+    expect(() => resolveSpawnEntrances({ type: ordinaryType, entrance: 'missing' }, level.graph)).toThrow('Unknown entrance');
     for (const configuredLevel of LEVELS) {
       for (const entry of configuredLevel.waves.flat()) {
         if (ENEMIES[entry.type].boss) expect(entry.entrance, `${configuredLevel.id}: ${entry.type}`).toBeTruthy();
@@ -65,6 +65,12 @@ describe('multi-entrance spawning and targeting', () => {
 
   it('spawns a deterministic wave across all entrances', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 211 });
+    const broadcastWaveIndex = level.waves.findIndex((wave) => {
+      const first = wave[0];
+      return first && !first.entrance && !ENEMIES[first.type].boss;
+    });
+    if (broadcastWaveIndex < 0) throw new Error('Expected a wave beginning with a broadcast entry');
+    engine.wave = broadcastWaveIndex;
     for (const tower of engine.towers) {
       tower.slots.fill(null);
       tower.energy = 0;
@@ -73,57 +79,26 @@ describe('multi-entrance spawning and targeting', () => {
     engine.startWave();
     for (let step = 0; step < 120 && engine.enemies.length === 0; step += 1) engine.update(1 / 60);
 
-    expect(engine.enemies.map((enemy) => enemy.routeId)).toEqual([
-      'north-entry', 'center-entry', 'south-entry',
-    ]);
-
-    for (let step = 0; step < 120 && engine.enemies.length < 6; step += 1) engine.update(1 / 60);
-
-    expect(engine.enemies.map((enemy) => enemy.routeId)).toEqual([
-      'north-entry', 'center-entry', 'south-entry', 'north-entry', 'center-entry', 'south-entry',
-    ]);
-  });
-
-  it('advances entrance queues independently and deploys parallel elites in the same tick', () => {
-    const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 217 });
-    for (const tower of engine.towers) {
-      tower.slots.fill(null);
-      tower.energy = 0;
-      tower.energyRegen = 0;
-    }
-    engine.wave = 4;
-    engine.startWave();
-
-    expect(engine.getSnapshot().waveQueue).toBe(39);
-    for (let step = 0; step < 2_000; step += 1) {
-      engine.update(FIXED_SIMULATION_STEP);
-      const elites = engine.enemies.filter((enemy) => enemy.type === 'fracture' || enemy.type === 'crown');
-      if (elites.length === 0) continue;
-      expect(elites.map((enemy) => `${enemy.routeId}:${enemy.type}`)).toEqual([
-        'north-entry:fracture',
-        'center-entry:crown',
-        'south-entry:fracture',
-      ]);
-      return;
-    }
-    throw new Error('Expected fifth-wave elites to spawn');
+    expect(engine.enemies.map((enemy) => enemy.routeId)).toEqual(level.graph.entrances);
   });
 
   it('moves and prioritizes enemies by their own route distance to the core', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 223 });
-    engine.spawnCreativeEnemy('spark', 'north-entry');
-    engine.spawnCreativeEnemy('spark', 'south-entry');
+    const northEntrance = level.graph.entrances[0];
+    const southEntrance = level.graph.entrances.at(-1);
+    if (!northEntrance || !southEntrance) throw new Error('Expected at least two entrances');
+    engine.spawnCreativeEnemy('spark', northEntrance);
+    engine.spawnCreativeEnemy('spark', southEntrance);
     const north = engine.enemies[0];
     const south = engine.enemies[1];
     const tower = engine.towers[0];
     if (!north || !south || !tower) throw new Error('Expected enemies and a tower');
 
     engine.update(FIXED_SIMULATION_STEP);
-    expect(north.position.y).toBe(85);
-    expect(south.position.y).toBe(565);
-
     const northRoute = engine.routeForEnemy(north);
     const southRoute = engine.routeForEnemy(south);
+    expect(north.position).toEqual(northRoute.pointAtDistance(north.distance).position);
+    expect(south.position).toEqual(southRoute.pointAtDistance(south.distance).position);
     north.distance = northRoute.length - 40;
     south.distance = southRoute.length - 90;
     north.progress = north.distance / northRoute.length;

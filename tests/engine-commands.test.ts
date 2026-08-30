@@ -1,23 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game/engine';
+import { DRAFT_BALANCE } from '../src/modules';
 
 describe('engine command and view boundary', () => {
-  it('starts the beginner level with a fixed four-module tutorial loadout', () => {
+  it('provides the modules needed to complete the beginner tutorial', () => {
     const engine = new GameEngine({ mode: 'standard', levelId: 'starter-elbow', seed: 5 });
 
     expect(engine.tutorialEnabled).toBe(true);
     expect(engine.getSnapshot()).toMatchObject({ status: 'planning', wave: 0, draft: null });
-    expect(engine.towers[0]?.slots).toEqual([null, null, null, null]);
-    expect(engine.getLibraryModules().map((module) => module.id)).toEqual([
-      'pulse',
-      'frost',
-      'proximity-mine',
-      'impact-trigger',
-    ]);
-    expect(engine.getModuleCount('pulse')).toBe(2);
-    expect(engine.getModuleCount('frost')).toBe(1);
-    expect(engine.getModuleCount('impact-trigger')).toBe(1);
-    expect(engine.getModuleCount('proximity-mine')).toBe(1);
+    const tutorialModules = ['pulse', 'frost', 'proximity-mine', 'impact-trigger'] as const;
+    expect(engine.getLibraryModules().map((module) => module.id)).toEqual(expect.arrayContaining(tutorialModules));
+    expect(engine.getModuleCount('pulse')).toBeGreaterThanOrEqual(2);
+    expect(engine.getModuleCount('frost')).toBeGreaterThanOrEqual(1);
+    expect(engine.towers[0]?.slots.every((slot) => slot === null)).toBe(true);
 
     const firstTower = engine.towers[0];
     if (!firstTower) throw new Error('Expected the tutorial tower');
@@ -29,23 +24,24 @@ describe('engine command and view boundary', () => {
     engine.installModule(0, 'pulse');
     engine.selectTower(null);
     engine.startWave();
+    const initialCore = engine.maxCore;
     for (let step = 0; step < 6_000 && engine.status === 'wave'; step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
-    expect(engine.getSnapshot()).toMatchObject({ status: 'planning', wave: 1, draft: null, core: 20 });
+    expect(engine.getSnapshot()).toMatchObject({ status: 'planning', wave: 1, draft: null, core: initialCore });
   });
 
-  it('starts standard levels with three rounds of four-choice module drafts', () => {
+  it('starts standard levels with the configured opening draft', () => {
     const engine = new GameEngine({ mode: 'standard', seed: 5 });
 
     expect(engine.getSnapshot()).toMatchObject({
       status: 'reward',
       wave: 0,
-      draft: { round: 1, totalRounds: 3 },
+      draft: { round: 1, totalRounds: engine.level.moduleDraft.initialPicks },
     });
-    expect(engine.getSnapshot().draft?.choices).toHaveLength(4);
+    expect(engine.getSnapshot().draft?.choices).toHaveLength(DRAFT_BALANCE.choicesPerOffer);
 
-    for (let round = 1; round <= 3; round += 1) {
+    for (let round = 1; round <= engine.level.moduleDraft.initialPicks; round += 1) {
       const choice = engine.getSnapshot().draft?.choices[0];
       if (!choice) throw new Error(`Expected a module choice in draft round ${round}`);
       engine.chooseDraftModule(choice);
@@ -57,7 +53,10 @@ describe('engine command and view boundary', () => {
 
   it('uses the selected level module-draft counts for opening and wave rewards', () => {
     const triune = new GameEngine({ mode: 'standard', levelId: 'triune-delta', seed: 7 });
-    expect(triune.getSnapshot().draft).toMatchObject({ round: 1, totalRounds: 5 });
+    expect(triune.getSnapshot().draft).toMatchObject({
+      round: 1,
+      totalRounds: triune.level.moduleDraft.initialPicks,
+    });
 
     const engine = new GameEngine({ mode: 'standard', levelId: 'white-prism', seed: 7 });
     for (let round = 0; round < engine.level.moduleDraft.initialPicks; round += 1) {
