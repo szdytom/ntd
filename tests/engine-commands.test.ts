@@ -3,6 +3,27 @@ import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game
 import { DRAFT_BALANCE } from '../src/modules';
 
 describe('engine command and view boundary', () => {
+  it('sorts the creative module library by kind and then ascending rarity', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
+    const definitions = engine.getLibraryModules();
+    const kindOrder = ['projectile', 'static', 'modifier', 'trail', 'logic'] as const;
+    const rarityOrder = ['common', 'uncommon', 'rare', 'legendary'] as const;
+
+    for (let index = 1; index < definitions.length; index += 1) {
+      const previous = definitions[index - 1];
+      const current = definitions[index];
+      if (!previous || !current) continue;
+      const previousKind = kindOrder.indexOf(previous.kind);
+      const currentKind = kindOrder.indexOf(current.kind);
+      expect(currentKind).toBeGreaterThanOrEqual(previousKind);
+      if (currentKind === previousKind) {
+        expect(rarityOrder.indexOf(current.meta.rarity)).toBeGreaterThanOrEqual(
+          rarityOrder.indexOf(previous.meta.rarity),
+        );
+      }
+    }
+  });
+
   it('provides the modules needed to complete the beginner tutorial', () => {
     const engine = new GameEngine({ mode: 'standard', levelId: 'starter-elbow', seed: 5 });
 

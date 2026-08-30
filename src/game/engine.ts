@@ -1,7 +1,13 @@
 import { EffectEngine } from '../effects/engine';
 import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
 import { createModuleRegistry } from '../modules';
-import type { ModuleCombatApi, StatusApplication, TargetEffectChannel } from '../modules/types';
+import type {
+  ModuleCombatApi,
+  ModuleKind,
+  ModuleRarity,
+  StatusApplication,
+  TargetEffectChannel,
+} from '../modules/types';
 import i18n from '../i18n';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
@@ -58,6 +64,19 @@ interface SpawnLane {
   timer: number;
 }
 const NO_EXCLUDED_ENEMY_IDS: readonly number[] = [];
+const CREATIVE_KIND_ORDER: Readonly<Record<ModuleKind, number>> = {
+  projectile: 0,
+  static: 1,
+  modifier: 2,
+  trail: 3,
+  logic: 4,
+};
+const CREATIVE_RARITY_ORDER: Readonly<Record<ModuleRarity, number>> = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  legendary: 3,
+};
 
 export interface GameEngineOptions {
   seed?: number;
@@ -435,7 +454,10 @@ export class GameEngine {
   getLibraryModules() {
     const definitions = this.modules.list();
     return this.mode === 'creative'
-      ? definitions
+      ? definitions.sort((left, right) => (
+        CREATIVE_KIND_ORDER[left.kind] - CREATIVE_KIND_ORDER[right.kind]
+        || CREATIVE_RARITY_ORDER[left.meta.rarity] - CREATIVE_RARITY_ORDER[right.meta.rarity]
+      ))
       : definitions
         .filter((definition) => this.getModuleCount(definition.id) > 0)
         .sort((left, right) => (
