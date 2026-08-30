@@ -340,8 +340,9 @@ export const LEVELS = [
       { x: 910, y: 390 }, { x: 1040, y: 205 },
     ],
     waves: [
-      wave(['spark', 12], ['kite', 6]),
-      wave(['surge', 6], ['kite', 9], ['block', 3]),
+      wave(['spark', 6], ['surge', 6], ['kite', 1]),
+      wave(['spark', 8], ['kite', 4], ['block', 1]),
+      wave(['surge', 6], ['kite', 8], ['block', 3]),
       wave(['spark', 9], ['block', 7], ['hex', 2], ['crown', 1, 'north-entry']),
       wave(['kite', 8], ['block', 6], ['fracture', 1, 'center-entry']),
       wave(
