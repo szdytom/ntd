@@ -320,7 +320,7 @@ export const LEVELS = [
     name: 'Triune Delta',
     sector: 'SECTOR D-6',
     description: 'Three incoming channels merge under increasingly mixed elite assaults.',
-    difficulty: 2,
+    difficulty: 3,
     accent: '#2f80ed',
     graph: createRouteMap([
       { id: 'north-entry', position: { x: -40, y: 85 }, parent: 'north-bend' },
@@ -363,7 +363,7 @@ export const LEVELS = [
       ),
     ],
     moduleDraft: { initialPicks: 5, wavePicks: 4 },
-    startingShards: 320,
+    startingShards: 340,
     enemyHealthScale: 1.2,
     enemySpeedScale: 1.1,
   },
