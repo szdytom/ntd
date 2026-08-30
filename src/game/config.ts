@@ -335,9 +335,9 @@ export const LEVELS = [
       { id: 'core', position: { x: 1120, y: 290 }, parent: null },
     ], ['north-entry', 'center-entry', 'south-entry']),
     towerPads: [
-      { x: 90, y: 180 }, { x: 355, y: 145 }, { x: 185, y: 415 }, { x: 90, y: 470 },
-      { x: 355, y: 505 }, { x: 485, y: 520 }, { x: 665, y: 590 }, { x: 745, y: 225 },
-      { x: 910, y: 390 }, { x: 1040, y: 205 },
+      { x: 90, y: 180 }, { x: 480, y: 270 }, { x: 185, y: 415 }, { x: 90, y: 470 },
+      { x: 355, y: 505 }, { x: 555, y: 575 }, { x: 665, y: 590 }, { x: 735, y: 270 },
+      { x: 910, y: 370 }, { x: 960, y: 215 },
     ],
     waves: [
       wave(['spark', 6], ['surge', 6], ['kite', 1]),
