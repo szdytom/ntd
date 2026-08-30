@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ModuleRegistry, type ModuleDefinition } from '../src/modules';
 
+const TestIcon = () => null;
+
 const definitions: ModuleDefinition[] = [
   {
     id: 'test-bolt',
     kind: 'projectile',
     tags: ['projectile'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Bolt', shortName: 'Bolt', symbol: 'B', color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
+      name: 'Test Bolt', shortName: 'Bolt', color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({ damage: 10, speed: 100, size: 2 }),
   },
@@ -15,8 +18,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-power',
     kind: 'modifier',
     tags: [],
+    icon: TestIcon,
     meta: {
-      name: 'Test Power', shortName: 'Power', symbol: 'P', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      name: 'Test Power', shortName: 'Power', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ damageMultiplier: 2 }),
   },
@@ -24,8 +28,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-fork',
     kind: 'modifier',
     tags: [],
+    icon: TestIcon,
     meta: {
-      name: 'Test Fork', shortName: 'Fork', symbol: 'F', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      name: 'Test Fork', shortName: 'Fork', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ count: 3, spread: 0.2 }),
   },
@@ -33,8 +38,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-echo',
     kind: 'modifier',
     tags: ['repeat'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Echo', shortName: 'Echo', symbol: 'E', color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
+      name: 'Test Echo', shortName: 'Echo', color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ repeats: 2, repeatDelay: 0.1 }),
   },
@@ -42,8 +48,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-impact',
     kind: 'logic',
     tags: ['trigger'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Impact', shortName: 'Impact', symbol: 'I', color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
+      name: 'Test Impact', shortName: 'Impact', color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'impact', payloadCount: 1 }),
   },
@@ -51,8 +58,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-timer',
     kind: 'logic',
     tags: ['trigger'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Timer', shortName: 'Timer', symbol: 'T', color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
+      name: 'Test Timer', shortName: 'Timer', color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'timer', payloadCount: 1, delay: 0.25 }),
   },
@@ -60,8 +68,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-field',
     kind: 'static',
     tags: ['static'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Field', shortName: 'Field', symbol: 'S', color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
+      name: 'Test Field', shortName: 'Field', color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,
@@ -75,8 +84,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-route',
     kind: 'logic',
     tags: ['route'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Route', shortName: 'Route', symbol: 'R', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      name: 'Test Route', shortName: 'Route', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ seeking: 4 }),
   },
@@ -84,8 +94,9 @@ const definitions: ModuleDefinition[] = [
     id: 'test-fixed',
     kind: 'projectile',
     tags: ['projectile', 'fixed-route'],
+    icon: TestIcon,
     meta: {
-      name: 'Test Fixed', shortName: 'Fixed', symbol: 'X', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      name: 'Test Fixed', shortName: 'Fixed', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,

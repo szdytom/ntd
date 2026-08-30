@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import type { EffectDefinition } from '../effects/types';
 import type { EffectEngine } from '../effects/engine';
 import type {
@@ -26,11 +27,12 @@ export type ModuleTag =
   | 'trigger';
 export type ModuleRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 export type ModuleTextValues = Readonly<Record<string, string | number>>;
+export interface ModuleIconProps { className?: string; }
+export type ModuleIconComponent = ComponentType<ModuleIconProps>;
 
 export interface ModuleMeta {
   name: string;
   shortName: string;
-  symbol: string;
   color: string;
   tint: string;
   energy: number;
@@ -149,6 +151,7 @@ export interface ProjectileRenderContext {
 export interface ModuleDefinition {
   readonly id: ModuleId;
   readonly kind: ModuleKind;
+  readonly icon: ModuleIconComponent;
   /** Self-declared capabilities used by data-driven compatibility rules. */
   readonly tags: readonly ModuleTag[];
   readonly meta: ModuleMeta;

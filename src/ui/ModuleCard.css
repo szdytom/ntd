@@ -63,6 +63,7 @@
 }
 
 .module-symbol {
+  --module-icon-surface: var(--module-tint);
   display: grid;
   width: 44px;
   height: 52px;
@@ -75,6 +76,8 @@
   font-size: 16px;
   font-weight: 500;
 }
+
+.module-symbol .module-icon { width: 32px; height: 32px; }
 
 .module-text {
   min-width: 0;

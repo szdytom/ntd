@@ -76,17 +76,17 @@
   box-shadow: 0 5px 13px color-mix(in srgb, var(--module-color) 16%, transparent);
 }
 
-.module-slot.filled > strong,
+.module-slot.filled > .slot-icon,
 .module-slot.filled > small {
   display: block;
 }
 
-.module-slot.filled > strong {
+.module-slot.filled > .slot-icon {
+  --module-icon-surface: var(--module-tint);
+  width: 30px;
+  height: 30px;
   align-self: end;
   margin: 0 0 3px;
-  font-family: var(--font-mono);
-  font-size: 24px;
-  line-height: 1;
 }
 
 .module-slot.filled > small {

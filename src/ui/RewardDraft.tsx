@@ -32,8 +32,9 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
     </header>
     <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);
+        const Icon = definition.icon;
         return <button key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={() => engine.chooseDraftModule(moduleId)}>
-          <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><b>{definition.meta.symbol}</b>
+          <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><span className="reward-icon"><Icon /></span>
           <strong>{moduleName(t, definition.id)}</strong>
           <small>{moduleDescription(t, definition)}</small>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>

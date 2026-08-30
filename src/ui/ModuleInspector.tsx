@@ -6,9 +6,10 @@ import './ModuleInspector.css';
 
 export function ModuleInspector({ definition }: { definition: ModuleDefinition }) {
   const { t } = useTranslation();
+  const Icon = definition.icon;
   return <div className="module-inspector" style={moduleVariableStyle(definition)}>
     <div className="inspector-summary">
-      <div className="inspector-symbol">{definition.meta.symbol}</div>
+      <div className="inspector-symbol"><Icon /></div>
       <div className="inspector-copy">
         <div className="inspector-meta">
           <span>{kindLabel(t, definition.kind)}</span>

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { preloadBloomShaders } from './effects/bloom';
 import './i18n';
 import './styles.css';
+import './modules/icons.css';
 import { App } from './ui/App';
 
 const root = document.querySelector<HTMLElement>('#app');

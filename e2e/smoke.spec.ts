@@ -224,7 +224,7 @@ test('signal compendium exposes every signal profile from its own entry', async 
   await expect(page.getByRole('heading', { name: /\u4fe1\u53f7\u56fe\u9274/ })).toBeVisible();
   await page.getByRole('button', { name: '\u5173\u95ed\u8bbe\u7f6e' }).click();
   await page.getByRole('button', { name: /\u8fd4\u56de\u9632\u533a\u9009\u62e9/ }).click();
-  await expect(page.getByRole('heading', { name: /\u9009\u62e9\u9632\u5fa1\u533a/ })).toBeVisible();
+  await expect(page.getByRole('region', { name: /\u9009\u62e9\u9632\u5fa1\u533a/ })).toBeVisible();
 });
 
 test('creative economy and signal controls are independent from the workshop', async ({ page }) => {

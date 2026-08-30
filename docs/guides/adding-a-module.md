@@ -2,7 +2,7 @@
 
 > Document type: **Guide** — follow this page to add one module without tracing the compiler and runtime end to end.
 
-Use an existing module of the same kind as the starting template. Keep compilation, runtime hooks, effects, and projectile painting in `src/modules/<id>.ts` so the behavior remains discoverable from one file.
+Use an existing module of the same kind as the starting template. Keep its icon, compilation, runtime hooks, effects, and projectile painting in `src/modules/<id>.tsx` so the module remains discoverable from one file.
 
 ## 1. Choose the compiler category
 
@@ -22,16 +22,24 @@ Put gameplay values in a local `stats` constant. Derive compile values, hook beh
 
 Declare the module's capability `tags` on its definition. Tags are module-owned properties used by compatibility rules; do not maintain reverse lists of module IDs inside a tag or compiler component.
 
-```ts
+```tsx
+import { createModuleIcon } from './icons';
+
+const IonIcon = createModuleIcon(<>
+  <path className="module-icon__line" d="M4 16h24" />
+  <circle className="module-icon__fill" cx="16" cy="16" r="5" />
+</>);
+
 const stats = { speedMultiplier: 1.2 } as const;
 
 export const ionModule: ModuleDefinition = {
   id: 'ion',
   kind: 'modifier',
+  tags: [],
+  icon: IonIcon,
   meta: {
     name: 'Ion Lens',
     shortName: 'Ion',
-    symbol: 'ϟ',
     color: '#00c2ff',
     tint: '#e4f9ff',
     energy: 9,
@@ -64,6 +72,7 @@ Never retain the array returned by `nearbyEnemies()`: the engine reuses it. Proc
 
 ## 4. Add visuals
 
+- Define a dedicated geometric SVG component beside the module definition and assign it through the required `icon` field. Use `createModuleIcon()` only for the shared canvas contract; never add module-specific geometry to the shared icon helper. Module cards, slots, inspectors, and reward drafts render the definition's component directly.
 - Put module-owned `EffectDefinition` objects in the module file and expose them through `effects`.
 - Give effect IDs a `module:<module-id>:<event>` namespace.
 - Use `renderProjectile` for persistent projectile geometry and hooks for short-lived feedback.

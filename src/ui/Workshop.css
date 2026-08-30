@@ -156,6 +156,9 @@
   background: #fff;
 }
 
+.workshop .inspector-symbol,
+.workshop .module-symbol { --module-icon-surface: #fff; }
+
 .workshop .module-symbol { width: 38px; height: 42px; font-size: 20px; }
 .workshop .all-modules .module-symbol { width: 36px; height: 40px; font-size: 19px; }
 
@@ -283,6 +286,23 @@
   border-radius: 0;
   transform: none;
   box-shadow: none;
+}
+
+.workshop .module-slot.filled {
+  grid-template-rows: 30px 18px;
+  align-content: center;
+  gap: 2px;
+  padding: 6px 5px 8px;
+}
+
+.workshop .module-slot.filled > .slot-icon {
+  align-self: center;
+  margin: 0;
+}
+
+.workshop .module-slot.filled > small {
+  align-self: center;
+  line-height: 18px;
 }
 
 .workshop .module-slot.empty { background: #fbfaff; }

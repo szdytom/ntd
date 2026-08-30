@@ -9,11 +9,12 @@ describe('module metadata', () => {
     const ids = modules.map((module) => module.id);
 
     expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(modules.map((module) => module.icon)).size).toBe(modules.length);
     for (const module of modules) {
       expect(module.id.length).toBeGreaterThan(0);
+      expect(typeof module.icon).toBe('function');
       expect(module.meta.name.length).toBeGreaterThan(0);
       expect(module.meta.shortName.length).toBeGreaterThan(0);
-      expect(module.meta.symbol.length).toBeGreaterThan(0);
       expect(module.meta.color).toMatch(/^#[0-9a-f]{6}$/i);
       expect(module.meta.tint).toMatch(/^#[0-9a-f]{6}$/i);
       expect(Number.isFinite(module.meta.energy)).toBe(true);

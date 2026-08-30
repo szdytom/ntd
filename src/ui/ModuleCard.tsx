@@ -15,6 +15,7 @@ export function ModuleCard({ definition, tutorialId, selected, exhausted, invent
   onQuickInstall: () => void;
 }) {
   const { t } = useTranslation();
+  const Icon = definition.icon;
   const dragStart = (event: DragEvent<HTMLButtonElement>): void => {
     if (exhausted) { event.preventDefault(); return; }
     event.dataTransfer.setData('text/module', definition.id);
@@ -28,7 +29,7 @@ export function ModuleCard({ definition, tutorialId, selected, exhausted, invent
       title={exhausted ? t('moduleCard.exhaustedTitle') : t('moduleCard.installTitle')}>
       <span className={`kind-badge ${definition.kind}`}>{KIND_SYMBOL[definition.kind]}</span>
       <span className="rarity-mark">{rarityLabel(t, definition.meta.rarity)}</span>
-      <span className="module-symbol">{definition.meta.symbol}</span>
+      <span className="module-symbol"><Icon /></span>
       <span className="module-text"><strong>{moduleShortName(t, definition.id)}</strong><small>{inventoryLabel ?? `${definition.meta.energy} ⚡`}</small></span>
     </button>
   );

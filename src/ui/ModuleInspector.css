@@ -19,6 +19,7 @@
 }
 
 .inspector-symbol {
+  --module-icon-surface: #fff;
   display: grid;
   width: 52px;
   height: 52px;
@@ -31,6 +32,8 @@
   font-size: 24px;
   font-weight: 500;
 }
+
+.inspector-symbol .module-icon { width: 36px; height: 36px; }
 
 .inspector-copy {
   min-width: 0;
@@ -143,6 +146,8 @@
     height: 44px;
     font-size: 21px;
   }
+
+  .inspector-symbol .module-icon { width: 31px; height: 31px; }
 
   .inspector-cost {
     min-width: 46px;

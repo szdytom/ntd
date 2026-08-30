@@ -40,7 +40,7 @@ Tests protect software contracts, not the current balance baseline. Read [Testin
 ## Match the repository boundaries
 
 - Put deterministic gameplay state and rules in `src/game/`.
-- Put module-specific compilation, hooks, effects, and projectile painting in one `src/modules/<id>.ts` file.
+- Put module-specific icon geometry, compilation, hooks, effects, and projectile painting in one `src/modules/<id>.tsx` file.
 - Put reusable effect machinery in `src/effects/`.
 - Keep one exported React component per `src/ui/*.tsx` file and import its same-named stylesheet.
 - Resolve every user-facing string through i18next.

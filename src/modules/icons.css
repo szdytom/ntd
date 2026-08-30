@@ -1,0 +1,24 @@
+.module-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: inherit;
+}
+
+.module-icon__line,
+.module-icon__thin,
+.module-icon__thick,
+.module-icon__cut {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.module-icon__line { stroke-width: 2; }
+.module-icon__thin { stroke-width: 1.4; }
+.module-icon__thick { stroke-width: 2.8; }
+.module-icon__fill { fill: currentColor; }
+.module-icon__cut { stroke: var(--module-icon-surface, #fff); stroke-width: 1.6; }
+.module-icon__cut-fill { fill: var(--module-icon-surface, #fff); }

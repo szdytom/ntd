@@ -15,6 +15,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
   engine: GameEngine;
 }) {
   const { t } = useTranslation();
+  const Icon = definition?.icon;
   const dragStart = (event: DragEvent<HTMLButtonElement>): void => {
     event.dataTransfer.setData('text/slot', String(index));
     event.dataTransfer.effectAllowed = 'move';
@@ -51,7 +52,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
             aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
             aria-label={t('moduleSlot.filledAria', { slot: index + 1, module: moduleName(t, definition.id) })}
             title={t('moduleSlot.filledTitle', { module: moduleName(t, definition.id), description: moduleDescription(t, definition) })}>
-            <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span><strong>{definition.meta.symbol}</strong><small>{moduleShortName(t, definition.id)}</small>
+            <span className="slot-kind">{KIND_SYMBOL[definition.kind]}</span><span className="slot-icon">{Icon ? <Icon /> : null}</span><small>{moduleShortName(t, definition.id)}</small>
           </button>
           <button className="slot-remove" onClick={() => engine.installModule(index, null)} aria-label={t('moduleSlot.remove', { slot: index + 1, module: moduleName(t, definition.id) })}>×</button>
         </div>
