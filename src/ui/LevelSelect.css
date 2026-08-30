@@ -243,6 +243,10 @@
 .level-card.selected .level-map-wrap { background-color: color-mix(in srgb, var(--level-accent) 13%, #fff); }
 .level-card.selected { box-shadow: inset 0 -8px 0 var(--level-accent); }
 
+.home-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 12px auto 0; color: #96919d; font-size: 11px; line-height: 1.5; text-align: center; }
+.home-meta a { color: inherit; text-underline-offset: 2px; }
+.home-meta a:hover { color: #6558e8; }
+
 @media (hover: hover) {
   .level-card:hover { box-shadow: inset 0 -8px 0 var(--level-accent); }
   .level-grid:hover .level-card.selected:not(:hover) { box-shadow: none; }

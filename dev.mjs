@@ -1,5 +1,8 @@
 import * as esbuild from 'esbuild';
 import { copyFile, mkdir } from 'node:fs/promises';
+import { getBuildInfo } from './scripts/build-info.mjs';
+
+const buildInfo = getBuildInfo();
 
 await mkdir('dist', { recursive: true });
 await copyFile('index.html', 'dist/index.html');
@@ -12,6 +15,10 @@ const context = await esbuild.context({
   entryNames: 'app',
   assetNames: 'assets/[name]-[hash]',
   loader: { '.css': 'css', '.glsl': 'text' },
+  define: {
+    __PRISM_BASTION_COMMIT_DATE__: JSON.stringify(buildInfo.commitDate),
+    __PRISM_BASTION_COMMIT__: JSON.stringify(buildInfo.commit),
+  },
 });
 
 await context.watch();

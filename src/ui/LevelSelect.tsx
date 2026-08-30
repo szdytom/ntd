@@ -1,6 +1,7 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BUILD_COMMIT, BUILD_COMMIT_DATE } from '../build-info';
 import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
 import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
@@ -281,6 +282,14 @@ export function LevelSelect({ onStart, onOpenArchive }: {
         </section>
       ) : null}
       </div>
+      <footer className="home-meta">
+        <span>{t('levelSelect.version', { date: BUILD_COMMIT_DATE })}</span>
+        <a href={`https://github.com/szdytom/ntd/commit/${BUILD_COMMIT}`} target="_blank" rel="noreferrer">{BUILD_COMMIT}</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/szdytom/ntd" target="_blank" rel="noreferrer">{t('levelSelect.projectOpenSource')}</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/szdytom/ntd" target="_blank" rel="noreferrer">{t('levelSelect.starRequest')}</a>
+      </footer>
     </main>
   );
 }
