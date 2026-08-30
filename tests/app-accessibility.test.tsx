@@ -6,10 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../src/i18n';
 import zhCN from '../src/i18n/locales/zh-CN.json';
 import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
+import { LEVEL_SELECTION_STORAGE_KEY } from '../src/ui/LevelSelect';
 
 beforeEach(() => {
   try {
     globalThis.localStorage?.removeItem(TUTORIAL_OFFER_STORAGE_KEY);
+    globalThis.localStorage?.removeItem(LEVEL_SELECTION_STORAGE_KEY);
   } catch {
     // localStorage is unavailable when jsdom uses an opaque origin.
   }
@@ -22,6 +24,37 @@ afterEach(() => {
 });
 
 describe('level selection accessibility', () => {
+  it('remembers the last selected mode, difficulty, and level', async () => {
+    const storedValues = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storedValues.get(key) ?? null,
+      setItem: (key: string, value: string) => storedValues.set(key, value),
+      removeItem: (key: string) => storedValues.delete(key),
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'No, thanks' }));
+
+    await user.click(within(screen.getByRole('group', { name: 'Game mode' })).getByRole('button', { name: /Creative/ }));
+    const difficultyGroup = screen.getByRole('radiogroup', { name: 'Choose difficulty' });
+    await user.click(difficultyGroup.querySelectorAll('[role="radio"]')[3] as HTMLElement);
+    await user.click(screen.getByRole('radio', { name: /Rose Circuit/ }));
+
+    expect(JSON.parse(globalThis.localStorage.getItem(LEVEL_SELECTION_STORAGE_KEY) ?? '{}')).toEqual({
+      levelId: 'rose-circuit',
+      mode: 'creative',
+      difficultyId: 'hard',
+    });
+
+    cleanup();
+    render(<App />);
+    expect(within(screen.getByRole('group', { name: 'Game mode' })).getByRole('button', { name: /Creative/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('radiogroup', { name: 'Choose difficulty' }).querySelector('[aria-checked="true"]')?.textContent).toContain('Hard');
+    const restoredLevelCards = screen.getByRole('radiogroup', { name: 'Choose defense sector' }).querySelectorAll('[role="radio"]');
+    expect(restoredLevelCards[1]?.getAttribute('aria-checked')).toBe('true');
+    expect(restoredLevelCards[1]?.textContent).toContain('Rose Circuit');
+  });
+
   it('exposes mode state and supports arrow-key radio selection', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -46,7 +79,7 @@ describe('level selection accessibility', () => {
     expect(selectedLevel?.textContent).toContain('White Prism');
     selectedLevel?.focus();
     await user.keyboard('{ArrowRight}');
-    expect(levelGroup.querySelector('[aria-checked="true"]')?.textContent).toContain('Rose Circuit');
+    expect(screen.getByRole('radiogroup', { name: 'Choose defense sector' }).querySelector('[aria-checked="true"]')?.textContent).toContain('Rose Circuit');
   });
 
   it('shows three level cards at a time and pages with arrow controls', async () => {

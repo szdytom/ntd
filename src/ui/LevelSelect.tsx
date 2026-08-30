@@ -14,18 +14,55 @@ const DESKTOP_VISIBLE_LEVEL_COUNT = 3;
 const COMPACT_VISIBLE_LEVEL_COUNT = 1;
 const COMPACT_LEVEL_QUERY = '(max-width: 980px)';
 const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
+export const LEVEL_SELECTION_STORAGE_KEY = 'prism-bastion-level-selection';
 const visibleLevelCountForViewport = (): number => globalThis.matchMedia?.(COMPACT_LEVEL_QUERY).matches
   ? COMPACT_VISIBLE_LEVEL_COUNT
   : DESKTOP_VISIBLE_LEVEL_COUNT;
 const positiveInteger = (value: number, fallback: number): number => Number.isFinite(value)
   ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
   : fallback;
-const initialCreativeSetup = (): CreativeSetup => ({
+const initialCreativeSetup = (levelId: string): CreativeSetup => ({
   healthScale: 1,
   speedScale: 1,
   coreStability: 20,
-  waveCount: getLevel(DEFAULT_LEVEL_ID).waves.length,
+  waveCount: getLevel(levelId).waves.length,
 });
+
+interface RememberedLevelSelection {
+  levelId: string;
+  mode: GameMode;
+  difficultyId: DifficultyId;
+}
+
+const isGameMode = (value: unknown): value is GameMode => value === 'standard' || value === 'creative';
+const isDifficultyId = (value: unknown): value is DifficultyId => DIFFICULTIES.some((difficulty) => difficulty.id === value);
+const isLevelId = (value: unknown): value is string => LEVELS.some((level) => level.id === value);
+
+const readRememberedSelection = (): RememberedLevelSelection | null => {
+  try {
+    const raw = globalThis.localStorage?.getItem(LEVEL_SELECTION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const selection = parsed as Record<string, unknown>;
+    if (!isLevelId(selection.levelId) || !isGameMode(selection.mode) || !isDifficultyId(selection.difficultyId)) return null;
+    return {
+      levelId: selection.levelId,
+      mode: selection.mode,
+      difficultyId: selection.difficultyId,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const rememberSelection = (selection: RememberedLevelSelection): void => {
+  try {
+    globalThis.localStorage?.setItem(LEVEL_SELECTION_STORAGE_KEY, JSON.stringify(selection));
+  } catch {
+    // Storage may be unavailable in privacy-restricted browser contexts.
+  }
+};
 
 export interface LevelSelection {
   levelId: string;
@@ -39,17 +76,23 @@ export function LevelSelect({ onStart, onOpenArchive }: {
   onOpenArchive: () => void;
 }) {
   const { t } = useTranslation();
-  const [levelId, setLevelId] = useState<string>(DEFAULT_LEVEL_ID);
-  const [mode, setMode] = useState<GameMode>('standard');
-  const [difficultyId, setDifficultyId] = useState<DifficultyId>(DEFAULT_DIFFICULTY_ID);
-  const [creative, setCreative] = useState<CreativeSetup>(initialCreativeSetup);
+  const [rememberedSelection] = useState(readRememberedSelection);
+  const [levelId, setLevelId] = useState<string>(rememberedSelection?.levelId ?? DEFAULT_LEVEL_ID);
+  const [mode, setMode] = useState<GameMode>(rememberedSelection?.mode ?? 'standard');
+  const [difficultyId, setDifficultyId] = useState<DifficultyId>(rememberedSelection?.difficultyId ?? DEFAULT_DIFFICULTY_ID);
+  const [creative, setCreative] = useState<CreativeSetup>(() => initialCreativeSetup(rememberedSelection?.levelId ?? DEFAULT_LEVEL_ID));
   const [visibleLevelCount, setVisibleLevelCount] = useState(visibleLevelCountForViewport);
-  const [carouselStart, setCarouselStart] = useState(() => visibleLevelCount === COMPACT_VISIBLE_LEVEL_COUNT
-    ? Math.max(0, LEVELS.findIndex((level) => level.id === DEFAULT_LEVEL_ID))
-    : 0);
+  const [carouselStart, setCarouselStart] = useState(() => {
+    const selectedIndex = Math.max(0, LEVELS.findIndex((level) => level.id === (rememberedSelection?.levelId ?? DEFAULT_LEVEL_ID)));
+    if (visibleLevelCount === COMPACT_VISIBLE_LEVEL_COUNT) return selectedIndex;
+    return Math.min(Math.max(0, selectedIndex - Math.floor(visibleLevelCount / 2)), Math.max(0, LEVELS.length - visibleLevelCount));
+  });
   const [carouselDirection, setCarouselDirection] = useState<'next' | 'previous' | null>(null);
   const selectedLevel = getLevel(levelId);
   const selectedDifficulty = getDifficulty(difficultyId);
+  useEffect(() => {
+    rememberSelection({ levelId, mode, difficultyId });
+  }, [difficultyId, levelId, mode]);
   const maximumCarouselStart = Math.max(0, LEVELS.length - visibleLevelCount);
   const visibleLevels = LEVELS.slice(carouselStart, carouselStart + visibleLevelCount);
   useEffect(() => {
@@ -69,9 +112,19 @@ export function LevelSelect({ onStart, onOpenArchive }: {
     mediaQuery.addEventListener('change', updateVisibleLevelCount);
     return () => mediaQuery.removeEventListener('change', updateVisibleLevelCount);
   }, [levelId]);
-  const selectLevel = (nextLevelId: string): void => {
+  const selectLevel = (nextLevelId: string, center = true): void => {
     setLevelId(nextLevelId);
     setCreative((current) => ({ ...current, waveCount: getLevel(nextLevelId).waves.length }));
+    if (!center) return;
+    const nextIndex = LEVELS.findIndex((level) => level.id === nextLevelId);
+    if (nextIndex < 0) return;
+    const centeredStart = visibleLevelCount === COMPACT_VISIBLE_LEVEL_COUNT
+      ? nextIndex
+      : nextIndex - Math.floor(visibleLevelCount / 2);
+    const nextStart = Math.max(0, Math.min(maximumCarouselStart, centeredStart));
+    if (nextStart === carouselStart) return;
+    setCarouselDirection(nextStart > carouselStart ? 'next' : 'previous');
+    setCarouselStart(nextStart);
   };
   const focusSelectedOption = (element: HTMLElement): void => {
     const group = element.parentElement;
@@ -98,15 +151,6 @@ export function LevelSelect({ onStart, onOpenArchive }: {
     const next = LEVELS[(index + offset + LEVELS.length) % LEVELS.length];
     if (!next) return;
     selectLevel(next.id);
-    const nextIndex = LEVELS.indexOf(next);
-    if (nextIndex < carouselStart) {
-      setCarouselDirection('previous');
-      setCarouselStart(nextIndex);
-    }
-    else if (nextIndex >= carouselStart + visibleLevelCount) {
-      setCarouselDirection('next');
-      setCarouselStart(Math.min(maximumCarouselStart, nextIndex - visibleLevelCount + 1));
-    }
     focusSelectedOption(event.currentTarget);
   };
   const moveCarousel = (offset: number): void => {
@@ -117,7 +161,7 @@ export function LevelSelect({ onStart, onOpenArchive }: {
     const selectedIndex = LEVELS.findIndex((level) => level.id === levelId);
     if (selectedIndex < nextStart || selectedIndex >= nextStart + visibleLevelCount) {
       const nextSelection = LEVELS[nextStart];
-      if (nextSelection) selectLevel(nextSelection.id);
+      if (nextSelection) selectLevel(nextSelection.id, false);
     }
   };
 
