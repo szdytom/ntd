@@ -1,63 +1,67 @@
-# 内置模块目录
+# Built-in Module Catalog
 
-## 弹射物 P
+> Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-| 模块 | 玩法 |
-| --- | --- |
-| 脉冲弹 | 低耗、稳定的基础弹体 |
-| 穿刺针 | 高速穿过三个目标 |
-| 微型新星 | 命中后产生范围爆炸 |
-| 弧链电核 | 传奇弹体，命中后向 118 范围内最多四个目标衰减传导 |
-| 回旋刃片 | 宽弹体，最多贯穿六个目标 |
+The registry contains 27 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
-## 静态载荷 S
+## Projectile modules
 
-| 模块 | 玩法 |
-| --- | --- |
-| 六角感应雷 | 在触发位置生成，武装后对接近的敌群爆炸 |
-| 静电哨戒点 | 传奇静态载荷，在 120 范围内进行六次周期连锁电击 |
-| 翡翠毒雾 | 在触发位置生成持续 5 秒的腐蚀区域 |
+Projectile modules emit a castable shot and consume all pending modifiers.
 
-## 修正 M
+| ID | Display name | Role |
+| --- | --- | --- |
+| `pulse` | Pulse Round | Stable baseline projectile |
+| `needle` | Piercing Needle | Fast projectile that can pass through multiple targets |
+| `nova` | Micro Nova | Impact projectile with area damage |
+| `arcbolt` | Arcbolt Core | Impact projectile that chains damage to nearby enemies |
+| `razor` | Returning Razor | Wide cutting projectile built for repeated contacts |
 
-| 模块 | 玩法 |
-| --- | --- |
-| 过载棱镜 | 提高下一发的伤害和弹速 |
-| 冷凝透镜 | 添加持续减速 |
-| 三分叉 | 将下一发变为三枚散射弹体 |
-| 折跃镜面 | 命中后最多两次转向新目标 |
-| 腐蚀孢子 | 降低直接伤害，添加可刷新的周期腐蚀 |
-| 巨像核心 | 增大伤害、尺寸与爆炸范围，同时降低弹速 |
+## Static payload modules
 
-## 尾迹修正 T
+Static payloads are deployed at a trigger position. They cannot be cast as root shots.
 
-| 模块 | 玩法 |
-| --- | --- |
-| 共振尾迹 | 附着于下一枚任意弹体，沿飞行路径持续绘制尾迹，并每四个尾迹刻度产生一次范围伤害波 |
+| ID | Display name | Role |
+| --- | --- | --- |
+| `proximity-mine` | Hex Proximity Mine | Arms, waits for a nearby enemy, and detonates |
+| `tesla-node` | Tesla Sentry | Repeatedly shocks nearby targets |
+| `toxic-cloud` | Emerald Toxic Cloud | Maintains a corrosive area |
+| `singularity` | Collapse Singularity | Pulls enemies toward its route-relative center |
 
-## 逻辑 L
+## Modifier modules
 
-| 模块 | 玩法 |
-| --- | --- |
-| 回响指令 | 延迟后再执行一次下一发 |
-| 寻路协议 | 添加制导和额外穿透 |
-| 四拍时钟 | 以 0.09 秒间隔执行下一发四次 |
-| 节能回路 | 降低下一段施法的总能耗，同时牺牲伤害 |
-| 碰撞触发器 | 下一枚弹体成为载体，命中时释放后一枚载荷 |
-| 延时触发器 | 载体计时结束或提前碰撞时释放载荷 |
-| 失效触发器 | 载体寿命结束或最后一次命中而消失时释放载荷；飞出边界除外，可响应棱镜领主护盾吸收 |
-| 地形触发器 | 载体第一次飞过通道中线后的第一个 tick 释放载荷 |
-| 接近触发器 | 静态载体感应到敌人时释放载荷 |
+Modifiers patch the next emitted projectile.
 
-修正、尾迹和逻辑模块优先影响右侧的下一枚投射物。多个普通弹射物可以放在同一座塔中形成多段施法，但整套程序必须同时满足能量需求后才会启动。静态载荷不能成为顶层施法，必须由触发器在触发位置生成。
+| ID | Display name | Role |
+| --- | --- | --- |
+| `overdrive` | Overdrive Prism | Trades efficiency for stronger projectile properties |
+| `frost` | Condensing Lens | Propagates slowing to affected targets |
+| `fork` | Triple Fork | Emits multiple projectiles with spread |
+| `ricochet` | Ricochet Mirror | Redirects a surviving projectile after impact |
+| `toxin` | Corrosive Spore | Propagates a periodic damage status |
+| `colossus` | Colossus Core | Enlarges and strengthens the next projectile |
+| `reclaim-circuit` | Reclaim Circuit | Converts health damage into tower energy |
+| `focus-core` | Focus Core | Converts extra projectiles, repeats, and pierce into one focused shot |
+| `condense-core` | Condense Core | Converts area radius into direct damage |
 
-若读取到序列末端时仍有修正、逻辑或缺失载荷，编译器会回到槽位 1 再读取最多一圈。例如 `脉冲 → 过载` 会释放普通脉冲，再释放回绕生成的过载脉冲；新增法术仍会消耗能量。无法在一圈内完成的递归触发组合会显示诊断，不会无限回绕。
+## Trail modules
 
-触发器会改变后续弹射物的层级。例如：
+| ID | Display name | Role |
+| --- | --- | --- |
+| `resonant-trail` | Resonant Trail | Publishes damage waves along the carrier path |
 
-- `命中触发 → 脉冲 → 新星`：脉冲是载体，新星是命中载荷；
-- `命中触发 → 脉冲 → 毒雾`：脉冲命中处直接生成毒雾；
-- `命中触发 → 脉冲 → 接近触发 → 感应雷 → 冷凝 → 新星`：命中处生成地雷，地雷接近触发后释放减速新星；
-- `命中触发 → 脉冲 → 延时触发 → 新星 → 穿刺`：脉冲命中释放新星载体，新星再释放穿刺载荷。
+## Logic and trigger modules
 
-载荷能耗会计入整轮施法，但只有载体满足条件时才会生成。程序面板中的 `PAYLOAD` 轨迹会显示实际编译后的嵌套关系。
+Logic modules alter how the next projectile is scheduled, aimed, or wrapped.
+
+| ID | Display name | Role |
+| --- | --- | --- |
+| `echo` | Echo Command | Repeats the next shot after a delay |
+| `seeker` | Seeker Protocol | Turns the next projectile toward a live target |
+| `barrage` | Four-Beat Clock | Repeats the next shot in a rapid sequence |
+| `economizer` | Economizer Circuit | Reduces the next cast's compiled energy cost |
+| `impact-trigger` | Impact Trigger | Releases payloads after a health-damaging collision |
+| `timer-trigger` | Timer Trigger | Releases payloads when its timer ends or it collides first |
+| `expiration-trigger` | Expiration Trigger | Releases payloads when the carrier reaches its normal end |
+| `terrain-trigger` | Terrain Trigger | Releases payloads after crossing a route centerline |
+
+The [module compiler explanation](internals/module-compiler.md) describes how these categories interact. The [module extension guide](guides/adding-a-module.md) covers implementation work.

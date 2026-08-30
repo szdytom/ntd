@@ -1,166 +1,45 @@
-# 模块与效果架构
+# System Overview
 
-## 设计边界
+> Document type: **Overview** — read this page to understand the major boundaries before following code paths.
 
-项目分为三个方向明确的层：
+Prism Bastion separates configuration, deterministic simulation, presentation metadata, and rendering. The central rule is that gameplay code owns state changes while React observes immutable view data and the renderer observes live simulation entities.
 
-1. `game` 只处理战斗对象、伤害、目标选择和时序，不包含任何具体模块的 `switch`。
-2. `modules` 把槽位编译为攻击蓝图，并通过稳定的运行时钩子接收施法、拖尾和命中事件。
-3. `effects` 管理视觉效果的定义、实例、生命周期与图层；React 只消费游戏快照和模块元数据。
+## Major areas
 
-因此增加模块不会要求修改战斗引擎、Canvas 主渲染器或 React 工作台。
+| Area | Responsibility | Primary entry points |
+| --- | --- | --- |
+| `src/game` | Session state, waves, enemies, towers, collision, targeting, routes, and level configuration | `engine.ts`, `config.ts`, `types.ts` |
+| `src/modules` | Module definitions, ordered compilation, runtime hooks, and the module registry | `compiler.ts`, `registry.ts`, `types.ts`, `index.ts` |
+| `src/effects` | Short-lived visual effects, drawing primitives, effect layers, bloom, and distortion | `engine.ts`, `types.ts`, `painter.ts`, `bloom.ts` |
+| `src/ui` | Screens, controls, workshop, reward draft, tutorial, and accessibility semantics | `App.tsx`, `GameSession.tsx`, `GameCanvas.tsx` |
+| `src/i18n` | Language selection, resource registration, and presentation helpers | `index.ts`, `presentation.ts`, `locales/` |
 
-## 单文件模块
+## Runtime ownership
 
-每个模块文件导出一个 `ModuleDefinition`，并共同表达：
+`GameEngine` is the authoritative owner of mutable combat state. It contains towers, enemies, projectiles, effects, wave queues, inventory, and session status. Browser animation frames pass elapsed time to the engine, which converts it into fixed simulation steps.
 
-- `meta`：工作台名称、图标、颜色、文案插值、能耗和稀有度；
-- `compile`：如何修改下一发，或如何生成弹射物蓝图；
-- `renderProjectile`：弹体本身或叠加层的 Canvas 绘制；
-- `effects`：该模块拥有的效果定义；
-- `onCast`、`onTrail`、`onHit`：弹体自身的运行时钩子；
-- `targetEffect`：声明跟随载体传播到目标的 Modifier 效果，以及它订阅的 `damage` / `static` 通道。
+Tower slot arrays are not interpreted during projectile flight. `ModuleRegistry` compiles a slot sequence into an immutable `TowerProgram`; the engine then casts the resulting `ShotBlueprint` trees. Module runtime behavior is invoked through hooks and a restricted combat API, so individual modules do not receive the engine itself.
 
-简化示例：
+Route geometry is a rooted tree whose leaves are entrances and whose root is the core. Every enemy receives one entrance ID at spawn time, and that ID resolves to a unique entrance-to-core polyline. Movement, interception, displacement, and core-distance targeting all use that per-enemy route.
 
-```ts
-const stats = {
-  speedMultiplier: 1.2,
-} as const;
+## Presentation boundaries
 
-export const ionModule: ModuleDefinition = {
-  id: 'ion',
-  kind: 'modifier',
-  meta: {
-    name: '离子透镜', shortName: '离子', symbol: 'ϟ',
-    color: '#00c2ff', tint: '#e4f9ff', energy: 9,
-    text: { detail: { speed: Math.round((stats.speedMultiplier - 1) * 100) } },
-  },
-  effects: [ionHitEffect],
-  compile: (context) => context.modifyNext(stats),
-  targetEffect: {
-    channels: ['damage'],
-    apply: ({ enemy, combat }) => {
-      if (enemy) combat.applyStatus(enemy, ionizedStatus);
-    },
-  },
-  renderProjectile: ({ ctx, projectile }) => {
-    // 绘制离子叠加层
-  },
-  onHit: ({ effects, position }) => {
-    effects.spawn('module:ion:hit', { position, color: '#00c2ff' });
-  },
-};
+React subscribes to immutable `GameViewSnapshot` objects for controls and panels. The Canvas renderer reads the live entity arrays because it renders every animation frame and must not wait for React snapshots. Toasts use a separate event subscription.
+
+The battlefield is drawn into a Canvas 2D scene. Effects are inserted into named layers around towers, projectiles, and enemies. When WebGL2 is available, a second emissive canvas is blurred and composited with the scene; otherwise the scene canvas is copied directly to the visible output.
+
+## Dependency direction
+
+```text
+UI controls ───────▶ GameEngine ◀────── module runtime hooks
+     │                   │                        │
+     │                   ├──▶ route/collision     └──▶ restricted combat API
+     │                   ├──▶ EffectEngine
+     │                   └──▶ immutable view snapshots
+     │
+     └──▶ presentation helpers ───▶ i18next resources
+
+GameRenderer ───▶ live engine entities + EffectEngine ───▶ Canvas/WebGL output
 ```
 
-模块玩法数值只在模块文件的 `stats` 中定义一次。`compile`、运行时钩子与绘制逻辑直接读取这份数据，`meta.text` 也从同一份数据派生展示值；语言文件仅保留诸如 `+{{speed}}% 弹速` 的文案模板。禁止在 `modules.*.description` 和 `modules.*.detail` 中写入具体数字，语言校验会同时检查这一点以及不同语言的占位符是否一致。
-
-文件完成后只需在 `src/modules/index.ts` 导入并调用 `.register(ionModule)`。注册表会自动完成：
-
-- React 模块库展示；
-- 槽位编译；
-- 模块效果注册；
-- 弹体渲染组合；
-- 施法、拖尾和命中钩子分发。
-
-需要实现链伤、持续伤害或改道等实际玩法时，钩子可以使用受限的 `ModuleCombatApi`：
-
-- `nearbyEnemies()` 查询范围目标；
-- `dealDamage()` 通过统一伤害入口结算，并把载体的 `damage` 目标效果传播给该目标；
-- `affectTarget()` 为无伤害的静态范围发布 `static` 目标效果；
-- `applySlow()` 统一添加或刷新减速，并返回目标是否刚从无减速进入减速；
-- `applyStatus()` 添加或刷新通用周期状态，并返回该状态是否为首次进入；
-- `retarget()` 改变弹体目标和速度向量。
-
-模块不会获得完整 `GameEngine`，所以它可以创造玩法，但不会耦合波次、经济或 UI。
-
-`onHit` 只表达弹体直接碰撞本身，例如弹跃或命中触发；它不再承担 Modifier 的目标效果。爆炸、连锁电击、地雷和哨戒攻击都通过 `dealDamage()` 自动传播伤害通道，因此无需识别冷凝或腐蚀。毒雾与奇点这类无伤害区域在枚举范围目标后调用 `affectTarget()`。新增 Modifier 只需声明订阅通道和 `apply()`，新增范围、连锁或静态载体只需发布自己实际影响的目标，双方不需要互相添加判断。冷凝与腐蚀使用状态接口的布尔返回值只在首次进入时播放粒子，后续传播只刷新时间。
-
-## 编译模型
-
-`ModuleRegistry.compile()` 从左向右遍历槽位。修正、尾迹与逻辑模块通过 `modifyNext()` 写入一个短生命周期的 pending 状态；弹射物模块调用 `emitProjectile()` 时消耗该状态并生成独立 `ShotBlueprint`。
-
-蓝图保留参与本次攻击的模块 ID，因此运行时不需要重新解释槽位，也不需要知道某个模块的具体类型。多个弹射物模块会生成多段施法。
-
-当第一遍读取结束后仍存在未被弹射物消费的修正/尾迹/逻辑，或触发器仍缺少载荷，编译游标会回到槽位 1，最多额外读取完整一圈。回绕期间生成的蓝图和载荷与普通读取完全相同，也会递归计入能耗和弹体数量。当前法术块完成后立即停止回绕；若读完一圈仍不能闭合，编译器产生诊断而不会继续循环。这保留了 Noita 式法术回绕的组合空间，同时给运行时一个严格的有限蓝图。
-
-例如 `脉冲 → 过载` 会编译为普通脉冲和回绕后的过载脉冲；`脉冲 → 新星 → 命中触发` 会先生成两个普通根法术，随后回绕生成一个以脉冲为载体、新星为载荷的法术块。
-
-触发模块通过 `wrapNext()` 将下一枚弹射物变为载体。编译器随后把指定数量的弹射物挂入载体的 `payload`，而不是加入顶层施法列表。捕获栈允许载荷继续带有自己的触发器，因此 `命中触发 → 脉冲 → 延时触发 → 新星 → 穿刺` 会形成三层蓝图树。能耗会递归统计，但运行时只立即生成根载体。这里的 `wrapNext()` 是构造触发蓝图的模块 API，与牌组读取到末端后的“回绕”是两个独立概念。
-
-静态投射物是独立的 `static` 模块类型，但仍复用 `ShotBlueprint` 与投射物实体。它额外声明存在时间、武装时间、作用半径、触发冷却和最大触发次数。编译器只允许它出现在触发器捕获的 `payload` 中；顶层静态模块会产生诊断且不会生成施法蓝图。
-
-触发发生时，运行时把触发坐标作为静态载荷的生成坐标，直接进入 `static → expired` 生命周期，没有飞行或部署阶段。引擎也会拒绝没有触发坐标的静态蓝图，避免绕过编译器后被意外“射出”。毒雾、感应雷和静电哨戒点都遵循这一约束；它们的视觉、周期逻辑和特效仍完整地封装在各自模块文件中。
-
-## 炮塔随机构型
-
-`tower-generation.ts` 使用固定的 12 点预算同时生成能量上限、能量回复、基础冷却、槽位数和射程。所有炮塔先获得最低可用属性，然后逐步从仍可购买的升级中加权随机抽取：
-
-- 能量上限每点增加 20，最多投入 5 点；
-- 能量回复每点增加 1.5/秒，最多投入 5 点；
-- 冷却强化每点减少 0.065 秒，最多投入 5 点；
-- 每个额外槽位消耗 3 点，最多从 3 槽增加到 6 槽；
-- 射程每点增加 13，最多投入 5 点。
-
-每次生成都必须用完同一预算，所以高槽位、高容量、高射速或远射程不会无成本地同时出现。生成器接收注入的随机函数；`GameEngine` 默认创建随机种子，也允许测试传入固定 seed 来复现构型。点数分配只保留为内部调试数据，React 工作台直接展示最终属性。
-
-## 关卡与游戏模式
-
-`config.ts` 中的每个 `LevelDefinition` 完整声明有根路线树、炮塔节点、波次、初始经济、敌人生命/速度倍率和主题色。路线树以叶节点为入口、根节点为核心，每个敌人在生成时固定入口 `routeId`，并缓存该入口到核心的唯一 `PathSampler`；移动、预判、位移和分裂都读取这条逐敌人路线。波次开始时，引擎为每个入口建立独立的生成队列和倒计时；每个未指定入口的普通信号条目会进入所有入口队列，显式指定入口的条目则只进入对应队列，带 `boss` 标记的信号必须使用后一种形式。各入口并行消费自己的队列，因此相同位置的三路编队会在同一模拟节拍出现，而不会因全局队列的生成间隔从上到下依次错开。三入口地图也会自然获得约三倍的普通敌军规模。旧单通道关卡通过 `legacyPathToGraph()` 转为退化树，保持原有几何和时序；“三相汇流”则以三条独立入口展示真正的汇流树。渲染器直接遍历唯一边集合绘制通道、方向箭头、入口与岔口，目标排序使用跨分支可比较的剩余核心图距。底层采样器仍能处理任意直线，但正式地图遵守八方向作者规范：每条边只能水平、垂直或呈 45°，配置测试负责防止地图几何偏离这一视觉语言。
-
-每张关卡还通过 `moduleDraft.initialPicks` 和 `moduleDraft.wavePicks` 分别声明开局补给轮数与非最终波奖励轮数。奖励界面直接展示当前草稿的实际轮数；三相汇流以五轮开局补给和四轮波后奖励应对三路同步压力，其余关卡保持三轮开局、三轮波后奖励。
-
-三相汇流共有七波。第三波起通过显式入口逐步升级精英编队：上路棱镜领主；中路裂变星核；上下裂变星核配中路棱镜领主；上下棱砧甲配中路迟滞辐环；最终上下路各由棱镜领主与裂变星核组队，中路由迟滞辐环与棱砧甲组队。普通信号仍同步广播到三条入口。
-
-正式模式维护模块库存，装配数量不能超过持有份数。模块库使用“拥有数减去所有炮塔已装配数”作为可用数；只展示至少持有一份的模块，并将可用数归零的模块稳定排序到列表末尾。拆卸后通过库存事件重新进入可用区。非最终波结束后进入三轮奖励状态；每轮四个候选中抽取 1–2 个 `projectile` 和 1–2 个 `modifier`/`trail`，剩余位置由 `logic`/`static` 池补足。类别内再按稀有度权重抽取，并压低上一轮候选和已大量持有模块；连续两轮没有稀有或传奇时，下一轮用同类别高级模块保底。创造模式跳过库存约束与奖励阶段，使用可变的敌人模板和倍率，并开放即时生成接口。
-
-`difficulty.ts` 注册五档纯数值难度。敌人生命倍率同时作用于本体与护盾，敌人速度在关卡倍率之后乘算，我方伤害在统一 `applyDamage()` 入口乘算，因此弹体、爆炸、连锁和持续伤害不会遗漏或重复处理。伤害经过护盾后，再由可选的 `armor.damageCap` 限制实际生命伤害；棱砧甲将任意超过 6 点的单次生命伤害压至 6 点，而低伤害保持原值。经济倍率统一作用于开局晶片、击杀晶片和波末奖励。难度不修改波次、模块、触发器或敌人行为。
-
-敌人配置还可通过 `split` 声明死亡分裂。裂变星核本体死亡时先进入 0.46 秒裂隙状态并立即从可攻击集合移除；0.14 秒后的闪光峰值才根据本体已经缩放过的生命、速度、奖励、体积和漏怪伤害构造三个子体。未生成的裂隙会阻止波次清场，`splitGeneration` 则限制子体不再分裂。裂隙在 Canvas overlay 绘制双层扩散环、中心亮雾和径向碎光，WebGL composite 同时执行局部水波折射与切向三采样模糊，因此旧本体删除与新子体生成发生在视野被扰动遮盖的窗口内。棱砧甲使用独立的黄铜五边形渲染：粗暗色外缘、内层甲板、五条承力接缝、中心甲片与铆钉共同表达厚重分层结构。
-
-`aura` 声明敌人周围的局部炮塔冷却与能量回复倍率。炮塔每个固定步查询自身是否处于存活光环内，冷却取最高倍率、能量回复取最低倍率；多个光环不叠乘。迟滞辐环参考 Mindustry 修复压制粒子“从场源指向受影响建筑”的关系表达，但改用每秒 22 次跳变的紫黑色闪电折线；普通层绘制紫黑宽色晕与冷紫亮芯，WebGL emissive 层再提供辉光。每座被压制炮塔还以约 1.4 秒周期反向播放 `game:core-hit`：红色圆环按相同三次缓出曲线从 78 收到 8 单位，十条红白细线按相同二次缓出路径从外围向塔身回收，并随进度增粗、增亮。六个 6–8 单位的黑色空心三角形或菱形使用独立随机相位、曲率与自转，从 82–116 单位外分批飞向塔身；它们不写入 emissive 层。范围本身不绘制，多个场源覆盖同一炮塔时只由最近场源绘制一束闪电，避免视觉叠加与逐场大面积渐变的开销。实际配置为 290 单位、2 倍冷却和 0.5 倍能量回复。正式关卡先在白棱镜区引入分裂，再在玫红回路倒数第二波与末波依次引入分层装甲和压制，最终于翠光折返末波组合分裂与压制；创造模式信号台仍可即时投放任意 Boss。
-
-工作台只在 `selectedTowerId` 指向有效炮塔时挂载，并绝对定位在战场地图之上。内部使用塔身侧栏与法术主区的二维布局；模块库按五种 `ModuleKind` 分页，因此每页都能完整铺开而不依赖工作台内部滚动。点击地图空处、关闭按钮或重置游戏都会把选择清空并卸载叠层。
-
-目标选择是 `Tower.targeting` 的纯数据策略。`EnemySpatialIndex` 持久记录每个敌人所在的网格及格内槽位；正常移动和强制位移只在跨格时以交换删除迁移对应记录，生成、分裂、死亡和重置则直接增删索引，不再在 120Hz 固定步中全量重建。射程、溅射、触发目标和弹道候选都复用这份持续索引；`selectTowerTarget()` 再以单次线性扫描比较当前生命、路径进度、塔距或 92 单位邻域密度，不再为每座塔复制并排序完整敌人数组。跃光的实际位移由 1.3 秒周期的八次幂正弦脉冲驱动；负基线由脉冲的解析均值反推，使 `Enemy.speed` 始终等于 95 的周期平均值。通用 `findPathInterception()` 不感知当前波相，仍按平均速度预测。升级直接强化最终属性，在 3、5 级额外增加槽位，不修改最初的随机构型记录。
-
-## EffectEngine
-
-效果系统借鉴了 Mindustry 的几项架构思想：效果定义与播放实例分离、使用归一化生命周期、按实例 ID 生成确定性随机、通过多个短效果组合复杂反馈。实现没有复制 Mindustry 源代码。
-
-每个 `EffectDefinition` 只有四个核心属性：
-
-- `id`：全局唯一名称；
-- `lifetime`：秒制生命周期；
-- `layer`：`ground`、`under-projectile`、`projectile`、`air` 或 `overlay`；
-- `render(frame, painter)`：无状态绘制函数。
-
-还可以通过可选的 `bloom` 声明 emissive 强度；设为 `false` 会完全排除该效果。效果工厂同样接受这个参数，因此模块文件仍能独立控制自己的普通绘制、发光强度和运行时逻辑。
-
-`frame` 提供 `fin`、`fout`、`slope`、缓动和确定性 `random()`。同一实例在每一帧获得一致的随机方向，不会出现普通逐帧随机造成的闪烁。
-
-`CanvasEffectPainter` 统一提供圆、冲击环、线、定向三角、正多边形和径向光晕。`factories.ts` 则提供可复用的火花锥与冲击波工厂。复杂炮口特效由模块在钩子中使用 `spawnMany()` 组合，而不是创建新的特效子系统。
-
-## Boss 护盾
-
-敌人配置可以通过可选的 `shield` 声明容量、回复速度、破盾冷却、半径、边数、旋转和颜色。运行时字段统一存在于 `Enemy`，因此普通敌人保持零容量，而不需要在伤害入口中按敌人类型分支。
-
-`enemy-shield.ts` 负责三个纯逻辑操作：生成按波次生命倍率缩放的初始护盾、结算护盾吸收与溢出伤害、偿还破盾后的负值冷却债务。弹体使用正多边形边界测试而非圆形近似；完整吸收时会在进入 `onHit`、状态和触发载荷之前销毁弹体，只有溢出到生命的命中才继续后续模块钩子。
-
-视觉状态与数值状态分离：`shieldHitFlash`、`shieldRadiusScale` 和 `shieldRippleAge` 分别控制受击闪白、力场展开与受击波时钟。主渲染器把每个领主的屏幕坐标、物理像素半径、多边形参数、护盾颜色和受击强度批量传入 WebGL 合成 pass；单帧最多处理 16 个护盾。fragment shader 使用同一正多边形边界分别裁切各护盾表面，在护盾存续期间持续运行两组交错相位的场景重采样和移动亮纹；受击状态只提高对应护盾的振幅并追加向外传播的多边形折射波。白色受击边框与主护盾共用坐标，`game-effects.ts` 则继续负责破裂和重启的粒子反馈。领主的生命与护盾直接显示在各自战场单位旁，不再进入 React 快照或占用战场顶部空间。
-
-### 泛光后处理
-
-`WebGLBloomPipeline` 借鉴 Mindustry 在 bullet 到 effect 图层间捕获发光内容的做法，但针对白底画面重新设计：
-
-1. 游戏主体在离屏 Canvas 2D 中完成一次绘制，并作为全分辨率场景纹理上传；
-2. 效果引擎把粒子再次绘制到半分辨率透明 emissive 缓冲，移动弹体、静态装置和开火热核也会写入该缓冲；
-3. WebGL 在四分之一分辨率 framebuffer 中执行横向、纵向可分离高斯模糊；
-4. 合成着色器用有上限的色彩侵染让宽光晕在白底可见，再以 screen 混合叠加清晰热核；
-5. 支持 WebGL 时页面 Canvas 承载合成结果，并缓存 shader uniform 位置；初始化失败或浏览器不支持 WebGL 时，渲染器自动回退到清晰的 Canvas 2D 场景。
-
-纹理尺寸只在视口变化时重新分配；普通帧使用 `texSubImage2D` 更新内容。GPU 每帧只执行两个低分辨率模糊 pass 和一个全分辨率合成 pass，不再在主线程反复缩放、混合 Canvas。地面点阵和路径预先缓存，效果几何则通过镜像 painter 一次计算、同时写入普通层与 emissive 层，进一步减少主线程的重复工作。
-
-## React 边界
-
-React 通过游戏事件订阅快照，负责工作台、槽位拖放、按钮与诊断显示。`App` 只切换 `LevelSelect` 与 `GameSession`；战场、工作台、模块槽、奖励弹窗等组件各自位于同名 `.tsx`，并直接导入同名 `.css`。`GameCanvas` 只在挂载时建立一个 `GameRenderer` 和动画循环；游戏引擎与模块定义不依赖 React，因此仍可独立进行 Node 冒烟测试或迁移到其他界面。组件边界测试会阻止重新向单文件塞入多个组件，或遗漏对应样式表。
+The focused explanations under [`internals/`](internals/) describe these mechanisms without turning into modification tutorials. Task-oriented changes belong under [`guides/`](guides/).
