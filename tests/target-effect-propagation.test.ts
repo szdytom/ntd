@@ -109,6 +109,8 @@ describe('target effect propagation', () => {
     if (!direct || !splash) throw new Error('Expected two enemies');
     const shot = engine.modules.compile(['frost', 'toxin', 'nova']).shots[0];
     if (!shot) throw new Error('Expected a nova shot');
+    const impactPosition = { ...direct.position };
+    const effects = vi.spyOn(engine.effects, 'spawnMany');
     fireAt(engine, shot, direct);
 
     advanceUntil(engine, () => isSlowed(splash));
@@ -117,14 +119,50 @@ describe('target effect propagation', () => {
     expect(isSlowed(splash)).toBe(true);
     expect(hasStatus(direct, 'toxin')).toBe(true);
     expect(hasStatus(splash, 'toxin')).toBe(true);
+    for (const effectId of ['module:frost:hit-ring', 'module:toxin:infect']) {
+      const releases = effects.mock.calls.filter(([ids]) => ids.includes(effectId));
+      expect(releases).toHaveLength(1);
+      expect(releases[0]?.[1].position).toEqual(impactPosition);
+    }
+  });
+
+  it('releases every burning modifier once at the splash center', () => {
+    const { engine, enemies } = prepareEngine([200, 200]);
+    const [direct, splash] = enemies;
+    if (!direct || !splash) throw new Error('Expected two enemies');
+    const shot = engine.modules.compile([
+      'ember-coating', 'searing-sigil', 'starfire-matrix', 'nova',
+    ]).shots[0];
+    if (!shot) throw new Error('Expected a burning nova shot');
+    const impactPosition = { ...direct.position };
+    const effects = vi.spyOn(engine.effects, 'spawnMany');
+    fireAt(engine, shot, direct);
+
+    advanceUntil(engine, () => hasStatus(splash, 'starfire-matrix'));
+
+    for (const enemy of enemies) {
+      expect(hasStatus(enemy, 'ember-coating')).toBe(true);
+      expect(hasStatus(enemy, 'searing-sigil')).toBe(true);
+      expect(hasStatus(enemy, 'starfire-matrix')).toBe(true);
+    }
+    for (const effectId of [
+      'module:ember-coating:ignite',
+      'module:searing-sigil:brand',
+      'module:starfire-matrix:implant',
+    ]) {
+      const releases = effects.mock.calls.filter(([ids]) => ids.includes(effectId));
+      expect(releases).toHaveLength(1);
+      expect(releases[0]?.[1].position).toEqual(impactPosition);
+    }
   });
 
   it('applies Frost and Corrosive Spore to every Arcbolt chain target', () => {
-    const { engine, enemies } = prepareEngine([200, 200, 200]);
+    const { engine, enemies } = prepareEngine([200, 240, 280]);
     const [direct, firstChain, secondChain] = enemies;
     if (!direct || !firstChain || !secondChain) throw new Error('Expected three enemies');
     const shot = engine.modules.compile(['frost', 'toxin', 'arcbolt']).shots[0];
     if (!shot) throw new Error('Expected an Arcbolt shot');
+    const effects = vi.spyOn(engine.effects, 'spawnMany');
     fireAt(engine, shot, direct);
 
     advanceUntil(engine, () => isSlowed(secondChain));
@@ -132,6 +170,15 @@ describe('target effect propagation', () => {
     for (const enemy of enemies) {
       expect(isSlowed(enemy)).toBe(true);
       expect(hasStatus(enemy, 'toxin')).toBe(true);
+    }
+    for (const effectId of ['module:frost:hit-ring', 'module:toxin:infect']) {
+      const releases = effects.mock.calls.filter(([ids]) => ids.includes(effectId));
+      expect(releases).toHaveLength(3);
+      for (const enemy of enemies) {
+        expect(releases.some(([, options]) => (
+          options.position.x === enemy.position.x && options.position.y === enemy.position.y
+        ))).toBe(true);
+      }
     }
   });
 
@@ -163,22 +210,27 @@ describe('target effect propagation', () => {
     expect(enemies.every(isSlowed)).toBe(true);
   });
 
-  it('refreshes Frost and Corrosive Spore without replaying their entry particles', () => {
-    const frostSetup = prepareEngine([220]);
+  it('plays static modifier releases once at each newly affected target', () => {
+    const frostSetup = prepareEngine([210, 250]);
     const frostCarrier = frostSetup.engine.modules.compile([
       'impact-trigger', 'pulse', 'frost', 'toxic-cloud',
     ]).shots[0];
     const frostPayload = frostCarrier?.payload[0];
-    const frostEnemy = frostSetup.enemies[0];
-    if (!frostPayload?.static || !frostEnemy) throw new Error('Expected a Frost cloud and enemy');
+    if (!frostPayload?.static) throw new Error('Expected a Frost cloud and enemies');
     const frostEffects = vi.spyOn(frostSetup.engine.effects, 'spawnMany');
-    const frostProjectile = deployAt(frostSetup.engine, frostPayload, 220);
+    const frostProjectile = deployAt(frostSetup.engine, frostPayload, 230);
 
     advanceFor(frostSetup.engine, 1.1);
 
     expect(frostProjectile.triggerCount).toBeGreaterThanOrEqual(3);
-    expect(frostEnemy.slowTime).toBeGreaterThan(0);
-    expect(frostEffects.mock.calls.filter(([ids]) => ids.includes('module:frost:hit-ring'))).toHaveLength(1);
+    expect(frostSetup.enemies.every(isSlowed)).toBe(true);
+    const frostReleases = frostEffects.mock.calls.filter(([ids]) => ids.includes('module:frost:hit-ring'));
+    expect(frostReleases).toHaveLength(2);
+    for (const enemy of frostSetup.enemies) {
+      expect(frostReleases.some(([, options]) => (
+        options.position.x === enemy.position.x && options.position.y === enemy.position.y
+      ))).toBe(true);
+    }
 
     const toxinSetup = prepareEngine([220]);
     const toxinCarrier = toxinSetup.engine.modules.compile([
@@ -194,6 +246,8 @@ describe('target effect propagation', () => {
 
     expect(toxinProjectile.triggerCount).toBeGreaterThanOrEqual(2);
     expect(toxinEnemy.statuses.find((status) => status.id === 'toxin')?.remaining).toBeGreaterThan(0);
-    expect(toxinEffects.mock.calls.filter(([ids]) => ids.includes('module:toxin:infect'))).toHaveLength(1);
+    const toxinReleases = toxinEffects.mock.calls.filter(([ids]) => ids.includes('module:toxin:infect'));
+    expect(toxinReleases).toHaveLength(1);
+    expect(toxinReleases[0]?.[1].position).toEqual(toxinEnemy.position);
   });
 });

@@ -30,9 +30,13 @@ export const frostModule: ModuleDefinition = {
   effects,
   compile: (context) => context.modifyNext({ slow: stats.slow, slowDuration: stats.duration }),
   targetEffect: {
-    channels: ['damage', 'static'],
-    apply: ({ effects: engine, position, enemy, shot, combat }) => {
-      if (enemy && combat.applySlow(enemy, shot.slow, shot.slowDuration)) {
+    channels: ['damage', 'static', 'secondary-hit'],
+    apply: ({ effects: engine, position, enemy, projectile, shot, targetEffectChannel, combat }) => {
+      if (targetEffectChannel === 'secondary-hit') {
+        engine.spawnMany(['module:frost:hit-ring', 'module:frost:shards'], { position, color });
+        return;
+      }
+      if (enemy && combat.applySlow(enemy, shot.slow, shot.slowDuration) && projectile?.behavior === 'static') {
         engine.spawnMany(['module:frost:hit-ring', 'module:frost:shards'], { position, color });
       }
     },
@@ -51,6 +55,9 @@ export const frostModule: ModuleDefinition = {
       ctx.stroke();
     }
     ctx.restore();
+  },
+  onHit: ({ effects: engine, position }) => {
+    engine.spawnMany(['module:frost:hit-ring', 'module:frost:shards'], { position, color });
   },
   onTrail: ({ effects: engine, position }) => engine.spawn('module:frost:trail', { position, color }),
 };

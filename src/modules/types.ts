@@ -83,11 +83,12 @@ export interface ModuleEffectContext {
   enemy?: Enemy;
   triggerTarget?: Enemy;
   damageDealt?: number;
+  targetEffectChannel?: TargetEffectChannel;
   combat: ModuleCombatApi;
 }
 
-export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer'>;
-export type TargetEffectChannel = 'damage' | 'static';
+export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer' | 'particleTimer'>;
+export type TargetEffectChannel = 'damage' | 'static' | 'secondary-hit';
 
 /**
  * Describes a modifier effect that follows every target affected by its carrier.

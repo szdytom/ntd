@@ -149,8 +149,15 @@ export interface EnemyStatus {
   duration: number;
   interval: number;
   tickTimer: number;
+  particleTimer: number;
   damage: number;
   color: string;
+  particle?: StatusParticleSpec;
+}
+
+export interface StatusParticleSpec {
+  effectId: string;
+  interval: number;
 }
 
 export interface SplitRift {

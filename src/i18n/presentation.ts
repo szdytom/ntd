@@ -2,7 +2,21 @@ import type { TFunction } from 'i18next';
 import type { DifficultyId, EnemyType, ModuleId } from '../game/types';
 import type { ModuleDefinition, ModuleKind, ModuleRarity, ModuleTextValues } from '../modules/types';
 
-const textOptions = (values?: ModuleTextValues): Record<string, string | number> => values ? { ...values } : {};
+const MAX_DISPLAY_FRACTION_DIGITS = 3;
+
+export const formatDisplayNumber = (value: number): number => {
+  if (!Number.isFinite(value)) return value;
+  const rounded = Number(value.toFixed(MAX_DISPLAY_FRACTION_DIGITS));
+  return Object.is(rounded, -0) ? 0 : rounded;
+};
+
+const textOptions = (values?: ModuleTextValues): Record<string, string | number> => {
+  if (!values) return {};
+  return Object.fromEntries(Object.entries(values).map(([key, value]) => [
+    key,
+    typeof value === 'number' ? formatDisplayNumber(value) : value,
+  ]));
+};
 
 export const moduleName = (t: TFunction, id: ModuleId): string => t(`modules.${id}.name`);
 export const moduleShortName = (t: TFunction, id: ModuleId): string => t(`modules.${id}.short`);

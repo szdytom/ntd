@@ -3,6 +3,8 @@ import { barrageModule } from './barrage';
 import { colossusModule } from './colossus';
 import { condenseCoreModule } from './condense-core';
 import { economizerModule } from './economizer';
+import { emberCoatingModule } from './ember-coating';
+import { emberFieldModule } from './ember-field';
 import { echoModule } from './echo';
 import { expirationTriggerModule } from './expiration-trigger';
 import { forkModule } from './fork';
@@ -20,7 +22,9 @@ import { razorModule } from './razor';
 import { ricochetModule } from './ricochet';
 import { ModuleRegistry } from './registry';
 import { seekerModule } from './seeker';
+import { searingSigilModule } from './searing-sigil';
 import { singularityModule } from './singularity';
+import { starfireMatrixModule } from './starfire-matrix';
 import { teslaNodeModule } from './tesla-node';
 import { terrainTriggerModule } from './terrain-trigger';
 import { timerTriggerModule } from './timer-trigger';
@@ -41,7 +45,10 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(resonantTrailModule)
     .register(razorModule)
     .register(ricochetModule)
+    .register(emberCoatingModule)
     .register(toxinModule)
+    .register(searingSigilModule)
+    .register(starfireMatrixModule)
     .register(colossusModule)
     .register(focusCoreModule)
     .register(condenseCoreModule)
@@ -51,6 +58,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(proximityMineModule)
     .register(singularityModule)
     .register(teslaNodeModule)
+    .register(emberFieldModule)
     .register(toxicCloudModule)
     .register(impactTriggerModule)
     .register(timerTriggerModule)

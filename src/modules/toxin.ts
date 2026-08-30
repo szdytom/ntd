@@ -26,6 +26,7 @@ export const toxinModule: ModuleDefinition = {
   meta: {
     name: 'Corrosive Spore', shortName: 'Corrosion', symbol: '♧', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
     text: { detail: {
+      direct: Math.round((1 - stats.damageMultiplier) * 100),
       damage: stats.damage,
       ticks: stats.duration / stats.interval,
       duration: stats.duration,
@@ -34,13 +35,17 @@ export const toxinModule: ModuleDefinition = {
   effects,
   compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
   targetEffect: {
-    channels: ['damage'],
-    apply: ({ effects: engine, position, enemy, combat }) => {
+    channels: ['damage', 'secondary-hit'],
+    apply: ({ effects: engine, position, enemy, projectile, targetEffectChannel, combat }) => {
+      if (targetEffectChannel === 'secondary-hit') {
+        engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
+        return;
+      }
       if (!enemy) return;
-      const enteredCorrosion = combat.applyStatus(enemy, {
+      const entered = combat.applyStatus(enemy, {
         id: 'toxin', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
       });
-      if (enteredCorrosion) {
+      if (entered && projectile?.behavior === 'static') {
         engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
       }
     },
@@ -56,6 +61,9 @@ export const toxinModule: ModuleDefinition = {
       ctx.fill();
     }
     ctx.restore();
+  },
+  onHit: ({ effects: engine, position }) => {
+    engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
   },
   onTrail: ({ effects: engine, position, projectile }) => {
     if (!projectile) return;

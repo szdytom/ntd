@@ -1225,6 +1225,7 @@ export class GameEngine {
       projectile,
       enemy,
       ...(damageDealt === undefined ? {} : { damageDealt }),
+      targetEffectChannel: channel,
       combat: this.combatApi,
     });
   }
@@ -1479,12 +1480,23 @@ export class GameEngine {
       existing.damage = Math.max(existing.damage, status.damage);
       existing.interval = status.interval;
       existing.color = status.color;
+      if (status.particle) {
+        existing.particle = status.particle;
+        existing.particleTimer = Math.min(
+          existing.particleTimer,
+          Math.max(FIXED_SIMULATION_STEP, status.particle.interval),
+        );
+      } else {
+        delete existing.particle;
+        existing.particleTimer = 0;
+      }
       return false;
     }
     enemy.statuses.push({
       ...status,
       remaining: status.duration,
       tickTimer: status.interval,
+      particleTimer: status.particle?.interval ?? 0,
     });
     return true;
   }
@@ -1494,6 +1506,19 @@ export class GameEngine {
       const activeDelta = Math.min(delta, Math.max(0, status.remaining));
       status.remaining -= delta;
       status.tickTimer -= activeDelta;
+      if (status.particle) {
+        const particleInterval = Math.max(FIXED_SIMULATION_STEP, status.particle.interval);
+        status.particleTimer -= activeDelta;
+        while (status.particleTimer <= 0 && !enemy.dead) {
+          this.effects.spawn(status.particle.effectId, {
+            position: enemy.position,
+            rotation: enemy.angle,
+            color: status.color,
+            data: { radius: enemy.radius },
+          });
+          status.particleTimer += particleInterval;
+        }
+      }
       while (status.tickTimer <= 0 && !enemy.dead) {
         this.applyDamage(enemy, status.damage, status.color);
         status.tickTimer += status.interval;

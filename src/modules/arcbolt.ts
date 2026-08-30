@@ -90,7 +90,8 @@ export const arcboltModule: ModuleDefinition = {
       const target = combat.nearestEnemy(origin, stats.chainRadius, visited);
       if (!target) break;
       engine.spawn('module:arcbolt:chain', { position: origin, color, data: { ...target.position } });
-      combat.dealDamage(target, damage, color, projectile);
+      const damageDealt = combat.dealDamage(target, damage, color, projectile);
+      if (damageDealt > 0) combat.affectTarget(target, projectile, 'secondary-hit');
       visited.push(target.id);
       origin = { ...target.position };
       damage *= stats.chainDamageMultiplier;

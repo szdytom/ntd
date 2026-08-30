@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 27 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 31 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -24,6 +24,7 @@ Static payloads are deployed at a trigger position. They cannot be cast as root 
 | --- | --- | --- |
 | `proximity-mine` | Hex Proximity Mine | Arms, waits for a nearby enemy, and detonates |
 | `tesla-node` | Tesla Sentry | Repeatedly shocks nearby targets |
+| `ember-field` | Ember Scorch Field | Maintains a low-cost burning area |
 | `toxic-cloud` | Emerald Toxic Cloud | Maintains a corrosive area |
 | `singularity` | Collapse Singularity | Pulls enemies toward its route-relative center |
 
@@ -37,7 +38,10 @@ Modifiers patch the next emitted projectile.
 | `frost` | Condensing Lens | Propagates slowing to affected targets |
 | `fork` | Triple Fork | Emits multiple projectiles with spread |
 | `ricochet` | Ricochet Mirror | Redirects a surviving projectile after impact |
+| `ember-coating` | Ember Coating | Propagates a light burning status |
 | `toxin` | Corrosive Spore | Propagates a periodic damage status |
+| `searing-sigil` | Searing Sigil | Propagates a heavy burning status |
+| `starfire-matrix` | Starfire Matrix | Propagates a rapid legendary burning status |
 | `colossus` | Colossus Core | Enlarges and strengthens the next projectile |
 | `reclaim-circuit` | Reclaim Circuit | Converts health damage into tower energy |
 | `focus-core` | Focus Core | Converts extra projectiles, repeats, and pierce into one focused shot |

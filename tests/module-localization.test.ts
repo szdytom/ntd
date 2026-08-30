@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import i18n from '../src/i18n';
 import en from '../src/i18n/locales/en.json';
 import zhCN from '../src/i18n/locales/zh-CN.json';
+import { formatDisplayNumber, moduleDetail } from '../src/i18n/presentation';
 import { createModuleRegistry } from '../src/modules';
 
 const placeholderPattern = /\{\{\s*([^},\s]+).*?\}\}/g;
@@ -33,5 +35,21 @@ describe('module localization values', () => {
         }
       }
     }
+  });
+
+  it.each([
+    [2.8 / 0.4, 7],
+    [0.1 + 0.2, 0.3],
+    [1 / 3, 0.333],
+    [-Number.EPSILON, 0],
+  ])('formats display number %s without floating-point noise', (value, expected) => {
+    expect(formatDisplayNumber(value)).toBe(expected);
+  });
+
+  it('formats computed values before interpolating module details', () => {
+    const definition = registry.require('starfire-matrix');
+
+    expect(moduleDetail(i18n.t, definition)).toContain('7×8 starfire damage');
+    expect(moduleDetail(i18n.t, definition)).not.toContain('6.999999999999999');
   });
 });

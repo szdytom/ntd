@@ -66,3 +66,35 @@ export function shockwave(options: ShockwaveOptions): EffectDefinition {
     },
   };
 }
+
+interface StatusOrbOptions {
+  id: string;
+  lifetime?: number;
+  size?: number;
+  hotColor?: string;
+  bloom?: number | false;
+}
+
+export function statusOrbs(options: StatusOrbOptions): EffectDefinition {
+  const size = options.size ?? 4;
+  const hotColor = options.hotColor ?? '#fff3bf';
+  return {
+    id: options.id,
+    lifetime: options.lifetime ?? 0.48,
+    layer: 'air',
+    bloom: options.bloom ?? 0.78,
+    render: (frame, painter) => {
+      const data = frame.data as { radius?: number } | undefined;
+      const areaRadius = Math.max(1, data?.radius ?? 10);
+      const angle = frame.random(0, 0, Math.PI * 2);
+      const distance = Math.sqrt(frame.random(1)) * areaRadius * 0.9;
+      const x = frame.x + Math.cos(angle) * distance;
+      const y = frame.y + Math.sin(angle) * distance;
+      const orbSize = size * (0.72 + frame.slope * 0.42) * frame.random(2, 0.78, 1.2);
+      painter.circle(x, y, orbSize * 1.75, frame.color, frame.fout * 0.16);
+      painter.circle(x, y, orbSize, frame.color, frame.fout * 0.42);
+      painter.circle(x, y, orbSize * 0.38, hotColor, frame.fout * 0.58);
+      painter.light(x, y, orbSize * 5.2, frame.color, frame.fout * 0.2);
+    },
+  };
+}
