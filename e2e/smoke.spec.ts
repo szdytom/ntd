@@ -243,8 +243,14 @@ test('creative economy and signal controls are independent from the workshop', a
   const signalButton = page.getByRole('button', { name: 'Signal console' });
   await expect(signalButton).toBeVisible();
   await signalButton.click();
-  await expect(page.getByRole('heading', { name: 'Creative Signal Console' })).toBeVisible();
+  const signalConsole = page.getByRole('dialog', { name: 'Creative Signal Console' });
+  await expect(signalConsole).toBeVisible();
+  await page.locator('.battle-footer-state').click();
+  await expect(signalConsole).toHaveCount(0);
+
   await signalButton.click();
+  await page.getByRole('button', { name: 'Close signal console' }).click();
+  await expect(signalConsole).toHaveCount(0);
 
   await clickBattlefieldAt(page, towerPad(defaultLevel, 0));
   await expect(page.getByLabel('Tower module workshop').locator('.creative-lab')).toHaveCount(0);

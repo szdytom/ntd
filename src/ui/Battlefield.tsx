@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
@@ -20,6 +20,20 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
 }) {
   const { t } = useTranslation();
   const [creativePanelOpen, setCreativePanelOpen] = useState(false);
+  const creativeToggleRef = useRef<HTMLButtonElement>(null);
+  const creativePanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!creativePanelOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (creativePanelRef.current?.contains(target) || creativeToggleRef.current?.contains(target)) return;
+      setCreativePanelOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+  }, [creativePanelOpen]);
   const { game: snapshot } = view;
   const phase = snapshot.status === 'won'
     ? t('battlefield.won')
@@ -56,7 +70,9 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
                 : waveInProgress ? 'battlefield.currentWave' : 'battlefield.nextWave')}</small>
               {engine.mode === 'creative' ? (
                 <button
+                  ref={creativeToggleRef}
                   className="creative-signal-toggle"
+                  aria-haspopup="dialog"
                   aria-expanded={creativePanelOpen}
                   aria-controls="creative-signal-panel"
                   onClick={() => setCreativePanelOpen((open) => !open)}
@@ -75,8 +91,11 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
         </div>
 
         {engine.mode === 'creative' && creativePanelOpen ? (
-          <div id="creative-signal-panel" className="creative-signal-panel">
-            <CreativeLab engine={engine} setup={view.creativeSetup} />
+          <div ref={creativePanelRef} id="creative-signal-panel" className="creative-signal-panel">
+            <CreativeLab engine={engine} setup={view.creativeSetup} onClose={() => {
+              setCreativePanelOpen(false);
+              creativeToggleRef.current?.focus();
+            }} />
           </div>
         ) : null}
 

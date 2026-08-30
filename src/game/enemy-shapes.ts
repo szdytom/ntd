@@ -17,6 +17,30 @@ export const SURGE_SHAPE = {
   notchScale: 0.36,
 } as const;
 
+export const ANVIL_SHAPE = {
+  sides: 5,
+  plateRadiusScale: 0.76,
+  grooveStartRadiusScale: 0.43,
+  grooveEndRadiusScale: 0.7,
+  coreRadiusScale: 0.38,
+} as const;
+
+export function regularPolygonPoints(
+  radius: number,
+  sides: number,
+  rotation: number,
+  centerX = 0,
+  centerY = 0,
+): readonly ShapePoint[] {
+  return Array.from({ length: sides }, (_, index) => {
+    const angle = rotation + index * Math.PI * 2 / sides;
+    return {
+      x: centerX + Math.cos(angle) * radius,
+      y: centerY + Math.sin(angle) * radius,
+    };
+  });
+}
+
 export function surgeBodyPoints(radius: number): readonly [ShapePoint, ShapePoint, ShapePoint, ShapePoint] {
   return [
     { x: radius, y: 0 },

@@ -6,6 +6,7 @@ import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
 import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
 import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
+import { CalibrationSlider } from './CalibrationSlider';
 import { LevelMap } from './LevelMap';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Tag } from './Tag';
@@ -276,8 +277,8 @@ export function LevelSelect({ onStart, onOpenArchive }: {
             </label>
           </div>
           <div className="setup-scales">
-            <label><span>{t('levelSelect.healthScale')}</span><input type="range" min="0.25" max="5" step="0.25" value={creative.healthScale} onChange={(event) => setCreative((current) => ({ ...current, healthScale: Number(event.target.value) }))} /><b>{creative.healthScale.toFixed(2)}×</b></label>
-            <label><span>{t('levelSelect.speedScale')}</span><input type="range" min="0.25" max="3" step="0.25" value={creative.speedScale} onChange={(event) => setCreative((current) => ({ ...current, speedScale: Number(event.target.value) }))} /><b>{creative.speedScale.toFixed(2)}×</b></label>
+            <CalibrationSlider label={t('levelSelect.healthScale')} min={0.25} max={5} step={0.25} value={creative.healthScale} onChange={(value) => setCreative((current) => ({ ...current, healthScale: value }))} />
+            <CalibrationSlider label={t('levelSelect.speedScale')} min={0.25} max={3} step={0.25} value={creative.speedScale} onChange={(value) => setCreative((current) => ({ ...current, speedScale: value }))} />
           </div>
         </section>
       ) : null}

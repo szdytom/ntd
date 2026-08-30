@@ -263,6 +263,7 @@
 	"battlefield.score": "Purification",
 	"creativeLab.title": "Creative Signal Console",
 	"creativeLab.description": "Adjust signal scales or inject individual enemies",
+	"creativeLab.close": "Close signal console",
 	"creativeLab.spawnNow": "Spawn {{enemy}} now",
 	"enemyArchive.entry": "Signal Compendium",
 	"enemyArchive.entryDetail": "{{count}} signal profiles",

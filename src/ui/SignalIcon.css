@@ -1,0 +1,77 @@
+.signal-icon {
+  display: block;
+  flex: 0 0 auto;
+  overflow: visible;
+  color: var(--signal-icon-fill);
+}
+
+.signal-icon__body,
+.signal-icon__fracture-spike,
+.signal-icon__fracture-core {
+  fill: var(--signal-icon-fill);
+  stroke: var(--signal-icon-detail);
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.signal-icon__detail-outline {
+  fill: none;
+  stroke: var(--signal-icon-detail);
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.signal-icon__detail-fill { fill: var(--signal-icon-detail); }
+
+.signal-icon__crown-orbit {
+  fill: none;
+  stroke: var(--signal-icon-accent);
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.signal-icon__ring-cutout { fill: var(--signal-icon-detail); }
+
+.signal-icon__anvil-shell {
+  fill: var(--signal-icon-fill);
+  stroke: var(--signal-icon-dark);
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+}
+
+.signal-icon__anvil-plate {
+  fill: color-mix(in srgb, var(--signal-icon-fill) 72%, var(--signal-icon-detail));
+  stroke: var(--signal-icon-detail);
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.signal-icon__anvil-groove {
+  stroke: var(--signal-icon-dark);
+  stroke-linecap: round;
+  stroke-width: 1.4;
+}
+
+.signal-icon__anvil-core {
+  fill: var(--signal-icon-dark);
+  stroke: var(--signal-icon-detail);
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.signal-icon--monochrome .signal-icon__fracture-spike,
+.signal-icon--monochrome .signal-icon__fracture-core { stroke: #fff; }
+
+.signal-icon--monochrome .signal-icon__anvil-shell {
+  fill: color-mix(in srgb, #fff 16%, transparent);
+  stroke: #fff;
+  stroke-width: 2.2;
+}
+
+.signal-icon--monochrome .signal-icon__anvil-plate {
+  fill: color-mix(in srgb, #fff 24%, transparent);
+  stroke: #fff;
+}
+
+.signal-icon--monochrome .signal-icon__anvil-groove { display: none; }
+.signal-icon--monochrome .signal-icon__anvil-core { fill: #fff; stroke: none; }

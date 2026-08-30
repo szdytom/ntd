@@ -1,5 +1,5 @@
 import { ENEMIES, type EnemyShieldConfig } from './config';
-import { FRACTURE_SHAPE, fractureSpikeAngles, traceFractureSpike, traceSurgeBody } from './enemy-shapes';
+import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, regularPolygonPoints, traceFractureSpike, traceSurgeBody } from './enemy-shapes';
 import { clamp } from './math';
 import type { EnemyType } from './types';
 
@@ -37,13 +37,10 @@ export function traceRegularPolygon(
   rotation: number,
 ): void {
   ctx.beginPath();
-  for (let index = 0; index < sides; index += 1) {
-    const angle = rotation + index * Math.PI * 2 / sides;
-    const px = x + Math.cos(angle) * radius;
-    const py = y + Math.sin(angle) * radius;
+  regularPolygonPoints(radius, sides, rotation, x, y).forEach(({ x: px, y: py }, index) => {
     if (index === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
-  }
+  });
   ctx.closePath();
 }
 
@@ -128,7 +125,7 @@ export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyV
 function drawAnvilBody(ctx: CanvasRenderingContext2D, radius: number, fillColor: string): void {
   const struck = fillColor === '#ffffff';
   ctx.fillStyle = fillColor;
-  traceRegularPolygon(ctx, 0, 0, radius, 5, 0);
+  traceRegularPolygon(ctx, 0, 0, radius, ANVIL_SHAPE.sides, 0);
   ctx.fill();
   ctx.shadowColor = 'transparent';
   ctx.strokeStyle = struck ? '#ffffff' : '#5f451c';
@@ -139,30 +136,30 @@ function drawAnvilBody(ctx: CanvasRenderingContext2D, radius: number, fillColor:
   ctx.fillStyle = struck ? '#ffffff' : '#d2a545';
   ctx.strokeStyle = struck ? '#ffffff' : '#f2d27a';
   ctx.lineWidth = Math.max(2.5, radius * 0.085);
-  traceRegularPolygon(ctx, 0, 0, radius * 0.76, 5, 0);
+  traceRegularPolygon(ctx, 0, 0, radius * ANVIL_SHAPE.plateRadiusScale, ANVIL_SHAPE.sides, 0);
   ctx.fill();
   ctx.stroke();
 
   ctx.strokeStyle = struck ? 'rgba(255,255,255,0.9)' : '#76551f';
   ctx.lineWidth = Math.max(2, radius * 0.065);
-  for (let index = 0; index < 5; index += 1) {
-    const angle = index * Math.PI * 2 / 5;
+  for (let index = 0; index < ANVIL_SHAPE.sides; index += 1) {
+    const angle = index * Math.PI * 2 / ANVIL_SHAPE.sides;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(angle) * radius * 0.43, Math.sin(angle) * radius * 0.43);
-    ctx.lineTo(Math.cos(angle) * radius * 0.7, Math.sin(angle) * radius * 0.7);
+    ctx.moveTo(Math.cos(angle) * radius * ANVIL_SHAPE.grooveStartRadiusScale, Math.sin(angle) * radius * ANVIL_SHAPE.grooveStartRadiusScale);
+    ctx.lineTo(Math.cos(angle) * radius * ANVIL_SHAPE.grooveEndRadiusScale, Math.sin(angle) * radius * ANVIL_SHAPE.grooveEndRadiusScale);
     ctx.stroke();
   }
 
   ctx.fillStyle = struck ? '#ffffff' : '#6d4d1c';
   ctx.strokeStyle = struck ? '#ffffff' : '#f6dc91';
   ctx.lineWidth = Math.max(2, radius * 0.06);
-  traceRegularPolygon(ctx, 0, 0, radius * 0.38, 5, Math.PI);
+  traceRegularPolygon(ctx, 0, 0, radius * ANVIL_SHAPE.coreRadiusScale, ANVIL_SHAPE.sides, Math.PI);
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = struck ? '#ffffff' : '#fff0b2';
-  for (let index = 0; index < 5; index += 1) {
-    const angle = index * Math.PI * 2 / 5;
+  for (let index = 0; index < ANVIL_SHAPE.sides; index += 1) {
+    const angle = index * Math.PI * 2 / ANVIL_SHAPE.sides;
     traceRegularPolygon(
       ctx,
       Math.cos(angle) * radius * 0.61,

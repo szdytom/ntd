@@ -11,12 +11,10 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  transition: transform 140ms ease;
+  transition: filter 140ms ease;
 }
 
-.enemy-preview-button:hover {
-  transform: translateY(-2px);
-}
+.enemy-preview-button:hover { filter: brightness(1.08); }
 
 .enemy-preview-button:focus-visible {
   outline: 3px solid var(--purple);
@@ -30,92 +28,13 @@
   align-items: center;
   gap: 5px;
   padding: 0 7px;
+  text-shadow: 0 1px 1px rgba(37, 33, 52, .36);
 }
 
-.enemy-preview i,
-.legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  flex: 0 0 auto;
-  background: var(--preview-color, #6c5ce7);
-}
-
-.enemy-preview i.tri,
-.legend i.tri {
-  width: 0;
-  height: 0;
-  border-right: 6px solid transparent;
-  border-bottom: 11px solid var(--preview-color, #ffcf4a);
-  border-left: 6px solid transparent;
-  background: transparent;
-}
-
-.enemy-preview i.square,
-.legend i.square {
-  transform: rotate(45deg);
-  border-radius: 2px;
-}
-
-.enemy-preview i.hex,
-.legend i.hex {
-  clip-path: polygon(25% 7%, 75% 7%, 100% 50%, 75% 93%, 25% 93%, 0 50%);
-}
-
-.enemy-preview i.fracture,
-.legend i.fracture {
-  position: relative;
-  border-radius: 0;
-  background: transparent;
-}
-
-.enemy-preview i.fracture::before,
-.legend i.fracture::before,
-.enemy-preview i.fracture::after,
-.legend i.fracture::after {
-  position: absolute;
-  content: '';
-}
-
-.enemy-preview i.fracture::before,
-.legend i.fracture::before {
-  z-index: 1;
-  inset: 14%;
-  border-radius: 50%;
-  background: var(--preview-color, #00a8cc);
-}
-
-.enemy-preview i.fracture::after,
-.legend i.fracture::after {
-  inset: 0;
-  background: var(--preview-color, #00a8cc);
-  clip-path: polygon(50% 0, 58.5% 22%, 78% 41.5%, 100% 50%, 78% 58.5%, 58.5% 78%, 50% 100%, 41.5% 78%, 22% 58.5%, 0 50%, 22% 41.5%, 41.5% 22%);
-}
-
-.enemy-preview i.ring,
-.legend i.ring {
-  border: 2px solid var(--preview-color, #9aae18);
-  border-radius: 50%;
-  background: transparent;
-}
-
-.enemy-preview i.surge,
-.legend i.surge {
-  width: 12px;
-  clip-path: polygon(100% 50%, 14% 100%, 32% 50%, 14% 0);
-}
-
-.enemy-preview i.anvil,
-.legend i.anvil {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #6d4d1c;
-  background: var(--preview-color, #b88a35);
-  clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
-}
+.enemy-preview .signal-icon { width: 15px; height: 15px; }
 
 .enemy-preview b {
-  color: #252134;
+  color: inherit;
   font-family: var(--font-mono);
   font-size: 13px;
 }

@@ -297,9 +297,6 @@
 .setup-rules input { width: 62px; height: 42px; border: 2px solid var(--select-ink); color: var(--select-ink); background: #fff; font-size: 18px; font-weight: 800; text-align: center; }
 .setup-rules b { color: var(--rule-accent); }
 .setup-scales { display: grid; grid-template-columns: 1fr; align-content: center; gap: 10px; margin: 0; }
-.setup-scales label { display: grid; grid-template-columns: 86px minmax(80px, 1fr) 50px; align-items: center; gap: 8px; color: var(--select-ink); font-size: 14px; font-weight: 800; }
-.setup-scales input { width: 100%; accent-color: var(--purple); }
-.setup-scales b { color: var(--purple); font-family: var(--font-mono); font-size: 14px; text-align: right; }
 
 .begin-run {
   display: flex;

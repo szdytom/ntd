@@ -4,6 +4,7 @@ import { ENEMIES, resolveSpawnEntrances } from '../game/config';
 import type { GameEngine } from '../game/engine';
 import type { EnemyType, GameSnapshot } from '../game/types';
 import { enemyName } from '../i18n/presentation';
+import { SignalIcon } from './SignalIcon';
 import { Tag } from './Tag';
 import './EnemyPreview.css';
 
@@ -29,7 +30,6 @@ export function EnemyPreview({ engine, wave, liveCounts, onOpenArchive }: {
   return <div className="enemy-preview">{[...counts.entries()].map(([type, count]) => {
     const enemy = ENEMIES[type];
     const name = enemyName(t, type);
-    const shape = enemy.shape === 'fracture' ? 'fracture' : enemy.shape === 'ring' ? 'ring' : enemy.shape === 'surge' ? 'surge' : enemy.shape === 'anvil' ? 'anvil' : enemy.sides === 3 ? 'tri' : enemy.sides >= 6 ? 'hex' : 'square';
     return <button
       className="enemy-preview-button"
       key={type}
@@ -37,8 +37,8 @@ export function EnemyPreview({ engine, wave, liveCounts, onOpenArchive }: {
       onClick={() => onOpenArchive(type)}
       aria-label={t('battlefield.openSignalArchive', { signal: name })}
     >
-      <Tag className="enemy-preview-tag" title={`${name} × ${count}`}>
-        <i className={shape} style={{ '--preview-color': enemy.color } as CSSProperties} />
+      <Tag className="enemy-preview-tag" tone="accent" contrast="light" style={{ '--tag-accent': enemy.color } as CSSProperties} title={`${name} × ${count}`}>
+        <SignalIcon type={type} monochrome />
         <b>×{count}</b>
       </Tag>
     </button>;

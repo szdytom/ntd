@@ -263,6 +263,7 @@
 	"battlefield.score": "净化值",
 	"creativeLab.title": "创造模式信号台",
 	"creativeLab.description": "调整信号倍率，或立即投放单个敌人",
+	"creativeLab.close": "关闭信号台",
 	"creativeLab.spawnNow": "立即生成{{enemy}}",
 	"enemyArchive.entry": "信号图鉴",
 	"enemyArchive.entryDetail": "{{count}} 份信号档案",
