@@ -1,12 +1,13 @@
 .sector-archive {
   --sector-accent: #6558e8;
   display: grid;
-  min-height: 720px;
+  height: 100%;
+  min-height: 0;
   grid-template-columns: 270px minmax(0, 1fr);
   color: var(--archive-ink);
 }
 
-.sector-archive-index { min-width: 0; border-right: 2px solid var(--archive-ink); background: #efedf3; }
+.sector-archive-index { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-right: 2px solid var(--archive-ink); background: #efedf3; scrollbar-color: var(--sector-accent) #e5e2e9; scrollbar-width: thin; }
 .sector-archive-index > header {
   display: flex;
   min-height: 62px;
@@ -45,7 +46,7 @@
 .sector-archive-index button small { margin-top: 6px; color: var(--muted); font: 13px/1 var(--font-mono); }
 .sector-archive-index button > b { padding-right: 10px; font: 900 13px/1 var(--font-mono); }
 
-.sector-archive-record { display: grid; min-width: 0; grid-template-columns: minmax(340px, .88fr) minmax(500px, 1.12fr); align-content: start; background: #fff; }
+.sector-archive-record { display: grid; min-width: 0; min-height: 0; grid-template-columns: minmax(340px, .88fr) minmax(500px, 1.12fr); align-content: start; overflow-y: auto; overscroll-behavior: contain; background: #fff; scrollbar-color: var(--sector-accent) #e5e2e9; scrollbar-width: thin; }
 
 /* The selected route is the page's specimen: real level geometry on a measured grid. */
 .sector-route-stage {
@@ -97,34 +98,6 @@
 .sector-wave-analysis p { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
 .sector-ledger-section > header > span { min-width: 34px; padding: 7px; color: #fff; background: var(--archive-ink); font: 900 13px/1 var(--font-mono); text-align: center; }
 
-.sector-signal-ledger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; background: #fff; }
-.sector-signal-ledger article {
-  --signal-accent: var(--sector-accent);
-  position: relative;
-  display: grid;
-  min-height: 124px;
-  grid-template-columns: 48px minmax(0, 1fr);
-  align-content: space-between;
-  padding: 16px 18px 24px 28px;
-  overflow: hidden;
-  border-right: 2px solid var(--archive-ink);
-  border-bottom: 2px solid var(--archive-ink);
-  background: color-mix(in srgb, var(--signal-accent) 10%, #fff);
-}
-.sector-signal-ledger article:nth-child(3n) { border-right: 0; }
-.sector-signal-ledger article::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 9px; border-right: 2px solid var(--archive-ink); background: var(--signal-accent); }
-.sector-ledger-signal-icon { grid-row: 1 / 3; align-self: center; width: 40px; height: 40px; }
-.sector-signal-ledger article > header { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 10px; }
-.sector-signal-ledger article > header strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.sector-signal-ledger article > header b { font: 900 27px/1 var(--font-mono); }
-.sector-signal-ledger article > div { display: flex; gap: 16px; margin-top: 18px; color: var(--muted); font-size: 14px; }
-.sector-signal-ledger article > div b { color: var(--archive-ink); font-family: var(--font-mono); }
-.sector-signal-ledger article > i { position: absolute; right: 0; bottom: 0; left: 9px; height: 10px; border-top: 2px solid var(--archive-ink); background: #efedf3; }
-.sector-signal-ledger article > i > b { display: block; height: 100%; border-right: 2px solid var(--archive-ink); background: var(--signal-accent); }
-.sector-empty-ledger { display: flex; min-height: 128px; align-items: center; justify-content: center; flex-direction: column; padding: 24px; text-align: center; }
-.sector-empty-ledger strong { font-size: 16px; }
-.sector-empty-ledger span { margin-top: 7px; color: var(--muted); font-size: 14px; }
-
 .sector-wave-analysis > header > span { padding: 8px 10px; border: 2px solid var(--archive-ink); background: var(--archive-yellow); font: 800 13px/1.2 var(--font-mono); }
 .wave-pulse { display: grid; grid-auto-columns: minmax(116px, 1fr); grid-auto-flow: column; overflow-x: auto; border-bottom: 2px solid var(--archive-ink); }
 .wave-pulse article { display: grid; min-height: 174px; grid-template-rows: auto 74px auto; gap: 10px; padding: 13px; border-right: 2px solid var(--archive-ink); background: #fff; }
@@ -154,13 +127,16 @@
   .sector-record-head { grid-template-columns: 1fr; }
   .sector-difficulty-stamps { min-height: 78px; border-top: 2px solid var(--archive-ink); border-left: 0; }
   .sector-difficulty-stamps > div { margin-top: 8px; }
-  .sector-signal-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sector-signal-ledger article:nth-child(3n) { border-right: 2px solid var(--archive-ink); }
-  .sector-signal-ledger article:nth-child(2n) { border-right: 0; }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  .sector-archive { grid-template-columns: 200px minmax(0, 1fr); }
+  .sector-archive-record { display: block; }
+  .sector-route-stage { min-height: 320px; border-right: 0; }
 }
 
 @media (max-width: 760px) {
-  .sector-archive { display: block; min-height: 0; }
+  .sector-archive { display: block; height: auto; min-height: 0; }
   .sector-archive-index { overflow-x: auto; border-right: 0; border-bottom: 2px solid var(--archive-ink); }
   .sector-archive-index > header { display: none; }
   .sector-archive-index > div { display: flex; width: max-content; min-width: 100%; }
@@ -171,7 +147,7 @@
   .sector-archive-index button strong { font-size: 12px; }
   .sector-archive-index button small,
   .sector-archive-index button > b { font-size: 11px; }
-  .sector-archive-record { display: block; }
+  .sector-archive-record { display: block; overflow: visible; }
   .sector-route-stage { min-height: 270px; border-right: 0; }
   .sector-route-stage .level-map { inset: 58px 20px 24px; width: calc(100% - 40px); height: calc(100% - 82px); }
   .sector-record-code { top: 12px; left: 12px; min-width: 84px; padding: 8px 10px; }
@@ -196,14 +172,6 @@
   .sector-wave-analysis p { font-size: 12px; }
   .sector-ledger-section > header > span,
   .sector-wave-analysis > header > span { font-size: 11px; }
-  .sector-signal-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sector-signal-ledger article { min-height: 112px; padding: 13px 11px 22px 23px; }
-  .sector-ledger-signal-icon { width: 32px; height: 32px; }
-  .sector-signal-ledger article > header strong { font-size: 12px; }
-  .sector-signal-ledger article > header b { font-size: 22px; }
-  .sector-signal-ledger article > div { gap: 8px; font-size: 12px; }
-  .sector-empty-ledger strong { font-size: 14px; }
-  .sector-empty-ledger span { font-size: 12px; }
   .wave-pulse { grid-auto-columns: minmax(102px, 1fr); }
   .wave-pulse article { min-height: 156px; grid-template-rows: auto 64px auto; padding: 10px; }
   .wave-pulse article > header span,

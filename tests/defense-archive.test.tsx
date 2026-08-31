@@ -210,11 +210,12 @@ describe('defense archive interface', () => {
     render(<DefenseArchive repository={repository as never} onBack={() => undefined} />);
 
     expect(await screen.findByText('Completed defenses')).toBeTruthy();
-    expect(document.querySelector('.defense-archive-signal-grid .signal-icon')).toBeTruthy();
+    expect(document.querySelector('.signal-ledger-grid .signal-icon')).toBeTruthy();
     await user.click(screen.getByRole('tab', { name: 'Defense sectors' }));
     expect(screen.getByRole('heading', { name: 'White Prism' })).toBeTruthy();
     expect(screen.getByText('Wave performance')).toBeTruthy();
     expect(screen.getByText('Signal outcomes recorded only in this sector')).toBeTruthy();
+    expect(document.querySelector('.sector-ledger-section .signal-ledger-grid')).toBeTruthy();
     await user.click(screen.getByRole('tab', { name: 'Achievements' }));
     expect(screen.getByText('Field training')).toBeTruthy();
     await user.click(screen.getByRole('tab', { name: /Defense records/ }));

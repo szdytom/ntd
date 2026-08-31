@@ -45,6 +45,8 @@ Do not put long text directly on a saturated field unless the contrast is explic
 
 The default structural boundary is a `2px solid` ink line. Use `1px` only for subordinate subdivisions inside an already bounded unit, such as cells in the Compendium stat matrix. A boundary should be drawn by one owner. Two neighboring children should not each add a full border and accidentally create a four-pixel seam.
 
+Keep divider weight consistent within the same grid or visual hierarchy. All peer boundaries must use the same thickness; do not mix `1px` and `2px` lines between equivalent regions. If a subordinate grid uses `1px` lines, the transition to it must be structurally clear, while the surrounding primary divisions remain `2px`.
+
 ## Divide rectangles by responsibility
 
 Start from the screen's operating model, then convert it into rectangles:
@@ -57,6 +59,8 @@ Start from the screen's operating model, then convert it into rectangles:
 6. At narrow widths, change the reading order; do not proportionally shrink the desktop diagram.
 
 Good asymmetry comes from information weight. A narrow index beside a large specimen is useful. A random narrow card beside three equal cards is decoration.
+
+Prefer dividing one parent rectangle directly over nesting multiple bordered boxes. Sibling regions should share the parent's grid and meet at single owned divider lines. Add a nested bordered rectangle only when it represents a genuinely independent interaction or data object; spacing, background tint, typography, or a shared divider should handle ordinary grouping. Before adding a wrapper, check whether the parent can express the same hierarchy with `grid-template-*`, named areas, or a pseudo-element divider.
 
 ### Arc Workshop
 
@@ -128,6 +132,8 @@ Prefer flat state changes: replace a background, add an inset accent bar, revers
 
 The existing system sans face carries headings and prose. Use tight, heavy display headings for screen identity, regular compact text for explanation, and `--font-mono` only for IDs, measurements, counts, short codes, and symbolic readouts.
 
+On desktop and tablet layouts, primary text must be at least `14px`; decorative or supporting text must be at least `13px`. At mobile breakpoints, the minimums become `12px` for primary text and `11px` for decorative or supporting text. These are hard lower bounds, not target sizes: controls, values, body copy, and other text needed to operate or understand the interface should normally remain larger. Placeholder ornament, non-text geometry, and text rendered as part of an imported image are not substitutes for readable interface labels.
+
 Keep labels close to the edge or value they explain. A rectangular UI becomes noisy when every cell repeats a heading, subtitle, border, icon, and badge. In a dense region, choose the smallest combination that still communicates role:
 
 - a colored leading strip plus heading for a section;
@@ -187,7 +193,9 @@ Keep each component's structural styles in its same-named stylesheet. Shared pri
 ## Review checklist
 
 - Does every major rectangle correspond to navigation, context, work, or detail?
+- Are related regions direct divisions of one parent instead of nested bordered boxes?
 - Can one border own each shared boundary without doubled seams?
+- Do peer divider lines use one consistent thickness?
 - Is the main work area flexible while rails and controls remain usable?
 - Does saturated color identify a role or state rather than fill empty space?
 - Is there one dominant expressive device, with quieter supporting panels?
@@ -195,6 +203,7 @@ Keep each component's structural styles in its same-named stylesheet. Shared pri
 - Do selection, disabled, hover, and focus states remain distinct without extra badges?
 - Does the mobile layout become a sensible reading sequence rather than a miniature desktop grid?
 - Are localized labels allowed to truncate or wrap without moving structural boundaries unpredictably?
+- Does primary/supporting text stay at or above `14px`/`13px`, or `12px`/`11px` on mobile?
 - Does the result still read clearly in the Canvas/WebGL-free UI layer and with reduced motion?
 
 The [rendering performance guide](rendering-performance.md) covers Canvas and effects. This page applies only to DOM interface composition and its visual language.

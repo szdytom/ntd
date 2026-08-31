@@ -6,14 +6,16 @@
   --archive-coral: #ff637a;
   --archive-yellow: #ffd447;
   width: min(1440px, calc(100% - 40px));
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 600px;
   margin: 0 auto;
   padding: 24px 0;
 }
 
 .defense-archive-frame {
   display: grid;
-  min-height: calc(100vh - 48px);
+  height: 100%;
+  min-height: 0;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
   border: 2px solid var(--archive-ink);
@@ -23,65 +25,62 @@
 
 .defense-archive-head {
   display: grid;
-  min-height: 96px;
-  grid-template-columns: 132px minmax(0, 1fr) 154px 76px;
+  min-height: 92px;
+  grid-template-columns: 74px minmax(0, 1fr) 72px;
   align-items: stretch;
+  overflow: hidden;
   border-bottom: 2px solid var(--archive-ink);
 }
 
 .defense-archive-back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  width: auto;
+  height: auto;
+  place-items: center;
+  padding: 0;
   border: 0;
   border-right: 2px solid var(--archive-ink);
+  border-radius: 0;
   color: var(--archive-ink);
   background: var(--archive-yellow);
   cursor: pointer;
-  font-size: 14px;
 }
-.defense-archive-back span { font-size: 25px; transition: transform .16s ease; }
-.defense-archive-back strong { font-size: 14px; }
+.defense-archive-back span { font-size: 28px; line-height: 1; transition: transform .16s ease; }
 .defense-archive-back:hover { color: #fff; background: var(--archive-purple); }
 .defense-archive-back:hover span { transform: translateX(-4px); }
 
 .defense-archive-title {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
-  min-width: 0;
   align-items: center;
+  padding: 0 26px;
+  border-right: 2px solid var(--archive-ink);
+}
+.defense-archive-title {
+  min-width: 0;
   gap: 20px;
-  padding: 14px 28px;
 }
-.defense-archive-title span {
-  padding: 6px 8px;
-  color: #fff;
-  background: var(--archive-ink);
-  font: 800 13px/1 var(--font-mono);
-  letter-spacing: .09em;
-  text-transform: uppercase;
+.defense-archive-title h1 {
+  margin: 0;
+  color: var(--archive-ink);
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: .95;
+  letter-spacing: -.055em;
 }
-.defense-archive-title h1 { margin: 0; font-size: clamp(38px, 4vw, 56px); line-height: .92; letter-spacing: -.06em; }
-
-.defense-archive-head-seal {
-  position: relative;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px 18px 18px;
-  overflow: hidden;
+.defense-archive-head > .settings-panel {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  align-self: stretch;
+  place-items: center;
+  margin: 0;
   border-left: 2px solid var(--archive-ink);
-  background:
-    linear-gradient(var(--archive-ink) 2px, transparent 2px) 0 0 / 100% 24px,
-    #f1efff;
+  background: #fff;
 }
-.defense-archive-head-seal i { width: 12px; border: 2px solid var(--archive-ink); border-bottom: 0; }
-.defense-archive-head-seal i:nth-child(1) { height: 30px; background: var(--archive-coral); }
-.defense-archive-head-seal i:nth-child(2) { height: 52px; background: var(--archive-mint); }
-.defense-archive-head-seal i:nth-child(3) { height: 40px; background: var(--archive-purple); }
-.defense-archive-head-seal b { position: absolute; top: 8px; right: 10px; font: 800 13px/1 var(--font-mono); }
-.defense-archive-head > .settings-panel { display: grid; align-self: stretch; place-items: center; margin: 0; border-left: 2px solid var(--archive-ink); }
+.defense-archive-head > .settings-panel .settings-trigger { border-radius: 0; }
 
 .defense-archive-tabs {
   display: grid;
@@ -90,6 +89,8 @@
   background: #f7f6f9;
 }
 .defense-archive-tabs button {
+  --tab-accent: var(--archive-purple);
+  position: relative;
   display: flex;
   min-height: 58px;
   align-items: center;
@@ -98,17 +99,48 @@
   border: 0;
   border-right: 2px solid var(--archive-ink);
   color: var(--archive-ink);
+  overflow: hidden;
   background: transparent;
   cursor: pointer;
   font-size: 14px;
   font-weight: 850;
 }
+.defense-archive-tabs button::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 2px solid var(--archive-ink);
+  background: var(--tab-accent);
+}
+.defense-archive-tabs button[data-tab='sectors'] { --tab-accent: var(--archive-coral); }
+.defense-archive-tabs button[data-tab='achievements'] { --tab-accent: var(--archive-yellow); }
+.defense-archive-tabs button[data-tab='history'] { --tab-accent: var(--archive-mint); }
 .defense-archive-tabs button:last-child { border-right: 0; }
-.defense-archive-tabs button[aria-selected='true'] { color: #fff; background: var(--archive-ink); }
+.defense-archive-tabs button[aria-selected='true'] {
+  background: color-mix(in srgb, var(--tab-accent) 18%, #fff);
+  box-shadow: inset 0 -8px 0 var(--tab-accent);
+}
+.defense-archive-tabs button[aria-selected='true']::before { transform: rotate(45deg); }
 .defense-archive-tabs button:not([aria-selected='true']):hover { background: #e8e4ff; }
 .defense-archive-tabs b { min-width: 28px; padding: 4px 7px; color: var(--archive-ink); background: var(--archive-yellow); font: 800 13px/1 var(--font-mono); }
 
-.defense-archive-content { position: relative; min-width: 0; min-height: 0; background: #fff; }
+.defense-archive-content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #fff;
+  scrollbar-color: var(--archive-purple) #e5e2e9;
+  scrollbar-width: thin;
+}
+.defense-archive-content:focus-visible { outline-offset: -4px; }
+.defense-archive-content::-webkit-scrollbar { width: 12px; height: 12px; }
+.defense-archive-content::-webkit-scrollbar-track { border-left: 2px solid var(--archive-ink); background: #e5e2e9; }
+.defense-archive-content::-webkit-scrollbar-thumb { border: 2px solid var(--archive-ink); background: var(--archive-purple); }
+.defense-archive-content[data-tab='sectors'],
+.defense-archive-content[data-tab='history'] { overflow: hidden; }
 
 /* Overview is one uninterrupted archive plate. */
 .defense-archive-overview { display: grid; grid-template-rows: auto auto; }
@@ -170,28 +202,6 @@
 .defense-archive-table-section td { font-family: var(--font-mono); }
 .defense-archive-table-section td small { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
 
-.defense-archive-signal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; }
-.defense-archive-signal-grid article {
-  --signal-accent: var(--archive-purple);
-  position: relative;
-  display: grid;
-  min-height: 132px;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
-  align-content: space-between;
-  gap: 12px;
-  padding: 18px 20px 24px 28px;
-  overflow: hidden;
-  border-right: 2px solid var(--archive-ink);
-  border-bottom: 2px solid var(--archive-ink);
-  background: color-mix(in srgb, var(--signal-accent) 10%, #fff);
-}
-.defense-archive-signal-grid article:nth-child(3n) { border-right: 0; }
-.defense-archive-signal-grid article::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 10px; border-right: 2px solid var(--archive-ink); background: var(--signal-accent); }
-.archive-signal-icon { grid-row: 1 / 3; align-self: center; width: 38px; height: 38px; }
-.defense-archive-signal-grid article > span { min-width: 0; align-self: center; font-size: 16px; font-weight: 850; }
-.defense-archive-signal-grid article > strong { font: 900 30px/1 var(--font-mono); }
-.defense-archive-signal-grid article > div { grid-column: 2 / -1; color: var(--muted); font-size: 14px; }
-.defense-archive-signal-grid article > i { position: absolute; right: 0; bottom: 0; left: 10px; height: 10px; border-top: 2px solid var(--archive-ink); border-right: 2px solid var(--archive-ink); background: var(--signal-accent); }
 .defense-archive-inline-empty { margin: 0; padding: 34px; color: var(--muted); font-size: 14px; text-align: center; }
 
 /* Category rail + cells, without cards nested inside category boxes. */
@@ -218,13 +228,14 @@
 .achievement-grid .unlocked .achievement-progress i { background: var(--archive-mint); }
 
 /* History is a master-detail plane. */
-.history-layout { display: grid; min-height: 650px; grid-template-columns: minmax(410px, .82fr) minmax(520px, 1.18fr); }
-.history-list { min-width: 0; border-right: 2px solid var(--archive-ink); }
+.history-layout { display: grid; height: 100%; min-height: 0; grid-template-columns: minmax(410px, .82fr) minmax(520px, 1.18fr); }
+.history-list { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; border-right: 2px solid var(--archive-ink); }
 .history-filters { display: grid; grid-template-columns: .8fr 1.2fr 1fr; border-bottom: 2px solid var(--archive-ink); }
 .history-filters label { display: grid; min-width: 0; padding: 12px; border-right: 2px solid var(--archive-ink); background: #fff7d8; }
 .history-filters label:last-child { border-right: 0; }
 .history-filters span { margin-bottom: 7px; font-size: 13px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
 .history-filters select { min-width: 0; height: 42px; border: 2px solid var(--archive-ink); border-radius: 0; color: var(--archive-ink); background: #fff; font-size: 14px; font-weight: 700; }
+.defense-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--archive-mint) #e5e2e9; scrollbar-width: thin; }
 .defense-list button { position: relative; display: grid; width: 100%; min-height: 78px; grid-template-columns: 12px minmax(0, 1.4fr) minmax(130px, .7fr) 30px; align-items: center; gap: 12px; padding: 0 14px 0 0; border: 0; border-bottom: 2px solid var(--archive-ink); color: var(--archive-ink); background: #fff; cursor: pointer; font-size: 14px; text-align: left; }
 .defense-list button > i { align-self: stretch; border-right: 2px solid var(--archive-ink); background: var(--archive-coral); }
 .defense-list button[data-result='won'] > i { background: var(--archive-mint); }
@@ -249,7 +260,7 @@
 .history-prompt strong { margin-top: 34px; font-size: 20px; }
 .history-prompt p { max-width: 390px; margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 
-.defense-detail { min-width: 0; background: #fff; }
+.defense-detail { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: #fff; scrollbar-color: var(--archive-coral) #e5e2e9; scrollbar-width: thin; }
 .defense-detail > header { display: flex; min-height: 92px; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 2px solid var(--archive-ink); background: #ffe5ea; }
 .defense-detail[data-result='won'] > header { background: #d8f6ec; }
 .defense-detail > header span { font: 13px/1 var(--font-mono); }
@@ -322,36 +333,46 @@
   .defense-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+@media (min-width: 761px) and (max-width: 900px) {
+  .history-layout { display: block; }
+  .history-list,
+  .defense-detail { height: 100%; }
+  .history-list { border-right: 0; }
+  .history-layout.has-detail .history-list { display: none; }
+  .history-layout:not(.has-detail) .history-prompt { display: none; }
+}
+
+@media (min-width: 761px) and (max-height: 760px) {
+  .defense-archive-shell { padding: 12px 0; }
+  .defense-archive-head { min-height: 78px; }
+  .defense-archive-title h1 { font-size: clamp(34px, 3.6vw, 46px); }
+  .defense-archive-tabs button { min-height: 50px; }
+  .defense-archive-footer { min-height: 40px; }
+}
+
 @media (max-width: 760px) {
-  .defense-archive-shell { width: calc(100% - 20px); padding: 10px 0; }
+  .defense-archive-shell { width: calc(100% - 20px); height: auto; min-height: 100dvh; padding: 10px 0; }
   .defense-archive-frame { min-height: calc(100vh - 20px); border-radius: 12px; }
   .defense-archive-head { grid-template-columns: 58px minmax(0, 1fr) 58px; min-height: 78px; }
-  .defense-archive-back strong,
-  .defense-archive-title span,
-  .defense-archive-head-seal { display: none; }
   .defense-archive-title { padding: 12px 14px; }
   .defense-archive-title h1 { font-size: clamp(29px, 9vw, 36px); }
   .defense-archive-head > .settings-panel { grid-column: 3; border-left: 2px solid var(--archive-ink); }
   .defense-archive-tabs button { min-height: 52px; padding: 5px; font-size: 12px; line-height: 1.15; }
+  .defense-archive-tabs button::before { display: none; }
   .defense-archive-tabs b { display: none; }
   .defense-archive-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; }
   .defense-archive-metric,
   .defense-archive-metric.metric-1 { grid-column: auto; grid-row: auto; min-height: 108px; padding: 14px; }
   .defense-archive-metric.metric-1 { grid-column: 1 / -1; min-height: 150px; }
-  .defense-archive-metric.metric-4 { border-right: 0; }
-  .defense-archive-metric.metric-5 { grid-column: 1 / -1; }
-  .defense-archive-metric.metric-6 { border-right: 0; }
+  .defense-archive-metric.metric-3,
+  .defense-archive-metric.metric-5 { border-right: 0; }
+  .defense-archive-metric.metric-4 { border-right: 2px solid var(--archive-ink); }
+  .defense-archive-metric.metric-5 { grid-column: auto; }
+  .defense-archive-metric.metric-6 { grid-column: 1 / -1; border-right: 0; }
   .defense-archive-metric span { font-size: 12px; }
   .defense-archive-table-section > header { align-items: flex-start; flex-direction: column; gap: 5px; padding: 13px 14px; }
   .defense-archive-table-section h2 { font-size: 20px; }
   .defense-archive-table-section header p { font-size: 12px; text-align: left; }
-  .defense-archive-signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .defense-archive-signal-grid article,
-  .defense-archive-signal-grid article:nth-child(3n) { min-height: 118px; grid-template-columns: 34px minmax(0, 1fr) auto; padding: 14px 12px 22px 22px; border-right: 2px solid var(--archive-ink); }
-  .defense-archive-signal-grid article:nth-child(2n) { border-right: 0; }
-  .archive-signal-icon { width: 30px; height: 30px; }
-  .defense-archive-signal-grid article > span { font-size: 13px; }
-  .defense-archive-signal-grid article > div { font-size: 12px; }
   .achievement-group { display: block; }
   .achievement-group > header { min-height: 82px; align-items: center; flex-direction: row; padding: 14px; border-right: 0; border-bottom: 2px solid var(--archive-ink); }
   .achievement-group > header h2 { font-size: 20px; }
@@ -363,7 +384,10 @@
   .achievement-grid h3 { font-size: 14px; }
   .achievement-grid p { min-height: 0; font-size: 12px; }
   .achievement-grid small { font-size: 11px; }
-  .history-layout { display: block; min-height: 520px; }
+  .defense-archive-content,
+  .defense-archive-content[data-tab='sectors'],
+  .defense-archive-content[data-tab='history'] { overflow: visible; }
+  .history-layout { display: block; height: auto; min-height: 520px; }
   .history-list { border-right: 0; }
   .history-layout.has-detail .history-list { display: none; }
   .history-layout:not(.has-detail) .history-prompt { display: none; }
@@ -372,6 +396,7 @@
   .history-filters label:last-child { border-bottom: 0; }
   .history-filters span { font-size: 11px; }
   .history-filters select { font-size: 12px; }
+  .defense-list { overflow: visible; }
   .defense-list button { min-height: 74px; font-size: 12px; }
   .defense-list button strong,
   .defense-list button b { font-size: 12px; }
@@ -380,6 +405,7 @@
   .defense-facts dt { font-size: 11px; }
   .defense-facts dd { font-size: 12px; }
   .tower-records { grid-template-columns: 1fr; }
+  .defense-detail { overflow: visible; }
   .tower-records > article,
   .tower-records > article:nth-child(2n),
   .tower-records > article:nth-last-child(-n + 2) { border-right: 0; border-bottom: 2px solid var(--archive-ink); }

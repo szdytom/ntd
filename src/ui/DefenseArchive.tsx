@@ -1,13 +1,19 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ENEMIES, LEVELS } from '../game/config';
+import { LEVELS } from '../game/config';
 import { DIFFICULTIES } from '../game/difficulty';
-import type { DifficultyId, EnemyType, EnemyVariant, ModuleId } from '../game/types';
-import { buildDefenseArchiveAnalytics, type DefenseRecord, type DefenseArchiveRepository, type DefenseArchiveSnapshot } from '../defense-archive';
-import { difficultyName, enemyName, levelName, moduleName } from '../i18n/presentation';
+import type { DifficultyId, EnemyVariant, ModuleId } from '../game/types';
+import {
+  buildDefenseArchiveAnalytics,
+  type DefenseRecord,
+  type DefenseArchiveRepository,
+  type DefenseArchiveSnapshot,
+} from '../defense-archive';
+import { difficultyName, levelName, moduleName } from '../i18n/presentation';
 import { createModuleRegistry } from '../modules';
 import { SettingsPanel } from './SettingsPanel';
 import { SectorArchive } from './SectorArchive';
+import { SignalLedger, signalIconType, signalLabel } from './SignalLedger';
 import { SignalIcon } from './SignalIcon';
 import { moduleVariableStyle } from './modulePresentation';
 import './DefenseArchive.css';
@@ -16,6 +22,7 @@ type DefenseArchiveTab = 'overview' | 'sectors' | 'achievements' | 'history';
 type ResultFilter = 'all' | 'won' | 'lost';
 const PAGE_SIZE = 20;
 const ARCHIVE_MODULES = createModuleRegistry();
+const ARCHIVE_TABS: DefenseArchiveTab[] = ['overview', 'sectors', 'achievements', 'history'];
 
 const formatDuration = (seconds: number): string => {
   const rounded = Math.max(0, Math.round(seconds));
@@ -24,13 +31,6 @@ const formatDuration = (seconds: number): string => {
   const remainder = rounded % 60;
   return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}` : `${minutes}:${String(remainder).padStart(2, '0')}`;
 };
-
-const signalLabel = (t: ReturnType<typeof useTranslation>['t'], variant: EnemyVariant): string => (
-  variant === 'fracture-fragment' ? t('enemyArchive.fragments.name') : enemyName(t, variant as EnemyType)
-);
-
-const signalColor = (variant: EnemyVariant): string => ENEMIES[variant === 'fracture-fragment' ? 'fracture' : variant].color;
-const signalIconType = (variant: EnemyVariant): EnemyType => variant === 'fracture-fragment' ? 'fracture' : variant;
 
 const ArchiveModule = ({ moduleId, count }: { moduleId: ModuleId; count?: number }) => {
   const { t } = useTranslation();
@@ -50,9 +50,8 @@ const DefenseArchiveHeader = ({ repository, onBack, onDefenseArchiveCleared }: {
 }) => {
   const { t } = useTranslation();
   return <header className="defense-archive-head">
-    <button className="defense-archive-back" onClick={onBack} aria-label={t('defenseArchive.back')}><span aria-hidden="true">←</span><strong>{t('defenseArchive.backShort')}</strong></button>
-    <div className="defense-archive-title"><span>{t('defenseArchive.eyebrow')}</span><h1>{t('defenseArchive.title')}</h1></div>
-    <div className="defense-archive-head-seal" aria-hidden="true"><i /><i /><i /><b>ARC</b></div>
+    <button className="defense-archive-back" onClick={onBack} aria-label={t('defenseArchive.back')}><span aria-hidden="true">←</span></button>
+    <div className="defense-archive-title"><h1>{t('defenseArchive.title')}</h1></div>
     <SettingsPanel defenseArchiveRepository={repository} onDefenseArchiveCleared={onDefenseArchiveCleared} />
   </header>;
 };
@@ -74,14 +73,7 @@ const Overview = ({ records }: { records: DefenseRecord[] }) => {
     </section>
     <section className="defense-archive-table-section signal-ledger">
       <header><h2>{t('defenseArchive.signalStats')}</h2><p>{t('defenseArchive.signalStatsDetail')}</p></header>
-      {analytics.signals.length === 0 ? <p className="defense-archive-inline-empty">{t('defenseArchive.noSignalData')}</p> : <div className="defense-archive-signal-grid">
-        {analytics.signals.map((signal) => <article key={signal.variant} style={{ '--signal-accent': signalColor(signal.variant) } as CSSProperties}>
-          <SignalIcon type={signalIconType(signal.variant)} className="archive-signal-icon" />
-          <span>{signalLabel(t, signal.variant)}</span><strong>{Math.round(signal.purificationRate * 100)}%</strong>
-          <div><b>{signal.defeated}</b> {t('defenseArchive.short.defeated')} · <b>{signal.leaked}</b> {t('defenseArchive.short.leaked')}</div>
-          <i style={{ width: `${Math.min(100, signal.purificationRate * 100)}%` }} />
-        </article>)}
-      </div>}
+      <SignalLedger signals={analytics.signals} includeUnobserved />
     </section>
   </div>;
 };
@@ -168,16 +160,51 @@ export function DefenseArchive({ repository, onBack }: { repository: DefenseArch
   const [tab, setTab] = useState<DefenseArchiveTab>('overview');
   const [snapshot, setSnapshot] = useState<DefenseArchiveSnapshot | null>(null);
   const [error, setError] = useState(false);
+  const contentRef = useRef<HTMLElement>(null);
   const load = (): void => {
     setError(false);
     void repository.readSnapshot().then(setSnapshot).catch(() => setError(true));
   };
   useEffect(load, [repository]);
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [tab]);
+  const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+    const nextIndex = event.key === 'Home' ? 0
+      : event.key === 'End' ? ARCHIVE_TABS.length - 1
+        : event.key === 'ArrowRight' ? (index + 1) % ARCHIVE_TABS.length
+          : event.key === 'ArrowLeft' ? (index - 1 + ARCHIVE_TABS.length) % ARCHIVE_TABS.length
+            : -1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    const nextTab = ARCHIVE_TABS[nextIndex];
+    if (!nextTab) return;
+    setTab(nextTab);
+    event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+  };
   return <main className="defense-archive-shell">
     <div className="defense-archive-frame">
       <DefenseArchiveHeader repository={repository} onBack={onBack} onDefenseArchiveCleared={load} />
-      <nav className="defense-archive-tabs" role="tablist" aria-label={t('defenseArchive.sections')}>{(['overview', 'sectors', 'achievements', 'history'] as const).map((item) => <button key={item} role="tab" aria-selected={tab === item} onClick={() => setTab(item)}><span>{t(`defenseArchive.tab.${item}`)}</span>{item === 'history' && snapshot ? <b>{snapshot.defenses.length}</b> : null}</button>)}</nav>
-      <section className="defense-archive-content" role="tabpanel">
+      <nav className="defense-archive-tabs" role="tablist" aria-label={t('defenseArchive.sections')}>{ARCHIVE_TABS.map((item, index) => <button
+        key={item}
+        id={`defense-archive-tab-${item}`}
+        data-tab={item}
+        role="tab"
+        aria-controls="defense-archive-panel"
+        aria-selected={tab === item}
+        tabIndex={tab === item ? 0 : -1}
+        onKeyDown={(event) => moveTabFocus(event, index)}
+        onClick={() => setTab(item)}
+      ><span>{t(`defenseArchive.tab.${item}`)}</span>{item === 'history' && snapshot ? <b>{snapshot.defenses.length}</b> : null}</button>)}</nav>
+      <section
+        ref={contentRef}
+        id="defense-archive-panel"
+        className="defense-archive-content"
+        data-tab={tab}
+        role="tabpanel"
+        aria-labelledby={`defense-archive-tab-${tab}`}
+        tabIndex={0}
+      >
         {error ? <div className="defense-archive-empty"><strong>{t('defenseArchive.storageError')}</strong><p>{t('defenseArchive.storageErrorDetail')}</p><button onClick={load}>{t('defenseArchive.retry')}</button></div>
           : !snapshot ? <div className="defense-archive-loading"><i/><span>{t('defenseArchive.loading')}</span></div>
             : snapshot.warningCount > 0 ? <div className="defense-archive-warning">{t('defenseArchive.corruptWarning', { count: snapshot.warningCount })}</div> : null}

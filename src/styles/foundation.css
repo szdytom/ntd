@@ -39,6 +39,15 @@ body:has(.app-shell),
   overflow: hidden;
 }
 
+@media (min-width: 761px) {
+  html:has(.defense-archive-shell),
+  body:has(.defense-archive-shell),
+  #app:has(.defense-archive-shell) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
 button {
   color: inherit;
   font: inherit;

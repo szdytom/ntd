@@ -1,40 +1,17 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ENEMIES, LEVELS } from '../game/config';
-import type { EnemyType, EnemyVariant } from '../game/types';
+import { LEVELS } from '../game/config';
 import {
   buildDefenseArchiveAnalytics,
   type DefenseRecord,
   type SectorStats,
-  type SignalStats,
 } from '../defense-archive';
-import { difficultyName, enemyName, levelDescription, levelName } from '../i18n/presentation';
+import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
 import { LevelMap } from './LevelMap';
-import { SignalIcon } from './SignalIcon';
+import { SignalLedger } from './SignalLedger';
 import './SectorArchive.css';
 
 const percent = (value: number): string => `${Math.round(value * 100)}%`;
-
-const signalLabel = (t: ReturnType<typeof useTranslation>['t'], variant: EnemyVariant): string => (
-  variant === 'fracture-fragment' ? t('enemyArchive.fragments.name') : enemyName(t, variant as EnemyType)
-);
-
-const signalColor = (variant: EnemyVariant): string => ENEMIES[variant === 'fracture-fragment' ? 'fracture' : variant].color;
-const signalIconType = (variant: EnemyVariant): EnemyType => variant === 'fracture-fragment' ? 'fracture' : variant;
-
-const SignalLedger = ({ signals }: { signals: SignalStats[] }) => {
-  const { t } = useTranslation();
-  if (signals.length === 0) return <div className="sector-empty-ledger">
-    <strong>{t('defenseArchive.sectors.noSignalData')}</strong>
-    <span>{t('defenseArchive.sectors.noSignalDataDetail')}</span>
-  </div>;
-  return <div className="sector-signal-ledger">{signals.map((signal) => <article key={signal.variant} style={{ '--signal-accent': signalColor(signal.variant) } as CSSProperties}>
-    <SignalIcon type={signalIconType(signal.variant)} className="sector-ledger-signal-icon" />
-    <header><strong>{signalLabel(t, signal.variant)}</strong><b>{percent(signal.purificationRate)}</b></header>
-    <div><span>{t('defenseArchive.short.defeated')} <b>{signal.defeated}</b></span><span>{t('defenseArchive.short.leaked')} <b>{signal.leaked}</b></span></div>
-    <i aria-hidden="true"><b style={{ width: percent(signal.purificationRate) }} /></i>
-  </article>)}</div>;
-};
 
 const WaveAnalysis = ({ sector }: { sector: SectorStats }) => {
   const { t } = useTranslation();
@@ -147,7 +124,10 @@ export function SectorArchive({ records }: { records: DefenseRecord[] }) {
 
       <section className="sector-ledger-section">
         <header><div><h3>{t('defenseArchive.signalStats')}</h3><p>{t('defenseArchive.sectors.signalStatsDetail')}</p></div><span>{selected.signals.length}</span></header>
-        <SignalLedger signals={selected.signals} />
+        <SignalLedger signals={selected.signals} emptyState={{
+          title: t('defenseArchive.sectors.noSignalData'),
+          detail: t('defenseArchive.sectors.noSignalDataDetail'),
+        }} />
       </section>
 
       <WaveAnalysis sector={selected} />

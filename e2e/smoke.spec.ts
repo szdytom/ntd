@@ -264,10 +264,15 @@ test('defense archive reads, filters, details, and clears IndexedDB records', as
 
   await page.getByRole('button', { name: 'Open defense archive' }).click();
   await expect(page.getByRole('heading', { name: 'Defense Archive' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
   await expect(page.getByText('Defense sectors')).toBeVisible();
   await expect(page.locator('.defense-archive-metric.metric-1 strong')).toHaveText('1');
   await page.getByRole('tab', { name: 'Defense sectors' }).click();
   await expect(page.getByRole('heading', { name: 'White Prism' })).toBeVisible();
+  expect(await page.locator('.sector-archive-record').evaluate((element) => (
+    getComputedStyle(element).overflowY === 'auto' && element.scrollHeight > element.clientHeight
+  ))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
   await expect(page.getByText('Wave performance')).toBeVisible();
   await expect(page.getByText('Signal outcomes recorded only in this sector')).toBeVisible();
   await page.getByRole('tab', { name: 'Achievements' }).click();
@@ -276,6 +281,8 @@ test('defense archive reads, filters, details, and clears IndexedDB records', as
   await page.getByRole('button', { name: /White Prism/ }).click();
   await expect(page.getByText('e2e1234 · 2026-08-31')).toBeVisible();
   await expect(page.getByText('Final module inventory')).toBeVisible();
+  expect(await page.locator('.defense-detail').evaluate((element) => getComputedStyle(element).overflowY)).toBe('auto');
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
   await page.getByRole('button', { name: 'Settings' }).click();
   const settings = page.getByRole('dialog', { name: 'Settings' });
   await settings.getByRole('button', { name: 'Clear archive' }).click();
