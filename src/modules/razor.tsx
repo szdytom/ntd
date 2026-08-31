@@ -1,6 +1,5 @@
 import { coneSparks } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
-import { drawGlow } from '../game/glow';
 import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
@@ -47,23 +46,51 @@ export const razorModule: ModuleDefinition = {
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity) + projectile.life * 8;
-    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 14, color, 0.9);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(angle);
-    ctx.fillStyle = color;
+
     for (let index = 0; index < 4; index += 1) {
       ctx.rotate(Math.PI / 2);
+
+      ctx.fillStyle = '#078aa8';
+      ctx.strokeStyle = '#63e6f5';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.moveTo(1, -2);
-      ctx.lineTo(12, 0);
-      ctx.lineTo(1, 3);
+      ctx.moveTo(1.5, -2.2);
+      ctx.quadraticCurveTo(7.5, -4.2, 13.5, -0.6);
+      ctx.lineTo(7.2, 1.1);
+      ctx.quadraticCurveTo(4.2, 2.4, 1.5, 2.2);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = '#e9fdff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(2.8, -2.4);
+      ctx.quadraticCurveTo(8.2, -3.7, 13.5, -0.6);
+      ctx.stroke();
     }
-    ctx.fillStyle = '#fff';
+
+    ctx.fillStyle = '#064e61';
+    ctx.strokeStyle = '#8df3ff';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.moveTo(0, -3.5);
+    ctx.lineTo(3.5, 0);
+    ctx.lineTo(0, 3.5);
+    ctx.lineTo(-3.5, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#e9fdff';
+    ctx.beginPath();
+    ctx.moveTo(-0.8, -2.1);
+    ctx.lineTo(1.8, -0.2);
+    ctx.lineTo(0.4, 0.6);
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
   },
