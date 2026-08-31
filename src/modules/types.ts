@@ -19,13 +19,15 @@ export type ModuleTag =
   | 'fixed-route'
   | 'projectile'
   | 'repeat'
+  | 'reliable-trigger'
   | 'rift-space'
   | 'route'
   | 'static'
   | 'status'
   | 'trail'
+  | 'trail-carrier'
   | 'trigger';
-export type ModuleRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+export type ModuleRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 export type ModuleTextValues = Readonly<Record<string, string | number>>;
 export interface ModuleIconProps { className?: string; }
 export type ModuleIconComponent = ComponentType<ModuleIconProps>;

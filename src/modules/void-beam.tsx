@@ -133,7 +133,7 @@ const drawVoidRing = (
 export const voidBeamModule: ModuleDefinition = {
   id: 'void-beam',
   kind: 'projectile',
-  tags: ['projectile', 'fixed-route'],
+  tags: ['projectile', 'fixed-route', 'trail-carrier'],
   icon: VoidBeamIcon,
   meta: {
     name: 'Void Beam', shortName: 'Void Beam', color, tint: '#e9ffed', energy: 11, rarity: 'uncommon',

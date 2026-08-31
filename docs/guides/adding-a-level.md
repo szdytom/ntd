@@ -59,6 +59,8 @@ Provide all `LevelDefinition` fields:
 - `difficulty` display rank and `accent` color;
 - `graph`, `towerPads`, and `waves`;
 - `moduleDraft.initialPicks` and `moduleDraft.wavePicks` as positive integers;
+- one `moduleDraft.qualityAnchors` value per wave, beginning with the opening reward and ending with the reward before the final wave;
+- finite `qualityBias`, an `inventoryInfluence` from `0` to `1`, and a non-negative whole-run `abandonLimit`;
 - required session setup and scale fields.
 
 Add matching `levels.<id>.name` and `levels.<id>.description` keys to both locale files. The UI uses those localized keys rather than the fallback strings in configuration.

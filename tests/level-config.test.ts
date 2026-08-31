@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, resolveSpawnEntrances, WORLD } from '../src/game/config';
+import { LEVELS, resolveSpawnEntrances, TUTORIAL_LEVEL_ID, WORLD } from '../src/game/config';
 import { signalRegistry } from '../src/signals';
 
 describe('level configuration', () => {
@@ -16,9 +16,18 @@ describe('level configuration', () => {
       expect(level.signalSpeedScale, `${level.id}: speed scale`).toBeGreaterThan(0);
       expect(level.startingShards, `${level.id}: starting shards`).toBeGreaterThanOrEqual(0);
 
-      for (const [key, picks] of Object.entries(level.moduleDraft)) {
+      for (const [key, picks] of Object.entries({
+        initialPicks: level.moduleDraft.initialPicks,
+        wavePicks: level.moduleDraft.wavePicks,
+      })) {
         expect(Number.isInteger(picks) && picks > 0, `${level.id}: ${key}`).toBe(true);
       }
+      expect(level.moduleDraft.qualityAnchors, `${level.id}: quality anchors`).toHaveLength(level.waves.length);
+      expect(level.moduleDraft.qualityAnchors.every((anchor) => anchor >= 1 && anchor <= 5)).toBe(true);
+      expect(level.moduleDraft.inventoryInfluence).toBeGreaterThanOrEqual(0);
+      expect(level.moduleDraft.inventoryInfluence).toBeLessThanOrEqual(1);
+      expect(Number.isFinite(level.moduleDraft.qualityBias)).toBe(true);
+      expect(level.moduleDraft.abandonLimit).toBe(Math.floor(level.waves.length * 2 / 3));
       for (const [index, pad] of level.towerPads.entries()) {
         expect(Number.isFinite(pad.x) && pad.x >= 0 && pad.x <= WORLD.width, `${level.id}: pad ${index} x`).toBe(true);
         expect(Number.isFinite(pad.y) && pad.y >= 0 && pad.y <= WORLD.height, `${level.id}: pad ${index} y`).toBe(true);
@@ -43,6 +52,12 @@ describe('level configuration', () => {
         const dy = Math.abs(end.y - start.y);
         expect(dx === 0 || dy === 0 || dx === dy, `${level.id}: ${edge.from} -> ${edge.to}`).toBe(true);
       }
+    }
+  });
+
+  it('uses a flat quality anchor for every standard non-tutorial level', () => {
+    for (const level of LEVELS.filter((candidate) => candidate.id !== TUTORIAL_LEVEL_ID)) {
+      expect(level.moduleDraft.qualityAnchors.every((anchor) => anchor === 2), level.id).toBe(true);
     }
   });
 });

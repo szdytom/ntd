@@ -19,6 +19,10 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
   }, [draft?.round]);
   if (!draft) return null;
   const isInitialDraft = snapshot.wave === 0;
+  const abandonUnavailable = draft.abandonsRemaining === 0
+    ? t('reward.abandonUnavailableEmpty')
+    : t('reward.abandonUnavailableConsecutive');
+  const abandonTitle = draft.canAbandon ? t('reward.abandonHint') : abandonUnavailable;
   return <section className="reward-panel" ref={panelRef} role="region" aria-label={isInitialDraft ? t('reward.initialAria') : t('reward.waveAria')}>
     <header className="reward-head">
       <div className="reward-heading">
@@ -41,6 +45,15 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
           <em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
         </button>;
       })}</div>
-    <footer className="reward-foot">{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</footer>
+    <footer className="reward-foot">
+      <span>{draft.boosted ? <Tag tone="yellow">{t('reward.boosted')}</Tag> : null}{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</span>
+      <button
+        className="reward-abandon"
+        disabled={!draft.canAbandon}
+        aria-label={`${t('reward.abandon', { count: draft.abandonsRemaining })}${draft.canAbandon ? '' : `. ${abandonUnavailable}`}`}
+        title={abandonTitle}
+        onClick={() => engine.abandonDraft()}
+      >{t('reward.abandon', { count: draft.abandonsRemaining })}</button>
+    </footer>
   </section>;
 }

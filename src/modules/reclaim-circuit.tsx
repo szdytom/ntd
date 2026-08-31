@@ -1,4 +1,5 @@
 import type { EffectDefinition } from '../effects/types';
+import { COMBAT_BALANCE } from '../game/balance';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
 
@@ -9,7 +10,7 @@ const ReclaimCircuitIcon = createModuleIcon(<>
 </>);
 
 const color = '#15b86a';
-const stats = { damageMultiplier: 0.88, energyRefundMultiplier: 0.22 } as const;
+const stats = { damageMultiplier: 0.88, energyRefundMultiplier: 0.18 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -36,10 +37,11 @@ export const reclaimCircuitModule: ModuleDefinition = {
   tags: [],
   icon: ReclaimCircuitIcon,
   meta: {
-    name: 'Reclaim Circuit', shortName: 'Reclaim', color, tint: '#e4fff1', energy: 4, rarity: 'uncommon',
+    name: 'Reclaim Circuit', shortName: 'Reclaim', color, tint: '#e4fff1', energy: 10, rarity: 'epic',
     text: { detail: {
       damage: Math.round((1 - stats.damageMultiplier) * 100),
       refund: Math.round(stats.energyRefundMultiplier * 100),
+      cap: Math.round(COMBAT_BALANCE.maxEnergyRefundPerCycle * 100),
     } },
   },
   effects,

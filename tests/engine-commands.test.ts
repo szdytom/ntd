@@ -7,7 +7,7 @@ describe('engine command and view boundary', () => {
     const engine = new GameEngine({ mode: 'creative', seed: 5 });
     const definitions = engine.getLibraryModules();
     const kindOrder = ['projectile', 'static', 'modifier', 'trail', 'logic'] as const;
-    const rarityOrder = ['common', 'uncommon', 'rare', 'legendary'] as const;
+    const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 
     for (let index = 1; index < definitions.length; index += 1) {
       const previous = definitions[index - 1];
@@ -70,6 +70,70 @@ describe('engine command and view boundary', () => {
 
     expect(engine.getSnapshot().status).toBe('planning');
     expect(engine.getSnapshot().draft).toBeNull();
+  });
+
+  it('offers the matching half of an opening area program', () => {
+    const engine = new GameEngine({ mode: 'standard', seed: 17 });
+    const firstChoices = engine.getSnapshot().draft?.choices ?? [];
+    const firstHalf = firstChoices.find((moduleId) => {
+      const definition = engine.modules.require(moduleId);
+      return definition.kind === 'static' || definition.tags.includes('reliable-trigger');
+    });
+    if (!firstHalf) throw new Error('Expected an opening area-program component');
+
+    const firstDefinition = engine.modules.require(firstHalf);
+    engine.chooseDraftModule(firstHalf);
+    const secondChoices = engine.getSnapshot().draft?.choices ?? [];
+    expect(secondChoices.some((moduleId) => {
+      const definition = engine.modules.require(moduleId);
+      return firstDefinition.kind === 'static'
+        ? definition.tags.includes('reliable-trigger')
+        : definition.kind === 'static';
+    })).toBe(true);
+  });
+
+  it('limits abandonment, prevents consecutive use, and carries a boost across reward batches', () => {
+    const engine = new GameEngine({ mode: 'standard', seed: 5 });
+    expect(engine.getSnapshot().draft).toMatchObject({
+      round: 1,
+      boosted: false,
+      canAbandon: true,
+      abandonsRemaining: 3,
+    });
+
+    engine.abandonDraft();
+    expect(engine.getSnapshot().draft).toMatchObject({
+      round: 2,
+      boosted: true,
+      canAbandon: false,
+      abandonsRemaining: 2,
+    });
+    engine.abandonDraft();
+    expect(engine.getSnapshot().draft?.round).toBe(2);
+
+    const choice = engine.getSnapshot().draft?.choices[0];
+    if (!choice) throw new Error('Expected a boosted draft choice');
+    engine.chooseDraftModule(choice);
+    expect(engine.getSnapshot().draft).toMatchObject({ round: 3, boosted: false, canAbandon: true });
+    engine.abandonDraft();
+    expect(engine.getSnapshot()).toMatchObject({ status: 'planning', draft: null });
+
+    engine.startWave();
+    const expectedEnemies = engine.getWaveBlueprint(0).length;
+    for (let step = 0; step < 3_000 && engine.signals.length < expectedEnemies; step += 1) {
+      engine.update(FIXED_SIMULATION_STEP);
+    }
+    engine.signals.forEach((signal) => { signal.dead = true; });
+    engine.update(FIXED_SIMULATION_STEP);
+    const delaySteps = Math.ceil(WAVE_CLEAR_DELAY / FIXED_SIMULATION_STEP);
+    for (let step = 0; step < delaySteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
+
+    expect(engine.getSnapshot().draft).toMatchObject({
+      round: 1,
+      boosted: true,
+      canAbandon: false,
+      abandonsRemaining: 1,
+    });
   });
 
   it('uses the selected level module-draft counts for opening and wave rewards', () => {

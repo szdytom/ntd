@@ -219,6 +219,7 @@ export interface Projectile {
   seeking: number;
   modules: ModuleId[];
   shot: ShotBlueprint;
+  energyRefundBudget?: EnergyRefundBudget;
   trailTimer: number;
   moduleState: Record<string, unknown>;
   behavior: 'linear' | 'static';
@@ -227,6 +228,10 @@ export interface Projectile {
   triggerCooldown: number;
   triggerCount: number;
   trail: Point[];
+}
+
+export interface EnergyRefundBudget {
+  remaining: number;
 }
 
 export interface FloatingText {
@@ -242,6 +247,7 @@ export interface ScheduledCast {
   targetId: number;
   delay: number;
   origin?: Point;
+  energyRefundBudget?: EnergyRefundBudget;
 }
 
 export type GameStatus = 'planning' | 'wave' | 'reward' | 'won' | 'lost';
@@ -250,6 +256,9 @@ export interface ModuleDraftSnapshot {
   round: number;
   totalRounds: number;
   choices: ModuleId[];
+  boosted: boolean;
+  canAbandon: boolean;
+  abandonsRemaining: number;
 }
 
 export interface CreativeSetup {

@@ -3,6 +3,7 @@ import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
 import { createModuleRegistry } from '../modules';
 import type {
   ModuleCombatApi,
+  ModuleDefinition,
   ModuleKind,
   ModuleRarity,
   StatusApplication,
@@ -23,7 +24,7 @@ import {
   type SpawnEntry,
 } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
-import { rollModuleDraft } from './draft';
+import { calculateInventoryQuality, calculateQualityCenter, rollModuleDraft } from './draft';
 import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../signals/capabilities/damage-cap';
 import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '../signals/capabilities/shield';
 import { signalMovementSpeedMultiplier } from '../signals/capabilities/movement';
@@ -38,6 +39,7 @@ import type {
   DefenseCompletedReport,
   DefenseWaveReport,
   DifficultyId,
+  EnergyRefundBudget,
   Signal,
   SignalId,
   FloatingText,
@@ -80,7 +82,8 @@ const CREATIVE_RARITY_ORDER: Readonly<Record<ModuleRarity, number>> = {
   common: 0,
   uncommon: 1,
   rare: 2,
-  legendary: 3,
+  epic: 3,
+  legendary: 4,
 };
 
 export interface GameEngineOptions {
@@ -190,7 +193,9 @@ export class GameEngine {
   private towerAuraEnergyRegen = 1;
   private draft: GameSnapshot['draft'] = null;
   private previousDraftChoices = new Set<ModuleId>();
-  private draftsWithoutRare = 0;
+  private draftAbandonsUsed = 0;
+  private lastDraftActionWasAbandon = false;
+  private pendingDraftQualityBoost = false;
   private creativeSetup: CreativeSetup;
   private runId = createRunId();
   private runStartedAt = Date.now();
@@ -666,6 +671,7 @@ export class GameEngine {
   chooseDraftModule(moduleId: ModuleId): void {
     if (this.status !== 'reward' || !this.draft?.choices.includes(moduleId)) return;
     this.moduleInventory.set(moduleId, (this.moduleInventory.get(moduleId) ?? 0) + 1);
+    this.lastDraftActionWasAbandon = false;
     this.configurationRevision += 1;
     this.emit({ type: 'toast', message: i18n.t('toast.moduleAcquired', { module: i18n.t(`modules.${moduleId}.name`) }), tone: 'good' });
     if (this.draft.round >= this.draft.totalRounds) {
@@ -675,7 +681,25 @@ export class GameEngine {
       this.draft = {
         round: this.draft.round + 1,
         totalRounds: this.draft.totalRounds,
-        choices: this.rollDraftChoices(),
+        ...this.rollDraftOffer(this.draft.round + 1),
+      };
+    }
+    this.emitState();
+  }
+
+  abandonDraft(): void {
+    if (this.status !== 'reward' || !this.draft?.canAbandon) return;
+    this.draftAbandonsUsed += 1;
+    this.lastDraftActionWasAbandon = true;
+    this.pendingDraftQualityBoost = true;
+    if (this.draft.round >= this.draft.totalRounds) {
+      this.draft = null;
+      this.status = 'planning';
+    } else {
+      this.draft = {
+        round: this.draft.round + 1,
+        totalRounds: this.draft.totalRounds,
+        ...this.rollDraftOffer(this.draft.round + 1),
       };
     }
     this.emitState();
@@ -860,7 +884,9 @@ export class GameEngine {
     this.waveOutcomes.clear();
     this.draft = null;
     this.previousDraftChoices.clear();
-    this.draftsWithoutRare = 0;
+    this.draftAbandonsUsed = 0;
+    this.lastDraftActionWasAbandon = false;
+    this.pendingDraftQualityBoost = false;
     this.moduleInventory.clear();
     if (this.tutorialEnabled) {
       for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) this.moduleInventory.set(moduleId, count);
@@ -1062,12 +1088,21 @@ export class GameEngine {
       tower.energy -= program.energyCost;
       tower.cooldownLeft = tower.cooldown;
       tower.flash = 1;
+      const energyRefundBudget: EnergyRefundBudget = {
+        remaining: program.energyCost * COMBAT_BALANCE.maxEnergyRefundPerCycle,
+      };
 
       program.shots.forEach((shot, shotIndex) => {
         for (let repeat = 0; repeat < shot.repeats; repeat += 1) {
           const delay = shotIndex * 0.05 + repeat * shot.repeatDelay;
-          if (delay <= 0) this.castShot(tower, shot, target);
-          else this.scheduledCasts.push({ towerId: tower.id, blueprint: shot, targetId: target.id, delay });
+          if (delay <= 0) this.castShot(tower, shot, target, undefined, energyRefundBudget);
+          else this.scheduledCasts.push({
+            towerId: tower.id,
+            blueprint: shot,
+            targetId: target.id,
+            delay,
+            energyRefundBudget,
+          });
         }
       });
     }
@@ -1107,7 +1142,9 @@ export class GameEngine {
       if (cast.delay > 0) continue;
       const tower = this.towers.find((item) => item.id === cast.towerId);
       const target = this.signals.find((item) => item.id === cast.targetId && !item.dead) ?? (tower ? this.findTarget(tower) : null);
-      if (tower && (target || cast.blueprint.static)) this.castShot(tower, cast.blueprint, target, cast.origin);
+      if (tower && (target || cast.blueprint.static)) {
+        this.castShot(tower, cast.blueprint, target, cast.origin, cast.energyRefundBudget);
+      }
       cast.delay = -999;
     }
     let aliveCount = 0;
@@ -1119,7 +1156,13 @@ export class GameEngine {
     this.scheduledCasts.length = aliveCount;
   }
 
-  private castShot(tower: Tower, blueprint: ShotBlueprint, target: Signal | null, origin?: Point): void {
+  private castShot(
+    tower: Tower,
+    blueprint: ShotBlueprint,
+    target: Signal | null,
+    origin?: Point,
+    energyRefundBudget?: EnergyRefundBudget,
+  ): void {
     const isStatic = blueprint.static !== undefined;
     if (isStatic && origin === undefined) return;
     if (!isStatic && !target) return;
@@ -1183,6 +1226,7 @@ export class GameEngine {
         seeking: blueprint.seeking,
         modules: [...blueprint.modules],
         shot: blueprint,
+        ...(energyRefundBudget ? { energyRefundBudget } : {}),
         trailTimer: 0,
         moduleState: {},
         behavior: isStatic ? 'static' : 'linear',
@@ -1741,7 +1785,9 @@ export class GameEngine {
     projectile.shot.payload.forEach((payload, payloadIndex) => {
       for (let repeat = 0; repeat < payload.repeats; repeat += 1) {
         const delay = payloadIndex * 0.04 + repeat * payload.repeatDelay;
-        if (delay <= 0) this.castShot(tower, payload, target, projectile.position);
+        if (delay <= 0) {
+          this.castShot(tower, payload, target, projectile.position, projectile.energyRefundBudget);
+        }
         else {
           if (!target && !payload.static) continue;
           this.scheduledCasts.push({
@@ -1750,6 +1796,9 @@ export class GameEngine {
             targetId: target?.id ?? -1,
             delay,
             origin: { ...projectile.position },
+            ...(projectile.energyRefundBudget
+              ? { energyRefundBudget: projectile.energyRefundBudget }
+              : {}),
           });
         }
       }
@@ -1760,9 +1809,15 @@ export class GameEngine {
     if (damageDealt <= 0 || projectile.shot.energyRefundMultiplier <= 0) return;
     const tower = this.towers.find((item) => item.id === projectile.towerId);
     if (!tower) return;
+    const requested = damageDealt * projectile.shot.energyRefundMultiplier;
+    const refunded = projectile.energyRefundBudget
+      ? Math.min(requested, projectile.energyRefundBudget.remaining)
+      : requested;
+    if (refunded <= 0) return;
+    if (projectile.energyRefundBudget) projectile.energyRefundBudget.remaining -= refunded;
     tower.energy = Math.min(
       tower.maxEnergy,
-      tower.energy + damageDealt * projectile.shot.energyRefundMultiplier,
+      tower.energy + refunded,
     );
   }
 
@@ -2014,22 +2069,94 @@ export class GameEngine {
     this.projectiles.length = aliveProjectileCount;
   }
 
-  private rollDraftChoices(): ModuleId[] {
+  private canAbandonDraft(): boolean {
+    return !this.lastDraftActionWasAbandon
+      && this.draftAbandonsUsed < this.level.moduleDraft.abandonLimit;
+  }
+
+  private openingDraftGuarantee(round: number): Set<ModuleId> {
+    if (this.wave !== 0 || this.tutorialEnabled) return new Set();
+    const definitions = this.modules.list();
+    const isOpeningStatic = (definition: ModuleDefinition): boolean => (
+      definition.kind === 'static'
+      && definition.meta.rarity !== 'epic'
+      && definition.meta.rarity !== 'legendary'
+    );
+    const owns = (predicate: (definition: ModuleDefinition) => boolean): boolean => (
+      definitions.some((definition) => predicate(definition) && this.getModuleCount(definition.id) > 0)
+    );
+    const hasReliableTrigger = owns((definition) => definition.tags.includes('reliable-trigger'));
+    const hasStatic = owns(isOpeningStatic);
+    const hasDirectAreaProjectile = this.getModuleCount('nova') > 0;
+    if (hasDirectAreaProjectile || (hasReliableTrigger && hasStatic)) return new Set();
+
+    if (hasReliableTrigger) {
+      return new Set(definitions.filter(isOpeningStatic).map((definition) => definition.id));
+    }
+    if (hasStatic) {
+      return new Set(definitions
+        .filter((definition) => definition.tags.includes('reliable-trigger'))
+        .map((definition) => definition.id));
+    }
+    if (round >= 3) return new Set<ModuleId>(['nova']);
+    return new Set(definitions
+      .filter((definition) => isOpeningStatic(definition) || definition.tags.includes('reliable-trigger'))
+      .map((definition) => definition.id));
+  }
+
+  private projectileCoverageDeficit(definitions: readonly ModuleDefinition[]): number {
+    const availableProjectiles = definitions.reduce((sum, definition) => (
+      definition.kind === 'projectile' ? sum + this.getAvailableModuleCount(definition.id) : sum
+    ), 0);
+    const towersMissingProjectiles = this.towers.filter((tower) => !tower.slots.some((moduleId) => (
+      moduleId ? this.modules.require(moduleId).kind === 'projectile' : false
+    ))).length;
+    const affordableNewTowers = Math.min(
+      this.level.towerPads.length - this.towers.length,
+      Math.floor(this.shards / ECONOMY_BALANCE.towerCost),
+    );
+    return Math.max(0, towersMissingProjectiles + affordableNewTowers - availableProjectiles);
+  }
+
+  private rollDraftOffer(round: number): Pick<NonNullable<GameSnapshot['draft']>, 'choices' | 'boosted' | 'canAbandon' | 'abandonsRemaining'> {
+    const boosted = this.pendingDraftQualityBoost;
+    this.pendingDraftQualityBoost = false;
+    const definitions = this.modules.list();
+    const inventoryAverage = calculateInventoryQuality(
+      definitions,
+      (moduleId) => this.getModuleCount(moduleId),
+    );
+    const anchors = this.level.moduleDraft.qualityAnchors;
+    const anchor = anchors[this.wave] ?? anchors.at(-1) ?? 1;
+    const qualityCenter = calculateQualityCenter({
+      anchor,
+      inventoryAverage,
+      inventoryInfluence: this.level.moduleDraft.inventoryInfluence,
+      qualityBias: this.level.moduleDraft.qualityBias,
+      boost: boosted ? 1 : 0,
+    });
     const result = rollModuleDraft({
-      definitions: this.modules.list(),
+      definitions,
       ownedCount: (moduleId) => this.getModuleCount(moduleId),
+      availableCount: (moduleId) => this.getAvailableModuleCount(moduleId),
       random: this.towerRandom,
       previousChoices: this.previousDraftChoices,
-      draftsWithoutRare: this.draftsWithoutRare,
+      qualityCenter,
+      projectileDeficit: this.projectileCoverageDeficit(definitions),
+      guaranteedChoices: this.openingDraftGuarantee(round),
     });
     this.previousDraftChoices = result.previousChoices;
-    this.draftsWithoutRare = result.draftsWithoutRare;
-    return result.choices;
+    return {
+      choices: result.choices,
+      boosted,
+      canAbandon: this.canAbandonDraft(),
+      abandonsRemaining: Math.max(0, this.level.moduleDraft.abandonLimit - this.draftAbandonsUsed),
+    };
   }
 
   private beginModuleDraft(totalRounds: number): void {
     this.previousDraftChoices.clear();
-    this.draft = { round: 1, totalRounds, choices: this.rollDraftChoices() };
+    this.draft = { round: 1, totalRounds, ...this.rollDraftOffer(1) };
     this.status = 'reward';
   }
 

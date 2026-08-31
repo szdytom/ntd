@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 33 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 34 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -37,6 +37,7 @@ Modifiers patch the next emitted projectile.
 | --- | --- | --- |
 | `overdrive` | Overdrive Prism | Trades efficiency for stronger projectile properties |
 | `frost` | Condensing Lens | Propagates slowing to affected targets |
+| `double-fork` | Double Fork | Emits two projectiles with a narrow spread |
 | `fork` | Triple Fork | Emits multiple projectiles with spread |
 | `ricochet` | Ricochet Mirror | Redirects a surviving projectile after impact |
 | `ember-coating` | Ember Coating | Propagates a light burning status |

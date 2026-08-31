@@ -8,4 +8,5 @@ export const ECONOMY_BALANCE = {
 export const COMBAT_BALANCE = {
   waveHealthGrowth: 1.13,
   splashDamageFactor: 0.55,
+  maxEnergyRefundPerCycle: 0.6,
 } as const;

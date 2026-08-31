@@ -30,7 +30,7 @@ const effects: readonly EffectDefinition[] = [
 export const impactTriggerModule: ModuleDefinition = {
   id: 'impact-trigger',
   kind: 'logic',
-  tags: ['trigger'],
+  tags: ['trigger', 'reliable-trigger'],
   icon: ImpactTriggerIcon,
   meta: {
     name: 'Impact Trigger', shortName: 'Impact', color, tint: '#ffe7f7', energy: 6, rarity: 'common',

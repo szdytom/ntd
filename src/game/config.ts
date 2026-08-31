@@ -13,6 +13,10 @@ export interface SpawnEntry {
 export interface LevelModuleDraft {
   initialPicks: number;
   wavePicks: number;
+  qualityAnchors: readonly number[];
+  qualityBias: number;
+  inventoryInfluence: number;
+  abandonLimit: number;
 }
 
 export interface LevelDefinition {
@@ -37,7 +41,25 @@ const group = (type: SignalId, count: number, entrance?: NodeId): SpawnEntry[] =
 const wave = (...groups: Array<[SignalId, number, NodeId?]>): SpawnEntry[] => (
   groups.flatMap(([type, count, entrance]) => group(type, count, entrance))
 );
-const DEFAULT_MODULE_DRAFT: LevelModuleDraft = { initialPicks: 3, wavePicks: 3 };
+
+export const qualityAnchors = (...values: number[]): readonly number[] => {
+  if (values.some((anchor) => !Number.isFinite(anchor) || anchor < 1 || anchor > 5)) {
+    throw new RangeError('Module quality anchors must be between 1 and 5');
+  }
+  return values;
+};
+
+const moduleDraft = (
+  anchors: readonly number[],
+  abandonLimit: number,
+  picks: Pick<LevelModuleDraft, 'initialPicks' | 'wavePicks'> = { initialPicks: 3, wavePicks: 3 },
+): LevelModuleDraft => ({
+  ...picks,
+  qualityAnchors: anchors,
+  qualityBias: 0,
+  inventoryInfluence: 0.4,
+  abandonLimit,
+});
 
 export function resolveSpawnEntrances(
   entry: SpawnEntry,
@@ -78,7 +100,7 @@ export const LEVELS = [
       wave(['spark', 5]),
       wave(['spark', 6], ['kite', 3]),
     ],
-    moduleDraft: DEFAULT_MODULE_DRAFT,
+    moduleDraft: moduleDraft(qualityAnchors(1, 4), 1),
     startingShards: 180,
     signalHealthScale: 0.72,
     signalSpeedScale: 0.85,
@@ -106,7 +128,7 @@ export const LEVELS = [
       wave(['spark', 10], ['block', 8], ['hex', 4]),
       wave(['kite', 4], ['block', 3], ['hex', 5], ['fracture', 1, 'white-prism:0']),
     ],
-    moduleDraft: DEFAULT_MODULE_DRAFT,
+    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2), 3),
     startingShards: 240,
     signalHealthScale: 1,
     signalSpeedScale: 1,
@@ -136,7 +158,7 @@ export const LEVELS = [
       wave(['spark', 12], ['block', 8], ['hex', 5], ['anvil', 1]),
       wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1, 'rose-circuit:0']),
     ],
-    moduleDraft: DEFAULT_MODULE_DRAFT,
+    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2, 2), 4),
     startingShards: 250,
     signalHealthScale: 1.08,
     signalSpeedScale: 1.03,
@@ -167,7 +189,7 @@ export const LEVELS = [
       wave(['spark', 12], ['block', 6], ['hex', 5], ['crown', 1, 'verdant-fold:0']),
       wave(['block', 8], ['hex', 5], ['fracture', 1, 'verdant-fold:0'], ['radiant', 1, 'verdant-fold:0']),
     ],
-    moduleDraft: DEFAULT_MODULE_DRAFT,
+    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2, 2, 2), 4),
     startingShards: 260,
     signalHealthScale: 1.16,
     signalSpeedScale: 1.08,
@@ -219,7 +241,11 @@ export const LEVELS = [
         ['crown', 1, 'south-entry'], ['fracture', 1, 'south-entry'],
       ),
     ],
-    moduleDraft: { initialPicks: 5, wavePicks: 4 },
+    moduleDraft: moduleDraft(
+      qualityAnchors(2, 2, 2, 2, 2, 2, 2, 2),
+      5,
+      { initialPicks: 5, wavePicks: 4 },
+    ),
     startingShards: 340,
     signalHealthScale: 1.2,
     signalSpeedScale: 1.1,
@@ -227,8 +253,28 @@ export const LEVELS = [
 ] as const satisfies readonly [LevelDefinition, ...LevelDefinition[]];
 
 for (const level of LEVELS) {
-  for (const [key, picks] of Object.entries(level.moduleDraft)) {
+  for (const [key, picks] of Object.entries({
+    initialPicks: level.moduleDraft.initialPicks,
+    wavePicks: level.moduleDraft.wavePicks,
+  })) {
     if (!Number.isInteger(picks) || picks <= 0) throw new Error(`${level.id} ${key} must be a positive integer`);
+  }
+  if (level.moduleDraft.qualityAnchors.length !== level.waves.length) {
+    throw new Error(`${level.id} requires one module quality anchor per reward batch`);
+  }
+  if (level.moduleDraft.qualityAnchors.some((anchor) => !Number.isFinite(anchor) || anchor < 1 || anchor > 5)) {
+    throw new Error(`${level.id} module quality anchors must be between 1 and 5`);
+  }
+  if (!Number.isFinite(level.moduleDraft.qualityBias)) {
+    throw new Error(`${level.id} module quality bias must be finite`);
+  }
+  if (!Number.isFinite(level.moduleDraft.inventoryInfluence)
+    || level.moduleDraft.inventoryInfluence < 0
+    || level.moduleDraft.inventoryInfluence > 1) {
+    throw new Error(`${level.id} module inventory influence must be between 0 and 1`);
+  }
+  if (!Number.isInteger(level.moduleDraft.abandonLimit) || level.moduleDraft.abandonLimit < 0) {
+    throw new Error(`${level.id} module abandon limit must be a non-negative integer`);
   }
   for (const entries of level.waves) {
     entries.forEach((entry) => resolveSpawnEntrances(entry, level.graph));

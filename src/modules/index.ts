@@ -2,6 +2,7 @@ import { arcboltModule } from './arcbolt';
 import { barrageModule } from './barrage';
 import { colossusModule } from './colossus';
 import { condenseCoreModule } from './condense-core';
+import { doubleForkModule } from './double-fork';
 import { economizerModule } from './economizer';
 import { emberCoatingModule } from './ember-coating';
 import { emberFieldModule } from './ember-field';
@@ -41,6 +42,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(novaModule)
     .register(overdriveModule)
     .register(frostModule)
+    .register(doubleForkModule)
     .register(forkModule)
     .register(echoModule)
     .register(seekerModule)

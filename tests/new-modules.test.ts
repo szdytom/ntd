@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import type { EnergyRefundBudget, Signal, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
@@ -20,6 +20,7 @@ const addProjectile = (
   position: { x: number; y: number },
   velocity: { x: number; y: number },
   targetId: number | null,
+  energyRefundBudget?: EnergyRefundBudget,
 ): Projectile => {
   const projectile: Projectile = {
     id: 40_000 + engine.projectiles.length,
@@ -38,6 +39,7 @@ const addProjectile = (
     seeking: shot.seeking,
     modules: [...shot.modules],
     shot,
+    ...(energyRefundBudget ? { energyRefundBudget } : {}),
     trailTimer: 1,
     moduleState: {},
     behavior: shot.static ? 'static' : 'linear',
@@ -54,9 +56,13 @@ const addProjectile = (
 describe('new module compilation', () => {
   const registry = createModuleRegistry();
 
-  it('registers all four modules', () => {
-    expect(['singularity', 'reclaim-circuit', 'focus-core', 'condense-core'].map((id) => registry.require(id).kind))
-      .toEqual(['static', 'modifier', 'modifier', 'modifier']);
+  it('registers the advanced modules', () => {
+    expect(['singularity', 'reclaim-circuit', 'focus-core', 'condense-core', 'double-fork'].map((id) => registry.require(id).kind))
+      .toEqual(['static', 'modifier', 'modifier', 'modifier', 'modifier']);
+    expect(registry.require('reclaim-circuit').meta).toMatchObject({ rarity: 'epic', energy: 10 });
+    expect(registry.require('fork').meta).toMatchObject({ rarity: 'epic', energy: 34 });
+    expect(registry.require('double-fork').meta).toMatchObject({ rarity: 'rare', energy: 18 });
+    expect(registry.compile(['double-fork', 'pulse']).shots[0]).toMatchObject({ count: 2 });
   });
 
   it('converts pierce, forks, and echoes into one focused shot', () => {
@@ -133,6 +139,39 @@ describe('new module combat behavior', () => {
     for (let step = 0; step < 30 && tower.energy === 0; step += 1) engine.update(FIXED_SIMULATION_STEP);
 
     expect(tower.energy).toBeCloseTo(shot.damage * shot.energyRefundMultiplier, 5);
+  });
+
+  it('stops reclaim refunds when the shared cycle budget is exhausted', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 42 });
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    const tower = engine.towers[0];
+    if (!signal || !tower) throw new Error('Expected a signal and tower');
+    placeSignal(engine, signal, 120);
+    tower.slots.fill(null);
+    tower.energy = 0;
+    tower.energyRegen = 0;
+    const shot = engine.modules.compile(['reclaim-circuit', 'pulse']).shots[0];
+    if (!shot) throw new Error('Expected a reclaim pulse');
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
+    const launchGap = signal.radius + shot.size + 1;
+    const budget = { remaining: 1 };
+    addProjectile(
+      engine,
+      shot,
+      {
+        x: signal.position.x - direction.x * launchGap,
+        y: signal.position.y - direction.y * launchGap,
+      },
+      { x: direction.x * shot.speed, y: direction.y * shot.speed },
+      signal.id,
+      budget,
+    );
+
+    for (let step = 0; step < 30 && tower.energy === 0; step += 1) engine.update(FIXED_SIMULATION_STEP);
+
+    expect(tower.energy).toBeCloseTo(1, 5);
+    expect(budget.remaining).toBe(0);
   });
 
   it('pulls signals on both sides toward an armed singularity', () => {

@@ -84,14 +84,34 @@
 .reward-card > em { color: var(--module-color); font-family: var(--font-mono); font-size: 13px; font-style: normal; font-weight: 800; }
 
 .reward-foot {
-  display: grid;
+  display: flex;
   min-height: 46px;
-  place-items: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 18px 0 30px;
   border-top: 2px solid #252134;
   color: #77717f;
   background: #fff;
   font-size: 14px;
 }
+.reward-foot > span { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.reward-foot .ui-tag { flex: none; }
+.reward-abandon {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 2px solid #252134;
+  border-radius: 0;
+  color: #252134;
+  background: #fff4c2;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.reward-abandon:hover:not(:disabled),
+.reward-abandon:focus-visible:not(:disabled) { background: #ffe36e; }
+.reward-abandon:disabled { cursor: not-allowed; opacity: .42; }
 
 @media (max-width: 900px) {
   .reward-head { min-height: 124px; gap: 16px; padding: 16px 18px; }
@@ -120,5 +140,7 @@
   .reward-card > small { min-height: 28px; margin: 6px 0 5px; font-size: 12px; }
   .reward-card > .reward-detail { min-height: 30px; margin-bottom: 9px; padding: 5px 6px; font-size: 12px; }
   .reward-card > em { font-size: 11px; }
-  .reward-foot { min-height: 40px; font-size: 12px; }
+  .reward-foot { min-height: 40px; gap: 8px; padding: 0 8px; font-size: 11px; }
+  .reward-foot .ui-tag { display: none; }
+  .reward-abandon { min-height: 30px; padding: 3px 7px; font-size: 10px; }
 }

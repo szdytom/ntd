@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateWaveBalanceRows, sampleTowerStatAverages } from '../src/game/balance-analysis';
+import { calculateDraftBalanceRows, calculateWaveBalanceRows, sampleTowerStatAverages } from '../src/game/balance-analysis';
 import { LEVELS, resolveSpawnEntrances } from '../src/game/config';
 
 describe('balance report aggregation', () => {
@@ -39,6 +39,20 @@ describe('balance report aggregation', () => {
         expect(Object.values(row.entranceFlow).reduce((sum, count) => sum + count, 0)).toBe(expandedEntries);
         expect(Object.keys(row.entranceFlow).every((entrance) => level.graph.entrances.includes(entrance))).toBe(true);
       });
+    }
+  });
+
+  it('reports finite draft shares for every configured anchor and inventory sample', () => {
+    const rows = calculateDraftBalanceRows();
+    expect(rows).toHaveLength(LEVELS.reduce(
+      (total, level) => total + level.moduleDraft.qualityAnchors.length * 3,
+      0,
+    ));
+    for (const row of rows) {
+      expect(row.qualityCenter).toBeGreaterThanOrEqual(1);
+      expect(row.qualityCenter).toBeLessThanOrEqual(5);
+      expect(Object.values(row.qualityShares).reduce((sum, share) => sum + share, 0)).toBeCloseTo(1);
+      expect(Object.values(row.kindShares).reduce((sum, share) => sum + share, 0)).toBeCloseTo(1);
     }
   });
 });

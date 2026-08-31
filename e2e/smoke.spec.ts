@@ -7,7 +7,6 @@ import {
   type LevelDefinition,
 } from '../src/game/config';
 import type { SignalId, Point } from '../src/game/types';
-import { DRAFT_BALANCE } from '../src/modules';
 import { getSignalCapability, SIGNAL_IDS, signalRegistry } from '../src/signals';
 
 const WORLD = { width: 1160, height: 650 } as const;
@@ -52,16 +51,6 @@ async function clickBattlefieldAt(page: Page, point: Point): Promise<void> {
   const offsetX = (bounds.width - WORLD.width * scale) / 2;
   const offsetY = (bounds.height - WORLD.height * scale) / 2;
   await page.mouse.click(bounds.x + offsetX + point.x * scale, bounds.y + offsetY + point.y * scale);
-}
-
-async function completeInitialDraft(page: Page, level: LevelDefinition): Promise<void> {
-  const dialog = page.getByRole('region', { name: 'Choose initial modules' });
-  for (let round = 0; round < level.moduleDraft.initialPicks; round += 1) {
-    await expect(dialog).toBeVisible();
-    await expect(dialog.locator('.reward-card')).toHaveCount(DRAFT_BALANCE.choicesPerOffer);
-    await dialog.locator('.reward-card').first().click();
-  }
-  await expect(dialog).toHaveCount(0);
 }
 
 test('first visit offers the tutorial and remembers a final choice', async ({ page }) => {
@@ -111,7 +100,16 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   expect(size?.height ?? 0).toBeGreaterThan(300);
   await expect(page.getByRole('alert')).toHaveCount(0);
 
-  await completeInitialDraft(page, defaultLevel);
+  const draft = page.getByRole('region', { name: 'Choose initial modules' });
+  const abandon = draft.getByRole('button', { name: /Abandon all/ });
+  await expect(abandon).toHaveText(`Abandon all · ${defaultLevel.moduleDraft.abandonLimit} left`);
+  await abandon.click();
+  await expect(draft.getByText('QUALITY SIGNAL +1')).toBeVisible();
+  await expect(abandon).toBeDisabled();
+  for (let round = 1; round < defaultLevel.moduleDraft.initialPicks; round += 1) {
+    await draft.locator('.reward-card').first().click();
+  }
+  await expect(draft).toHaveCount(0);
   await clickBattlefieldAt(page, towerPad(defaultLevel, 1));
   await expect(page.getByLabel('Tower module workshop').locator('.tower-id')).toHaveText('Node 02');
   expect(pageErrors).toEqual([]);
