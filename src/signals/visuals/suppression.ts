@@ -1,13 +1,17 @@
-import type { EnemyAuraConfig } from './config';
-import { seededNoise } from './math';
-import type { Point } from './types';
-import { traceRegularPolygon } from './enemy-visuals';
+import type { TowerSuppressionCapability } from '..';
+import { traceRegularPolygon } from './canvas';
+
+interface Point { x: number; y: number }
+const seededNoise = (seed: number): number => {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+};
 
 export function drawSuppressionSource(
   ctx: CanvasRenderingContext2D,
   position: Point,
   radius: number,
-  aura: EnemyAuraConfig,
+  aura: TowerSuppressionCapability,
   time: number,
   sourceId: number,
   emissive: boolean,
@@ -26,7 +30,7 @@ export function drawSuppressionLink(
   ctx: CanvasRenderingContext2D,
   source: Point,
   target: Point,
-  aura: EnemyAuraConfig,
+  aura: TowerSuppressionCapability,
   time: number,
   sourceId: number,
   towerId: number,
@@ -49,7 +53,7 @@ export function drawSuppressionLink(
 export function strokeSuppressionLink(
   ctx: CanvasRenderingContext2D,
   points: readonly Point[],
-  aura: EnemyAuraConfig,
+  aura: TowerSuppressionCapability,
   emissive: boolean,
 ): void {
   if (emissive) {

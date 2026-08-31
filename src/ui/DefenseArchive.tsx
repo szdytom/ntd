@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next';
 import { LEVELS } from '../game/config';
 import { DIFFICULTIES } from '../game/difficulty';
-import type { DifficultyId, EnemyVariant, ModuleId } from '../game/types';
+import type { DifficultyId, SignalVariantId, ModuleId } from '../game/types';
 import {
   buildDefenseArchiveAnalytics,
   type DefenseRecord,
@@ -115,7 +115,7 @@ const DefenseDetail = ({ record, onClose }: { record: DefenseRecord; onClose: ()
       <div><dt>{t('defenseArchive.detail.version')}</dt><dd>{record.build.commit} · {record.build.commitDate}</dd></div>
     </dl>
     <section><h3>{t('defenseArchive.detail.waves')}</h3><div className="defense-archive-table-scroll"><table className="wave-table"><thead><tr><th>{t('defenseArchive.column.wave')}</th><th>{t('defenseArchive.column.signal')}</th><th>{t('defenseArchive.column.spawned')}</th><th>{t('defenseArchive.column.defeated')}</th><th>{t('defenseArchive.column.leaked')}</th><th>{t('defenseArchive.column.remaining')}</th></tr></thead>
-      <tbody>{record.waves.flatMap((wave) => Object.entries(wave.enemies).map(([variant, tally]) => <tr key={`${wave.wave}-${variant}`}><td>{wave.wave}</td><th><span className="defense-wave-signal"><SignalIcon type={signalIconType(variant as EnemyVariant)} />{signalLabel(t, variant as EnemyVariant)}</span></th><td>{tally?.spawned ?? 0}{(tally?.queued ?? 0) > 0 ? <small> +{tally?.queued} {t('defenseArchive.short.queued')}</small> : null}</td><td>{tally?.defeated ?? 0}</td><td>{tally?.leaked ?? 0}</td><td>{tally?.remaining ?? 0}</td></tr>))}</tbody>
+      <tbody>{record.waves.flatMap((wave) => Object.entries(wave.signals).map(([variant, tally]) => <tr key={`${wave.wave}-${variant}`}><td>{wave.wave}</td><th><span className="defense-wave-signal"><SignalIcon type={signalIconType(variant as SignalVariantId)} />{signalLabel(t, variant as SignalVariantId)}</span></th><td>{tally?.spawned ?? 0}{(tally?.queued ?? 0) > 0 ? <small> +{tally?.queued} {t('defenseArchive.short.queued')}</small> : null}</td><td>{tally?.defeated ?? 0}</td><td>{tally?.leaked ?? 0}</td><td>{tally?.remaining ?? 0}</td></tr>))}</tbody>
     </table></div></section>
     <section><h3>{t('defenseArchive.detail.inventory')}</h3><div className="inventory-ledger">{record.inventory.map((entry) => <ArchiveModule key={entry.moduleId} moduleId={entry.moduleId} count={entry.count} />)}</div></section>
     <section><h3>{t('defenseArchive.detail.towers')}</h3><div className="tower-records">{record.towers.map((tower, index) => <article key={tower.padIndex}>

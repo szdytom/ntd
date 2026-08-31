@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './GameSession.css';
 import type { GameEngine } from '../game/engine';
-import type { EnemyType } from '../game/types';
+import type { SignalId } from '../game/types';
 import { GameHeader } from './GameHeader';
 import { Battlefield } from './Battlefield';
 import { useGameState } from './useGameState';
@@ -17,7 +17,7 @@ export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onT
   engine: GameEngine;
   defenseArchive: DefenseArchiveRepository;
   onExit: () => void;
-  onOpenArchive: (type: EnemyType) => void;
+  onOpenArchive: (type: SignalId) => void;
   onTutorialResolved: () => void;
 }) {
   const { t } = useTranslation();

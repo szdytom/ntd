@@ -16,8 +16,8 @@ export const GAME_EFFECT_IDS = {
 export const gameEffects: readonly EffectDefinition[] = [
   shockwave({ id: 'game:tower-build-ring', lifetime: 0.5, radius: 54, stroke: 3, sides: 6, layer: 'ground' }),
   coneSparks({ id: 'game:tower-build-sparks', lifetime: 0.48, count: 18, distance: 72, length: 10, stroke: 2 }),
-  shockwave({ id: 'game:enemy-pop-ring', lifetime: 0.28, radius: 32, stroke: 2.5, sides: 6 }),
-  coneSparks({ id: 'game:enemy-pop-sparks', lifetime: 0.42, count: 12, distance: 54, length: 9, stroke: 2 }),
+  shockwave({ id: 'game:signal-pop-ring', lifetime: 0.28, radius: 32, stroke: 2.5, sides: 6 }),
+  coneSparks({ id: 'game:signal-pop-sparks', lifetime: 0.42, count: 12, distance: 54, length: 9, stroke: 2 }),
   {
     id: GAME_EFFECT_IDS.fractureSplitRipple,
     lifetime: 0.46,

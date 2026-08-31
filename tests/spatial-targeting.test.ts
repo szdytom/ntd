@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { EnemySpatialIndex } from '../src/game/spatial-index';
+import { SignalSpatialIndex } from '../src/game/spatial-index';
 import { selectTowerTarget } from '../src/game/targeting';
-import type { Enemy, Tower } from '../src/game/types';
+import type { Signal, Tower } from '../src/game/types';
 
-const enemy = (id: number, x: number, hp: number, progress: number): Enemy => ({
+const signal = (id: number, x: number, hp: number, progress: number): Signal => ({
   id,
-  type: 'spark',
+    type: 'spark',
+    variantId: 'spark',
   routeId: 'test',
   progress,
   distance: progress * 100,
@@ -17,7 +18,6 @@ const enemy = (id: number, x: number, hp: number, progress: number): Enemy => ({
   reward: 0,
   coreDamage: 1,
   radius: 10,
-  splitGeneration: 0,
   slowFactor: 0,
   slowTime: 0,
   hitFlash: 0,
@@ -49,11 +49,11 @@ const tower = (targeting: Tower['targeting']): Tower => ({
 });
 
 describe('spatial targeting systems', () => {
-  const enemies = [enemy(1, 20, 80, 0.2), enemy(2, 80, 20, 0.8), enemy(3, 240, 50, 0.5)];
+  const signals = [signal(1, 20, 80, 0.2), signal(2, 80, 20, 0.8), signal(3, 240, 50, 0.5)];
 
-  it('indexes radius and segment candidates without leaking distant enemies', () => {
-    const index = new EnemySpatialIndex(64);
-    index.rebuild(enemies);
+  it('indexes radius and segment candidates without leaking distant signals', () => {
+    const index = new SignalSpatialIndex(64);
+    index.rebuild(signals);
 
     expect(index.withinRadius({ x: 0, y: 0 }, 100).map((item) => item.id)).toEqual([1, 2]);
     expect(index.nearestWithinRadius({ x: 70, y: 0 }, 100).map((item) => item.id)).toEqual([2, 1]);
@@ -63,9 +63,9 @@ describe('spatial targeting systems', () => {
   });
 
   it('fills reusable query buffers without retaining stale results', () => {
-    const index = new EnemySpatialIndex(64);
-    const result: Enemy[] = [];
-    index.rebuild(enemies);
+    const index = new SignalSpatialIndex(64);
+    const result: Signal[] = [];
+    index.rebuild(signals);
 
     expect(index.collectWithinRadius({ x: 0, y: 0 }, 100, result).map((item) => item.id)).toEqual([1, 2]);
     expect(index.collectWithinRadius({ x: 240, y: 0 }, 10, result).map((item) => item.id)).toEqual([3]);
@@ -73,9 +73,9 @@ describe('spatial targeting systems', () => {
       .toEqual([1, 2]);
   });
 
-  it('updates only when an enemy dirties its grid membership', () => {
-    const index = new EnemySpatialIndex(64);
-    const moving = enemy(11, 20, 100, 0);
+  it('updates only when a signal dirties its grid membership', () => {
+    const index = new SignalSpatialIndex(64);
+    const moving = signal(11, 20, 100, 0);
 
     expect(index.update(moving)).toBe(true);
     expect(index.withinRadius({ x: 20, y: 0 }, 4)).toEqual([moving]);
@@ -91,10 +91,10 @@ describe('spatial targeting systems', () => {
     expect(index.withinRadius({ x: 80, y: 0 }, 4)).toEqual([moving]);
   });
 
-  it('incrementally inserts, removes, and clears enemy membership', () => {
-    const index = new EnemySpatialIndex(64);
-    const first = enemy(21, 20, 100, 0);
-    const second = enemy(22, 90, 100, 0);
+  it('incrementally inserts, removes, and clears signal membership', () => {
+    const index = new SignalSpatialIndex(64);
+    const first = signal(21, 20, 100, 0);
+    const second = signal(22, 90, 100, 0);
 
     index.update(first);
     index.update(second);
@@ -112,15 +112,15 @@ describe('spatial targeting systems', () => {
   });
 
   it('matches a rebuilt reference index across movement, death, spawn, and removal', () => {
-    const incremental = new EnemySpatialIndex(64);
-    const reference = new EnemySpatialIndex(64);
+    const incremental = new SignalSpatialIndex(64);
+    const reference = new SignalSpatialIndex(64);
     const moving = Array.from({ length: 36 }, (_, index) => (
-      enemy(index + 100, (index * 47) % 520 - 80, 100, 0)
+      signal(index + 100, (index * 47) % 520 - 80, 100, 0)
     ));
     moving.forEach((item, index) => { item.position.y = (index * 71) % 380 - 60; });
     moving.forEach((item) => incremental.update(item));
 
-    const sortedIds = (items: Enemy[]) => items.map((item) => item.id).sort((left, right) => left - right);
+    const sortedIds = (items: Signal[]) => items.map((item) => item.id).sort((left, right) => left - right);
     for (let step = 0; step < 160; step += 1) {
       for (let index = 0; index < moving.length; index += 1) {
         const item = moving[index];
@@ -131,7 +131,7 @@ describe('spatial targeting systems', () => {
         incremental.update(item);
       }
       if (step % 29 === 0) {
-        const spawned = enemy(1_000 + step, 30 + step * 2, 100, 0);
+        const spawned = signal(1_000 + step, 30 + step * 2, 100, 0);
         spawned.position.y = 210 - step;
         moving.push(spawned);
         incremental.update(spawned);
@@ -156,8 +156,8 @@ describe('spatial targeting systems', () => {
   });
 
   it('selects targets with a linear scan for each targeting strategy', () => {
-    expect(selectTowerTarget(tower('core-nearest'), enemies)?.id).toBe(2);
-    expect(selectTowerTarget(tower('hp-lowest'), enemies)?.id).toBe(2);
-    expect(selectTowerTarget(tower('tower-nearest'), enemies)?.id).toBe(1);
+    expect(selectTowerTarget(tower('core-nearest'), signals)?.id).toBe(2);
+    expect(selectTowerTarget(tower('hp-lowest'), signals)?.id).toBe(2);
+    expect(selectTowerTarget(tower('tower-nearest'), signals)?.id).toBe(1);
   });
 });

@@ -1,5 +1,5 @@
 import { clamp } from './math';
-import { traceRegularPolygon } from './enemy-visuals';
+import { traceRegularPolygon } from '../signals/visuals/canvas';
 
 export interface TowerVisualOptions {
   color: string;

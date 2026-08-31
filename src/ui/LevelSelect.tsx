@@ -2,10 +2,11 @@ import type { CSSProperties, KeyboardEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BUILD_COMMIT, BUILD_COMMIT_DATE } from '../build-info';
-import { DEFAULT_LEVEL_ID, ENEMIES, getLevel, LEVELS } from '../game/config';
+import { DEFAULT_LEVEL_ID, getLevel, LEVELS } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID, DIFFICULTIES, getDifficulty } from '../game/difficulty';
-import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/types';
+import type { CreativeSetup, DifficultyId, GameMode } from '../game/types';
 import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
+import { SIGNAL_IDS, signalRegistry } from '../signals';
 import { CalibrationSlider } from './CalibrationSlider';
 import { LevelMap } from './LevelMap';
 import { SettingsPanel } from './SettingsPanel';
@@ -15,7 +16,6 @@ import './LevelSelect.css';
 const DESKTOP_VISIBLE_LEVEL_COUNT = 3;
 const COMPACT_VISIBLE_LEVEL_COUNT = 1;
 const COMPACT_LEVEL_QUERY = '(max-width: 980px)';
-const ARCHIVE_ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 export const LEVEL_SELECTION_STORAGE_KEY = 'prism-bastion-level-selection';
 const visibleLevelCountForViewport = (): number => globalThis.matchMedia?.(COMPACT_LEVEL_QUERY).matches
   ? COMPACT_VISIBLE_LEVEL_COUNT
@@ -222,11 +222,11 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive }: {
               <span className="defense-archive-entry-marks" aria-hidden="true"><i /><i /><i /><i /></span>
               <strong>{t('defenseArchive.entry')}</strong>
             </button>
-            <button className="enemy-archive-entry" onClick={onOpenArchive} aria-label={t('enemyArchive.entryAria')}>
-              <span className="enemy-archive-entry-spectrum" aria-hidden="true">
-                {ARCHIVE_ENEMY_TYPES.map((type) => <i key={type} style={{ '--signal-color': ENEMIES[type].color } as CSSProperties} />)}
+            <button className="signal-archive-entry" onClick={onOpenArchive} aria-label={t('signalArchive.entryAria')}>
+              <span className="signal-archive-entry-spectrum" aria-hidden="true">
+                {SIGNAL_IDS.map((type) => <i key={type} style={{ '--signal-color': signalRegistry.require(type).visual.color } as CSSProperties} />)}
               </span>
-              <strong>{t('enemyArchive.entry')}</strong>
+              <strong>{t('signalArchive.entry')}</strong>
             </button>
             <SettingsPanel />
           </div>

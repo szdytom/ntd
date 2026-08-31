@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES, LEVELS, resolveSpawnEntrances, WORLD } from '../src/game/config';
+import { LEVELS, resolveSpawnEntrances, WORLD } from '../src/game/config';
+import { signalRegistry } from '../src/signals';
 
 describe('level configuration', () => {
   it('keeps every level structurally playable', () => {
@@ -11,8 +12,8 @@ describe('level configuration', () => {
       expect(level.graph.entrances.length, `${level.id}: entrances`).toBeGreaterThan(0);
       expect(level.towerPads.length, `${level.id}: tower pads`).toBeGreaterThan(0);
       expect(level.waves.length, `${level.id}: waves`).toBeGreaterThan(0);
-      expect(level.enemyHealthScale, `${level.id}: health scale`).toBeGreaterThan(0);
-      expect(level.enemySpeedScale, `${level.id}: speed scale`).toBeGreaterThan(0);
+      expect(level.signalHealthScale, `${level.id}: health scale`).toBeGreaterThan(0);
+      expect(level.signalSpeedScale, `${level.id}: speed scale`).toBeGreaterThan(0);
       expect(level.startingShards, `${level.id}: starting shards`).toBeGreaterThanOrEqual(0);
 
       for (const [key, picks] of Object.entries(level.moduleDraft)) {
@@ -25,7 +26,7 @@ describe('level configuration', () => {
       for (const [waveIndex, wave] of level.waves.entries()) {
         expect(wave.length, `${level.id}: wave ${waveIndex + 1}`).toBeGreaterThan(0);
         for (const entry of wave) {
-          expect(ENEMIES[entry.type], `${level.id}: ${entry.type}`).toBeDefined();
+          expect(signalRegistry.require(entry.type), `${level.id}: ${entry.type}`).toBeDefined();
           expect(() => resolveSpawnEntrances(entry, level.graph)).not.toThrow();
         }
       }

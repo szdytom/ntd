@@ -119,9 +119,9 @@ export const toxicCloudModule: ModuleDefinition = {
   },
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawn('module:toxic-cloud:pulse', { position, color });
-    for (const enemy of combat.nearbyEnemies(position, stats.radius)) {
-      if (projectile) combat.affectTarget(enemy, projectile, 'static');
-      combat.applyStatus(enemy, {
+    for (const signal of combat.nearbyEnemies(position, stats.radius)) {
+      if (projectile) combat.affectTarget(signal, projectile, 'static');
+      combat.applyStatus(signal, {
         id: 'toxic-cloud',
         duration: stats.statusDuration,
         interval: stats.damageInterval,

@@ -4,7 +4,7 @@
 
 ## Boundary and lifecycle
 
-`GameEngine` owns combat truth. It counts actual enemy spawns, defeats, core arrivals, and the bodies still active when a loss occurs. Fracture children use a separate persisted variant so their bodies reconcile without inventing another configured enemy type.
+`GameEngine` owns combat truth. It counts actual signal spawns, defeats, core arrivals, and the bodies still active when a loss occurs. Fracture children use a separate persisted variant so their bodies reconcile without inventing another configured signal type.
 
 The engine emits two kinds of events for the defense archive:
 
@@ -19,7 +19,7 @@ Resetting creates a new run identifier and clears in-memory telemetry. Exiting b
 
 `IndexedDBArchiveStorage` is the browser default. Its `prism-bastion-defense-archive` database contains a defense store and one achievement-state record. The run identifier is also the defense key, making repeated completion delivery idempotent. Other adapters can implement the same boundary without changing the repository, UI, or engine event flow.
 
-Records include the data schema version and build commit metadata. Presentation resolves level, enemy, module, difficulty, and targeting labels from current localization resources; unknown historical identifiers remain visible as identifiers rather than making the record unreadable.
+Records include the data schema version and build commit metadata. Presentation resolves level, signal, module, difficulty, and targeting labels from current localization resources; unknown historical identifiers remain visible as identifiers rather than making the record unreadable.
 
 Creative defenses are not persisted. Tutorial Standard defenses are persisted and included in descriptive statistics, but only tutorial achievements consume their result. Other Creative actions can still satisfy the tutorial achievements that teach Creative controls.
 
@@ -30,9 +30,9 @@ The dashboard derives every displayed aggregate from defense records rather than
 - overall counts summarize completed defenses;
 - the sector tab groups the same records by level and derives a local signal ledger;
 - wave analysis compares defenses that reached each wave, then reports how many cleared it and what happened to its signals;
-- signal rows sum the same wave tallies by enemy variant.
+- signal rows sum the same wave tallies by signal variant.
 
-This keeps wins, losses, enemy outcomes, and detail views reconcilable. Wall duration uses record timestamps and includes planning, draft, pause, and combat time. Simulation duration advances only during `wave` fixed steps, so planning, reward selection, and pause time are excluded. A flawless victory means the final core equals its maximum.
+This keeps wins, losses, signal outcomes, and detail views reconcilable. Wall duration uses record timestamps and includes planning, draft, pause, and combat time. Simulation duration advances only during `wave` fixed steps, so planning, reward selection, and pause time are excluded. A flawless victory means the final core equals its maximum.
 
 ## Achievement state
 

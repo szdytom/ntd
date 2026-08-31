@@ -4,7 +4,7 @@
 
 Tests protect software contracts. They do not approve or preserve balance decisions.
 
-Prism Bastion keeps authored balance data in configuration: enemy health and speed, module energy and rarity, tower stat ranges, level geometry, wave composition, reward quantities, and similar tuning. Designers must be able to change those values without rewriting unrelated tests.
+Prism Bastion keeps authored balance data in configuration: signal health and speed, module energy and rarity, tower stat ranges, level geometry, wave composition, reward quantities, and similar tuning. Designers must be able to change those values without rewriting unrelated tests.
 
 ## What tests should protect
 
@@ -22,22 +22,22 @@ Algorithm tests may use exact numbers when those numbers are declared inside the
 
 Do not copy current production values into assertions merely to detect that they changed. In particular, avoid golden assertions for:
 
-- Enemy health, speed, radius, reward, damage, or trait magnitudes.
+- Signal health, speed, radius, reward, damage, or trait magnitudes.
 - Module damage, energy cost, rarity, duration, range, or multiplier values.
 - Tower base stats, upgrade ranges, and draft quantities.
-- Level coordinates, pad counts, wave counts, enemy totals, compositions, or introduction order.
+- Level coordinates, pad counts, wave counts, signal totals, compositions, or introduction order.
 - Balance-report totals, simulated tower averages, or other outputs whose purpose is to inform tuning.
 
-These values may deserve schema or sanity checks. An energy cost can be required to be finite and non-negative; a wave can be required to reference registered enemies; a route can be required to reach its root. Those checks reject invalid data while allowing valid retuning.
+These values may deserve schema or sanity checks. An energy cost can be required to be finite and non-negative; a wave can be required to reference registered signals; a route can be required to reach its root. Those checks reject invalid data while allowing valid retuning.
 
 ## Derive integration expectations from configuration
 
 When a test proves that configured behavior reaches the runtime, read the expectation from the same configuration rather than repeating its current number.
 
 ```ts
-const cap = ENEMIES.anvil.armor.damageCap;
-dealDamage(enemy, cap * 10);
-expect(enemy.hp).toBe(enemy.maxHp - cap);
+const cap = getSignalCapability(signalRegistry.require('anvil'), 'damage-cap')?.damageCap;
+dealDamage(signal, cap * 10);
+expect(signal.hp).toBe(signal.maxHp - cap);
 ```
 
 This test fails if armor stops enforcing its cap. It keeps passing if a designer changes the cap from one valid value to another.
@@ -65,7 +65,7 @@ An exact numeric assertion is appropriate when at least one of these is true:
 
 If the only justification is “that is what `config.ts` says today,” do not assert the number. Read it from configuration, assert a useful invariant, or omit the test.
 
-Similarly, an exact content sequence is a contract only when the product explicitly promises that sequence. A test should not make a particular enemy's first appearance or a level's current wave order permanent by accident.
+Similarly, an exact content sequence is a contract only when the product explicitly promises that sequence. A test should not make a particular signal's first appearance or a level's current wave order permanent by accident.
 
 ## Reports are evidence, not gates
 

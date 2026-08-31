@@ -91,14 +91,14 @@ export const arcboltModule: ModuleDefinition = {
     ctx.restore();
   },
   onCast: ({ effects: engine, position, rotation }) => engine.spawn('module:arcbolt:muzzle', { position, rotation, color }),
-  onHit: ({ effects: engine, position, rotation, projectile, enemy, combat }) => {
+  onHit: ({ effects: engine, position, rotation, projectile, signal, combat }) => {
     engine.spawn('module:arcbolt:hit', { position, rotation, color });
-    if (!projectile || !enemy) return;
-    const visited = [enemy.id];
-    let origin = { ...enemy.position };
+    if (!projectile || !signal) return;
+    const visited = [signal.id];
+    let origin = { ...signal.position };
     let damage = projectile.damage * stats.chainDamageMultiplier;
     for (let index = 0; index < stats.maxChains; index += 1) {
-      const target = combat.nearestEnemy(origin, stats.chainRadius, visited);
+      const target = combat.nearestSignal(origin, stats.chainRadius, visited);
       if (!target) break;
       engine.spawn('module:arcbolt:chain', { position: origin, color, data: { ...target.position } });
       const damageDealt = combat.dealDamage(target, damage, color, projectile);

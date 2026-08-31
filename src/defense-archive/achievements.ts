@@ -1,6 +1,7 @@
 import { LEVELS } from '../game/config';
 import { DIFFICULTIES } from '../game/difficulty';
-import type { DifficultyId, EnemyType, DefenseArchiveFact } from '../game/types';
+import type { DifficultyId, SignalVariantId, DefenseArchiveFact } from '../game/types';
+import { SIGNAL_IDS, signalRegistry } from '../signals';
 import type {
   AchievementDefinition,
   AchievementProgress,
@@ -9,7 +10,6 @@ import type {
 } from './types';
 
 const NON_TUTORIAL_LEVEL_IDS = LEVELS.filter((level) => level.id !== 'starter-elbow').map((level) => level.id);
-const ENEMY_TYPES: EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 const TUTORIAL_FACTS: DefenseArchiveFact[] = [
   'creative-signal-spawned',
   'second-tower-built',
@@ -66,8 +66,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     id: 'progress.signal-spectrum',
     category: 'progress',
     progress: (state) => ({
-      current: ENEMY_TYPES.filter((type) => state.defeatedTypes.includes(type)).length,
-      target: ENEMY_TYPES.length,
+      current: SIGNAL_IDS.filter((type) => state.defeatedSignalIds.includes(type)).length,
+      target: SIGNAL_IDS.length,
     }),
   },
   {
@@ -112,9 +112,11 @@ export function applyDefense(state: AchievementState, record: DefenseRecord): vo
   if (record.mode !== 'standard') return;
   let defeated = 0;
   for (const wave of record.waves) {
-    for (const [variant, tally] of Object.entries(wave.enemies)) {
+    for (const [variant, tally] of Object.entries(wave.signals)) {
       defeated += tally?.defeated ?? 0;
-      if (variant !== 'fracture-fragment' && (tally?.defeated ?? 0) > 0) addUnique(state.defeatedTypes, variant as EnemyType);
+      const variantId = variant as SignalVariantId;
+      const signalId = signalRegistry.signalIdForVariant(variantId);
+      if (variantId === signalId && (tally?.defeated ?? 0) > 0) addUnique(state.defeatedSignalIds, signalId);
     }
   }
   state.standardDefeated += defeated;

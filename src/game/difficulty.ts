@@ -5,8 +5,8 @@ export interface DifficultyDefinition {
   name: string;
   rank: -2 | -1 | 0 | 1 | 2;
   description: string;
-  enemyHealth: number;
-  enemySpeed: number;
+  signalHealth: number;
+  signalSpeed: number;
   towerDamage: number;
   economy: number;
 }
@@ -17,8 +17,8 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
     name: 'Relaxed',
     rank: -2,
     description: 'Explore module combinations with generous room for error.',
-    enemyHealth: 0.72,
-    enemySpeed: 0.94,
+    signalHealth: 0.72,
+    signalSpeed: 0.94,
     towerDamage: 1.18,
     economy: 1.12,
   },
@@ -27,8 +27,8 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
     name: 'Easy',
     rank: -1,
     description: 'Reduces build pressure while preserving progression.',
-    enemyHealth: 0.86,
-    enemySpeed: 0.97,
+    signalHealth: 0.86,
+    signalSpeed: 0.97,
     towerDamage: 1.08,
     economy: 1.06,
   },
@@ -37,8 +37,8 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
     name: 'Standard',
     rank: 0,
     description: 'Uses the designed baseline and standard economy.',
-    enemyHealth: 1,
-    enemySpeed: 1,
+    signalHealth: 1,
+    signalSpeed: 1,
     towerDamage: 1,
     economy: 1,
   },
@@ -47,8 +47,8 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
     name: 'Hard',
     rank: 1,
     description: 'Demands tighter coverage and efficient sequencing.',
-    enemyHealth: 1.18,
-    enemySpeed: 1.04,
+    signalHealth: 1.18,
+    signalSpeed: 1.04,
     towerDamage: 0.94,
     economy: 0.96,
   },
@@ -57,8 +57,8 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
     name: 'Extreme',
     rank: 2,
     description: 'Raises numerical pressure for mature builds.',
-    enemyHealth: 1.42,
-    enemySpeed: 1.08,
+    signalHealth: 1.42,
+    signalSpeed: 1.08,
     towerDamage: 0.86,
     economy: 0.9,
   },

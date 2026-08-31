@@ -6,7 +6,7 @@ import '../src/i18n';
 import { GameEngine } from '../src/game/engine';
 import type { GameSnapshot } from '../src/game/types';
 import { Battlefield } from '../src/ui/Battlefield';
-import { EnemyPreview } from '../src/ui/EnemyPreview';
+import { SignalPreview } from '../src/ui/SignalPreview';
 
 afterEach(cleanup);
 
@@ -16,12 +16,12 @@ const finalWaveSnapshot = (engine: GameEngine, snapshot: GameSnapshot): GameSnap
   wave: engine.level.waves.length - 1,
 });
 
-describe('enemy wave preview', () => {
+describe('signal wave preview', () => {
   it('shows every signal type in a wave without truncation', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 17 });
     const snapshot = finalWaveSnapshot(engine, engine.getSnapshot());
 
-    render(<EnemyPreview
+    render(<SignalPreview
       engine={engine}
       wave={snapshot.wave}
       onOpenArchive={() => undefined}
@@ -39,7 +39,7 @@ describe('enemy wave preview', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'triune-delta', seed: 19 });
     const snapshot = finalWaveSnapshot(engine, engine.getSnapshot());
 
-    render(<EnemyPreview
+    render(<SignalPreview
       engine={engine}
       wave={snapshot.wave}
       liveCounts={{ kite: 4, crown: 1 }}
@@ -84,6 +84,6 @@ describe('enemy wave preview', () => {
     />);
 
     expect(screen.getByText('No signals')).toBeTruthy();
-    expect(container.querySelector('.enemy-preview')).toBeNull();
+    expect(container.querySelector('.signal-preview')).toBeNull();
   });
 });

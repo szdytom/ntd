@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Enemy, Projectile, ShotBlueprint } from '../src/game/types';
+import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
 
-const placeEnemy = (engine: GameEngine, enemy: Enemy, pathDistance: number): void => {
+const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
   const at = engine.path.pointAtDistance(pathDistance);
-  enemy.speed = 0;
-  enemy.distance = pathDistance;
-  enemy.progress = pathDistance / engine.path.length;
-  enemy.position = at.position;
-  enemy.angle = at.angle;
-  enemy.hp = 10_000;
-  enemy.maxHp = 10_000;
+  signal.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+  signal.hp = 10_000;
+  signal.maxHp = 10_000;
 };
 
 const addProjectile = (
@@ -51,18 +51,18 @@ const addProjectile = (
   return projectile;
 };
 
-const fireAt = (engine: GameEngine, shot: ShotBlueprint, enemy: Enemy): Projectile => {
-  const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
-  const launchGap = enemy.radius + shot.size + 2;
+const fireAt = (engine: GameEngine, shot: ShotBlueprint, signal: Signal): Projectile => {
+  const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
+  const launchGap = signal.radius + shot.size + 2;
   return addProjectile(
     engine,
     shot,
     {
-      x: enemy.position.x - direction.x * launchGap,
-      y: enemy.position.y - direction.y * launchGap,
+      x: signal.position.x - direction.x * launchGap,
+      y: signal.position.y - direction.y * launchGap,
     },
     { x: direction.x * shot.speed, y: direction.y * shot.speed },
-    enemy.id,
+    signal.id,
   );
 };
 
@@ -107,10 +107,10 @@ describe('tiered damage status modules', () => {
 
   it('applies all four independently stackable statuses to one target', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 83 });
-    engine.spawnCreativeEnemy('block');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 200);
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 200);
     const shot = engine.modules.compile([
       'ember-coating',
       'toxin',
@@ -119,25 +119,25 @@ describe('tiered damage status modules', () => {
       'pulse',
     ]).shots[0];
     if (!shot) throw new Error('Expected a compiled status shot');
-    fireAt(engine, shot, enemy);
+    fireAt(engine, shot, signal);
 
-    advanceUntil(engine, () => enemy.statuses.length === 4);
+    advanceUntil(engine, () => signal.statuses.length === 4);
 
-    expect(enemy.statuses.map((status) => status.id)).toEqual([
+    expect(signal.statuses.map((status) => status.id)).toEqual([
       'ember-coating',
       'toxin',
       'searing-sigil',
       'starfire-matrix',
     ]);
-    expect(enemy.statuses.map((status) => status.damage)).toEqual([2, 3, 5, 7]);
+    expect(signal.statuses.map((status) => status.damage)).toEqual([2, 3, 5, 7]);
   });
 
   it('emits distinct particles while burning statuses remain active', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 85 });
-    engine.spawnCreativeEnemy('block');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 200);
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 200);
     const shot = engine.modules.compile([
       'ember-coating',
       'searing-sigil',
@@ -145,8 +145,8 @@ describe('tiered damage status modules', () => {
       'pulse',
     ]).shots[0];
     if (!shot) throw new Error('Expected a compiled burning shot');
-    fireAt(engine, shot, enemy);
-    advanceUntil(engine, () => enemy.statuses.length === 3);
+    fireAt(engine, shot, signal);
+    advanceUntil(engine, () => signal.statuses.length === 3);
     const spawnEffect = vi.spyOn(engine.effects, 'spawn');
 
     advanceUntil(engine, () => false, 0.5);
@@ -158,10 +158,10 @@ describe('tiered damage status modules', () => {
       'module:starfire-matrix:burning',
     ]));
     for (const [, options] of spawnEffect.mock.calls.filter(([id]) => id.endsWith(':burning'))) {
-      expect(options.data).toEqual({ radius: enemy.radius });
+      expect(options.data).toEqual({ radius: signal.radius });
     }
 
-    advanceUntil(engine, () => enemy.statuses.length === 0, 4);
+    advanceUntil(engine, () => signal.statuses.length === 0, 4);
     spawnEffect.mockClear();
     advanceUntil(engine, () => false, 0.6);
     expect(spawnEffect.mock.calls.some(([id]) => id.endsWith(':burning'))).toBe(false);
@@ -169,20 +169,20 @@ describe('tiered damage status modules', () => {
 
   it('delivers the complete legendary burn over eight ticks', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 87 });
-    engine.spawnCreativeEnemy('block');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 200);
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 200);
     const shot = engine.modules.compile(['starfire-matrix', 'pulse']).shots[0];
     if (!shot) throw new Error('Expected a compiled Starfire shot');
-    fireAt(engine, shot, enemy);
+    fireAt(engine, shot, signal);
 
-    advanceUntil(engine, () => enemy.statuses.some((status) => status.id === 'starfire-matrix'));
-    const hpAfterImpact = enemy.hp;
-    advanceUntil(engine, () => !enemy.statuses.some((status) => status.id === 'starfire-matrix'), 4);
+    advanceUntil(engine, () => signal.statuses.some((status) => status.id === 'starfire-matrix'));
+    const hpAfterImpact = signal.hp;
+    advanceUntil(engine, () => !signal.statuses.some((status) => status.id === 'starfire-matrix'), 4);
 
     expect(10_000 - hpAfterImpact).toBe(14);
-    expect(hpAfterImpact - enemy.hp).toBe(56);
+    expect(hpAfterImpact - signal.hp).toBe(56);
   });
 });
 
@@ -209,20 +209,20 @@ describe('Ember Scorch Field', () => {
 
   it('burns targets, refreshes one field status, and publishes the static channel', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 89 });
-    engine.spawnCreativeEnemy('block');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 220);
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 220);
     const carrier = engine.modules.compile(['impact-trigger', 'pulse', 'frost', 'ember-field']).shots[0];
     const field = carrier?.payload[0];
     if (!field?.static) throw new Error('Expected an Ember Scorch Field payload');
-    const projectile = addProjectile(engine, field, { ...enemy.position }, { x: 0, y: 0 }, null);
+    const projectile = addProjectile(engine, field, { ...signal.position }, { x: 0, y: 0 }, null);
 
     advanceUntil(engine, () => projectile.triggerCount >= 3, 2);
 
-    expect(enemy.slowTime).toBeGreaterThan(0);
-    expect(enemy.statuses.filter((status) => status.id === 'ember-field')).toHaveLength(1);
-    expect(enemy.statuses.find((status) => status.id === 'ember-field')).toMatchObject({
+    expect(signal.slowTime).toBeGreaterThan(0);
+    expect(signal.statuses.filter((status) => status.id === 'ember-field')).toHaveLength(1);
+    expect(signal.statuses.find((status) => status.id === 'ember-field')).toMatchObject({
       damage: 2,
       duration: 1,
       interval: 0.5,

@@ -1,19 +1,19 @@
 import { distance } from './math';
-import type { Enemy, TargetingMode, Tower } from './types';
+import type { Signal, TargetingMode, Tower } from './types';
 
-export type DensityQuery = (enemy: Enemy) => number;
-export type CoreDistanceQuery = (enemy: Enemy) => number;
+export type DensityQuery = (signal: Signal) => number;
+export type CoreDistanceQuery = (signal: Signal) => number;
 
 export function selectTowerTarget(
   tower: Tower,
-  candidates: readonly Enemy[],
-  densityQuery: DensityQuery = (enemy) => candidates.reduce(
-    (count, other) => count + (!other.dead && distance(enemy.position, other.position) <= 92 ? 1 : 0),
+  candidates: readonly Signal[],
+  densityQuery: DensityQuery = (signal) => candidates.reduce(
+    (count, other) => count + (!other.dead && distance(signal.position, other.position) <= 92 ? 1 : 0),
     0,
   ),
-  coreDistanceQuery: CoreDistanceQuery = (enemy) => 1 - enemy.progress,
-): Enemy | null {
-  let best: Enemy | null = null;
+  coreDistanceQuery: CoreDistanceQuery = (signal) => 1 - signal.progress,
+): Signal | null {
+  let best: Signal | null = null;
   let bestDensity = 0;
   const densityMode = tower.targeting.startsWith('density');
   for (const candidate of candidates) {
@@ -44,8 +44,8 @@ export function selectTowerTarget(
 function compareTarget(
   mode: TargetingMode,
   tower: Tower,
-  candidate: Enemy,
-  incumbent: Enemy,
+  candidate: Signal,
+  incumbent: Signal,
   candidateDensity: number,
   incumbentDensity: number,
   candidateCoreDistance: number,

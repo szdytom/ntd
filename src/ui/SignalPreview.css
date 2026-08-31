@@ -1,4 +1,4 @@
-.enemy-preview {
+.signal-preview {
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
@@ -6,7 +6,7 @@
   gap: 6px;
 }
 
-.enemy-preview-button {
+.signal-preview-button {
   padding: 0;
   border: 0;
   background: transparent;
@@ -14,15 +14,15 @@
   transition: filter 140ms ease;
 }
 
-.enemy-preview-button:hover { filter: brightness(1.08); }
+.signal-preview-button:hover { filter: brightness(1.08); }
 
-.enemy-preview-button:focus-visible {
+.signal-preview-button:focus-visible {
   outline: 3px solid var(--purple);
   outline-offset: 2px;
   box-shadow: none;
 }
 
-.enemy-preview .enemy-preview-tag {
+.signal-preview .signal-preview-tag {
   display: flex;
   min-height: 30px;
   align-items: center;
@@ -31,9 +31,9 @@
   text-shadow: 0 1px 1px rgba(37, 33, 52, .36);
 }
 
-.enemy-preview .signal-icon { width: 15px; height: 15px; }
+.signal-preview .signal-icon { width: 15px; height: 15px; }
 
-.enemy-preview b {
+.signal-preview b {
   color: inherit;
   font-family: var(--font-mono);
   font-size: 13px;

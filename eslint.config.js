@@ -20,6 +20,18 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/signals/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{ name: 'react', message: 'Signal definitions and interpreters must remain framework-independent.' }],
+        patterns: [{
+          group: ['**/game/**', '**/ui/**', '**/defense-archive/**', '**/i18n/**'],
+          message: 'The signals domain must not depend on game orchestration, UI, persistence, or i18n runtime code.',
+        }],
+      }],
+    },
+  },
+  {
     files: ['**/*.mjs', '**/*.js'],
     languageOptions: {
       globals: globals.node,

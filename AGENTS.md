@@ -20,6 +20,7 @@ Prism Bastion is a geometric tower-defense game built around modular programming
 
 ```text
 src/
+├── signals/    Signal definitions, registry, capabilities, visuals, and compendium protocols
 ├── game/       Combat engine, paths, collision, targeting, levels, and balance
 ├── modules/    Module definitions, registry, rarity, and sequence compiler
 ├── effects/    Effect lifecycle, Canvas painters, and effect factories
@@ -58,6 +59,6 @@ Examples:
 
 - `feat: remember level selection`
 - `fix: correct triune-delta display settings`
-- `perf: update enemy spatial index incrementally`
+- `perf: update signal spatial index incrementally`
 
 Use a scope only when it materially improves clarity. Keep unrelated changes in separate commits.

@@ -1,10 +1,10 @@
-import { ENEMIES, type EnemyShieldConfig } from './config';
-import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, regularPolygonPoints, traceFractureSpike, traceSurgeBody } from './enemy-shapes';
-import { clamp } from './math';
-import type { EnemyType } from './types';
+import { signalRegistry, type ShieldCapability, type SignalId } from '..';
+import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, regularPolygonPoints, traceFractureSpike, traceSurgeBody } from './geometry';
 
-export interface EnemyBodyVisualOptions {
-  type: EnemyType;
+const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
+export interface SignalBodyVisualOptions {
+  type: SignalId;
   radius?: number;
   time?: number;
   travelAngle?: number;
@@ -12,7 +12,7 @@ export interface EnemyBodyVisualOptions {
   hitStrength?: number;
 }
 
-export interface EnemyShieldVisualState {
+export interface SignalShieldVisualState {
   charge: number;
   radiusScale: number;
   hitStrength: number;
@@ -44,61 +44,62 @@ export function traceRegularPolygon(
   ctx.closePath();
 }
 
-export function enemyVisualRotation(
-  type: EnemyType,
+export function signalVisualRotation(
+  type: SignalId,
   time: number,
   travelAngle = 0,
   phase = 0,
 ): number {
-  if (type === 'fracture' || type === 'anvil') return time * 0.55 + phase;
-  if (type === 'radiant') return -time * 0.38 + phase;
-  return travelAngle + (type === 'kite' ? Math.PI / 4 : 0);
+  const visual = signalRegistry.require(type).visual;
+  if (visual.spin !== undefined) return time * visual.spin + phase;
+  return travelAngle + (visual.rotationOffset ?? 0);
 }
 
-export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyVisualOptions): void {
-  const config = ENEMIES[options.type];
-  const radius = options.radius ?? config.radius;
+export function drawSignalBody(ctx: CanvasRenderingContext2D, options: SignalBodyVisualOptions): void {
+  const definition = signalRegistry.require(options.type);
+  const visual = definition.visual;
+  const radius = options.radius ?? definition.stats.radius;
   const time = options.time ?? 0;
   const travelAngle = options.travelAngle ?? 0;
-  const fillColor = (options.hitStrength ?? 0) > 0 ? '#ffffff' : config.color;
+  const fillColor = (options.hitStrength ?? 0) > 0 ? '#ffffff' : visual.color;
 
   ctx.save();
-  ctx.rotate(enemyVisualRotation(options.type, time, travelAngle, options.phase));
+  ctx.rotate(signalVisualRotation(options.type, time, travelAngle, options.phase));
   ctx.shadowColor = 'rgba(37, 31, 65, 0.18)';
   ctx.shadowBlur = 9;
   ctx.shadowOffsetY = 4;
 
-  if (config.shape === 'fracture') {
+  if (visual.geometry === 'fracture') {
     drawFractureBody(ctx, radius, fillColor);
-  } else if (config.shape === 'anvil') {
+  } else if (visual.geometry === 'anvil') {
     drawAnvilBody(ctx, radius, fillColor);
   } else {
     ctx.fillStyle = fillColor;
-    if (config.shape === 'ring') traceRing(ctx, radius, radius * 0.48);
-    else if (config.shape === 'surge') traceSurgeBody(ctx, radius);
-    else traceRegularPolygon(ctx, 0, 0, radius, config.sides, options.type === 'spark' ? Math.PI / 2 : 0);
-    ctx.fill(config.shape === 'ring' ? 'evenodd' : 'nonzero');
+    if (visual.geometry === 'ring') traceRing(ctx, radius, radius * 0.48);
+    else if (visual.geometry === 'surge') traceSurgeBody(ctx, radius);
+    else traceRegularPolygon(ctx, 0, 0, radius, visual.sides, 0);
+    ctx.fill(visual.geometry === 'ring' ? 'evenodd' : 'nonzero');
     ctx.shadowColor = 'transparent';
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = options.type === 'crown' ? 4 : 3;
+    ctx.lineWidth = visual.crownOrbit ? 4 : 3;
     ctx.stroke();
   }
   ctx.shadowColor = 'transparent';
 
-  if (options.type === 'hex' || options.type === 'crown') {
+  if (visual.innerOutline) {
     ctx.strokeStyle = 'rgba(255,255,255,0.75)';
     ctx.lineWidth = 2;
-    traceRegularPolygon(ctx, 0, 0, radius * 0.48, config.sides, 0);
+    traceRegularPolygon(ctx, 0, 0, radius * 0.48, visual.sides, 0);
     ctx.stroke();
   }
-  if (options.type === 'crown') {
+  if (visual.crownOrbit) {
     ctx.rotate(-travelAngle - time * 0.9);
     ctx.strokeStyle = '#ffcf4a';
     ctx.lineWidth = 3;
     traceRegularPolygon(ctx, 0, 0, radius + 7, 8, time * 0.9);
     ctx.stroke();
   }
-  if (config.shape === 'fracture') {
+  if (visual.geometry === 'fracture') {
     ctx.strokeStyle = 'rgba(255,255,255,0.88)';
     ctx.lineWidth = Math.max(1.4, radius * 0.075);
     ctx.beginPath();
@@ -109,9 +110,9 @@ export function drawEnemyBody(ctx: CanvasRenderingContext2D, options: EnemyBodyV
     ctx.arc(0, 0, Math.max(2.5, radius * 0.12), 0, Math.PI * 2);
     ctx.fill();
   }
-  if (options.type === 'radiant') {
-    for (let index = 0; index < 3; index += 1) {
-      const angle = index * Math.PI * 2 / 3;
+  if (visual.orbitNodes) {
+    for (let index = 0; index < visual.orbitNodes; index += 1) {
+      const angle = index * Math.PI * 2 / visual.orbitNodes;
       const orbit = radius * 0.72;
       ctx.fillStyle = '#f4ffc2';
       ctx.beginPath();
@@ -172,10 +173,10 @@ function drawAnvilBody(ctx: CanvasRenderingContext2D, radius: number, fillColor:
   }
 }
 
-export function drawEnemyShield(
+export function drawSignalShield(
   ctx: CanvasRenderingContext2D,
-  shield: EnemyShieldConfig,
-  state: EnemyShieldVisualState,
+  shield: ShieldCapability,
+  state: SignalShieldVisualState,
 ): void {
   if (state.charge <= 0 || state.radiusScale <= 0) return;
   const radius = shield.radius * state.radiusScale;

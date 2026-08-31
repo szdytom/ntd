@@ -115,7 +115,7 @@
 .settings-storage-action button:disabled { cursor: default; opacity: .72; }
 .settings-storage-action > span { min-height: 25px; padding-top: 6px; color: #a31c3b; font-size: 11px; line-height: 1.25; }
 
-.enemy-archive-head > .settings-panel .settings-trigger { border-radius: 0; }
+.signal-archive-head > .settings-panel .settings-trigger { border-radius: 0; }
 
 .level-select-utilities > .settings-panel .settings-trigger {
   width: 40px;
@@ -123,7 +123,7 @@
   border-radius: 0;
 }
 
-.enemy-archive-head > .settings-panel {
+.signal-archive-head > .settings-panel {
   grid-column: 3;
   grid-row: 1;
   border-right: 2px solid var(--archive-ink, #252134);

@@ -1,41 +1,41 @@
-import type { Enemy, Point } from './types';
+import type { Signal, Point } from './types';
 
-const NO_EXCLUDED_ENEMIES: readonly number[] = [];
+const NO_EXCLUDED_SIGNALS: readonly number[] = [];
 
-interface EnemyCell {
+interface SignalCell {
   x: number;
   y: number;
-  enemies: Enemy[];
+  signals: Signal[];
 }
 
-interface IndexedEnemy {
-  enemy: Enemy;
-  cell: EnemyCell;
+interface IndexedSignal {
+  signal: Signal;
+  cell: SignalCell;
   index: number;
 }
 
-export class EnemySpatialIndex {
-  private readonly columns = new Map<number, Map<number, EnemyCell>>();
-  private readonly indexedEnemies = new Map<number, IndexedEnemy>();
+export class SignalSpatialIndex {
+  private readonly columns = new Map<number, Map<number, SignalCell>>();
+  private readonly indexedEnemies = new Map<number, IndexedSignal>();
 
   constructor(private readonly cellSize = 128) {
     if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError('cellSize must be positive');
   }
 
-  rebuild(enemies: readonly Enemy[]): void {
+  rebuild(signals: readonly Signal[]): void {
     this.clear();
-    for (const enemy of enemies) this.update(enemy);
+    for (const signal of signals) this.update(signal);
   }
 
-  update(enemy: Enemy): boolean {
-    const indexed = this.indexedEnemies.get(enemy.id);
-    if (enemy.dead) return indexed ? this.remove(enemy.id) : false;
+  update(signal: Signal): boolean {
+    const indexed = this.indexedEnemies.get(signal.id);
+    if (signal.dead) return indexed ? this.remove(signal.id) : false;
 
-    const cellX = this.coordinate(enemy.position.x);
-    const cellY = this.coordinate(enemy.position.y);
+    const cellX = this.coordinate(signal.position.x);
+    const cellY = this.coordinate(signal.position.y);
     if (
       indexed &&
-      indexed.enemy === enemy &&
+      indexed.signal === signal &&
       indexed.cell.x === cellX &&
       indexed.cell.y === cellY
     ) {
@@ -44,20 +44,20 @@ export class EnemySpatialIndex {
 
     if (indexed) this.detach(indexed);
     const cell = this.getOrCreateCell(cellX, cellY);
-    const next = indexed ?? { enemy, cell, index: 0 };
-    next.enemy = enemy;
+    const next = indexed ?? { signal, cell, index: 0 };
+    next.signal = signal;
     next.cell = cell;
-    next.index = cell.enemies.length;
-    cell.enemies.push(enemy);
-    this.indexedEnemies.set(enemy.id, next);
+    next.index = cell.signals.length;
+    cell.signals.push(signal);
+    this.indexedEnemies.set(signal.id, next);
     return true;
   }
 
-  remove(enemyId: number): boolean {
-    const indexed = this.indexedEnemies.get(enemyId);
+  remove(signalId: number): boolean {
+    const indexed = this.indexedEnemies.get(signalId);
     if (!indexed) return false;
     this.detach(indexed);
-    this.indexedEnemies.delete(enemyId);
+    this.indexedEnemies.delete(signalId);
     return true;
   }
 
@@ -66,16 +66,16 @@ export class EnemySpatialIndex {
     this.indexedEnemies.clear();
   }
 
-  withinRadius(position: Point, radius: number, excludeIds: readonly number[] = NO_EXCLUDED_ENEMIES): Enemy[] {
+  withinRadius(position: Point, radius: number, excludeIds: readonly number[] = NO_EXCLUDED_SIGNALS): Signal[] {
     return this.collectWithinRadius(position, radius, [], excludeIds);
   }
 
   collectWithinRadius(
     position: Point,
     radius: number,
-    result: Enemy[],
-    excludeIds: readonly number[] | number = NO_EXCLUDED_ENEMIES,
-  ): Enemy[] {
+    result: Signal[],
+    excludeIds: readonly number[] | number = NO_EXCLUDED_SIGNALS,
+  ): Signal[] {
     result.length = 0;
     if (radius < 0) return result;
     const radiusSquared = radius * radius;
@@ -88,23 +88,23 @@ export class EnemySpatialIndex {
     );
     let writeIndex = 0;
     for (let index = 0; index < result.length; index += 1) {
-      const enemy = result[index];
-      if (!enemy || enemy.dead) continue;
+      const signal = result[index];
+      if (!signal || signal.dead) continue;
       const excluded = typeof excludeIds === 'number'
-        ? enemy.id === excludeIds
-        : excludeIds.includes(enemy.id);
+        ? signal.id === excludeIds
+        : excludeIds.includes(signal.id);
       if (excluded) continue;
-      const dx = enemy.position.x - position.x;
-      const dy = enemy.position.y - position.y;
+      const dx = signal.position.x - position.x;
+      const dy = signal.position.y - position.y;
       if (dx * dx + dy * dy > radiusSquared) continue;
-      result[writeIndex] = enemy;
+      result[writeIndex] = signal;
       writeIndex += 1;
     }
     result.length = writeIndex;
     return result;
   }
 
-  nearestWithinRadius(position: Point, radius: number, excludeIds: readonly number[] = NO_EXCLUDED_ENEMIES): Enemy[] {
+  nearestWithinRadius(position: Point, radius: number, excludeIds: readonly number[] = NO_EXCLUDED_SIGNALS): Signal[] {
     return this.withinRadius(position, radius, excludeIds).sort((left, right) => {
       const leftX = left.position.x - position.x;
       const leftY = left.position.y - position.y;
@@ -117,11 +117,11 @@ export class EnemySpatialIndex {
   findNearestWithinRadius(
     position: Point,
     radius: number,
-    excludeIds: readonly number[] = NO_EXCLUDED_ENEMIES,
-  ): Enemy | null {
+    excludeIds: readonly number[] = NO_EXCLUDED_SIGNALS,
+  ): Signal | null {
     if (radius < 0) return null;
     const radiusSquared = radius * radius;
-    let nearest: Enemy | null = null;
+    let nearest: Signal | null = null;
     let nearestDistanceSquared = radiusSquared;
     const minCellX = this.coordinate(position.x - radius);
     const maxCellX = this.coordinate(position.x + radius);
@@ -133,13 +133,13 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell.enemies) {
-          if (enemy.dead || excludeIds.includes(enemy.id)) continue;
-          const dx = enemy.position.x - position.x;
-          const dy = enemy.position.y - position.y;
+        for (const signal of cell.signals) {
+          if (signal.dead || excludeIds.includes(signal.id)) continue;
+          const dx = signal.position.x - position.x;
+          const dy = signal.position.y - position.y;
           const distanceSquared = dx * dx + dy * dy;
           if (distanceSquared <= radiusSquared && (!nearest || distanceSquared < nearestDistanceSquared)) {
-            nearest = enemy;
+            nearest = signal;
             nearestDistanceSquared = distanceSquared;
           }
         }
@@ -162,10 +162,10 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell.enemies) {
-          if (enemy.dead) continue;
-          const dx = enemy.position.x - position.x;
-          const dy = enemy.position.y - position.y;
+        for (const signal of cell.signals) {
+          if (signal.dead) continue;
+          const dx = signal.position.x - position.x;
+          const dy = signal.position.y - position.y;
           if (dx * dx + dy * dy <= radiusSquared) count += 1;
         }
       }
@@ -173,11 +173,11 @@ export class EnemySpatialIndex {
     return count;
   }
 
-  alongSegment(start: Point, end: Point, padding: number): Enemy[] {
+  alongSegment(start: Point, end: Point, padding: number): Signal[] {
     return this.collectAlongSegment(start, end, padding, []);
   }
 
-  collectAlongSegment(start: Point, end: Point, padding: number, result: Enemy[]): Enemy[] {
+  collectAlongSegment(start: Point, end: Point, padding: number, result: Signal[]): Signal[] {
     result.length = 0;
     this.collectBounds(
       Math.min(start.x, end.x) - padding,
@@ -188,16 +188,16 @@ export class EnemySpatialIndex {
     );
     let writeIndex = 0;
     for (let index = 0; index < result.length; index += 1) {
-      const enemy = result[index];
-      if (!enemy || enemy.dead) continue;
-      result[writeIndex] = enemy;
+      const signal = result[index];
+      if (!signal || signal.dead) continue;
+      result[writeIndex] = signal;
       writeIndex += 1;
     }
     result.length = writeIndex;
     return result;
   }
 
-  private collectBounds(minX: number, minY: number, maxX: number, maxY: number, result: Enemy[]): void {
+  private collectBounds(minX: number, minY: number, maxX: number, maxY: number, result: Signal[]): void {
     const minCellX = this.coordinate(minX);
     const maxCellX = this.coordinate(maxX);
     const minCellY = this.coordinate(minY);
@@ -208,36 +208,36 @@ export class EnemySpatialIndex {
       for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
         const cell = column.get(cellY);
         if (!cell) continue;
-        for (const enemy of cell.enemies) result.push(enemy);
+        for (const signal of cell.signals) result.push(signal);
       }
     }
   }
 
-  private getOrCreateCell(cellX: number, cellY: number): EnemyCell {
+  private getOrCreateCell(cellX: number, cellY: number): SignalCell {
     let column = this.columns.get(cellX);
     if (!column) {
-      column = new Map<number, EnemyCell>();
+      column = new Map<number, SignalCell>();
       this.columns.set(cellX, column);
     }
     let cell = column.get(cellY);
     if (!cell) {
-      cell = { x: cellX, y: cellY, enemies: [] };
+      cell = { x: cellX, y: cellY, signals: [] };
       column.set(cellY, cell);
     }
     return cell;
   }
 
-  private detach(indexed: IndexedEnemy): void {
+  private detach(indexed: IndexedSignal): void {
     const { cell, index } = indexed;
-    const lastIndex = cell.enemies.length - 1;
-    const replacement = cell.enemies[lastIndex];
+    const lastIndex = cell.signals.length - 1;
+    const replacement = cell.signals[lastIndex];
     if (index < lastIndex && replacement) {
-      cell.enemies[index] = replacement;
+      cell.signals[index] = replacement;
       const replacementIndex = this.indexedEnemies.get(replacement.id);
       if (replacementIndex) replacementIndex.index = index;
     }
-    cell.enemies.pop();
-    if (cell.enemies.length > 0) return;
+    cell.signals.pop();
+    if (cell.signals.length > 0) return;
     const column = this.columns.get(cell.x);
     column?.delete(cell.y);
     if (column?.size === 0) this.columns.delete(cell.x);

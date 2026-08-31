@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WORLD } from '../game/config';
 import type { GameEngine } from '../game/engine';
-import type { EnemyType, GameViewSnapshot } from '../game/types';
+import type { SignalId, GameViewSnapshot } from '../game/types';
 import { difficultyName, levelName } from '../i18n/presentation';
 import { GameCanvas } from './GameCanvas';
-import { EnemyPreview } from './EnemyPreview';
+import { SignalPreview } from './SignalPreview';
 import { CreativeLab } from './CreativeLab';
 import { Tag } from './Tag';
 import './Battlefield.css';
@@ -14,7 +14,7 @@ import './Battlefield.css';
 export function Battlefield({ engine, view, onOpenArchive, workshop, children }: {
   engine: GameEngine;
   view: GameViewSnapshot;
-  onOpenArchive: (type: EnemyType) => void;
+  onOpenArchive: (type: SignalId) => void;
   workshop?: ReactNode;
   children?: ReactNode;
 }) {
@@ -80,7 +80,7 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
               ) : null}
             </div>
             {terminal ? null : (
-              <EnemyPreview
+              <SignalPreview
                 engine={engine}
                 wave={previewWave}
                 {...(waveInProgress ? { liveCounts: snapshot.waveSignalCounts } : {})}

@@ -162,7 +162,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         energyRefundMultiplier: pending.energyRefundMultiplier,
         energyCost: Math.max(1, Math.round((definition.meta.energy + pending.energy) * pending.energyMultiplier)),
         lifetime: spec.lifetime ?? 1.7,
-        collision: spec.collision ?? 'enemy',
+        collision: spec.collision ?? 'signal',
         trajectory: spec.trajectory ?? 'steerable',
         aim: spec.aim ?? 'intercept',
         boundary: spec.boundary ?? 'margin',

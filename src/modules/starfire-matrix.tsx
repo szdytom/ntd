@@ -122,13 +122,13 @@ export const starfireMatrixModule: ModuleDefinition = {
   compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
   targetEffect: {
     channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, enemy, projectile, targetEffectChannel, combat }) => {
+    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
       if (targetEffectChannel === 'secondary-hit') {
         engine.spawnMany(['module:starfire-matrix:implant', 'module:starfire-matrix:starfall'], { position, color });
         return;
       }
-      if (!enemy) return;
-      const entered = combat.applyStatus(enemy, {
+      if (!signal) return;
+      const entered = combat.applyStatus(signal, {
         id: 'starfire-matrix', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
         particle: { effectId: burningEffectId, interval: 0.28 },
       });

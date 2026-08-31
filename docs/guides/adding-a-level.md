@@ -30,7 +30,7 @@ graph: createRouteMap([
 
 Use unique, stable node IDs. Provide exactly one root, make every declared entrance a leaf, and avoid zero-length edges. Authored levels currently use only horizontal, vertical, and 45-degree edges; the level configuration test enforces that visual language.
 
-The game world is `1160 × 650`. Existing maps place entrances slightly off the left edge and the core near the right edge so enemies enter and leave cleanly.
+The game world is `1160 × 650`. Existing maps place entrances slightly off the left edge and the core near the right edge so signals enter and leave cleanly.
 
 ## 2. Place tower pads
 
@@ -38,7 +38,7 @@ Add `towerPads` as world coordinates. Check that pads do not overlap route strok
 
 ## 3. Define waves and entrance behavior
 
-Use the local `wave()` helper with `[enemyType, count, optionalEntrance]` groups.
+Use the local `wave()` helper with `[signalType, count, optionalEntrance]` groups.
 
 ```ts
 waves: [
@@ -47,7 +47,7 @@ waves: [
 ],
 ```
 
-An entry without an entrance is copied to every entrance queue. On a three-entrance map, `['spark', 6]` therefore produces six Sparks per entrance. An explicit entrance restricts the entry to that lane. Enemy types marked as bosses must always specify an entrance.
+An entry without an entrance is copied to every entrance queue. On a three-entrance map, `['spark', 6]` therefore produces six Sparks per entrance. An explicit entrance restricts the entry to that lane. Signal types marked as bosses must always specify an entrance.
 
 Each entrance has an independent spawn timer, so lane queues advance in parallel rather than sharing one global delay.
 

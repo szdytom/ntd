@@ -92,10 +92,10 @@ describe('engine command and view boundary', () => {
     }
     engine.startWave();
     const expectedEnemies = engine.getWaveBlueprint(0).length;
-    for (let step = 0; step < 3_000 && engine.enemies.length < expectedEnemies; step += 1) {
+    for (let step = 0; step < 3_000 && engine.signals.length < expectedEnemies; step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
-    engine.enemies.forEach((enemy) => { enemy.dead = true; });
+    engine.signals.forEach((signal) => { signal.dead = true; });
     engine.update(FIXED_SIMULATION_STEP);
     const delaySteps = Math.ceil(WAVE_CLEAR_DELAY / FIXED_SIMULATION_STEP);
     for (let step = 0; step < delaySteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
@@ -133,12 +133,12 @@ describe('engine command and view boundary', () => {
     expect(engine.towers[0].slots).toEqual(before);
   });
 
-  it('allows multiple enemies to be injected during a creative run', () => {
+  it('allows multiple signals to be injected during a creative run', () => {
     const engine = new GameEngine({ mode: 'creative', seed: 5 });
 
-    engine.spawnCreativeEnemy('crown');
-    engine.spawnCreativeEnemy('crown');
-    expect(engine.enemies.filter((enemy) => enemy.type === 'crown')).toHaveLength(2);
+    engine.spawnCreativeSignal('crown');
+    engine.spawnCreativeSignal('crown');
+    expect(engine.signals.filter((signal) => signal.type === 'crown')).toHaveLength(2);
   });
 
   it('publishes complete live signal counts for the active wave', () => {
@@ -158,34 +158,34 @@ describe('engine command and view boundary', () => {
     expect(Object.isFrozen(engine.getSnapshot().waveSignalCounts)).toBe(true);
   });
 
-  it('decrements live signal counts after an active enemy is removed', () => {
+  it('decrements live signal counts after an active signal is removed', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 5 });
     engine.status = 'wave';
-    engine.spawnCreativeEnemy('crown');
+    engine.spawnCreativeSignal('crown');
     expect(engine.getSnapshot().waveSignalCounts).toEqual({ crown: 1 });
 
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected a creative enemy');
-    enemy.dead = true;
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a creative signal');
+    signal.dead = true;
     engine.update(FIXED_SIMULATION_STEP);
 
     expect(engine.getSnapshot().waveSignalCounts).toEqual({});
   });
 
-  it('resolves an enemy impact at the rendered core endpoint', () => {
+  it('resolves a signal impact at the rendered core endpoint', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 5 });
-    engine.spawnCreativeEnemy('spark');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected a creative enemy');
+    engine.spawnCreativeSignal('spark');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a creative signal');
     const endpoint = engine.path.pointAtDistance(engine.path.length).position;
-    enemy.distance = engine.path.length - enemy.speed * FIXED_SIMULATION_STEP / 2;
-    enemy.position = engine.path.pointAtDistance(enemy.distance).position;
+    signal.distance = engine.path.length - signal.speed * FIXED_SIMULATION_STEP / 2;
+    signal.position = engine.path.pointAtDistance(signal.distance).position;
 
     engine.update(FIXED_SIMULATION_STEP);
 
-    expect(enemy.dead).toBe(true);
-    expect(enemy.position).toEqual(endpoint);
-    expect(engine.core).toBe(engine.maxCore - enemy.coreDamage);
+    expect(signal.dead).toBe(true);
+    expect(signal.position).toEqual(endpoint);
+    expect(engine.core).toBe(engine.maxCore - signal.coreDamage);
   });
 
   it('configures creative core stability and repeats the final designed wave', () => {
@@ -232,8 +232,8 @@ describe('engine command and view boundary', () => {
     });
     engine.startWave();
     const expectedEnemies = engine.getWaveBlueprint(0).length;
-    while (engine.enemies.length < expectedEnemies) engine.update(FIXED_SIMULATION_STEP);
-    engine.enemies.forEach((enemy) => { enemy.dead = true; });
+    while (engine.signals.length < expectedEnemies) engine.update(FIXED_SIMULATION_STEP);
+    engine.signals.forEach((signal) => { signal.dead = true; });
 
     engine.update(FIXED_SIMULATION_STEP);
     expect(engine.status).toBe('wave');

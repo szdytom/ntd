@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import { ENEMIES, WORLD } from '../src/game/config';
-import type { Enemy, Projectile, ShotBlueprint } from '../src/game/types';
+import { WORLD } from '../src/game/config';
+import { getSignalCapability, signalRegistry } from '../src/signals';
+import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
 
-const placeEnemy = (engine: GameEngine, enemy: Enemy, pathDistance: number): void => {
+const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
   const at = engine.path.pointAtDistance(pathDistance);
-  enemy.speed = 0;
-  enemy.distance = pathDistance;
-  enemy.progress = pathDistance / engine.path.length;
-  enemy.position = at.position;
-  enemy.angle = at.angle;
-  enemy.hp = 1_000;
-  enemy.maxHp = 1_000;
+  signal.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+  signal.hp = 1_000;
+  signal.maxHp = 1_000;
 };
 
 const addProjectile = (
@@ -102,68 +103,68 @@ describe('void beam compatibility', () => {
 describe('rift trail combat', () => {
   it('lets the carrier pass through a signal without direct damage', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 73 });
-    engine.spawnCreativeEnemy('spark');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 120);
+    engine.spawnCreativeSignal('spark');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 120);
     const shot = engine.modules.compile(['void-beam']).shots[0];
     if (!shot) throw new Error('Expected a void beam');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
     addProjectile(engine, shot, {
-      x: enemy.position.x - direction.x * 34,
-      y: enemy.position.y - direction.y * 34,
+      x: signal.position.x - direction.x * 34,
+      y: signal.position.y - direction.y * 34,
     }, {
       x: direction.x * shot.speed,
       y: direction.y * shot.speed,
-    }, enemy.id);
+    }, signal.id);
 
     advance(engine, 0.5);
 
-    expect(enemy.hp).toBe(1_000);
+    expect(signal.hp).toBe(1_000);
     expect(engine.projectiles).toHaveLength(1);
   });
 
   it('deals stable damage per second while a signal remains in contact', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 79 });
-    engine.spawnCreativeEnemy('spark');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 120);
+    engine.spawnCreativeSignal('spark');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 120);
     const shot = engine.modules.compile(['rift-trail', 'void-beam']).shots[0];
     if (!shot) throw new Error('Expected a riftwake void beam');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
     addProjectile(engine, shot, {
-      x: enemy.position.x - direction.x * 34,
-      y: enemy.position.y - direction.y * 34,
+      x: signal.position.x - direction.x * 34,
+      y: signal.position.y - direction.y * 34,
     }, {
       x: direction.x * shot.speed,
       y: direction.y * shot.speed,
-    }, enemy.id);
+    }, signal.id);
 
-    for (let step = 0; step < 120 && !engine.spaceRifts[0]?.contacts.has(enemy.id); step += 1) {
+    for (let step = 0; step < 120 && !engine.spaceRifts[0]?.contacts.has(signal.id); step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
 
     const rift = engine.spaceRifts[0];
-    expect(rift?.contacts.has(enemy.id)).toBe(true);
+    expect(rift?.contacts.has(signal.id)).toBe(true);
     if (!rift) throw new Error('Expected a persistent rift');
     expect(rift.settlementInterval).toBeGreaterThan(FIXED_SIMULATION_STEP);
     expect(rift.modifierInterval).toBeGreaterThanOrEqual(rift.settlementInterval);
     expect(rift.effectInterval).toBeGreaterThanOrEqual(rift.settlementInterval);
-    expect(rift.contacts.get(enemy.id)?.pendingDamage).toBeCloseTo(
+    expect(rift.contacts.get(signal.id)?.pendingDamage).toBeCloseTo(
       rift.damagePerSecond * FIXED_SIMULATION_STEP,
       6,
     );
-    expect(enemy.hp).toBe(1_000);
+    expect(signal.hp).toBe(1_000);
 
     advance(engine, 1);
-    const hpAfterOneSecond = enemy.hp;
+    const hpAfterOneSecond = signal.hp;
     advance(engine, 0.5);
 
     expect(engine.spaceRifts).toHaveLength(1);
     expect(engine.spaceRifts[0]?.points.length).toBeGreaterThan(2);
     expect(hpAfterOneSecond).toBeCloseTo(1_000 - rift.damagePerSecond, 6);
-    expect(enemy.hp).toBeCloseTo(1_000 - rift.damagePerSecond * 1.5, 6);
+    expect(signal.hp).toBeCloseTo(1_000 - rift.damagePerSecond * 1.5, 6);
   });
 
   it('derives its DPS from the compiled projectile damage', () => {
@@ -182,91 +183,91 @@ describe('rift trail combat', () => {
 
   it('uses only the strongest rift when several rifts cover one signal', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 91 });
-    engine.spawnCreativeEnemy('spark');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 120);
+    engine.spawnCreativeSignal('spark');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 120);
     const weakShot = engine.modules.compile(['rift-trail', 'void-beam']).shots[0];
     const strongShot = engine.modules.compile(['overdrive', 'rift-trail', 'void-beam']).shots[0];
     if (!weakShot || !strongShot) throw new Error('Expected two riftwake void beams');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
     const position = {
-      x: enemy.position.x - direction.x * 34,
-      y: enemy.position.y - direction.y * 34,
+      x: signal.position.x - direction.x * 34,
+      y: signal.position.y - direction.y * 34,
     };
     addProjectile(engine, weakShot, position, {
       x: direction.x * weakShot.speed,
       y: direction.y * weakShot.speed,
-    }, enemy.id);
+    }, signal.id);
     addProjectile(engine, strongShot, position, {
       x: direction.x * strongShot.speed,
       y: direction.y * strongShot.speed,
-    }, enemy.id);
+    }, signal.id);
 
-    for (let step = 0; step < 120 && !engine.spaceRifts.some((rift) => rift.contacts.has(enemy.id)); step += 1) {
+    for (let step = 0; step < 120 && !engine.spaceRifts.some((rift) => rift.contacts.has(signal.id)); step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
 
     expect(engine.spaceRifts).toHaveLength(2);
-    expect(engine.spaceRifts.filter((rift) => rift.contacts.has(enemy.id))).toHaveLength(1);
+    expect(engine.spaceRifts.filter((rift) => rift.contacts.has(signal.id))).toHaveLength(1);
     const strongestDps = Math.max(...engine.spaceRifts.map((rift) => rift.damagePerSecond));
     advance(engine, 1);
 
-    expect(enemy.hp).toBeCloseTo(1_000 - strongestDps, 6);
+    expect(signal.hp).toBeCloseTo(1_000 - strongestDps, 6);
   });
 
   it('uses an explicit per-second armor cap independent of settlement frequency', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 82 });
-    engine.spawnCreativeEnemy('anvil');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected a Prism Anvil');
-    placeEnemy(engine, enemy, 120);
+    engine.spawnCreativeSignal('anvil');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a Prism Anvil');
+    placeSignal(engine, signal, 120);
     const shot = engine.modules.compile(['rift-trail', 'void-beam']).shots[0];
     if (!shot) throw new Error('Expected a riftwake void beam');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
     addProjectile(engine, shot, {
-      x: enemy.position.x - direction.x * 34,
-      y: enemy.position.y - direction.y * 34,
+      x: signal.position.x - direction.x * 34,
+      y: signal.position.y - direction.y * 34,
     }, {
       x: direction.x * shot.speed,
       y: direction.y * shot.speed,
-    }, enemy.id);
+    }, signal.id);
 
-    for (let step = 0; step < 120 && !engine.spaceRifts[0]?.contacts.has(enemy.id); step += 1) {
+    for (let step = 0; step < 120 && !engine.spaceRifts[0]?.contacts.has(signal.id); step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
     advance(engine, 1);
 
-    expect(enemy.hp).toBeCloseTo(
-      1_000 - ENEMIES.anvil.armor.continuousDamageCapPerSecond,
+    expect(signal.hp).toBeCloseTo(
+      1_000 - getSignalCapability(signalRegistry.require('anvil'), 'damage-cap')!.continuousDamageCapPerSecond,
       6,
     );
   });
 
   it('applies target modifiers on each sustained damage pulse', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 81 });
-    engine.spawnCreativeEnemy('spark');
-    const enemy = engine.enemies[0];
-    if (!enemy) throw new Error('Expected an enemy');
-    placeEnemy(engine, enemy, 120);
+    engine.spawnCreativeSignal('spark');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a signal');
+    placeSignal(engine, signal, 120);
     const shot = engine.modules.compile(['frost', 'rift-trail', 'void-beam']).shots[0];
     if (!shot) throw new Error('Expected a frosted riftwake void beam');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
     addProjectile(engine, shot, {
-      x: enemy.position.x - direction.x * 34,
-      y: enemy.position.y - direction.y * 34,
+      x: signal.position.x - direction.x * 34,
+      y: signal.position.y - direction.y * 34,
     }, {
       x: direction.x * shot.speed,
       y: direction.y * shot.speed,
-    }, enemy.id);
+    }, signal.id);
 
-    for (let step = 0; step < 180 && enemy.slowFactor === 0; step += 1) {
+    for (let step = 0; step < 180 && signal.slowFactor === 0; step += 1) {
       engine.update(FIXED_SIMULATION_STEP);
     }
 
-    expect(enemy.hp).toBeLessThan(1_000);
-    expect(enemy.slowFactor).toBe(0.3);
-    expect(enemy.slowTime).toBeGreaterThan(1.5);
+    expect(signal.hp).toBeLessThan(1_000);
+    expect(signal.slowFactor).toBe(0.3);
+    expect(signal.slowTime).toBeGreaterThan(1.5);
   });
 
   it('finishes the carrier at the boundary while leaving the rift nearby', () => {

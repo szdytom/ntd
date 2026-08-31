@@ -8,7 +8,7 @@ The visible battlefield combines a Canvas 2D scene with an optional WebGL2 post-
 
 `GameRenderer` owns an offscreen scene canvas and a cached background canvas. Resize handling caps device pixel ratio, computes a world-to-screen scale inside the fixed world dimensions, rebuilds the static background, and resizes post-process targets.
 
-Each frame collects reusable entity lists, copies the cached background, applies the world transform, and draws in a fixed order. Effect layers are interleaved with terrain, towers, projectiles, enemies, labels, and the core:
+Each frame collects reusable entity lists, copies the cached background, applies the world transform, and draws in a fixed order. Effect layers are interleaved with terrain, towers, projectiles, signals, labels, and the core:
 
 ```text
 ground effects
@@ -17,7 +17,7 @@ towers
 under-projectile effects
 projectiles
 projectile effects
-enemies
+signals
 air effects
 labels and core
 overlay effects

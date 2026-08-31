@@ -1,4 +1,4 @@
-import type { DifficultyId, EnemyOutcomeTally, EnemyVariant } from '../game/types';
+import type { DifficultyId, SignalOutcomeTally, SignalVariantId } from '../game/types';
 import { LEVELS } from '../game/config';
 import type {
   AggregateStats,
@@ -30,7 +30,7 @@ const addRecord = (aggregate: AggregateStats, record: DefenseRecord): void => {
   aggregate.flawlessWins += Number(record.result === 'won' && record.core === record.maxCore);
   aggregate.bestScore = Math.max(aggregate.bestScore, record.score);
   for (const wave of record.waves) {
-    for (const tally of Object.values(wave.enemies)) {
+    for (const tally of Object.values(wave.signals)) {
       aggregate.defeated += tally?.defeated ?? 0;
       aggregate.leaked += tally?.leaked ?? 0;
       aggregate.remaining += tally?.remaining ?? 0;
@@ -39,21 +39,21 @@ const addRecord = (aggregate: AggregateStats, record: DefenseRecord): void => {
   aggregate.winRate = aggregate.defenses === 0 ? 0 : aggregate.wins / aggregate.defenses;
 };
 
-const emptyTally = (): EnemyOutcomeTally => ({ spawned: 0, defeated: 0, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 });
+const emptyTally = (): SignalOutcomeTally => ({ spawned: 0, defeated: 0, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 });
 
-const addTally = (total: EnemyOutcomeTally, tally: EnemyOutcomeTally | undefined): void => {
+const addTally = (total: SignalOutcomeTally, tally: SignalOutcomeTally | undefined): void => {
   if (!tally) return;
-  for (const key of Object.keys(total) as Array<keyof EnemyOutcomeTally>) total[key] += tally[key];
+  for (const key of Object.keys(total) as Array<keyof SignalOutcomeTally>) total[key] += tally[key];
 };
 
 const buildSignalStats = (records: readonly DefenseRecord[]): SignalStats[] => {
-  const signalMap = new Map<EnemyVariant, EnemyOutcomeTally>();
+  const signalMap = new Map<SignalVariantId, SignalOutcomeTally>();
   for (const record of records) {
     for (const wave of record.waves) {
-      for (const [variant, tally] of Object.entries(wave.enemies)) {
-        const total = signalMap.get(variant as EnemyVariant) ?? emptyTally();
+      for (const [variant, tally] of Object.entries(wave.signals)) {
+        const total = signalMap.get(variant as SignalVariantId) ?? emptyTally();
         addTally(total, tally);
-        signalMap.set(variant as EnemyVariant, total);
+        signalMap.set(variant as SignalVariantId, total);
       }
     }
   }
@@ -72,7 +72,7 @@ const buildWaveStats = (records: readonly DefenseRecord[], maxWaves: number): Wa
     const total = emptyTally();
     for (const record of attempts) {
       const report = record.waves.find((entry) => entry.wave === wave);
-      for (const tally of Object.values(report?.enemies ?? {})) addTally(total, tally);
+      for (const tally of Object.values(report?.signals ?? {})) addTally(total, tally);
     }
     return {
       wave,

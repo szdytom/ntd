@@ -101,13 +101,13 @@ export const searingSigilModule: ModuleDefinition = {
   compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
   targetEffect: {
     channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, enemy, projectile, targetEffectChannel, combat }) => {
+    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
       if (targetEffectChannel === 'secondary-hit') {
         engine.spawnMany(['module:searing-sigil:brand', 'module:searing-sigil:flare'], { position, color });
         return;
       }
-      if (!enemy) return;
-      const entered = combat.applyStatus(enemy, {
+      if (!signal) return;
+      const entered = combat.applyStatus(signal, {
         id: 'searing-sigil', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
         particle: { effectId: burningEffectId, interval: 0.34 },
       });

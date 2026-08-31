@@ -208,9 +208,9 @@ export const emberFieldModule: ModuleDefinition = {
   },
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawn('module:ember-field:pulse', { position, rotation: projectile?.age ?? 0, color });
-    for (const enemy of combat.nearbyEnemies(position, stats.radius)) {
-      if (projectile) combat.affectTarget(enemy, projectile, 'static');
-      combat.applyStatus(enemy, {
+    for (const signal of combat.nearbyEnemies(position, stats.radius)) {
+      if (projectile) combat.affectTarget(signal, projectile, 'static');
+      combat.applyStatus(signal, {
         id: 'ember-field',
         duration: stats.statusDuration,
         interval: stats.damageInterval,

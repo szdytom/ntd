@@ -1,4 +1,4 @@
-import type { AchievementState, DefenseRecord } from './types';
+import type { PersistedAchievementStateV1, PersistedDefenseRecordV1 } from './types';
 
 export interface IArchiveStorageReader {
   getDefense(id: string): Promise<unknown | undefined>;
@@ -7,8 +7,8 @@ export interface IArchiveStorageReader {
 }
 
 export interface IArchiveStorageWriter extends IArchiveStorageReader {
-  addDefense(record: DefenseRecord): Promise<void>;
-  putAchievementState(state: AchievementState): Promise<void>;
+  addDefense(record: PersistedDefenseRecordV1): Promise<void>;
+  putAchievementState(state: PersistedAchievementStateV1): Promise<void>;
   clearAll(): Promise<void>;
 }
 

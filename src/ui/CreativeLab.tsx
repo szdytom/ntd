@@ -1,14 +1,12 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ENEMIES } from '../game/config';
 import type { GameEngine } from '../game/engine';
-import type { CreativeSetup, EnemyType } from '../game/types';
-import { enemyName } from '../i18n/presentation';
+import type { CreativeSetup } from '../game/types';
+import { signalName } from '../i18n/presentation';
+import { SIGNAL_IDS, signalRegistry } from '../signals';
 import { CalibrationSlider } from './CalibrationSlider';
 import { SignalIcon } from './SignalIcon';
 import './CreativeLab.css';
-
-const ENEMY_TYPES: readonly EnemyType[] = ['spark', 'surge', 'kite', 'block', 'hex', 'crown', 'fracture', 'anvil', 'radiant'];
 
 export function CreativeLab({ engine, setup, onClose }: { engine: GameEngine; setup: CreativeSetup; onClose: () => void }) {
   const { t } = useTranslation();
@@ -22,12 +20,12 @@ export function CreativeLab({ engine, setup, onClose }: { engine: GameEngine; se
       <button type="button" className="creative-lab-close" onClick={onClose} aria-label={t('creativeLab.close')}>×</button>
     </header>
     <div className="creative-lab-body">
-    <div className="creative-enemy-grid">{ENEMY_TYPES.map((type) => {
-      const enemy = ENEMIES[type];
-      const name = enemyName(t, type);
-      return <button key={type} style={{ '--enemy-color': enemy.color } as CSSProperties} onClick={() => engine.spawnCreativeEnemy(type)} title={t('creativeLab.spawnNow', { enemy: name })}>
-        <span className="creative-enemy-symbol"><SignalIcon type={type} monochrome /></span>
-        <span className="creative-enemy-name">{name}</span>
+    <div className="creative-signal-grid">{SIGNAL_IDS.map((type) => {
+      const signal = signalRegistry.require(type);
+      const name = signalName(t, type);
+      return <button key={type} style={{ '--signal-color': signal.visual.color } as CSSProperties} onClick={() => engine.spawnCreativeSignal(type)} title={t('creativeLab.spawnNow', { signal: name })}>
+        <span className="creative-signal-symbol"><SignalIcon type={type} monochrome /></span>
+        <span className="creative-signal-name">{name}</span>
         <b aria-hidden="true">＋</b>
       </button>;
     })}</div>

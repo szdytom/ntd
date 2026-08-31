@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Enemy, Point, Projectile, ShotBlueprint } from '../src/game/types';
+import type { Signal, Point, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
 
-const placeEnemy = (engine: GameEngine, enemy: Enemy, pathDistance: number): void => {
+const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
   const at = engine.path.pointAtDistance(pathDistance);
-  enemy.speed = 0;
-  enemy.distance = pathDistance;
-  enemy.progress = pathDistance / engine.path.length;
-  enemy.position = at.position;
-  enemy.angle = at.angle;
-  enemy.hp = 10_000;
-  enemy.maxHp = 10_000;
+  signal.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+  signal.hp = 10_000;
+  signal.maxHp = 10_000;
 };
 
 const addProjectile = (
@@ -79,28 +79,28 @@ describe('expiration and terrain trigger modules', () => {
 
   it('waits for a piercing carrier final hit before releasing', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 61 });
-    for (let index = 0; index < 3; index += 1) engine.spawnCreativeEnemy('block');
-    const enemies = engine.enemies.slice(0, 3);
-    enemies.forEach((enemy, index) => placeEnemy(engine, enemy, 100 + index * 90));
+    for (let index = 0; index < 3; index += 1) engine.spawnCreativeSignal('block');
+    const signals = engine.signals.slice(0, 3);
+    signals.forEach((signal, index) => placeSignal(engine, signal, 100 + index * 90));
     const shot = engine.modules.compile(['expiration-trigger', 'needle', 'proximity-mine']).shots[0];
     if (!shot) throw new Error('Expected an expiration carrier');
     const projectile = addProjectile(engine, shot, { x: 25, y: 510 }, { x: shot.speed, y: 0 });
 
-    for (let index = 0; index < enemies.length; index += 1) {
-      const enemy = enemies[index];
-      if (!enemy) throw new Error('Expected a placed enemy');
-      updateUntil(engine, () => enemy.hp < enemy.maxHp);
-      expect(projectile.triggered).toBe(index === enemies.length - 1);
-      expect(staticPayloads(engine)).toHaveLength(index === enemies.length - 1 ? 1 : 0);
+    for (let index = 0; index < signals.length; index += 1) {
+      const signal = signals[index];
+      if (!signal) throw new Error('Expected a placed signal');
+      updateUntil(engine, () => signal.hp < signal.maxHp);
+      expect(projectile.triggered).toBe(index === signals.length - 1);
+      expect(staticPayloads(engine)).toHaveLength(index === signals.length - 1 ? 1 : 0);
     }
   });
 
   it('releases when a Prism Crown shield fully absorbs the carrier', () => {
     const expirationEngine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 67 });
-    expirationEngine.spawnCreativeEnemy('crown');
-    const crown = expirationEngine.enemies[0];
+    expirationEngine.spawnCreativeSignal('crown');
+    const crown = expirationEngine.signals[0];
     if (!crown) throw new Error('Expected a Prism Crown');
-    placeEnemy(expirationEngine, crown, 180);
+    placeSignal(expirationEngine, crown, 180);
     const expirationShot = expirationEngine.modules.compile(['expiration-trigger', 'pulse', 'proximity-mine']).shots[0];
     if (!expirationShot) throw new Error('Expected an expiration carrier');
     const expirationProjectile = addProjectile(
@@ -118,10 +118,10 @@ describe('expiration and terrain trigger modules', () => {
     expect(staticPayloads(expirationEngine)).toHaveLength(1);
 
     const impactEngine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 71 });
-    impactEngine.spawnCreativeEnemy('crown');
-    const impactCrown = impactEngine.enemies[0];
+    impactEngine.spawnCreativeSignal('crown');
+    const impactCrown = impactEngine.signals[0];
     if (!impactCrown) throw new Error('Expected a Prism Crown');
-    placeEnemy(impactEngine, impactCrown, 180);
+    placeSignal(impactEngine, impactCrown, 180);
     const impactShot = impactEngine.modules.compile(['impact-trigger', 'pulse', 'proximity-mine']).shots[0];
     if (!impactShot) throw new Error('Expected an impact carrier');
     const impactProjectile = addProjectile(

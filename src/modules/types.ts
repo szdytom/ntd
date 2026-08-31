@@ -2,8 +2,8 @@ import type { ComponentType } from 'react';
 import type { EffectDefinition } from '../effects/types';
 import type { EffectEngine } from '../effects/engine';
 import type {
-  Enemy,
-  EnemyStatus,
+  Signal,
+  SignalStatus,
   ModuleId,
   Point,
   Projectile,
@@ -51,7 +51,7 @@ export interface ProjectileSpec {
   splash?: number;
   lifetime?: number;
   static?: StaticProjectileSpec;
-  collision?: 'enemy' | 'none';
+  collision?: 'signal' | 'none';
   trajectory?: 'steerable' | 'fixed';
   aim?: 'intercept' | 'direct';
   boundary?: 'margin' | 'world';
@@ -97,14 +97,14 @@ export interface ModuleEffectContext {
   shot: ShotBlueprint;
   tower?: Tower;
   projectile?: Projectile;
-  enemy?: Enemy;
-  triggerTarget?: Enemy;
+  signal?: Signal;
+  triggerTarget?: Signal;
   damageDealt?: number;
   targetEffectChannel?: TargetEffectChannel;
   combat: ModuleCombatApi;
 }
 
-export type StatusApplication = Omit<EnemyStatus, 'remaining' | 'tickTimer' | 'particleTimer'>;
+export type StatusApplication = Omit<SignalStatus, 'remaining' | 'tickTimer' | 'particleTimer'>;
 export type TargetEffectChannel = 'damage' | 'static' | 'secondary-hit';
 
 /**
@@ -119,14 +119,14 @@ export interface ModuleTargetEffect {
 
 export interface ModuleCombatApi {
   /** Unsorted, non-allocating; the returned array is reused and must not be retained. */
-  nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Enemy[];
-  nearestEnemy(position: Point, radius: number, excludeIds?: readonly number[]): Enemy | null;
-  dealDamage(enemy: Enemy, damage: number, color: string, source: Projectile): number;
-  affectTarget(enemy: Enemy, source: Projectile, channel: TargetEffectChannel): void;
-  applySlow(enemy: Enemy, factor: number, duration: number): boolean;
-  applyStatus(enemy: Enemy, status: StatusApplication): boolean;
-  retarget(projectile: Projectile, enemy: Enemy): void;
-  displace(enemy: Enemy, distanceDelta: number): void;
+  nearbyEnemies(position: Point, radius: number, excludeIds?: readonly number[]): Signal[];
+  nearestSignal(position: Point, radius: number, excludeIds?: readonly number[]): Signal | null;
+  dealDamage(signal: Signal, damage: number, color: string, source: Projectile): number;
+  affectTarget(signal: Signal, source: Projectile, channel: TargetEffectChannel): void;
+  applySlow(signal: Signal, factor: number, duration: number): boolean;
+  applyStatus(signal: Signal, status: StatusApplication): boolean;
+  retarget(projectile: Projectile, signal: Signal): void;
+  displace(signal: Signal, distanceDelta: number): void;
   extendRift(source: Projectile, key: string, position: Point, options: RiftOptions): void;
 }
 

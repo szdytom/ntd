@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Enemy, Projectile, ShotBlueprint } from '../src/game/types';
+import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
 
-const placeEnemy = (engine: GameEngine, enemy: Enemy, pathDistance: number): void => {
+const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
   const at = engine.path.pointAtDistance(pathDistance);
-  enemy.speed = 0;
-  enemy.distance = pathDistance;
-  enemy.progress = pathDistance / engine.path.length;
-  enemy.position = at.position;
-  enemy.angle = at.angle;
-  enemy.hp = 10_000;
-  enemy.maxHp = 10_000;
+  signal.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+  signal.hp = 10_000;
+  signal.maxHp = 10_000;
 };
 
 const addProjectile = (
@@ -107,27 +107,27 @@ describe('new module compilation', () => {
 describe('new module combat behavior', () => {
   it('refunds tower energy from actual health damage', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 41 });
-    engine.spawnCreativeEnemy('block');
-    const enemy = engine.enemies[0];
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
     const tower = engine.towers[0];
-    if (!enemy || !tower) throw new Error('Expected an enemy and tower');
-    placeEnemy(engine, enemy, 120);
+    if (!signal || !tower) throw new Error('Expected a signal and tower');
+    placeSignal(engine, signal, 120);
     tower.slots.fill(null);
     tower.energy = 0;
     tower.energyRegen = 0;
     const shot = engine.modules.compile(['reclaim-circuit', 'pulse']).shots[0];
     if (!shot) throw new Error('Expected a reclaim pulse');
-    const direction = { x: Math.cos(enemy.angle), y: Math.sin(enemy.angle) };
-    const launchGap = enemy.radius + shot.size + 1;
+    const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
+    const launchGap = signal.radius + shot.size + 1;
     addProjectile(
       engine,
       shot,
       {
-        x: enemy.position.x - direction.x * launchGap,
-        y: enemy.position.y - direction.y * launchGap,
+        x: signal.position.x - direction.x * launchGap,
+        y: signal.position.y - direction.y * launchGap,
       },
       { x: direction.x * shot.speed, y: direction.y * shot.speed },
-      enemy.id,
+      signal.id,
     );
 
     for (let step = 0; step < 30 && tower.energy === 0; step += 1) engine.update(FIXED_SIMULATION_STEP);
@@ -135,15 +135,15 @@ describe('new module combat behavior', () => {
     expect(tower.energy).toBeCloseTo(shot.damage * shot.energyRefundMultiplier, 5);
   });
 
-  it('pulls enemies on both sides toward an armed singularity', () => {
+  it('pulls signals on both sides toward an armed singularity', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 43 });
-    engine.spawnCreativeEnemy('block');
-    engine.spawnCreativeEnemy('block');
-    const [ahead, behind] = engine.enemies;
+    engine.spawnCreativeSignal('block');
+    engine.spawnCreativeSignal('block');
+    const [ahead, behind] = engine.signals;
     const tower = engine.towers[0];
-    if (!ahead || !behind || !tower) throw new Error('Expected two enemies and a tower');
-    placeEnemy(engine, ahead, 280);
-    placeEnemy(engine, behind, 160);
+    if (!ahead || !behind || !tower) throw new Error('Expected two signals and a tower');
+    placeSignal(engine, ahead, 280);
+    placeSignal(engine, behind, 160);
     tower.slots.fill(null);
     const carrier = engine.modules.compile(['impact-trigger', 'pulse', 'singularity']).shots[0];
     const singularity = carrier?.payload[0];

@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
-import type { DifficultyId, EnemyType, ModuleId } from '../game/types';
+import type { DifficultyId, SignalId, ModuleId } from '../game/types';
+import { signalRegistry } from '../signals';
 import type { ModuleDefinition, ModuleKind, ModuleRarity, ModuleTextValues } from '../modules/types';
 
 const MAX_DISPLAY_FRACTION_DIGITS = 3;
@@ -26,7 +27,7 @@ export const moduleDescription = (t: TFunction, definition: ModuleDefinition): s
 export const moduleDetail = (t: TFunction, definition: ModuleDefinition): string => (
   t(`modules.${definition.id}.detail`, textOptions(definition.meta.text?.detail))
 );
-export const enemyName = (t: TFunction, type: EnemyType): string => t(`enemies.${type}`);
+export const signalName = (t: TFunction, type: SignalId): string => t(signalRegistry.require(type).text.nameKey);
 export const levelName = (t: TFunction, id: string): string => t(`levels.${id}.name`);
 export const levelDescription = (t: TFunction, id: string): string => t(`levels.${id}.description`);
 export const difficultyName = (t: TFunction, id: DifficultyId): string => t(`difficulties.${id}.name`);

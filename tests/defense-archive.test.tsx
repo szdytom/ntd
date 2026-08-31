@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LEVELS } from '../src/game/config';
-import type { DefenseCompletedReport, DifficultyId, EnemyType } from '../src/game/types';
+import type { DefenseCompletedReport, DifficultyId, SignalId } from '../src/game/types';
 import {
   ACHIEVEMENTS,
   DefenseArchiveRepository,
@@ -20,7 +20,8 @@ import { applyDefense, applyDefenseArchiveFact } from '../src/defense-archive/ac
 import {
   DEFENSE_ARCHIVE_SCHEMA_VERSION,
   createAchievementState,
-  type AchievementState,
+  type PersistedAchievementStateV1,
+  type PersistedDefenseRecordV1,
 } from '../src/defense-archive/types';
 import { DefenseArchive } from '../src/ui/DefenseArchive';
 import { SettingsPanel } from '../src/ui/SettingsPanel';
@@ -45,7 +46,7 @@ const record = (patch: Partial<DefenseRecord> = {}): DefenseRecord => ({
   core: 20,
   maxCore: 20,
   shards: 40,
-  waves: [{ wave: 1, enemies: { spark: { spawned: 4, defeated: 3, leaked: 1, remaining: 0, queued: 0, coreDamage: 1 } } }],
+  waves: [{ wave: 1, signals: { spark: { spawned: 4, defeated: 3, leaked: 1, remaining: 0, queued: 0, coreDamage: 1 } } }],
   inventory: [{ moduleId: 'pulse', count: 3 }],
   towers: [{ padIndex: 0, level: 1, targeting: 'core-nearest', slots: ['frost', 'pulse', null] }],
   build: { commit: 'abc1234', commitDate: '2026-08-31' },
@@ -53,8 +54,12 @@ const record = (patch: Partial<DefenseRecord> = {}): DefenseRecord => ({
 });
 
 class MemoryArchiveStorage implements IArchiveStorage {
-  private defenses = new Map<string, DefenseRecord>();
-  private achievementState: AchievementState | undefined;
+  private defenses = new Map<string, PersistedDefenseRecordV1>();
+  private achievementState: PersistedAchievementStateV1 | undefined;
+
+  rawSnapshot(): { defenses: PersistedDefenseRecordV1[]; achievementState: PersistedAchievementStateV1 | undefined } {
+    return { defenses: [...this.defenses.values()], achievementState: this.achievementState };
+  }
 
   read<TResult>(operation: (reader: IArchiveStorageReader) => Promise<TResult>): Promise<TResult> {
     return operation(this.reader(this.defenses, this.achievementState));
@@ -85,8 +90,8 @@ class MemoryArchiveStorage implements IArchiveStorage {
   }
 
   private reader(
-    defenses: Map<string, DefenseRecord>,
-    achievementState: AchievementState | undefined,
+    defenses: Map<string, PersistedDefenseRecordV1>,
+    achievementState: PersistedAchievementStateV1 | undefined,
   ): IArchiveStorageReader {
     return {
       getDefense: async (id) => defenses.get(id),
@@ -98,11 +103,16 @@ class MemoryArchiveStorage implements IArchiveStorage {
 
 describe('defense archive storage boundary', () => {
   it('runs repository behavior against an injected non-IndexedDB adapter', async () => {
-    const repository = new DefenseArchiveRepository(new MemoryArchiveStorage());
+    const storage = new MemoryArchiveStorage();
+    const repository = new DefenseArchiveRepository(storage);
 
     await repository.recordDefense(record());
     await repository.recordDefense(record());
     expect((await repository.readSnapshot()).defenses).toHaveLength(1);
+    expect(storage.rawSnapshot().defenses[0]?.waves[0]).toHaveProperty('enemies');
+    expect(storage.rawSnapshot().defenses[0]?.waves[0]).not.toHaveProperty('signals');
+    expect(storage.rawSnapshot().achievementState).toHaveProperty('defeatedTypes');
+    expect(storage.rawSnapshot().achievementState).not.toHaveProperty('defeatedSignalIds');
 
     await repository.clearAll();
     expect((await repository.readSnapshot()).defenses).toHaveLength(0);
@@ -126,8 +136,8 @@ describe('defense archive analytics', () => {
     const analytics = buildDefenseArchiveAnalytics([
       record({
         waves: [
-          { wave: 1, enemies: { spark: { spawned: 5, defeated: 5, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 } } },
-          { wave: 2, enemies: { kite: { spawned: 4, defeated: 4, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 } } },
+          { wave: 1, signals: { spark: { spawned: 5, defeated: 5, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 } } },
+          { wave: 2, signals: { kite: { spawned: 4, defeated: 4, leaked: 0, remaining: 0, queued: 0, coreDamage: 0 } } },
         ],
       }),
       record({
@@ -137,8 +147,8 @@ describe('defense archive analytics', () => {
         waveReached: 2,
         core: 0,
         waves: [
-          { wave: 1, enemies: { spark: { spawned: 5, defeated: 4, leaked: 1, remaining: 0, queued: 0, coreDamage: 1 } } },
-          { wave: 2, enemies: { kite: { spawned: 4, defeated: 1, leaked: 3, remaining: 0, queued: 0, coreDamage: 20 } } },
+          { wave: 1, signals: { spark: { spawned: 5, defeated: 4, leaked: 1, remaining: 0, queued: 0, coreDamage: 1 } } },
+          { wave: 2, signals: { kite: { spawned: 4, defeated: 1, leaked: 3, remaining: 0, queued: 0, coreDamage: 20 } } },
         ],
       }),
     ]);
@@ -244,6 +254,6 @@ describe('defense archive interface', () => {
 // Compile-time fixture guard: persisted records must remain assignable from engine reports.
 const _reportBoundary: DefenseCompletedReport = record();
 const _difficultyBoundary: DifficultyId = _reportBoundary.difficultyId;
-const _enemyBoundary: EnemyType = 'spark';
+const _signalBoundary: SignalId = 'spark';
 void _difficultyBoundary;
-void _enemyBoundary;
+void _signalBoundary;

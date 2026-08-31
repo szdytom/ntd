@@ -19,7 +19,7 @@ Maps use a rooted tree directed toward the core. A node's `parent` is its next n
 - nearest scalar distance on the polyline;
 - the first intersection time between a movement segment and the route centerline.
 
-`GameEngine` caches one sampler per entrance. Each enemy's `routeId` remains fixed for its lifetime, including split children.
+`GameEngine` caches one sampler per entrance. Each signal's `routeId` remains fixed for its lifetime, including split children.
 
 ## Multi-entrance waves
 
@@ -27,12 +27,12 @@ At wave start, the engine creates an independent queue and timer for every entra
 
 - an entry with an explicit entrance goes only to that queue;
 - an ordinary entry without an entrance is copied to every entrance queue;
-- an enemy type marked `boss` must specify an entrance.
+- a signal type marked `boss` must specify an entrance.
 
 Because lane timers advance independently, equivalent queue positions can spawn simultaneously. Broadcasting means a three-entrance map creates three instances of each unassigned wave entry; it is not round-robin distribution.
 
 ## Shared ordering across branches
 
-Normalized progress cannot compare two routes with different lengths. The engine instead calculates `route.length - enemy.distance`. That remaining physical route distance is meaningful before and after a confluence and drives core-nearest targeting and related tie-breakers.
+Normalized progress cannot compare two routes with different lengths. The engine instead calculates `route.length - signal.distance`. That remaining physical route distance is meaningful before and after a confluence and drives core-nearest targeting and related tie-breakers.
 
 The route model deliberately has no runtime path choice. An entrance identifies one unique parent chain, which keeps movement, interception, displacement, splitting, and ordering deterministic.

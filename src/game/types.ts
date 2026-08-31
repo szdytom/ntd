@@ -1,3 +1,6 @@
+import type { SignalId, SignalVariantId } from '../signals';
+export type { SignalId, SignalVariantId } from '../signals';
+
 export interface Point {
   x: number;
   y: number;
@@ -38,7 +41,7 @@ export interface ShotBlueprint {
   energyRefundMultiplier: number;
   energyCost: number;
   lifetime: number;
-  collision: 'enemy' | 'none';
+  collision: 'signal' | 'none';
   trajectory: 'steerable' | 'fixed';
   aim: 'intercept' | 'direct';
   boundary: 'margin' | 'world';
@@ -121,11 +124,10 @@ export interface Tower {
   targetId: number | null;
 }
 
-export type EnemyType = 'spark' | 'surge' | 'kite' | 'block' | 'hex' | 'crown' | 'fracture' | 'anvil' | 'radiant';
-
-export interface Enemy {
+export interface Signal {
   id: number;
-  type: EnemyType;
+  type: SignalId;
+  variantId: SignalVariantId;
   routeId: string;
   progress: number;
   distance: number;
@@ -138,7 +140,6 @@ export interface Enemy {
   reward: number;
   coreDamage: number;
   radius: number;
-  splitGeneration: number;
   slowFactor: number;
   slowTime: number;
   hitFlash: number;
@@ -147,11 +148,11 @@ export interface Enemy {
   shieldHitFlash: number;
   shieldRadiusScale: number;
   shieldRippleAge: number;
-  statuses: EnemyStatus[];
+  statuses: SignalStatus[];
   dead: boolean;
 }
 
-export interface EnemyStatus {
+export interface SignalStatus {
   id: string;
   remaining: number;
   duration: number;
@@ -269,9 +270,9 @@ export interface GameSnapshot {
   maxCore: number;
   shards: number;
   score: number;
-  enemiesAlive: number;
+  signalsAlive: number;
   waveQueue: number;
-  waveSignalCounts: Readonly<Partial<Record<EnemyType, number>>>;
+  waveSignalCounts: Readonly<Partial<Record<SignalId, number>>>;
   selectedTowerId: number | null;
   speed: number;
   paused: boolean;
@@ -294,9 +295,7 @@ export interface GameViewSnapshot {
   moduleInventory: Readonly<Record<ModuleId, ModuleInventorySnapshot>>;
 }
 
-export type EnemyVariant = EnemyType | 'fracture-fragment';
-
-export interface EnemyOutcomeTally {
+export interface SignalOutcomeTally {
   spawned: number;
   defeated: number;
   leaked: number;
@@ -307,7 +306,7 @@ export interface EnemyOutcomeTally {
 
 export interface DefenseWaveReport {
   wave: number;
-  enemies: Readonly<Partial<Record<EnemyVariant, EnemyOutcomeTally>>>;
+  signals: Readonly<Partial<Record<SignalVariantId, SignalOutcomeTally>>>;
 }
 
 export interface DefenseTowerReport {

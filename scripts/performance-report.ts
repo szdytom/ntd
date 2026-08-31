@@ -1,17 +1,18 @@
 import { distance } from '../src/game/math';
 import { WORLD } from '../src/game/config';
-import { EnemySpatialIndex } from '../src/game/spatial-index';
-import type { Enemy, Point } from '../src/game/types';
+import { SignalSpatialIndex } from '../src/game/spatial-index';
+import type { Signal, Point } from '../src/game/types';
 
-const ENEMY_COUNT = 10_000;
+const SIGNAL_COUNT = 10_000;
 const QUERY_COUNT = 2_000;
 const QUERY_RADIUS = 175;
 
-const enemies: Enemy[] = Array.from({ length: ENEMY_COUNT }, (_, id) => ({
+const signals: Signal[] = Array.from({ length: SIGNAL_COUNT }, (_, id) => ({
   id,
   type: 'spark',
+  variantId: 'spark',
   routeId: 'benchmark',
-  progress: id / ENEMY_COUNT,
+  progress: id / SIGNAL_COUNT,
   distance: id,
   position: { x: (id * 73) % WORLD.width, y: (id * 151) % WORLD.height },
   angle: 0,
@@ -19,6 +20,7 @@ const enemies: Enemy[] = Array.from({ length: ENEMY_COUNT }, (_, id) => ({
   maxHp: 1,
   speed: 0,
   reward: 0,
+  coreDamage: 1,
   radius: 13,
   slowFactor: 0,
   slowTime: 0,
@@ -43,11 +45,11 @@ const measure = (query: (point: Point) => number): { milliseconds: number; match
   return { milliseconds: performance.now() - started, matches };
 };
 
-const index = new EnemySpatialIndex();
-index.rebuild(enemies);
+const index = new SignalSpatialIndex();
+index.rebuild(signals);
 const indexed = measure((point) => index.countWithinRadius(point, QUERY_RADIUS));
-const naive = measure((point) => enemies.reduce(
-  (count, enemy) => count + (distance(enemy.position, point) <= QUERY_RADIUS ? 1 : 0),
+const naive = measure((point) => signals.reduce(
+  (count, signal) => count + (distance(signal.position, point) <= QUERY_RADIUS ? 1 : 0),
   0,
 ));
 
@@ -57,7 +59,7 @@ if (indexed.matches !== naive.matches) {
 
 const improvement = naive.milliseconds / Math.max(indexed.milliseconds, 0.01);
 console.log([
-  `Spatial query benchmark (${ENEMY_COUNT.toLocaleString()} enemies × ${QUERY_COUNT.toLocaleString()} queries)`,
+  `Spatial query benchmark (${SIGNAL_COUNT.toLocaleString()} signals × ${QUERY_COUNT.toLocaleString()} queries)`,
   `indexed: ${indexed.milliseconds.toFixed(1)} ms`,
   `naive:   ${naive.milliseconds.toFixed(1)} ms`,
   `ratio:   ${improvement.toFixed(2)}× faster`,

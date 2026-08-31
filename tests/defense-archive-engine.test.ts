@@ -7,7 +7,7 @@ describe('engine defense archive telemetry', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 13 });
     const facts: DefenseArchiveFact[] = [];
     engine.subscribe((event: GameEvent) => { if (event.type === 'defense-archive-fact') facts.push(event.fact); });
-    engine.spawnCreativeEnemy('spark');
+    engine.spawnCreativeSignal('spark');
     engine.selectTower(engine.towers[0]?.id ?? null);
     engine.setTargeting('hp-highest');
     engine.placeTower(1);
@@ -32,10 +32,10 @@ describe('engine defense archive telemetry', () => {
     engine.wave = 1;
     const entrance = engine.level.graph.entrances[0];
     if (!entrance) throw new Error('Expected an entrance');
-    const access = engine as unknown as { spawnEnemy(type: 'spark', routeId: string): void };
-    access.spawnEnemy('spark', entrance);
-    access.spawnEnemy('spark', entrance);
-    const [leaking] = engine.enemies;
+    const access = engine as unknown as { spawnSignal(type: 'spark', routeId: string): void };
+    access.spawnSignal('spark', entrance);
+    access.spawnSignal('spark', entrance);
+    const [leaking] = engine.signals;
     if (!leaking) throw new Error('Expected a spawned signal');
     leaking.coreDamage = engine.maxCore;
     leaking.distance = engine.routeFor(leaking.routeId).length;
@@ -44,7 +44,7 @@ describe('engine defense archive telemetry', () => {
     expect(report).not.toBeNull();
     expect(report?.result).toBe('lost');
     expect(report?.simulationSeconds).toBeCloseTo(FIXED_SIMULATION_STEP);
-    expect(report?.waves[0]?.enemies.spark).toMatchObject({ spawned: 2, leaked: 1, remaining: 1 });
+    expect(report?.waves[0]?.signals.spark).toMatchObject({ spawned: 2, leaked: 1, remaining: 1 });
     expect(report?.inventory.some((entry) => entry.moduleId === 'pulse' && entry.count > 0)).toBe(true);
     expect(report?.towers[0]).toMatchObject({ level: 1, targeting: 'core-nearest' });
 

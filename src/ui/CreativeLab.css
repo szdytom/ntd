@@ -85,7 +85,7 @@
   min-width: 0;
 }
 
-.creative-enemy-grid {
+.creative-signal-grid {
   display: grid;
   min-width: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -93,7 +93,7 @@
   background: var(--creative-ink);
 }
 
-.creative-enemy-grid > button {
+.creative-signal-grid > button {
   display: grid;
   min-width: 0;
   min-height: 66px;
@@ -103,13 +103,13 @@
   overflow: hidden;
   border: 0;
   color: #fff;
-  background: var(--enemy-color);
+  background: var(--signal-color);
   cursor: pointer;
   text-shadow: 0 1px 1px rgba(37, 33, 52, .36);
   text-align: left;
 }
 
-.creative-enemy-symbol {
+.creative-signal-symbol {
   display: grid;
   width: 30px;
   height: 30px;
@@ -119,9 +119,9 @@
   background: transparent;
 }
 
-.creative-enemy-symbol .signal-icon { width: 25px; height: 25px; }
+.creative-signal-symbol .signal-icon { width: 25px; height: 25px; }
 
-.creative-enemy-name {
+.creative-signal-name {
   overflow: hidden;
   padding: 0 7px;
   font-size: 13px;
@@ -130,7 +130,7 @@
   white-space: nowrap;
 }
 
-.creative-enemy-grid button b {
+.creative-signal-grid button b {
   display: grid;
   height: 100%;
   place-items: center;
@@ -140,8 +140,8 @@
   opacity: .78;
 }
 
-.creative-enemy-grid > button:hover { box-shadow: inset 0 -6px 0 rgba(255, 255, 255, .42); }
-.creative-enemy-grid > button:hover b { opacity: 1; }
+.creative-signal-grid > button:hover { box-shadow: inset 0 -6px 0 rgba(255, 255, 255, .42); }
+.creative-signal-grid > button:hover b { opacity: 1; }
 
 .creative-scales {
   display: grid;
@@ -164,14 +164,14 @@
   .creative-lab-head h2 { font-size: 17px; }
   .creative-lab-head small { font-size: 11px; }
   .creative-lab-body { grid-template-columns: 1fr; }
-  .creative-enemy-grid > button { min-height: 58px; grid-template-columns: 38px minmax(0, 1fr) 29px; }
-  .creative-enemy-symbol { width: 27px; height: 27px; margin-left: 8px; }
-  .creative-enemy-name { padding: 0 5px; font-size: 12px; }
+  .creative-signal-grid > button { min-height: 58px; grid-template-columns: 38px minmax(0, 1fr) 29px; }
+  .creative-signal-symbol { width: 27px; height: 27px; margin-left: 8px; }
+  .creative-signal-name { padding: 0 5px; font-size: 12px; }
   .creative-scales { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 1fr; border-top: 2px solid var(--creative-ink); border-left: 0; }
   .creative-scales > .calibration-slider { gap: 8px; padding: 10px; }
   .creative-scales > .calibration-slider + .calibration-slider { border-top: 0; border-left: 2px solid var(--creative-ink); }
 }
 
 @media (max-width: 540px) {
-  .creative-lab .creative-enemy-grid > button:last-child { grid-column: 1 / -1; }
+  .creative-lab .creative-signal-grid > button:last-child { grid-column: 1 / -1; }
 }

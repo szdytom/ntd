@@ -13,7 +13,7 @@ Projectile modules emit a castable shot and consume all pending modifiers.
 | `pulse` | Pulse Round | Stable baseline projectile |
 | `needle` | Piercing Needle | Fast projectile that can pass through multiple targets |
 | `nova` | Micro Nova | Impact projectile with area damage |
-| `arcbolt` | Arcbolt Core | Impact projectile that chains damage to nearby enemies |
+| `arcbolt` | Arcbolt Core | Impact projectile that chains damage to nearby signals |
 | `razor` | Returning Razor | Wide cutting projectile built for repeated contacts |
 | `void-beam` | Void Beam | Collisionless fixed-heading carrier for trail modules |
 
@@ -23,11 +23,11 @@ Static payloads are deployed at a trigger position. They cannot be cast as root 
 
 | ID | Display name | Role |
 | --- | --- | --- |
-| `proximity-mine` | Hex Proximity Mine | Arms, waits for a nearby enemy, and detonates |
+| `proximity-mine` | Hex Proximity Mine | Arms, waits for a nearby signal, and detonates |
 | `tesla-node` | Tesla Sentry | Repeatedly shocks nearby targets |
 | `ember-field` | Ember Scorch Field | Maintains a low-cost burning area |
 | `toxic-cloud` | Emerald Toxic Cloud | Maintains a corrosive area |
-| `singularity` | Collapse Singularity | Pulls enemies toward its route-relative center |
+| `singularity` | Collapse Singularity | Pulls signals toward its route-relative center |
 
 ## Modifier modules
 

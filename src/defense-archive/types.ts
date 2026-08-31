@@ -1,9 +1,9 @@
 import type {
   DefenseCompletedReport,
   DifficultyId,
-  EnemyOutcomeTally,
-  EnemyType,
-  EnemyVariant,
+  SignalOutcomeTally,
+  SignalId,
+  SignalVariantId,
   DefenseArchiveFact,
 } from '../game/types';
 
@@ -16,6 +16,14 @@ export interface DefenseRecord extends DefenseCompletedReport {
     commit: string;
     commitDate: string;
   };
+}
+
+/** IndexedDB v1 wire shape. Legacy field names are isolated to persistence. */
+export interface PersistedDefenseRecordV1 extends Omit<DefenseRecord, 'waves'> {
+  waves: readonly {
+    wave: number;
+    enemies: Readonly<Partial<Record<SignalVariantId, SignalOutcomeTally>>>;
+  }[];
 }
 
 export type AchievementCategory = 'tutorial' | 'progress' | 'challenge';
@@ -41,11 +49,16 @@ export interface AchievementState {
   challengeFacts: DefenseArchiveFact[];
   tutorialCompleted: boolean;
   standardDefeated: number;
-  defeatedTypes: EnemyType[];
+  defeatedSignalIds: SignalId[];
   clears: Partial<Record<DifficultyId, string[]>>;
   flawlessClears: Partial<Record<DifficultyId, string[]>>;
   challengeWins: Array<'single-tower' | 'level-one'>;
   unlockedAt: Record<string, number>;
+}
+
+/** IndexedDB v1 wire shape. */
+export interface PersistedAchievementStateV1 extends Omit<AchievementState, 'defeatedSignalIds'> {
+  defeatedTypes: SignalId[];
 }
 
 export interface DefenseArchiveSnapshot {
@@ -91,8 +104,8 @@ export interface SectorStats extends AggregateStats {
   waves: WaveStats[];
 }
 
-export interface SignalStats extends EnemyOutcomeTally {
-  variant: EnemyVariant;
+export interface SignalStats extends SignalOutcomeTally {
+  variant: SignalVariantId;
   purificationRate: number;
 }
 
@@ -109,7 +122,7 @@ export const createAchievementState = (): AchievementState => ({
   challengeFacts: [],
   tutorialCompleted: false,
   standardDefeated: 0,
-  defeatedTypes: [],
+  defeatedSignalIds: [],
   clears: {},
   flawlessClears: {},
   challengeWins: [],

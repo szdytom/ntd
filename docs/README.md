@@ -25,8 +25,8 @@ If a page starts answering a different kind of question, follow its link to the 
 | --- | --- |
 | [Internals index](internals/README.md) | Which implementation explanation applies |
 | [Module compiler](internals/module-compiler.md) | Pending modifiers, wraparound, triggers, payloads, and hook dispatch |
-| [Cross-cutting combat mechanics](internals/combat-runtime.md) | Target-effect propagation, damage ordering, spatial queries, and configured enemy traits |
-| [Route graphs](internals/route-graphs.md) | Multi-entrance paths and per-enemy route sampling |
+| [Cross-cutting combat mechanics](internals/combat-runtime.md) | Target-effect propagation, damage ordering, spatial queries, and configured signal traits |
+| [Route graphs](internals/route-graphs.md) | Multi-entrance paths and per-signal route sampling |
 | [Rendering pipeline](internals/rendering-pipeline.md) | Canvas layers, effects, bloom, distortion, and fallback |
 | [Defense archive](internals/defense-archive.md) | Defense telemetry, local persistence, statistics, and achievement rules |
 
@@ -40,7 +40,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | [Add a module](guides/adding-a-module.md) | Implement and register a module safely |
 | [Add an effect](guides/adding-an-effect.md) | Create a reusable visual effect |
 | [Add a level](guides/adding-a-level.md) | Author a route graph, pads, and waves |
-| [Add an enemy](guides/adding-an-enemy.md) | Extend enemy configuration and presentation |
+| [Add a signal](guides/adding-a-signal.md) | Define and register a signal vertical slice |
 | [Localization](guides/localization.md) | Add or change user-facing text |
 | [UI style](guides/ui-style.md) | Extend the bright geometric, Mondrian-inspired interface |
 | [Rendering performance](guides/rendering-performance.md) | Avoid hot-path regressions and verify visual optimization |

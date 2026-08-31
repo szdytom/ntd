@@ -9,7 +9,7 @@ Each guide assumes the existing architecture and gives the shortest safe path fo
 - [Add a module](adding-a-module.md): define compiler behavior, runtime hooks, presentation, registration, and tests.
 - [Add an effect](adding-an-effect.md): define effect geometry, register it, spawn it, and verify both render paths.
 - [Add a level](adding-a-level.md): author route geometry, tower pads, waves, and localized presentation.
-- [Add an enemy](adding-an-enemy.md): extend the enemy union, configuration, archive, visuals, localization, and tests.
+- [Add a signal](adding-a-signal.md): add one declarative definition, register it, localize it, and place it in a level.
 - [Localization](localization.md): change user-facing copy or add a locale while preserving the resource contract.
 - [UI style](ui-style.md): divide screens into meaningful rectangles and preserve the bright geometric visual language.
 - [Rendering performance](rendering-performance.md): review hot paths and validate optimization work.

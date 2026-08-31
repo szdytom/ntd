@@ -1,25 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES } from '../src/game/config';
+import { getSignalCapability, signalRegistry } from '../src/signals';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Enemy } from '../src/game/types';
+import type { Signal } from '../src/game/types';
 
-function placeAtDistance(engine: GameEngine, enemy: Enemy, pathDistance: number): void {
+function placeAtDistance(engine: GameEngine, signal: Signal, pathDistance: number): void {
   const at = engine.path.pointAtDistance(pathDistance);
-  enemy.distance = pathDistance;
-  enemy.progress = pathDistance / engine.path.length;
-  enemy.position = at.position;
-  enemy.angle = at.angle;
-  enemy.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+  signal.speed = 0;
 }
 
 describe('suppression elite', () => {
   it('applies its configured suppression only inside the aura without stacking copies', () => {
-    const aura = ENEMIES.radiant.aura;
+    const aura = getSignalCapability(signalRegistry.require('radiant'), 'tower-suppression-aura');
+    if (!aura) throw new Error('Expected tower-suppression-aura capability');
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 31 });
     const tower = engine.towers[0];
     if (!tower) throw new Error('Expected the starter tower');
-    engine.spawnCreativeEnemy('radiant');
-    const first = engine.enemies[0];
+    engine.spawnCreativeSignal('radiant');
+    const first = engine.signals[0];
     if (!first) throw new Error('Expected a suppression elite');
     placeAtDistance(engine, first, 180);
     tower.position = { ...first.position };
@@ -30,8 +31,8 @@ describe('suppression elite', () => {
     expect(tower.cooldownLeft).toBeCloseTo(1 - FIXED_SIMULATION_STEP / aura.cooldownMultiplier, 8);
     expect(tower.energy).toBeCloseTo(tower.energyRegen * FIXED_SIMULATION_STEP * aura.energyRegenMultiplier, 8);
 
-    engine.spawnCreativeEnemy('radiant');
-    const second = engine.enemies[1];
+    engine.spawnCreativeSignal('radiant');
+    const second = engine.signals[1];
     if (!second) throw new Error('Expected a second suppression elite');
     placeAtDistance(engine, second, 180);
     tower.cooldownLeft = 1;

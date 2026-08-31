@@ -50,7 +50,7 @@
   letter-spacing: -.055em;
 }
 
-.enemy-archive-entry,
+.signal-archive-entry,
 .defense-archive-entry {
   display: flex;
   align-items: center;
@@ -66,20 +66,20 @@
   transition: background .16s ease, color .16s ease;
 }
 
-.enemy-archive-entry:hover,
+.signal-archive-entry:hover,
 .defense-archive-entry:hover {
   color: var(--select-ink);
   background: color-mix(in srgb, var(--purple) 8%, #fff);
 }
 
-.enemy-archive-entry-spectrum {
+.signal-archive-entry-spectrum {
   display: flex;
   align-items: center;
   width: 44px;
   height: 28px;
 }
 
-.enemy-archive-entry-spectrum i {
+.signal-archive-entry-spectrum i {
   --signal-color: #6c5ce7;
   width: 14px;
   height: 14px;
@@ -89,8 +89,8 @@
   transform: rotate(45deg);
 }
 
-.enemy-archive-entry-spectrum i:nth-child(2n) { border-radius: 50%; }
-.enemy-archive-entry > strong { font-size: 13px; white-space: nowrap; }
+.signal-archive-entry-spectrum i:nth-child(2n) { border-radius: 50%; }
+.signal-archive-entry > strong { font-size: 13px; white-space: nowrap; }
 
 .defense-archive-entry-marks {
   display: flex;
@@ -375,12 +375,12 @@
   .selection-section-head { min-height: 58px; padding: 0 10px 0 14px; }
   .selection-heading-copy span { display: none; }
   .selection-heading-copy strong { font-size: 15px; }
-  .enemy-archive-entry { width: 42px; padding: 0 7px; }
+  .signal-archive-entry { width: 42px; padding: 0 7px; }
   .defense-archive-entry { width: 42px; padding: 0 6px; }
   .defense-archive-entry-marks { width: 27px; gap: 2px; padding-inline: 3px; }
   .defense-archive-entry > strong { display: none; }
-  .enemy-archive-entry-spectrum { width: 26px; }
-  .enemy-archive-entry > strong { display: none; }
+  .signal-archive-entry-spectrum { width: 26px; }
+  .signal-archive-entry > strong { display: none; }
   .level-carousel { grid-template-columns: 34px minmax(0, 1fr) 34px; }
   .level-card { display: block; }
   .level-map-wrap { min-height: 150px; }

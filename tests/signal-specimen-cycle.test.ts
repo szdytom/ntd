@@ -6,7 +6,7 @@ import {
   ARCHIVE_SHIELD_PROJECTILE_FLIGHT,
   ARCHIVE_SHIELD_RESTORE_DELAY,
   createArchiveShieldCycle,
-} from '../src/ui/enemy-specimen-cycle';
+} from '../src/signals/archive/specimen-cycle';
 
 describe('compendium shield cycle', () => {
   it('launches every two seconds, breaks on the fourth hit, and restores four seconds later', () => {

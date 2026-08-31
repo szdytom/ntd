@@ -9,18 +9,19 @@ import {
 } from '../effects/bloom';
 import { ECONOMY_BALANCE } from './balance';
 import i18n from '../i18n';
-import { ENEMIES, WORLD } from './config';
+import { DEFAULT_SIGNAL_ID, getSignalCapability, signalRegistry } from '../signals';
+import { WORLD } from './config';
 import { clamp, distanceSquared, seededNoise } from './math';
-import { drawEnemyBody, drawEnemyShield, hexToRgb, traceRegularPolygon } from './enemy-visuals';
+import { drawSignalBody, drawSignalShield, hexToRgb, traceRegularPolygon } from '../signals/visuals/canvas';
 import {
   buildSuppressionLinkPoints,
   drawSuppressionCollapse,
   drawSuppressionSource,
   strokeSuppressionLink,
-} from './suppression-visuals';
+} from '../signals/visuals/suppression';
 import { drawTowerBody, type TowerVisualOptions } from './tower-visuals';
 import type { GameEngine } from './engine';
-import type { Enemy, Point, Projectile, SpaceRift, Tower } from './types';
+import type { Signal, Point, Projectile, SpaceRift, Tower } from './types';
 import type { ProjectileRenderContext } from '../modules/types';
 
 const DECORATIONS = [
@@ -34,7 +35,7 @@ const DECORATIONS = [
   { x: 721, y: 585, color: '#00b894', shape: 4, size: 6 },
 ] as const;
 const SPLIT_DISTORTION_COLOR = hexToRgb('#73e7f2');
-const compareEnemyY = (left: Enemy, right: Enemy): number => left.position.y - right.position.y;
+const compareSignalY = (left: Signal, right: Signal): number => left.position.y - right.position.y;
 const PAD_DASH = [5, 5];
 const RANGE_DASH = [7, 7];
 const NO_DASH: number[] = [];
@@ -56,8 +57,8 @@ export class GameRenderer {
   private readonly resizeObserver: ResizeObserver;
   private readonly activeSingularities: Projectile[] = [];
   private readonly singularityDistortions: SingularityDistortion[] = [];
-  private readonly suppressionSources: Enemy[] = [];
-  private readonly orderedEnemies: Enemy[] = [];
+  private readonly suppressionSources: Signal[] = [];
+  private readonly orderedEnemies: Signal[] = [];
   private readonly lightningPoints: Point[] = [];
   private readonly riftLeftX: number[] = [];
   private readonly riftLeftY: number[] = [];
@@ -80,15 +81,15 @@ export class GameRenderer {
     rotation: 0,
   };
   private readonly towerLabels = new Map<number, { level: number; label: string }>();
-  private readonly enemyBodyOptions = {
-    type: 'spark' as Enemy['type'],
+  private readonly signalBodyOptions = {
+    type: DEFAULT_SIGNAL_ID,
     radius: 0,
     time: 0,
     travelAngle: 0,
     phase: 0,
     hitStrength: 0,
   };
-  private readonly enemyShieldVisualState = { charge: 0, radiusScale: 0, hitStrength: 0 };
+  private readonly signalShieldVisualState = { charge: 0, radiusScale: 0, hitStrength: 0 };
   private readonly projectileRenderContext: ProjectileRenderContext = {
     ctx: null as unknown as CanvasRenderingContext2D,
     projectile: null as unknown as Projectile,
@@ -172,7 +173,7 @@ export class GameRenderer {
     this.drawDecorations();
     this.engine.effects.render(ctx, 'ground', bloomCtx);
     this.drawSpaceRifts(bloomCtx ?? null, riftMaskCtx);
-    this.drawEnemyAuraSources(bloomCtx ?? null);
+    this.drawSignalAuraSources(bloomCtx ?? null);
     this.drawSingularityFields(bloomCtx ?? null);
     this.drawTowerPads();
     this.drawSelectionRange();
@@ -181,7 +182,7 @@ export class GameRenderer {
     this.drawProjectiles();
     this.engine.effects.render(ctx, 'projectile', bloomCtx);
     this.drawEnemies();
-    this.drawEnemyAuraLinks(bloomCtx ?? null);
+    this.drawSignalAuraLinks(bloomCtx ?? null);
     this.engine.effects.render(ctx, 'air', bloomCtx);
     this.drawFloatingText();
     this.drawCore();
@@ -235,9 +236,9 @@ export class GameRenderer {
   private getShieldDistortions(): readonly ShieldDistortion[] {
     const distortions = this.shieldDistortions;
     distortions.length = 0;
-    for (const candidate of this.engine.enemies) {
-      if (candidate.dead || !ENEMIES[candidate.type].shield) continue;
-      const shield = ENEMIES[candidate.type].shield;
+    for (const candidate of this.engine.signals) {
+      if (candidate.dead) continue;
+      const shield = getSignalCapability(signalRegistry.require(candidate.type), 'shield');
       if (!shield || (candidate.shield <= 0 && candidate.shieldRippleAge >= 0.72)) continue;
       const index = distortions.length;
       if (index >= MAX_SHIELD_DISTORTIONS) break;
@@ -310,11 +311,11 @@ export class GameRenderer {
 
     this.suppressionSources.length = 0;
     this.orderedEnemies.length = 0;
-    for (const enemy of this.engine.enemies) {
-      this.orderedEnemies.push(enemy);
-      if (!enemy.dead && ENEMIES[enemy.type].aura) this.suppressionSources.push(enemy);
+    for (const signal of this.engine.signals) {
+      this.orderedEnemies.push(signal);
+      if (!signal.dead && getSignalCapability(signalRegistry.require(signal.type), 'tower-suppression-aura')) this.suppressionSources.push(signal);
     }
-    this.orderedEnemies.sort(compareEnemyY);
+    this.orderedEnemies.sort(compareSignalY);
   }
 
   private getSingularityDistortions(): SingularityDistortion[] {
@@ -411,14 +412,14 @@ export class GameRenderer {
       }
     }
 
-    for (const enemy of this.engine.enemies) {
-      const shield = ENEMIES[enemy.type].shield;
-      if (!shield || enemy.shield <= 0 || enemy.dead) continue;
-      const radius = shield.radius * enemy.shieldRadiusScale;
-      const bob = Math.sin(this.engine.visualElapsed * 5 + enemy.id) * 2;
-      ctx.globalAlpha = 0.045 + enemy.shieldHitFlash * 0.34;
+    for (const signal of this.engine.signals) {
+      const shield = getSignalCapability(signalRegistry.require(signal.type), 'shield');
+      if (!shield || signal.shield <= 0 || signal.dead) continue;
+      const radius = shield.radius * signal.shieldRadiusScale;
+      const bob = Math.sin(this.engine.visualElapsed * 5 + signal.id) * 2;
+      ctx.globalAlpha = 0.045 + signal.shieldHitFlash * 0.34;
       ctx.fillStyle = shield.color;
-      traceRegularPolygon(ctx, enemy.position.x, enemy.position.y + bob, radius, shield.sides, shield.rotation);
+      traceRegularPolygon(ctx, signal.position.x, signal.position.y + bob, radius, shield.sides, shield.rotation);
       ctx.fill();
     }
 
@@ -912,30 +913,30 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  private drawEnemyAuraSources(bloomCtx: CanvasRenderingContext2D | null): void {
+  private drawSignalAuraSources(bloomCtx: CanvasRenderingContext2D | null): void {
     const sources = this.suppressionSources;
     if (sources.length === 0) return;
     const ctx = this.ctx;
 
     for (const source of sources) {
-      const aura = ENEMIES[source.type].aura;
+      const aura = getSignalCapability(signalRegistry.require(source.type), 'tower-suppression-aura');
       if (!aura) continue;
       drawSuppressionSource(ctx, source.position, source.radius, aura, this.engine.visualElapsed, source.id, false);
       if (bloomCtx) drawSuppressionSource(bloomCtx, source.position, source.radius, aura, this.engine.visualElapsed, source.id, true);
     }
   }
 
-  private drawEnemyAuraLinks(bloomCtx: CanvasRenderingContext2D | null): void {
+  private drawSignalAuraLinks(bloomCtx: CanvasRenderingContext2D | null): void {
     const sources = this.suppressionSources;
     if (sources.length === 0) return;
     const ctx = this.ctx;
     const time = this.engine.visualElapsed;
     const points = this.lightningPoints;
     for (const tower of this.engine.towers) {
-      let source: Enemy | null = null;
+      let source: Signal | null = null;
       let nearestDistanceSquared = Number.POSITIVE_INFINITY;
       for (const candidate of sources) {
-        const aura = ENEMIES[candidate.type].aura;
+        const aura = getSignalCapability(signalRegistry.require(candidate.type), 'tower-suppression-aura');
         if (!aura) continue;
         const deltaX = tower.position.x - candidate.position.x;
         const deltaY = tower.position.y - candidate.position.y;
@@ -946,7 +947,7 @@ export class GameRenderer {
         nearestDistanceSquared = distSquared;
       }
       if (!source) continue;
-      const aura = ENEMIES[source.type].aura;
+      const aura = getSignalCapability(signalRegistry.require(source.type), 'tower-suppression-aura');
       if (!aura) continue;
       buildSuppressionLinkPoints(
         source.position,
@@ -1096,49 +1097,50 @@ export class GameRenderer {
   }
 
   private drawEnemies(): void {
-    for (const enemy of this.orderedEnemies) this.drawEnemy(enemy);
+    for (const signal of this.orderedEnemies) this.drawSignal(signal);
   }
 
-  private drawEnemy(enemy: Enemy): void {
+  private drawSignal(signal: Signal): void {
     const ctx = this.ctx;
-    const config = ENEMIES[enemy.type];
-    const bob = Math.sin(this.engine.elapsed * 5 + enemy.id) * 2;
-    const bodyOptions = this.enemyBodyOptions;
-    bodyOptions.type = enemy.type;
-    bodyOptions.radius = enemy.radius;
+    const definition = signalRegistry.require(signal.type);
+    const shield = getSignalCapability(definition, 'shield');
+    const bob = Math.sin(this.engine.elapsed * 5 + signal.id) * 2;
+    const bodyOptions = this.signalBodyOptions;
+    bodyOptions.type = signal.type;
+    bodyOptions.radius = signal.radius;
     bodyOptions.time = this.engine.elapsed;
-    bodyOptions.travelAngle = enemy.angle;
-    bodyOptions.phase = enemy.id * 0.17;
-    bodyOptions.hitStrength = enemy.hitFlash;
+    bodyOptions.travelAngle = signal.angle;
+    bodyOptions.phase = signal.id * 0.17;
+    bodyOptions.hitStrength = signal.hitFlash;
     ctx.save();
-    ctx.translate(enemy.position.x, enemy.position.y + bob);
-    drawEnemyBody(ctx, bodyOptions);
+    ctx.translate(signal.position.x, signal.position.y + bob);
+    drawSignalBody(ctx, bodyOptions);
     ctx.restore();
 
-    if (config.shield) {
-      const shieldState = this.enemyShieldVisualState;
-      shieldState.charge = enemy.maxShield > 0 ? enemy.shield / enemy.maxShield : 0;
-      shieldState.radiusScale = enemy.shieldRadiusScale;
-      shieldState.hitStrength = enemy.shieldHitFlash;
+    if (shield) {
+      const shieldState = this.signalShieldVisualState;
+      shieldState.charge = signal.maxShield > 0 ? signal.shield / signal.maxShield : 0;
+      shieldState.radiusScale = signal.shieldRadiusScale;
+      shieldState.hitStrength = signal.shieldHitFlash;
       ctx.save();
-      ctx.translate(enemy.position.x, enemy.position.y + bob);
-      drawEnemyShield(ctx, config.shield, shieldState);
+      ctx.translate(signal.position.x, signal.position.y + bob);
+      drawSignalShield(ctx, shield, shieldState);
       ctx.restore();
     }
 
-    const barWidth = enemy.radius * 2.15;
-    const barY = enemy.position.y - enemy.radius - 10 + bob;
-    if (enemy.maxShield > 0) {
+    const barWidth = signal.radius * 2.15;
+    const barY = signal.position.y - signal.radius - 10 + bob;
+    if (signal.maxShield > 0) {
       ctx.fillStyle = 'rgba(49,45,67,0.1)';
       ctx.beginPath();
-      ctx.roundRect(enemy.position.x - barWidth / 2, barY - 7, barWidth, 3, 1.5);
+      ctx.roundRect(signal.position.x - barWidth / 2, barY - 7, barWidth, 3, 1.5);
       ctx.fill();
-      ctx.fillStyle = ENEMIES[enemy.type].shield?.color ?? '#45b7ff';
+      ctx.fillStyle = shield?.color ?? '#45b7ff';
       ctx.beginPath();
       ctx.roundRect(
-        enemy.position.x - barWidth / 2,
+        signal.position.x - barWidth / 2,
         barY - 7,
-        barWidth * clamp(enemy.shield / enemy.maxShield, 0, 1),
+        barWidth * clamp(signal.shield / signal.maxShield, 0, 1),
         3,
         1.5,
       );
@@ -1146,31 +1148,31 @@ export class GameRenderer {
     }
     ctx.fillStyle = 'rgba(49,45,67,0.12)';
     ctx.beginPath();
-    ctx.roundRect(enemy.position.x - barWidth / 2, barY, barWidth, 4, 2);
+    ctx.roundRect(signal.position.x - barWidth / 2, barY, barWidth, 4, 2);
     ctx.fill();
-    ctx.fillStyle = enemy.slowTime > 0 ? '#00a8e8' : config.color;
+    ctx.fillStyle = signal.slowTime > 0 ? '#00a8e8' : definition.visual.color;
     ctx.beginPath();
-    ctx.roundRect(enemy.position.x - barWidth / 2, barY, barWidth * clamp(enemy.hp / enemy.maxHp, 0, 1), 4, 2);
+    ctx.roundRect(signal.position.x - barWidth / 2, barY, barWidth * clamp(signal.hp / signal.maxHp, 0, 1), 4, 2);
     ctx.fill();
 
-    if (enemy.slowTime > 0) {
+    if (signal.slowTime > 0) {
       ctx.strokeStyle = 'rgba(0,168,232,0.55)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(enemy.position.x, enemy.position.y + bob, enemy.radius + 5, 0, Math.PI * 2);
+      ctx.arc(signal.position.x, signal.position.y + bob, signal.radius + 5, 0, Math.PI * 2);
       ctx.stroke();
     }
-    for (let index = 0; index < enemy.statuses.length; index += 1) {
-      const status = enemy.statuses[index];
+    for (let index = 0; index < signal.statuses.length; index += 1) {
+      const status = signal.statuses[index];
       if (!status) continue;
-      const radius = enemy.radius + 7 + index * 4;
+      const radius = signal.radius + 7 + index * 4;
       ctx.strokeStyle = status.color;
       ctx.globalAlpha = 0.72;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(
-        enemy.position.x,
-        enemy.position.y + bob,
+        signal.position.x,
+        signal.position.y + bob,
         radius,
         -Math.PI / 2,
         -Math.PI / 2 + Math.PI * 2 * clamp(status.remaining / status.duration, 0, 1),
@@ -1181,8 +1183,8 @@ export class GameRenderer {
         ctx.fillStyle = status.color;
         ctx.beginPath();
         ctx.arc(
-          enemy.position.x + Math.cos(angle) * radius,
-          enemy.position.y + bob + Math.sin(angle) * radius,
+          signal.position.x + Math.cos(angle) * radius,
+          signal.position.y + bob + Math.sin(angle) * radius,
           2.2,
           0,
           Math.PI * 2,

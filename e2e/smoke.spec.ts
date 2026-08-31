@@ -1,21 +1,21 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   DEFAULT_LEVEL_ID,
-  ENEMIES,
   getLevel,
   resolveSpawnEntrances,
   TUTORIAL_LEVEL_ID,
   type LevelDefinition,
 } from '../src/game/config';
-import type { EnemyType, Point } from '../src/game/types';
+import type { SignalId, Point } from '../src/game/types';
 import { DRAFT_BALANCE } from '../src/modules';
+import { getSignalCapability, SIGNAL_IDS, signalRegistry } from '../src/signals';
 
 const WORLD = { width: 1160, height: 650 } as const;
 const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
 const defaultLevel = getLevel(DEFAULT_LEVEL_ID);
 const tutorialLevel = getLevel(TUTORIAL_LEVEL_ID);
 const triuneLevel = getLevel('triune-delta');
-const enemyTypes = Object.keys(ENEMIES) as EnemyType[];
+const signalTypes = SIGNAL_IDS;
 
 const formatValue = (value: number): string => Number.isInteger(value)
   ? String(value)
@@ -27,8 +27,8 @@ function towerPad(level: LevelDefinition, index: number): Point {
   return pad;
 }
 
-function configuredSignalCounts(level: LevelDefinition, waveIndex: number): Map<EnemyType, number> {
-  const counts = new Map<EnemyType, number>();
+function configuredSignalCounts(level: LevelDefinition, waveIndex: number): Map<SignalId, number> {
+  const counts = new Map<SignalId, number>();
   for (const entry of level.waves[waveIndex] ?? []) {
     const count = resolveSpawnEntrances(entry, level.graph).length;
     counts.set(entry.type, (counts.get(entry.type) ?? 0) + count);
@@ -36,8 +36,8 @@ function configuredSignalCounts(level: LevelDefinition, waveIndex: number): Map<
   return counts;
 }
 
-function archiveNumber(type: EnemyType): string {
-  return String(enemyTypes.indexOf(type) + 1).padStart(2, '0');
+function archiveNumber(type: SignalId): string {
+  return String(signalTypes.indexOf(type) + 1).padStart(2, '0');
 }
 
 async function prepareReturningPlayer(page: Page): Promise<void> {
@@ -151,7 +151,9 @@ test('the multi-entrance sector renders its route tree and all battlefield entra
   await expect(page.getByRole('heading', { name: 'Triune Delta D-6', level: 1 })).toBeVisible();
   await expect(page.locator('.spawn-label')).toHaveCount(triuneLevel.graph.entrances.length);
   for (const [type, count] of configuredSignalCounts(triuneLevel, 0)) {
-    await expect(page.getByTitle(`${ENEMIES[type].name} × ${count}`)).toBeVisible();
+    const preview = page.locator(`.signal-preview-button:has([data-signal-type="${type}"])`);
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(`×${count}`);
   }
 });
 
@@ -161,56 +163,56 @@ test('signal compendium exposes every signal profile from its own entry', async 
   await page.getByRole('button', { name: 'Open signal compendium' }).click();
   await expect(page.getByRole('heading', { name: 'Signal Compendium' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
-  const index = page.getByRole('navigation', { name: 'Enemy signal index' });
-  const consoleFrame = page.locator('.enemy-archive-console');
+  const index = page.getByRole('navigation', { name: 'Signal index' });
+  const consoleFrame = page.locator('.signal-archive-console');
   const initialFrameHeight = await consoleFrame.evaluate((element) => element.getBoundingClientRect().height);
-  await expect(index.getByRole('button')).toHaveCount(enemyTypes.length);
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText(archiveNumber('spark'));
+  await expect(index.getByRole('button')).toHaveCount(signalTypes.length);
+  await expect(page.locator('.signal-archive-seal b')).toHaveText(archiveNumber('spark'));
   await index.getByRole('button', { name: /Surge/ }).click();
   await expect(page.getByRole('heading', { name: 'Surge' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText(archiveNumber('surge'));
+  await expect(page.locator('.signal-archive-seal b')).toHaveText(archiveNumber('surge'));
   await expect(page.getByText('Waveform surge')).toBeVisible();
-  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(ENEMIES.surge.speed)} u/s`);
+  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(signalRegistry.require('surge').stats.speed)} u/s`);
   await index.getByRole('button', { name: /Prism Crown/ }).click();
   await expect(page.getByRole('heading', { name: 'Prism Crown' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText(archiveNumber('crown'));
+  await expect(page.locator('.signal-archive-seal b')).toHaveText(archiveNumber('crown'));
   await expect(page.getByText('Regenerating shield lattice')).toBeVisible();
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-has-shield', 'true');
-  expect(await page.locator('.enemy-archive-specimen').evaluate((canvas) => (
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-has-shield', 'true');
+  expect(await page.locator('.signal-archive-specimen').evaluate((canvas) => (
     canvas instanceof HTMLCanvasElement && canvas.getContext('webgl2') instanceof WebGL2RenderingContext
   ))).toBe(true);
   await page.waitForTimeout(1_400);
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-projectile-visible', 'true');
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-projectile-visible', 'true');
   await index.getByRole('button', { name: /Fracture Star/ }).click();
   await expect(page.getByRole('heading', { name: 'Fracture Star' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
   await page.getByRole('button', { name: 'Show fragments' }).click();
   await expect(page.getByRole('heading', { name: 'Fracture Fragments' })).toBeVisible();
-  const fracture = ENEMIES.fracture;
-  const split = fracture.split;
+  const fracture = signalRegistry.require('fracture');
+  const split = getSignalCapability(fracture, 'split-on-death');
   if (!split) throw new Error('Expected the fracture signal to define splitting');
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', String(split.count));
-  await expect(page.locator('[data-stat="health"] strong')).toHaveText(formatValue(Math.max(1, Math.round(fracture.hp * split.healthScale))));
-  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(fracture.speed * split.speedScale)} u/s`);
-  await expect(page.locator('[data-stat="reward"] strong')).toHaveText(`${formatValue(Math.max(1, Math.round(fracture.reward * split.rewardScale)))} ◇`);
-  await expect(page.locator('[data-stat="coreDamage"] strong')).toHaveText(formatValue(Math.max(1, Math.round(fracture.coreDamage * split.coreDamageScale))));
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-specimen-count', String(split.count));
+  await expect(page.locator('[data-stat="health"] strong')).toHaveText(formatValue(Math.max(1, Math.round(fracture.stats.health * split.healthScale))));
+  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(fracture.stats.speed * split.speedScale)} u/s`);
+  await expect(page.locator('[data-stat="reward"] strong')).toHaveText(`${formatValue(Math.max(1, Math.round(fracture.stats.reward * split.rewardScale)))} ◇`);
+  await expect(page.locator('[data-stat="coreDamage"] strong')).toHaveText(formatValue(Math.max(1, Math.round(fracture.stats.coreDamage * split.coreDamageScale))));
   await page.getByRole('button', { name: 'Restore core' }).click();
   await expect(page.getByRole('heading', { name: 'Fracture Star' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-specimen-count', '1');
   await index.getByRole('button', { name: /Prism Anvil/ }).click();
   await expect(page.getByRole('heading', { name: 'Prism Anvil' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText(archiveNumber('anvil'));
+  await expect(page.locator('.signal-archive-seal b')).toHaveText(archiveNumber('anvil'));
   await expect(page.getByText('Layered armor')).toBeVisible();
-  await expect(page.locator('[data-stat="health"] strong')).toHaveText(formatValue(ENEMIES.anvil.hp));
-  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(ENEMIES.anvil.speed)} u/s`);
+  await expect(page.locator('[data-stat="health"] strong')).toHaveText(formatValue(signalRegistry.require('anvil').stats.health));
+  await expect(page.locator('[data-stat="speed"] strong')).toHaveText(`${formatValue(signalRegistry.require('anvil').stats.speed)} u/s`);
   await index.getByRole('button', { name: /Radiant Lag Ring/ }).click();
   await expect(page.getByRole('heading', { name: 'Radiant Lag Ring' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-seal b')).toHaveText(archiveNumber('radiant'));
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'false');
+  await expect(page.locator('.signal-archive-seal b')).toHaveText(archiveNumber('radiant'));
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'false');
   await page.getByRole('button', { name: 'Suppress tower' }).click();
   await expect(page.getByRole('heading', { name: 'Suppressed Tower' })).toBeVisible();
-  await expect(page.locator('.enemy-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'true');
-  const aura = ENEMIES.radiant.aura;
+  await expect(page.locator('.signal-archive-specimen')).toHaveAttribute('data-suppressed-tower', 'true');
+  const aura = getSignalCapability(signalRegistry.require('radiant'), 'tower-suppression-aura');
   if (!aura) throw new Error('Expected the radiant signal to define suppression');
   await expect(page.locator('[data-stat="suppressedCooldown"] strong')).toHaveText(`${formatValue(aura.cooldownMultiplier)}×`);
   await expect(page.locator('[data-stat="suppressedRegen"] strong')).toHaveText(`${Math.round(aura.energyRegenMultiplier * 100)}%`);

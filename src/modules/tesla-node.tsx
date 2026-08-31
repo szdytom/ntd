@@ -119,7 +119,7 @@ export const teslaNodeModule: ModuleDefinition = {
     if (!projectile || !triggerTarget) return;
     engine.spawn('module:tesla:zap', { position, color, data: { ...triggerTarget.position } });
     combat.dealDamage(triggerTarget, projectile.damage, color, projectile);
-    const secondary = combat.nearestEnemy(triggerTarget.position, stats.chainRadius, [triggerTarget.id]);
+    const secondary = combat.nearestSignal(triggerTarget.position, stats.chainRadius, [triggerTarget.id]);
     if (secondary) {
       engine.spawn('module:tesla:zap', { position: triggerTarget.position, color, data: { ...secondary.position } });
       combat.dealDamage(secondary, projectile.damage * stats.chainDamageMultiplier, color, projectile);

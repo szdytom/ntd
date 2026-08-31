@@ -1,156 +1,12 @@
-import type { EnemyType, Point } from './types';
+import { signalRegistry } from '../signals';
+import type { SignalId } from '../signals';
+import type { Point } from './types';
 import { createRouteMap, legacyPathToGraph, type NodeId, type RouteMap } from './path';
 
 export const WORLD = { width: 1160, height: 650 } as const;
 
-export interface EnemyConfig {
-  hp: number;
-  speed: number;
-  spawnDelay: number;
-  reward: number;
-  coreDamage: number;
-  radius: number;
-  color: string;
-  sides: number;
-  name: string;
-  shape?: 'polygon' | 'surge' | 'fracture' | 'anvil' | 'ring';
-  movement?: EnemyWaveMovementConfig;
-  shield?: EnemyShieldConfig;
-  armor?: EnemyArmorConfig;
-  split?: EnemySplitConfig;
-  aura?: EnemyAuraConfig;
-  boss?: boolean;
-}
-
-export interface EnemyWaveMovementConfig {
-  cycle: number;
-  peakSpeedMultiplier: number;
-  wavePower: number;
-}
-
-export interface EnemyArmorConfig {
-  damageCap: number;
-  continuousDamageCapPerSecond: number;
-}
-
-export interface EnemyAuraConfig {
-  radius: number;
-  cooldownMultiplier: number;
-  energyRegenMultiplier: number;
-  color: string;
-  lightningColor: string;
-  lightningCoreColor: string;
-}
-
-export interface EnemySplitConfig {
-  count: number;
-  healthScale: number;
-  speedScale: number;
-  rewardScale: number;
-  coreDamageScale: number;
-  radiusScale: number;
-  spacing: number;
-}
-
-export interface EnemyShieldConfig {
-  capacity: number;
-  regen: number;
-  cooldown: number;
-  radius: number;
-  sides: number;
-  rotation: number;
-  color: string;
-}
-
-export const ENEMIES: Record<EnemyType, EnemyConfig> = {
-  spark: { hp: 28, speed: 105, spawnDelay: 0.42, reward: 3, coreDamage: 1, radius: 13, color: '#ffcf4a', sides: 3, name: 'Spark' },
-  surge: {
-    hp: 24,
-    speed: 95,
-    spawnDelay: 0.5,
-    reward: 4,
-    coreDamage: 1,
-    radius: 15,
-    color: '#3d8bfd',
-    sides: 4,
-    name: 'Surge',
-    shape: 'surge',
-    movement: { cycle: 1.3, peakSpeedMultiplier: 5.25, wavePower: 8 },
-  },
-  kite: { hp: 62, speed: 74, spawnDelay: 0.58, reward: 5, coreDamage: 1, radius: 15, color: '#ff6b9d', sides: 4, name: 'Kite' },
-  block: { hp: 125, speed: 53, spawnDelay: 0.72, reward: 8, coreDamage: 2, radius: 17, color: '#20c997', sides: 4, name: 'Phalanx' },
-  hex: { hp: 235, speed: 43, spawnDelay: 0.86, reward: 14, coreDamage: 3, radius: 21, color: '#7257fa', sides: 6, name: 'Hex Armor' },
-  crown: {
-    hp: 420,
-    speed: 31,
-    spawnDelay: 1.4,
-    reward: 52,
-    coreDamage: 8,
-    radius: 29,
-    color: '#ff774d',
-    sides: 8,
-    name: 'Prism Crown',
-    boss: true,
-    shield: { capacity: 240, regen: 4, cooldown: 9, radius: 72, sides: 6, rotation: Math.PI / 6, color: '#45b7ff' },
-  },
-  fracture: {
-    hp: 360,
-    speed: 35,
-    spawnDelay: 1.35,
-    reward: 32,
-    coreDamage: 7,
-    radius: 32,
-    color: '#00a8cc',
-    sides: 4,
-    name: 'Fracture Star',
-    shape: 'fracture',
-    split: {
-      count: 3,
-      healthScale: 0.3,
-      speedScale: 1.35,
-      rewardScale: 0.25,
-      coreDamageScale: 0.34,
-      radiusScale: 0.58,
-      spacing: 25,
-    },
-  },
-  anvil: {
-    hp: 480,
-    speed: 26,
-    spawnDelay: 1.5,
-    reward: 50,
-    coreDamage: 8,
-    radius: 34,
-    color: '#b88a35',
-    sides: 5,
-    name: 'Prism Anvil',
-    shape: 'anvil',
-    armor: { damageCap: 6, continuousDamageCapPerSecond: 24 },
-  },
-  radiant: {
-    hp: 390,
-    speed: 30,
-    spawnDelay: 1.4,
-    reward: 46,
-    coreDamage: 7,
-    radius: 31,
-    color: '#9aae18',
-    sides: 3,
-    name: 'Radiant Lag Ring',
-    shape: 'ring',
-    aura: {
-      radius: 290,
-      cooldownMultiplier: 2,
-      energyRegenMultiplier: 0.5,
-      color: '#b7cc35',
-      lightningColor: '#382347',
-      lightningCoreColor: '#a78bfa',
-    },
-  },
-};
-
 export interface SpawnEntry {
-  type: EnemyType;
+  type: SignalId;
   entrance?: NodeId;
 }
 
@@ -171,14 +27,14 @@ export interface LevelDefinition {
   waves: readonly (readonly SpawnEntry[])[];
   moduleDraft: LevelModuleDraft;
   startingShards: number;
-  enemyHealthScale: number;
-  enemySpeedScale: number;
+  signalHealthScale: number;
+  signalSpeedScale: number;
 }
 
-const group = (type: EnemyType, count: number, entrance?: NodeId): SpawnEntry[] => (
+const group = (type: SignalId, count: number, entrance?: NodeId): SpawnEntry[] => (
   Array.from({ length: count }, () => ({ type, ...(entrance ? { entrance } : {}) }))
 );
-const wave = (...groups: Array<[EnemyType, number, NodeId?]>): SpawnEntry[] => (
+const wave = (...groups: Array<[SignalId, number, NodeId?]>): SpawnEntry[] => (
   groups.flatMap(([type, count, entrance]) => group(type, count, entrance))
 );
 const DEFAULT_MODULE_DRAFT: LevelModuleDraft = { initialPicks: 3, wavePicks: 3 };
@@ -193,7 +49,7 @@ export function resolveSpawnEntrances(
     }
     return [entry.entrance];
   }
-  if (ENEMIES[entry.type].boss) {
+  if (signalRegistry.require(entry.type).stats.boss) {
     throw new Error(`Boss ${entry.type} must declare a fixed entrance`);
   }
   if (graph.entrances.length === 0) throw new Error('A level requires at least one entrance');
@@ -224,14 +80,14 @@ export const LEVELS = [
     ],
     moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 180,
-    enemyHealthScale: 0.72,
-    enemySpeedScale: 0.85,
+    signalHealthScale: 0.72,
+    signalSpeedScale: 0.85,
   },
   {
     id: 'white-prism',
     name: 'White Prism',
     sector: 'SECTOR A-7',
-    description: 'A balanced angular route with shields and splitting enemies.',
+    description: 'A balanced angular route with shields and splitting signals.',
     difficulty: 1,
     accent: '#6c5ce7',
     graph: legacyPathToGraph([
@@ -252,8 +108,8 @@ export const LEVELS = [
     ],
     moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 240,
-    enemyHealthScale: 1,
-    enemySpeedScale: 1,
+    signalHealthScale: 1,
+    signalSpeedScale: 1,
   },
   {
     id: 'rose-circuit',
@@ -282,8 +138,8 @@ export const LEVELS = [
     ],
     moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 250,
-    enemyHealthScale: 1.08,
-    enemySpeedScale: 1.03,
+    signalHealthScale: 1.08,
+    signalSpeedScale: 1.03,
   },
   {
     id: 'verdant-fold',
@@ -313,8 +169,8 @@ export const LEVELS = [
     ],
     moduleDraft: DEFAULT_MODULE_DRAFT,
     startingShards: 260,
-    enemyHealthScale: 1.16,
-    enemySpeedScale: 1.08,
+    signalHealthScale: 1.16,
+    signalSpeedScale: 1.08,
   },
   {
     id: 'triune-delta',
@@ -365,8 +221,8 @@ export const LEVELS = [
     ],
     moduleDraft: { initialPicks: 5, wavePicks: 4 },
     startingShards: 340,
-    enemyHealthScale: 1.2,
-    enemySpeedScale: 1.1,
+    signalHealthScale: 1.2,
+    signalSpeedScale: 1.1,
   },
 ] as const satisfies readonly [LevelDefinition, ...LevelDefinition[]];
 

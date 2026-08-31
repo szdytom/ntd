@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES } from '../src/game/config';
-import { FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, surgeBodyPoints } from '../src/game/enemy-shapes';
+import { signalRegistry } from '../src/signals';
+import { FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, surgeBodyPoints } from '../src/signals/visuals/geometry';
 
-describe('fracture enemy geometry', () => {
+describe('fracture signal geometry', () => {
   it('uses a dedicated shape instead of the legacy star', () => {
-    expect(ENEMIES.fracture.shape).toBe('fracture');
+    expect(signalRegistry.require('fracture').visual.geometry).toBe('fracture');
     expect(FRACTURE_SHAPE.coreRadiusScale).toBeGreaterThan(FRACTURE_SHAPE.spikeBaseRadiusScale);
   });
 
@@ -22,7 +22,7 @@ describe('fracture enemy geometry', () => {
   });
 });
 
-describe('Surge enemy geometry', () => {
+describe('Surge signal geometry', () => {
   it('places the concave face behind its forward-pointing tip', () => {
     const [tip, firstRear, notch, secondRear] = surgeBodyPoints(15);
 

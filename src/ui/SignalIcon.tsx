@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { ENEMIES } from '../game/config';
-import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, regularPolygonPoints, surgeBodyPoints } from '../game/enemy-shapes';
-import type { EnemyType } from '../game/types';
+import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, regularPolygonPoints, surgeBodyPoints } from '../signals/visuals/geometry';
+import type { SignalId } from '../game/types';
+import { signalRegistry } from '../signals';
 import './SignalIcon.css';
 
 const BODY_RADIUS = 13;
@@ -14,14 +14,14 @@ function regularPolygon(radius: number, sides: number, rotation: number): string
   return pointList(regularPolygonPoints(radius, sides, rotation));
 }
 
-function regularBody(type: EnemyType): ReactNode {
-  const config = ENEMIES[type];
-  const rotation = type === 'spark' ? Math.PI / 2 : type === 'kite' ? Math.PI / 4 : 0;
+function regularBody(type: SignalId): ReactNode {
+  const visual = signalRegistry.require(type).visual;
+  const rotation = visual.rotationOffset ?? 0;
   return <>
-    {type === 'crown' ? <polygon className="signal-icon__crown-orbit" points={regularPolygon(17, 8, Math.PI / 8)} /> : null}
-    <polygon className="signal-icon__body" points={regularPolygon(BODY_RADIUS, config.sides, rotation)} />
-    {type === 'hex' || type === 'crown'
-      ? <polygon className="signal-icon__detail-outline" points={regularPolygon(BODY_RADIUS * .48, config.sides, 0)} />
+    {visual.crownOrbit ? <polygon className="signal-icon__crown-orbit" points={regularPolygon(17, 8, Math.PI / 8)} /> : null}
+    <polygon className="signal-icon__body" points={regularPolygon(BODY_RADIUS, visual.sides, rotation)} />
+    {visual.innerOutline
+      ? <polygon className="signal-icon__detail-outline" points={regularPolygon(BODY_RADIUS * .48, visual.sides, 0)} />
       : null}
   </>;
 }
@@ -56,12 +56,12 @@ function anvilBody(): ReactNode {
   </>;
 }
 
-function ringBody(): ReactNode {
+function ringBody(orbitNodes: number): ReactNode {
   return <>
     <circle className="signal-icon__body" r={BODY_RADIUS} />
     <circle className="signal-icon__ring-cutout" r={BODY_RADIUS * .48} />
-    {Array.from({ length: 3 }, (_, index) => {
-      const angle = index * Math.PI * 2 / 3;
+    {Array.from({ length: orbitNodes }, (_, index) => {
+      const angle = index * Math.PI * 2 / orbitNodes;
       return <circle
         className="signal-icon__detail-fill"
         key={angle}
@@ -73,21 +73,22 @@ function ringBody(): ReactNode {
   </>;
 }
 
-function signalBody(type: EnemyType): ReactNode {
-  const shape = ENEMIES[type].shape;
+function signalBody(type: SignalId): ReactNode {
+  const visual = signalRegistry.require(type).visual;
+  const shape = visual.geometry;
   if (shape === 'fracture') return fractureBody();
   if (shape === 'anvil') return anvilBody();
-  if (shape === 'ring') return ringBody();
+  if (shape === 'ring') return ringBody(visual.orbitNodes ?? 0);
   if (shape === 'surge') return <polygon className="signal-icon__body" points={pointList(surgeBodyPoints(BODY_RADIUS))} />;
   return regularBody(type);
 }
 
 export function SignalIcon({ type, monochrome = false, className = '' }: {
-  type: EnemyType;
+  type: SignalId;
   monochrome?: boolean;
   className?: string;
 }) {
-  const color = ENEMIES[type].color;
+  const color = signalRegistry.require(type).visual.color;
   const style = {
     '--signal-icon-fill': monochrome ? '#fff' : color,
     '--signal-icon-detail': monochrome ? color : '#fff',

@@ -1,5 +1,5 @@
 import type { IArchiveStorage, IArchiveStorageReader, IArchiveStorageWriter } from './storage';
-import type { AchievementState, DefenseRecord } from './types';
+import type { PersistedAchievementStateV1, PersistedDefenseRecordV1 } from './types';
 
 const DATABASE_NAME = 'prism-bastion-defense-archive';
 const DATABASE_VERSION = 1;
@@ -33,11 +33,11 @@ class IndexedDBArchiveTransaction implements IArchiveStorageWriter {
     return requestResult(this.transaction.objectStore(ACHIEVEMENTS_STORE).get('profile'));
   }
 
-  async addDefense(record: DefenseRecord): Promise<void> {
+  async addDefense(record: PersistedDefenseRecordV1): Promise<void> {
     await requestResult(this.transaction.objectStore(DEFENSES_STORE).add(record));
   }
 
-  async putAchievementState(state: AchievementState): Promise<void> {
+  async putAchievementState(state: PersistedAchievementStateV1): Promise<void> {
     await requestResult(this.transaction.objectStore(ACHIEVEMENTS_STORE).put(state));
   }
 

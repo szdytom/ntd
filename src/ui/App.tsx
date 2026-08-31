@@ -3,8 +3,9 @@ import '../i18n';
 import { TUTORIAL_LEVEL_ID, getLevel } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID } from '../game/difficulty';
 import { GameEngine } from '../game/engine';
-import type { EnemyType } from '../game/types';
-import { EnemyArchive } from './EnemyArchive';
+import type { SignalId } from '../game/types';
+import { DEFAULT_SIGNAL_ID } from '../signals';
+import { SignalArchive } from './SignalArchive';
 import { DefenseArchive } from './DefenseArchive';
 import { GameSession } from './GameSession';
 import { LevelSelect, type LevelSelection } from './LevelSelect';
@@ -44,7 +45,7 @@ const tutorialSelection = (): LevelSelection => ({
 
 export function App() {
   const [engine, setEngine] = useState<GameEngine | null>(null);
-  const [archiveType, setArchiveType] = useState<EnemyType | null>(null);
+  const [archiveType, setArchiveType] = useState<SignalId | null>(null);
   const [defenseArchiveOpen, setDefenseArchiveOpen] = useState(false);
   const [tutorialOfferOpen, setTutorialOfferOpen] = useState(() => !tutorialOfferWasResolved());
   const start = (selection: LevelSelection): void => setEngine(new GameEngine(selection));
@@ -60,7 +61,7 @@ export function App() {
     {defenseArchiveOpen
       ? <DefenseArchive repository={defenseArchiveRepository} onBack={() => setDefenseArchiveOpen(false)} />
       : archiveType
-      ? <EnemyArchive initialType={archiveType} onBack={() => setArchiveType(null)} backToBattlefield={Boolean(engine)} />
+      ? <SignalArchive initialType={archiveType} onBack={() => setArchiveType(null)} backToBattlefield={Boolean(engine)} />
       : engine
         ? <GameSession
           engine={engine}
@@ -69,7 +70,7 @@ export function App() {
           onOpenArchive={setArchiveType}
           onTutorialResolved={rememberTutorialOfferResolution}
         />
-        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType('spark')} onOpenDefenseArchive={() => setDefenseArchiveOpen(true)} />}
+        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType(DEFAULT_SIGNAL_ID)} onOpenDefenseArchive={() => setDefenseArchiveOpen(true)} />}
     {tutorialOfferOpen && !engine && !archiveType && !defenseArchiveOpen
       ? <TutorialOffer onAccept={acceptTutorial} onDecline={declineTutorial} />
       : null}

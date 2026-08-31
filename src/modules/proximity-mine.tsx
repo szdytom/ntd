@@ -89,8 +89,8 @@ export const proximityMineModule: ModuleDefinition = {
   onTrigger: ({ effects: engine, position, projectile, combat }) => {
     engine.spawnMany(['module:mine:blast-a', 'module:mine:blast-b', 'module:mine:debris'], { position, color });
     if (!projectile) return;
-    for (const enemy of combat.nearbyEnemies(position, stats.blastRadius)) {
-      combat.dealDamage(enemy, projectile.damage, color, projectile);
+    for (const signal of combat.nearbyEnemies(position, stats.blastRadius)) {
+      combat.dealDamage(signal, projectile.damage, color, projectile);
     }
   },
 };

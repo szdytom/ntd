@@ -2,7 +2,7 @@
 
 > Document type: **Guide** — follow this page to add short-lived visual feedback without coupling it to simulation state.
 
-Use an `EffectDefinition` for transient geometry such as sparks, rings, muzzle flashes, and deployment pulses. Use entity rendering instead when the visual must persist for the full lifetime of an enemy or projectile.
+Use an `EffectDefinition` for transient geometry such as sparks, rings, muzzle flashes, and deployment pulses. Use entity rendering instead when the visual must persist for the full lifetime of a signal or projectile.
 
 ## Define the effect
 
@@ -45,7 +45,7 @@ Call `effects.spawn(id, { position, rotation, color, data, lifetimeScale })`, or
 ## Verify it
 
 1. Trigger the effect at the shortest and longest expected lifetimes.
-2. Check its relationship to projectiles, enemies, and overlays at the chosen layer.
+2. Check its relationship to projectiles, signals, and overlays at the chosen layer.
 3. Check WebGL bloom and the Canvas-only fallback.
 4. Confirm high spawn rates do not introduce frame churn.
 5. Add an effect-engine test when lifecycle, data, or recycling behavior is non-trivial.

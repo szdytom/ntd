@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from '../src/game/collision';
-import { isInsideRegularShield } from '../src/game/enemy-shield';
+import { isInsideRegularShield } from '../src/signals/capabilities/shield';
 
 describe('swept collision', () => {
   it('detects a circle crossed entirely within one step', () => {

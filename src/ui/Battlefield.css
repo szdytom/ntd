@@ -97,8 +97,8 @@
   .incoming-title { gap: 4px; }
   .battle-card[data-mode='creative'] .incoming-title > small { display: none; }
   .creative-signal-toggle { padding: 4px 6px; font-size: 11px; white-space: nowrap; }
-  .incoming > .enemy-preview { max-width: min(240px, 52vw); min-width: 0; justify-content: flex-end; }
-  .incoming .enemy-preview-tag { min-height: 26px; flex: 0 0 auto; }
+  .incoming > .signal-preview { max-width: min(240px, 52vw); min-width: 0; justify-content: flex-end; }
+  .incoming .signal-preview-tag { min-height: 26px; flex: 0 0 auto; }
   .creative-signal-panel { top: 61px; right: 7px; width: calc(100% - 14px); }
   .spawn-label,
   .core-label { font-size: 11px; }

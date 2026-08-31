@@ -9,11 +9,11 @@ import type {
   TargetEffectChannel,
 } from '../modules/types';
 import i18n from '../i18n';
+import { getSignalCapability, signalRegistry } from '../signals';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
 import {
   DEFAULT_LEVEL_ID,
-  ENEMIES,
   getLevel,
   resolveSpawnEntrances,
   TOWER_COLORS,
@@ -24,13 +24,13 @@ import {
 } from './config';
 import { DEFAULT_DIFFICULTY_ID, getDifficulty, type DifficultyDefinition } from './difficulty';
 import { rollModuleDraft } from './draft';
-import { limitEnemyContinuousHealthDamage, limitEnemyHealthDamage } from './enemy-armor';
-import { absorbShieldDamage, createEnemyShield, isInsideRegularShield, updateEnemyShield } from './enemy-shield';
-import { enemyMovementSpeedMultiplier } from './enemy-movement';
+import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../signals/capabilities/damage-cap';
+import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '../signals/capabilities/shield';
+import { signalMovementSpeedMultiplier } from '../signals/capabilities/movement';
 import { findPathInterception } from './interception';
 import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
 import { resolveRoute, type NodeId, type PathSampler } from './path';
-import { EnemySpatialIndex } from './spatial-index';
+import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
 import type {
@@ -38,8 +38,8 @@ import type {
   DefenseCompletedReport,
   DefenseWaveReport,
   DifficultyId,
-  Enemy,
-  EnemyType,
+  Signal,
+  SignalId,
   FloatingText,
   GameEvent,
   GameMode,
@@ -56,8 +56,8 @@ import type {
   SplitRift,
   TargetingMode,
   Tower,
-  EnemyOutcomeTally,
-  EnemyVariant,
+  SignalOutcomeTally,
+  SignalVariantId,
 } from './types';
 
 type Listener = (event: GameEvent) => void;
@@ -65,7 +65,7 @@ type ViewListener = () => void;
 
 interface SpawnLane {
   entrance: NodeId;
-  queue: EnemyType[];
+  queue: SignalId[];
   timer: number;
 }
 const NO_EXCLUDED_ENEMY_IDS: readonly number[] = [];
@@ -100,17 +100,18 @@ const TUTORIAL_MODULES: Readonly<Record<ModuleId, number>> = {
 const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
 export const WAVE_CLEAR_DELAY = 2;
-export const FRACTURE_SPLIT_DELAY = 0.14;
-export const FRACTURE_RIPPLE_DURATION = 0.46;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
 const SEEKING_RETARGET_RADIUS = 320;
 const TERRAIN_TRIGGER_CROSSING_TICKS = 'terrain-trigger:crossing-ticks';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
-  ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
+  ...signalRegistry.list().map((definition) => Math.max(
+    definition.stats.radius,
+    getSignalCapability(definition, 'shield')?.radius ?? 0,
+  )),
 );
-const emptyEnemyTally = (): EnemyOutcomeTally => ({
+const emptySignalTally = (): SignalOutcomeTally => ({
   spawned: 0,
   defeated: 0,
   leaked: 0,
@@ -128,14 +129,14 @@ const normalizeCreativeWaveCount = (value: number): number => Number.isFinite(va
   ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
   : 1;
 
-interface PendingEnemySplit extends SplitRift {
-  parent: Enemy;
+interface PendingSignalSplit extends SplitRift {
+  parent: Signal;
   spawned: boolean;
 }
 
 export class GameEngine {
   readonly towers: Tower[] = [];
-  readonly enemies: Enemy[] = [];
+  readonly signals: Signal[] = [];
   readonly projectiles: Projectile[] = [];
   readonly spaceRifts: SpaceRift[] = [];
   readonly floatingTexts: FloatingText[] = [];
@@ -167,7 +168,7 @@ export class GameEngine {
   private spawnLanes: SpawnLane[] = [];
   private waveClearDelayLeft: number | null = null;
   private scheduledCasts: ScheduledCast[] = [];
-  private pendingEnemySplits: PendingEnemySplit[] = [];
+  private pendingSignalSplits: PendingSignalSplit[] = [];
   private nextId = 1;
   private dirtyStateTimer = 0;
   private simulationAccumulator = 0;
@@ -175,14 +176,14 @@ export class GameEngine {
   private viewSnapshot!: GameViewSnapshot;
   private readonly towerRandom: () => number;
   private readonly moduleInventory = new Map<ModuleId, number>();
-  private readonly enemyIndex = new EnemySpatialIndex();
+  private readonly signalIndex = new SignalSpatialIndex();
   private readonly spaceRiftByKey = new Map<string, SpaceRift>();
-  private readonly spaceRiftCoverage = new Map<Enemy, SpaceRift>();
-  private readonly spaceRiftCrossings = new Map<Enemy, Point>();
-  private readonly spaceRiftEnemies = new Map<number, Enemy>();
+  private readonly spaceRiftCoverage = new Map<Signal, SpaceRift>();
+  private readonly spaceRiftCrossings = new Map<Signal, Point>();
+  private readonly spaceRiftEnemies = new Map<number, Signal>();
   private readonly routeCache = new Map<NodeId, PathSampler>();
-  private readonly spatialCandidates: Enemy[] = [];
-  private readonly nearbyCandidates: Enemy[] = [];
+  private readonly spatialCandidates: Signal[] = [];
+  private readonly nearbyCandidates: Signal[] = [];
   private readonly movementStart: Point = { x: 0, y: 0 };
   private readonly movementEnd: Point = { x: 0, y: 0 };
   private towerAuraCooldown = 1;
@@ -195,42 +196,42 @@ export class GameEngine {
   private runStartedAt = Date.now();
   private defenseCompleted = false;
   private readonly defenseArchiveFacts = new Set<DefenseArchiveFact>();
-  private readonly waveOutcomes = new Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>();
+  private readonly waveOutcomes = new Map<number, Partial<Record<SignalVariantId, SignalOutcomeTally>>>();
   private readonly combatApi: ModuleCombatApi = {
     // Unsorted, non-allocating: consumers must not retain the returned array.
     nearbyEnemies: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
-      this.enemyIndex.collectWithinRadius(position, radius, this.nearbyCandidates, excludeIds)
+      this.signalIndex.collectWithinRadius(position, radius, this.nearbyCandidates, excludeIds)
     ),
-    nearestEnemy: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
-      this.enemyIndex.findNearestWithinRadius(position, radius, excludeIds)
+    nearestSignal: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
+      this.signalIndex.findNearestWithinRadius(position, radius, excludeIds)
     ),
-    dealDamage: (enemy, damage, color, source) => {
-      const result = this.applyDamage(enemy, Math.max(1, Math.round(damage)), color);
+    dealDamage: (signal, damage, color, source) => {
+      const result = this.applyDamage(signal, Math.max(1, Math.round(damage)), color);
       if (source && result.healthDamage > 0) {
         this.refundProjectileEnergy(source, result.healthDamage);
-        this.dispatchTargetEffect(source, enemy, 'damage', result.healthDamage);
+        this.dispatchTargetEffect(source, signal, 'damage', result.healthDamage);
       }
       return result.healthDamage;
     },
-    affectTarget: (enemy, source, channel) => this.dispatchTargetEffect(source, enemy, channel),
-    applySlow: (enemy, factor, duration) => {
-      if (enemy.dead || factor <= 0 || duration <= 0) return false;
-      const enteredSlow = enemy.slowFactor <= 0 || enemy.slowTime <= 0;
-      enemy.slowFactor = Math.max(enemy.slowFactor, factor);
-      enemy.slowTime = Math.max(enemy.slowTime, duration);
+    affectTarget: (signal, source, channel) => this.dispatchTargetEffect(source, signal, channel),
+    applySlow: (signal, factor, duration) => {
+      if (signal.dead || factor <= 0 || duration <= 0) return false;
+      const enteredSlow = signal.slowFactor <= 0 || signal.slowTime <= 0;
+      signal.slowFactor = Math.max(signal.slowFactor, factor);
+      signal.slowTime = Math.max(signal.slowTime, duration);
       return enteredSlow;
     },
-    applyStatus: (enemy, status) => this.applyStatus(enemy, status),
-    retarget: (projectile, enemy) => {
+    applyStatus: (signal, status) => this.applyStatus(signal, status),
+    retarget: (projectile, signal) => {
       const direction = normalize({
-        x: enemy.position.x - projectile.position.x,
-        y: enemy.position.y - projectile.position.y,
+        x: signal.position.x - projectile.position.x,
+        y: signal.position.y - projectile.position.y,
       });
-      projectile.targetId = enemy.id;
+      projectile.targetId = signal.id;
       projectile.velocity.x = direction.x * projectile.speed;
       projectile.velocity.y = direction.y * projectile.speed;
     },
-    displace: (enemy, distanceDelta) => this.displaceEnemy(enemy, distanceDelta),
+    displace: (signal, distanceDelta) => this.displaceSignal(signal, distanceDelta),
     extendRift: (source, key, position, options) => this.extendSpaceRift(source, key, position, options),
   };
 
@@ -296,7 +297,7 @@ export class GameEngine {
   getViewSnapshot = (): GameViewSnapshot => this.viewSnapshot;
 
   getSplitRifts(): readonly SplitRift[] {
-    return this.pendingEnemySplits;
+    return this.pendingSignalSplits;
   }
 
   private emit(event: GameEvent): void {
@@ -309,11 +310,11 @@ export class GameEngine {
     this.emit({ type: 'defense-archive-fact', fact });
   }
 
-  private enemyVariant(enemy: Pick<Enemy, 'type' | 'splitGeneration'>): EnemyVariant {
-    return enemy.type === 'fracture' && enemy.splitGeneration > 0 ? 'fracture-fragment' : enemy.type;
+  private signalVariant(signal: Pick<Signal, 'variantId'>): SignalVariantId {
+    return signal.variantId;
   }
 
-  private outcomeFor(wave: number, variant: EnemyVariant): EnemyOutcomeTally {
+  private outcomeFor(wave: number, variant: SignalVariantId): SignalOutcomeTally {
     let outcomes = this.waveOutcomes.get(wave);
     if (!outcomes) {
       outcomes = {};
@@ -321,7 +322,7 @@ export class GameEngine {
     }
     const existing = outcomes[variant];
     if (existing) return existing;
-    const created = emptyEnemyTally();
+    const created = emptySignalTally();
     outcomes[variant] = created;
     return created;
   }
@@ -344,22 +345,22 @@ export class GameEngine {
   }
 
   private completedDefenseReport(): DefenseCompletedReport {
-    const waves = new Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>();
+    const waves = new Map<number, Partial<Record<SignalVariantId, SignalOutcomeTally>>>();
     for (const [wave, outcomes] of this.waveOutcomes) {
       waves.set(wave, Object.fromEntries(Object.entries(outcomes).map(([variant, tally]) => [
         variant,
         { ...tally! },
-      ])) as Partial<Record<EnemyVariant, EnemyOutcomeTally>>);
+      ])) as Partial<Record<SignalVariantId, SignalOutcomeTally>>);
     }
-    for (const enemy of this.enemies) {
-      if (!enemy.dead) this.outcomeForReport(waves, this.wave, this.enemyVariant(enemy)).remaining += 1;
+    for (const signal of this.signals) {
+      if (!signal.dead) this.outcomeForReport(waves, this.wave, this.signalVariant(signal)).remaining += 1;
     }
     for (const lane of this.spawnLanes) {
       for (const type of lane.queue) this.outcomeForReport(waves, this.wave, type).queued += 1;
     }
     const waveReports: DefenseWaveReport[] = [...waves.entries()]
       .sort(([left], [right]) => left - right)
-      .map(([wave, enemies]) => ({ wave, enemies }));
+      .map(([wave, signals]) => ({ wave, signals }));
     return {
       runId: this.runId,
       startedAt: this.runStartedAt,
@@ -390,10 +391,10 @@ export class GameEngine {
   }
 
   private outcomeForReport(
-    waves: Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>,
+    waves: Map<number, Partial<Record<SignalVariantId, SignalOutcomeTally>>>,
     wave: number,
-    variant: EnemyVariant,
-  ): EnemyOutcomeTally {
+    variant: SignalVariantId,
+  ): SignalOutcomeTally {
     let outcomes = waves.get(wave);
     if (!outcomes) {
       outcomes = {};
@@ -401,7 +402,7 @@ export class GameEngine {
     }
     const existing = outcomes[variant];
     if (existing) return existing;
-    const created = emptyEnemyTally();
+    const created = emptySignalTally();
     outcomes[variant] = created;
     return created;
   }
@@ -416,18 +417,18 @@ export class GameEngine {
     return this.viewSnapshot?.game ?? this.createGameSnapshot();
   }
 
-  private countWaveSignals(): Readonly<Partial<Record<EnemyType, number>>> {
-    const counts: Partial<Record<EnemyType, number>> = {};
-    const increment = (type: EnemyType): void => {
+  private countWaveSignals(): Readonly<Partial<Record<SignalId, number>>> {
+    const counts: Partial<Record<SignalId, number>> = {};
+    const increment = (type: SignalId): void => {
       counts[type] = (counts[type] ?? 0) + 1;
     };
     for (const lane of this.spawnLanes) {
       for (const type of lane.queue) increment(type);
     }
-    for (const enemy of this.enemies) {
-      if (!enemy.dead) increment(enemy.type);
+    for (const signal of this.signals) {
+      if (!signal.dead) increment(signal.type);
     }
-    for (const split of this.pendingEnemySplits) {
+    for (const split of this.pendingSignalSplits) {
       if (!split.spawned) increment(split.parent.type);
     }
     return Object.freeze(counts);
@@ -445,8 +446,8 @@ export class GameEngine {
       maxCore: this.maxCore,
       shards: this.shards,
       score: this.score,
-      enemiesAlive: this.enemies.filter((enemy) => !enemy.dead).length
-        + this.pendingEnemySplits.filter((split) => !split.spawned).length,
+      signalsAlive: this.signals.filter((signal) => !signal.dead).length
+        + this.pendingSignalSplits.filter((split) => !split.spawned).length,
       waveQueue: this.spawnLanes.reduce((total, lane) => total + lane.queue.length, 0),
       waveSignalCounts: this.countWaveSignals(),
       selectedTowerId: this.selectedTowerId,
@@ -542,12 +543,12 @@ export class GameEngine {
     return route;
   }
 
-  routeForEnemy(enemy: Enemy): PathSampler {
-    return this.routeFor(enemy.routeId);
+  routeForSignal(signal: Signal): PathSampler {
+    return this.routeFor(signal.routeId);
   }
 
-  distanceToCore(enemy: Enemy): number {
-    return Math.max(0, this.routeForEnemy(enemy).length - enemy.distance);
+  distanceToCore(signal: Signal): number {
+    return Math.max(0, this.routeForSignal(signal).length - signal.distance);
   }
 
   getCorePosition(): Point {
@@ -652,12 +653,12 @@ export class GameEngine {
     this.emitState();
   }
 
-  spawnCreativeEnemy(type: EnemyType, requestedEntrance?: NodeId): void {
+  spawnCreativeSignal(type: SignalId, requestedEntrance?: NodeId): void {
     if (this.mode !== 'creative' || this.status === 'won' || this.status === 'lost') return;
     const entrance = requestedEntrance ?? this.level.graph.entrances[0];
     if (!entrance) return;
     if (!this.level.graph.entrances.includes(entrance)) throw new Error(`Unknown route entrance: ${entrance}`);
-    this.spawnEnemy(type, entrance);
+    this.spawnSignal(type, entrance);
     this.emitDefenseArchiveFact('creative-signal-spawned');
     this.emitState();
   }
@@ -829,15 +830,15 @@ export class GameEngine {
 
   reset(): void {
     this.towers.length = 0;
-    this.enemies.length = 0;
-    this.enemyIndex.clear();
+    this.signals.length = 0;
+    this.signalIndex.clear();
     this.projectiles.length = 0;
     this.spaceRifts.length = 0;
     this.spaceRiftByKey.clear();
     this.effects.clear();
     this.floatingTexts.length = 0;
     this.scheduledCasts.length = 0;
-    this.pendingEnemySplits.length = 0;
+    this.pendingSignalSplits.length = 0;
     this.spawnLanes.length = 0;
     this.waveClearDelayLeft = null;
     this.status = 'planning';
@@ -908,7 +909,7 @@ export class GameEngine {
 
     this.spawnEnemies(delta);
     this.updateEnemies(delta);
-    this.updatePendingEnemySplits(delta);
+    this.updatePendingSignalSplits(delta);
     this.updateTowers(delta);
     this.updateScheduledCasts(delta);
     this.updateProjectiles(delta);
@@ -930,89 +931,92 @@ export class GameEngine {
       if (lane.timer > 0) continue;
       const type = lane.queue.shift();
       if (!type) continue;
-      this.spawnEnemy(type, lane.entrance);
-      lane.timer = ENEMIES[type].spawnDelay;
+      this.spawnSignal(type, lane.entrance);
+      lane.timer = signalRegistry.require(type).stats.spawnDelay;
     }
   }
 
-  private spawnEnemy(type: EnemyType, routeId: NodeId): void {
-    const config = ENEMIES[type];
+  private spawnSignal(type: SignalId, routeId: NodeId): void {
+    const definition = signalRegistry.require(type);
+    const stats = definition.stats;
+    const shield = getSignalCapability(definition, 'shield');
     const creativeHealthScale = this.mode === 'creative' ? this.creativeSetup.healthScale : 1;
     const creativeSpeedScale = this.mode === 'creative' ? this.creativeSetup.speedScale : 1;
     const scale = Math.pow(COMBAT_BALANCE.waveHealthGrowth, Math.max(0, this.wave - 1))
-      * this.level.enemyHealthScale
-      * this.difficulty.enemyHealth
+      * this.level.signalHealthScale
+      * this.difficulty.signalHealth
       * creativeHealthScale;
     const route = this.routeFor(routeId);
     const at = route.pointAtDistance(0);
-    const enemy: Enemy = {
+    const signal: Signal = {
       id: this.nextId++,
       type,
+      variantId: type,
       routeId,
       progress: 0,
       distance: 0,
       position: at.position,
       angle: at.angle,
-      hp: Math.round(config.hp * scale),
-      maxHp: Math.round(config.hp * scale),
-      speed: config.speed * this.level.enemySpeedScale * this.difficulty.enemySpeed * creativeSpeedScale,
+      hp: Math.round(stats.health * scale),
+      maxHp: Math.round(stats.health * scale),
+      speed: stats.speed * this.level.signalSpeedScale * this.difficulty.signalSpeed * creativeSpeedScale,
       movementPhase: 0,
-      reward: Math.max(1, Math.round(config.reward * this.difficulty.economy)),
-      coreDamage: config.coreDamage,
-      radius: config.radius,
-      splitGeneration: 0,
+      reward: Math.max(1, Math.round(stats.reward * this.difficulty.economy)),
+      coreDamage: stats.coreDamage,
+      radius: stats.radius,
       slowFactor: 0,
       slowTime: 0,
       hitFlash: 0,
-      ...createEnemyShield(config.shield, scale),
+      ...createSignalShield(shield, scale),
       statuses: [],
       dead: false,
     };
-    this.enemies.push(enemy);
-    this.outcomeFor(this.wave, this.enemyVariant(enemy)).spawned += 1;
-    this.enemyIndex.update(enemy);
+    this.signals.push(signal);
+    this.outcomeFor(this.wave, this.signalVariant(signal)).spawned += 1;
+    this.signalIndex.update(signal);
   }
 
   private updateEnemies(delta: number): void {
     let lostThisStep = false;
-    for (const enemy of this.enemies) {
-      if (enemy.dead) {
-        this.enemyIndex.remove(enemy.id);
+    for (const signal of this.signals) {
+      if (signal.dead) {
+        this.signalIndex.remove(signal.id);
         continue;
       }
-      const config = ENEMIES[enemy.type];
-      const shieldConfig = config.shield;
-      const shieldRestored = updateEnemyShield(enemy, shieldConfig, delta);
+      const definition = signalRegistry.require(signal.type);
+      const shieldConfig = getSignalCapability(definition, 'shield');
+      const shieldRestored = updateSignalShield(signal, shieldConfig, delta);
       if (shieldRestored && shieldConfig) {
-        enemy.shieldRippleAge = 0;
+        signal.shieldRippleAge = 0;
         this.effects.spawn(GAME_EFFECT_IDS.shieldRestore, {
-          position: enemy.position,
+          position: signal.position,
           rotation: shieldConfig.rotation,
           color: shieldConfig.color,
           data: { radius: shieldConfig.radius, sides: shieldConfig.sides },
         });
       }
-      this.updateEnemyStatuses(enemy, delta);
-      if (enemy.dead) {
-        this.enemyIndex.remove(enemy.id);
+      this.updateSignalStatuses(signal, delta);
+      if (signal.dead) {
+        this.signalIndex.remove(signal.id);
         continue;
       }
-      enemy.slowTime = Math.max(0, enemy.slowTime - delta);
-      if (enemy.slowTime <= 0) enemy.slowFactor = 0;
-      const movementPhase = enemy.movementPhase ?? 0;
-      const movementMultiplier = enemyMovementSpeedMultiplier(config.movement, movementPhase);
-      enemy.movementPhase = config.movement
-        ? (movementPhase + delta) % config.movement.cycle
+      signal.slowTime = Math.max(0, signal.slowTime - delta);
+      if (signal.slowTime <= 0) signal.slowFactor = 0;
+      const movementPhase = signal.movementPhase ?? 0;
+      const movement = getSignalCapability(definition, 'pulse-movement');
+      const movementMultiplier = signalMovementSpeedMultiplier(movement, movementPhase);
+      signal.movementPhase = movement
+        ? (movementPhase + delta) % movement.cycle
         : 0;
-      const speed = enemy.speed * movementMultiplier * (1 - enemy.slowFactor);
-      enemy.distance += speed * delta;
-      const route = this.routeForEnemy(enemy);
-      enemy.progress = enemy.distance / route.length;
-      enemy.angle = route.sampleInto(enemy.distance, enemy.position);
-      if (enemy.distance >= route.length) {
-        enemy.dead = true;
-        const damage = enemy.coreDamage;
-        const outcome = this.outcomeFor(this.wave, this.enemyVariant(enemy));
+      const speed = signal.speed * movementMultiplier * (1 - signal.slowFactor);
+      signal.distance += speed * delta;
+      const route = this.routeForSignal(signal);
+      signal.progress = signal.distance / route.length;
+      signal.angle = route.sampleInto(signal.distance, signal.position);
+      if (signal.distance >= route.length) {
+        signal.dead = true;
+        const damage = signal.coreDamage;
+        const outcome = this.outcomeFor(this.wave, this.signalVariant(signal));
         outcome.leaked += 1;
         outcome.coreDamage += damage;
         this.core = Math.max(0, this.core - damage);
@@ -1026,7 +1030,7 @@ export class GameEngine {
           lostThisStep = true;
         }
       }
-      this.enemyIndex.update(enemy);
+      this.signalIndex.update(signal);
     }
     if (lostThisStep) {
       this.completeDefense();
@@ -1072,10 +1076,10 @@ export class GameEngine {
   private updateTowerAuraModifiers(tower: Tower): void {
     let cooldown = 1;
     let energyRegen = 1;
-    for (const enemy of this.enemies) {
-      if (enemy.dead) continue;
-      const aura = ENEMIES[enemy.type].aura;
-      if (!aura || distance(tower.position, enemy.position) > aura.radius) continue;
+    for (const signal of this.signals) {
+      if (signal.dead) continue;
+      const aura = getSignalCapability(signalRegistry.require(signal.type), 'tower-suppression-aura');
+      if (!aura || distance(tower.position, signal.position) > aura.radius) continue;
       cooldown = Math.max(cooldown, aura.cooldownMultiplier);
       energyRegen = Math.min(energyRegen, aura.energyRegenMultiplier);
     }
@@ -1083,8 +1087,8 @@ export class GameEngine {
     this.towerAuraEnergyRegen = energyRegen;
   }
 
-  private findTarget(tower: Tower): Enemy | null {
-    const candidates = this.enemyIndex.collectWithinRadius(
+  private findTarget(tower: Tower): Signal | null {
+    const candidates = this.signalIndex.collectWithinRadius(
       tower.position,
       tower.range,
       this.spatialCandidates,
@@ -1092,8 +1096,8 @@ export class GameEngine {
     return selectTowerTarget(
       tower,
       candidates,
-      (enemy) => this.enemyIndex.countWithinRadius(enemy.position, 92),
-      (enemy) => this.distanceToCore(enemy),
+      (signal) => this.signalIndex.countWithinRadius(signal.position, 92),
+      (signal) => this.distanceToCore(signal),
     );
   }
 
@@ -1102,7 +1106,7 @@ export class GameEngine {
       cast.delay -= delta;
       if (cast.delay > 0) continue;
       const tower = this.towers.find((item) => item.id === cast.towerId);
-      const target = this.enemies.find((item) => item.id === cast.targetId && !item.dead) ?? (tower ? this.findTarget(tower) : null);
+      const target = this.signals.find((item) => item.id === cast.targetId && !item.dead) ?? (tower ? this.findTarget(tower) : null);
       if (tower && (target || cast.blueprint.static)) this.castShot(tower, cast.blueprint, target, cast.origin);
       cast.delay = -999;
     }
@@ -1115,7 +1119,7 @@ export class GameEngine {
     this.scheduledCasts.length = aliveCount;
   }
 
-  private castShot(tower: Tower, blueprint: ShotBlueprint, target: Enemy | null, origin?: Point): void {
+  private castShot(tower: Tower, blueprint: ShotBlueprint, target: Signal | null, origin?: Point): void {
     const isStatic = blueprint.static !== undefined;
     if (isStatic && origin === undefined) return;
     if (!isStatic && !target) return;
@@ -1128,7 +1132,7 @@ export class GameEngine {
     const interception = target && !isStatic && blueprint.aim !== 'direct'
       ? findPathInterception({
         origin: launchOrigin,
-        path: this.routeForEnemy(target),
+        path: this.routeForSignal(target),
         projectileSpeed: blueprint.speed,
         projectileLifetime: blueprint.lifetime,
         launchOffset: spawnDistance,
@@ -1229,20 +1233,20 @@ export class GameEngine {
         }
         projectile.triggerCooldown = Math.max(0, projectile.triggerCooldown - delta);
         if (projectile.age >= config.armTime && config.gravity) {
-          const nearbyEnemies = this.enemyIndex.collectWithinRadius(
+          const nearbyEnemies = this.signalIndex.collectWithinRadius(
             projectile.position,
             config.gravity.radius,
             this.spatialCandidates,
           );
-          for (const enemy of nearbyEnemies) {
-            const fieldDistance = this.routeForEnemy(enemy).nearestDistance(projectile.position);
-            const offset = fieldDistance - enemy.distance;
+          for (const signal of nearbyEnemies) {
+            const fieldDistance = this.routeForSignal(signal).nearestDistance(projectile.position);
+            const offset = fieldDistance - signal.distance;
             const displacement = Math.sign(offset) * Math.min(Math.abs(offset), config.gravity.pull * delta);
-            this.combatApi.displace(enemy, displacement);
+            this.combatApi.displace(signal, displacement);
           }
         }
         if (projectile.age >= config.armTime && projectile.triggerCooldown <= 0) {
-          const target = this.enemyIndex.findNearestWithinRadius(projectile.position, config.triggerRadius);
+          const target = this.signalIndex.findNearestWithinRadius(projectile.position, config.triggerRadius);
           if (target) {
             projectile.triggerCooldown = config.cooldown;
             projectile.triggerCount += 1;
@@ -1327,7 +1331,7 @@ export class GameEngine {
       if (hit) {
         projectile.position.x = movementStart.x + (movementEnd.x - movementStart.x) * hit.time;
         projectile.position.y = movementStart.y + (movementEnd.y - movementStart.y) * hit.time;
-        this.hitEnemy(projectile, hit.enemy);
+        this.hitSignal(projectile, hit.signal);
       }
 
       if (projectile.shot.trigger?.type === 'terrain' && !projectile.triggered) {
@@ -1341,7 +1345,7 @@ export class GameEngine {
         if (moved && (delayedTicks !== undefined ? delayedTicks <= 1 : crossedWithinTick && configuredTicks <= 1)) {
           projectile.triggered = true;
           delete projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS];
-          this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+          this.triggerProjectile(projectile, hit?.signal ?? this.findTriggerTarget(projectile.position));
         } else if (moved && delayedTicks !== undefined) {
           projectile.moduleState[TERRAIN_TRIGGER_CROSSING_TICKS] = delayedTicks - 1;
         } else if (crossedWithinTick) {
@@ -1363,7 +1367,7 @@ export class GameEngine {
         !outsideWorld
       ) {
         projectile.triggered = true;
-        this.triggerProjectile(projectile, hit?.enemy ?? this.findTriggerTarget(projectile.position));
+        this.triggerProjectile(projectile, hit?.signal ?? this.findTriggerTarget(projectile.position));
       }
     }
   }
@@ -1433,16 +1437,16 @@ export class GameEngine {
       return;
     }
     this.spaceRiftEnemies.clear();
-    for (const enemy of this.enemies) {
-      if (!enemy.dead) this.spaceRiftEnemies.set(enemy.id, enemy);
+    for (const signal of this.signals) {
+      if (!signal.dead) this.spaceRiftEnemies.set(signal.id, signal);
     }
     let aliveCount = 0;
     for (const rift of this.spaceRifts) {
       if (rift.source.life <= 0) rift.remaining -= delta;
       if (rift.remaining <= 0) {
-        for (const [enemyId, contact] of rift.contacts) {
-          const enemy = this.spaceRiftEnemies.get(enemyId);
-          if (enemy) this.settleSpaceRiftContact(rift, enemy, contact, true);
+        for (const [signalId, contact] of rift.contacts) {
+          const signal = this.spaceRiftEnemies.get(signalId);
+          if (signal) this.settleSpaceRiftContact(rift, signal, contact, true);
         }
         this.spaceRiftByKey.delete(rift.key);
         continue;
@@ -1454,31 +1458,31 @@ export class GameEngine {
     this.spaceRiftCoverage.clear();
     this.spaceRiftCrossings.clear();
 
-    for (const enemy of this.spaceRiftEnemies.values()) {
+    for (const signal of this.spaceRiftEnemies.values()) {
       for (const rift of this.spaceRifts) {
         if (rift.points.length < 2) continue;
-        const coveredBy = this.spaceRiftCoverage.get(enemy);
+        const coveredBy = this.spaceRiftCoverage.get(signal);
         if (coveredBy && coveredBy.damagePerSecond >= rift.damagePerSecond) continue;
-        const crossing = this.findSpaceRiftCrossing(rift, enemy);
+        const crossing = this.findSpaceRiftCrossing(rift, signal);
         if (!crossing) continue;
-        this.spaceRiftCoverage.set(enemy, rift);
-        this.spaceRiftCrossings.set(enemy, crossing);
+        this.spaceRiftCoverage.set(signal, rift);
+        this.spaceRiftCrossings.set(signal, crossing);
       }
     }
 
     for (const rift of this.spaceRifts) {
       const nextContacts = new Map<number, SpaceRiftContact>();
-      for (const [enemyId, previousContact] of rift.contacts) {
-        const enemy = this.spaceRiftEnemies.get(enemyId);
-        if (enemy && this.spaceRiftCoverage.get(enemy) !== rift) {
-          this.settleSpaceRiftContact(rift, enemy, previousContact, true);
+      for (const [signalId, previousContact] of rift.contacts) {
+        const signal = this.spaceRiftEnemies.get(signalId);
+        if (signal && this.spaceRiftCoverage.get(signal) !== rift) {
+          this.settleSpaceRiftContact(rift, signal, previousContact, true);
         }
       }
-      for (const [enemy, coveredBy] of this.spaceRiftCoverage) {
-        if (coveredBy !== rift || enemy.dead) continue;
-        const crossing = this.spaceRiftCrossings.get(enemy);
+      for (const [signal, coveredBy] of this.spaceRiftCoverage) {
+        if (coveredBy !== rift || signal.dead) continue;
+        const crossing = this.spaceRiftCrossings.get(signal);
         if (!crossing) continue;
-        const contact = rift.contacts.get(enemy.id) ?? {
+        const contact = rift.contacts.get(signal.id) ?? {
           pendingDamage: 0,
           pendingDuration: 0,
           pendingModifierDamage: 0,
@@ -1497,16 +1501,16 @@ export class GameEngine {
           while (contact.settlementTimer <= SIMULATION_TIME_EPSILON) {
             contact.settlementTimer += rift.settlementInterval;
           }
-          this.settleSpaceRiftContact(rift, enemy, contact, false);
+          this.settleSpaceRiftContact(rift, signal, contact, false);
         }
-        if (!enemy.dead) nextContacts.set(enemy.id, contact);
+        if (!signal.dead) nextContacts.set(signal.id, contact);
       }
       rift.contacts = nextContacts;
     }
   }
 
-  private findSpaceRiftCrossing(rift: SpaceRift, enemy: Enemy): Point | null {
-    const radius = enemy.radius + rift.width * 0.5;
+  private findSpaceRiftCrossing(rift: SpaceRift, signal: Signal): Point | null {
+    const radius = signal.radius + rift.width * 0.5;
     const radiusSquared = radius * radius;
     for (let index = 1; index < rift.points.length; index += 1) {
       const start = rift.points[index - 1];
@@ -1516,12 +1520,12 @@ export class GameEngine {
       const dy = end.y - start.y;
       const lengthSquared = dx * dx + dy * dy;
       const projection = lengthSquared <= Number.EPSILON ? 0 : Math.max(0, Math.min(1,
-        ((enemy.position.x - start.x) * dx + (enemy.position.y - start.y) * dy) / lengthSquared,
+        ((signal.position.x - start.x) * dx + (signal.position.y - start.y) * dy) / lengthSquared,
       ));
       const x = start.x + dx * projection;
       const y = start.y + dy * projection;
-      const offsetX = enemy.position.x - x;
-      const offsetY = enemy.position.y - y;
+      const offsetX = signal.position.x - x;
+      const offsetY = signal.position.y - y;
       if (offsetX * offsetX + offsetY * offsetY <= radiusSquared) return { x, y };
     }
     return null;
@@ -1529,13 +1533,13 @@ export class GameEngine {
 
   private settleSpaceRiftContact(
     rift: SpaceRift,
-    enemy: Enemy,
+    signal: Signal,
     contact: SpaceRiftContact,
     flushModifier: boolean,
   ): void {
     if (contact.pendingDamage > SIMULATION_TIME_EPSILON && contact.pendingDuration > 0) {
       const result = this.applyDamage(
-        enemy,
+        signal,
         contact.pendingDamage,
         rift.color,
         contact.pendingDuration,
@@ -1562,7 +1566,7 @@ export class GameEngine {
     ) {
       this.dispatchTargetEffect(
         rift.source,
-        enemy,
+        signal,
         'damage',
         contact.pendingModifierDamage,
       );
@@ -1576,20 +1580,20 @@ export class GameEngine {
     }
   }
 
-  private hitEnemy(projectile: Projectile, enemy: Enemy): void {
-    const damageDealt = this.combatApi.dealDamage(enemy, projectile.damage, projectile.color, projectile);
+  private hitSignal(projectile: Projectile, signal: Signal): void {
+    const damageDealt = this.combatApi.dealDamage(signal, projectile.damage, projectile.color, projectile);
     if (damageDealt <= 0) {
       projectile.life = 0;
       return;
     }
     this.modules.dispatch('onHit', projectile.modules, {
       effects: this.effects,
-      position: { ...enemy.position },
+      position: { ...signal.position },
       rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
       color: projectile.color,
       shot: projectile.shot,
       projectile,
-      enemy,
+      signal,
       damageDealt,
       combat: this.combatApi,
     });
@@ -1598,14 +1602,14 @@ export class GameEngine {
       !projectile.triggered
     ) {
       projectile.triggered = true;
-      this.triggerProjectile(projectile, enemy);
+      this.triggerProjectile(projectile, signal);
     }
     if (projectile.splash > 0) {
-      const nearbyEnemies = this.enemyIndex.collectWithinRadius(
-        enemy.position,
+      const nearbyEnemies = this.signalIndex.collectWithinRadius(
+        signal.position,
         projectile.splash,
         this.spatialCandidates,
-        enemy.id,
+        signal.id,
       );
       for (const nearby of nearbyEnemies) {
         this.combatApi.dealDamage(
@@ -1619,7 +1623,7 @@ export class GameEngine {
     projectile.pierce -= 1;
     if (projectile.pierce < 0) projectile.life = 0;
     else {
-      const exitDistance = (enemy.radius + projectile.radius) * 2 + 2;
+      const exitDistance = (signal.radius + projectile.radius) * 2 + 2;
       const velocityLength = Math.hypot(projectile.velocity.x, projectile.velocity.y) || 1;
       projectile.position.x += projectile.velocity.x / velocityLength * exitDistance;
       projectile.position.y += projectile.velocity.y / velocityLength * exitDistance;
@@ -1629,32 +1633,32 @@ export class GameEngine {
 
   private dispatchTargetEffect(
     projectile: Projectile,
-    enemy: Enemy,
+    signal: Signal,
     channel: TargetEffectChannel,
     damageDealt?: number,
   ): void {
     const tower = this.towers.find((item) => item.id === projectile.towerId);
     this.modules.dispatchTargetEffect(channel, projectile.modules, {
       effects: this.effects,
-      position: { ...enemy.position },
+      position: { ...signal.position },
       rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
       color: projectile.color,
       shot: projectile.shot,
       ...(tower ? { tower } : {}),
       projectile,
-      enemy,
+      signal,
       ...(damageDealt === undefined ? {} : { damageDealt }),
       targetEffectChannel: channel,
       combat: this.combatApi,
     });
   }
 
-  private resolveSeekingTarget(projectile: Projectile): Enemy | null {
-    const current = this.enemies.find((enemy) => enemy.id === projectile.targetId && !enemy.dead);
+  private resolveSeekingTarget(projectile: Projectile): Signal | null {
+    const current = this.signals.find((signal) => signal.id === projectile.targetId && !signal.dead);
     if (current) return current;
 
     const remainingRange = Math.max(0, projectile.speed * projectile.life);
-    const target = this.enemyIndex.findNearestWithinRadius(
+    const target = this.signalIndex.findNearestWithinRadius(
       projectile.position,
       Math.min(SEEKING_RETARGET_RADIUS, remainingRange),
     );
@@ -1663,11 +1667,11 @@ export class GameEngine {
     return target;
   }
 
-  private findTriggerTarget(position: Point): Enemy | null {
-    const nearbyEnemies = this.enemyIndex.collectWithinRadius(position, 280, this.spatialCandidates);
-    let best: Enemy | null = null;
-    for (const enemy of nearbyEnemies) {
-      if (!best || this.distanceToCore(enemy) < this.distanceToCore(best)) best = enemy;
+  private findTriggerTarget(position: Point): Signal | null {
+    const nearbyEnemies = this.signalIndex.collectWithinRadius(position, 280, this.spatialCandidates);
+    let best: Signal | null = null;
+    for (const signal of nearbyEnemies) {
+      if (!best || this.distanceToCore(signal) < this.distanceToCore(best)) best = signal;
     }
     return best;
   }
@@ -1676,48 +1680,48 @@ export class GameEngine {
     projectile: Projectile,
     start: Point,
     end: Point,
-  ): { enemy: Enemy; time: number } | null {
-    let first: { enemy: Enemy; time: number } | null = null;
-    const candidates = this.enemyIndex.collectAlongSegment(
+  ): { signal: Signal; time: number } | null {
+    let first: { signal: Signal; time: number } | null = null;
+    const candidates = this.signalIndex.collectAlongSegment(
       start,
       end,
       MAX_ENEMY_COLLISION_RADIUS + projectile.radius,
       this.spatialCandidates,
     );
-    for (const enemy of candidates) {
-      const time = this.projectileHitTime(enemy, projectile, start, end);
-      if (time !== null && (!first || time < first.time)) first = { enemy, time };
+    for (const signal of candidates) {
+      const time = this.projectileHitTime(signal, projectile, start, end);
+      if (time !== null && (!first || time < first.time)) first = { signal, time };
     }
     return first;
   }
 
-  private projectileHitTime(enemy: Enemy, projectile: Projectile, start: Point, end: Point): number | null {
-    const shield = ENEMIES[enemy.type].shield;
-    if (!shield || enemy.shield <= 0) {
-      return segmentCircleHitTime(start, end, enemy.position, enemy.radius + projectile.radius);
+  private projectileHitTime(signal: Signal, projectile: Projectile, start: Point, end: Point): number | null {
+    const shield = getSignalCapability(signalRegistry.require(signal.type), 'shield');
+    if (!shield || signal.shield <= 0) {
+      return segmentCircleHitTime(start, end, signal.position, signal.radius + projectile.radius);
     }
     const shieldTime = segmentRegularPolygonHitTime(
       start,
       end,
       (point) => isInsideRegularShield(
-        enemy.position.x,
-        enemy.position.y,
+        signal.position.x,
+        signal.position.y,
         point.x,
         point.y,
-        shield.radius * enemy.shieldRadiusScale,
+        shield.radius * signal.shieldRadiusScale,
         shield.sides,
         shield.rotation,
         projectile.radius,
       ),
       projectile.radius,
     );
-    const bodyTime = segmentCircleHitTime(start, end, enemy.position, enemy.radius + projectile.radius);
+    const bodyTime = segmentCircleHitTime(start, end, signal.position, signal.radius + projectile.radius);
     if (shieldTime === null) return bodyTime;
     if (bodyTime === null) return shieldTime;
     return Math.min(shieldTime, bodyTime);
   }
 
-  private triggerProjectile(projectile: Projectile, target: Enemy | null): void {
+  private triggerProjectile(projectile: Projectile, target: Signal | null): void {
     this.modules.dispatch('onTrigger', projectile.modules, {
       effects: this.effects,
       position: { ...projectile.position },
@@ -1731,7 +1735,7 @@ export class GameEngine {
     this.firePayload(projectile, target);
   }
 
-  private firePayload(projectile: Projectile, target: Enemy | null): void {
+  private firePayload(projectile: Projectile, target: Signal | null): void {
     const tower = this.towers.find((item) => item.id === projectile.towerId);
     if (!tower) return;
     projectile.shot.payload.forEach((payload, payloadIndex) => {
@@ -1762,42 +1766,44 @@ export class GameEngine {
     );
   }
 
-  private displaceEnemy(enemy: Enemy, distanceDelta: number): void {
-    if (enemy.dead || !Number.isFinite(distanceDelta)) return;
-    const route = this.routeForEnemy(enemy);
-    enemy.distance = Math.max(0, Math.min(route.length, enemy.distance + distanceDelta));
-    enemy.progress = enemy.distance / route.length;
-    enemy.angle = route.sampleInto(enemy.distance, enemy.position);
-    this.enemyIndex.update(enemy);
+  private displaceSignal(signal: Signal, distanceDelta: number): void {
+    if (signal.dead || !Number.isFinite(distanceDelta)) return;
+    const route = this.routeForSignal(signal);
+    signal.distance = Math.max(0, Math.min(route.length, signal.distance + distanceDelta));
+    signal.progress = signal.distance / route.length;
+    signal.angle = route.sampleInto(signal.distance, signal.position);
+    this.signalIndex.update(signal);
   }
 
-  private applyDamage(enemy: Enemy, damage: number, color: string, continuousDuration?: number) {
-    if (enemy.dead) return { absorbed: 0, healthDamage: 0, broke: false };
-    const shieldConfig = ENEMIES[enemy.type].shield;
-    const shieldResult = absorbShieldDamage(enemy, damage * this.difficulty.towerDamage, shieldConfig);
+  private applyDamage(signal: Signal, damage: number, color: string, continuousDuration?: number) {
+    if (signal.dead) return { absorbed: 0, healthDamage: 0, broke: false };
+    const definition = signalRegistry.require(signal.type);
+    const shieldConfig = getSignalCapability(definition, 'shield');
+    const armor = getSignalCapability(definition, 'damage-cap');
+    const shieldResult = absorbSignalShieldDamage(signal, damage * this.difficulty.towerDamage, shieldConfig);
     const result = {
       ...shieldResult,
       healthDamage: continuousDuration === undefined
-        ? limitEnemyHealthDamage(shieldResult.healthDamage, ENEMIES[enemy.type].armor)
-        : limitEnemyContinuousHealthDamage(
+        ? limitSignalHealthDamage(shieldResult.healthDamage, armor)
+        : limitSignalContinuousHealthDamage(
           shieldResult.healthDamage,
           continuousDuration,
-          ENEMIES[enemy.type].armor,
+          armor,
         ),
     };
-    enemy.hitFlash = 1;
+    signal.hitFlash = 1;
     if (result.absorbed > 0 && shieldConfig) {
       this.floatingTexts.push({
         position: {
-          x: enemy.position.x + (seededNoise(enemy.id + this.elapsed) - 0.5) * 18,
-          y: enemy.position.y - shieldConfig.radius - 8,
+          x: signal.position.x + (seededNoise(signal.id + this.elapsed) - 0.5) * 18,
+          y: signal.position.y - shieldConfig.radius - 8,
         },
         text: `◇${Math.round(result.absorbed)}`,
         color: shieldConfig.color,
         life: 0.65,
       });
       this.effects.spawn(result.broke ? GAME_EFFECT_IDS.shieldBreak : GAME_EFFECT_IDS.shieldHit, {
-        position: enemy.position,
+        position: signal.position,
         rotation: shieldConfig.rotation,
         color: shieldConfig.color,
         data: { radius: shieldConfig.radius, sides: shieldConfig.sides },
@@ -1805,74 +1811,76 @@ export class GameEngine {
     }
     if (result.healthDamage <= 0) return result;
 
-    enemy.hp -= result.healthDamage;
+    signal.hp -= result.healthDamage;
     this.floatingTexts.push({
-      position: { x: enemy.position.x + (seededNoise(enemy.id + this.elapsed + 17) - 0.5) * 18, y: enemy.position.y - 18 },
+      position: { x: signal.position.x + (seededNoise(signal.id + this.elapsed + 17) - 0.5) * 18, y: signal.position.y - 18 },
       text: `${Math.round(result.healthDamage)}`,
       color,
       life: 0.65,
     });
-    if (enemy.hp <= 0) {
-      enemy.dead = true;
-      this.outcomeFor(this.wave, this.enemyVariant(enemy)).defeated += 1;
-      this.enemyIndex.remove(enemy.id);
-      this.shards += enemy.reward;
-      this.score += enemy.maxHp;
-      this.effects.spawnMany(['game:enemy-pop-ring', 'game:enemy-pop-sparks'], {
-        position: enemy.position,
-        color: ENEMIES[enemy.type].color,
-        lifetimeScale: enemy.type === 'crown' || (enemy.type === 'fracture' && enemy.splitGeneration === 0) ? 1.8 : 1,
+    if (signal.hp <= 0) {
+      signal.dead = true;
+      this.outcomeFor(this.wave, this.signalVariant(signal)).defeated += 1;
+      this.signalIndex.remove(signal.id);
+      this.shards += signal.reward;
+      this.score += signal.maxHp;
+      this.effects.spawnMany(['game:signal-pop-ring', 'game:signal-pop-sparks'], {
+        position: signal.position,
+        color: definition.visual.color,
+        lifetimeScale: signal.variantId === signal.type ? definition.visual.deathEffectScale ?? 1 : 1,
       });
-      this.queueEnemySplit(enemy);
+      this.queueSignalSplit(signal);
     }
     return result;
   }
 
-  private queueEnemySplit(parent: Enemy): void {
-    const split = ENEMIES[parent.type].split;
-    if (!split || parent.splitGeneration > 0) return;
-    this.pendingEnemySplits.push({
+  private queueSignalSplit(parent: Signal): void {
+    const split = getSignalCapability(signalRegistry.require(parent.type), 'split-on-death');
+    if (!split || parent.variantId !== parent.type) return;
+    this.pendingSignalSplits.push({
       parent,
       position: { ...parent.position },
       age: 0,
-      duration: FRACTURE_RIPPLE_DURATION,
+      duration: split.rippleDuration,
       spawned: false,
     });
     this.effects.spawn(GAME_EFFECT_IDS.fractureSplitRipple, {
       position: parent.position,
-      color: '#73e7f2',
+      color: split.effectColor,
     });
   }
 
-  private updatePendingEnemySplits(delta: number): void {
-    for (const pending of this.pendingEnemySplits) {
+  private updatePendingSignalSplits(delta: number): void {
+    for (const pending of this.pendingSignalSplits) {
       pending.age += delta;
-      if (pending.spawned || pending.age + SIMULATION_TIME_EPSILON < FRACTURE_SPLIT_DELAY) continue;
+      const split = getSignalCapability(signalRegistry.require(pending.parent.type), 'split-on-death');
+      if (!split || pending.spawned || pending.age + SIMULATION_TIME_EPSILON < split.delay) continue;
       pending.spawned = true;
       this.spawnSplitChildren(pending.parent);
     }
     let aliveCount = 0;
-    for (const pending of this.pendingEnemySplits) {
+    for (const pending of this.pendingSignalSplits) {
       if (pending.age >= pending.duration) continue;
-      this.pendingEnemySplits[aliveCount] = pending;
+      this.pendingSignalSplits[aliveCount] = pending;
       aliveCount += 1;
     }
-    this.pendingEnemySplits.length = aliveCount;
+    this.pendingSignalSplits.length = aliveCount;
   }
 
-  private spawnSplitChildren(parent: Enemy): void {
-    const split = ENEMIES[parent.type].split;
-    if (!split || parent.splitGeneration > 0) return;
-    const route = this.routeForEnemy(parent);
+  private spawnSplitChildren(parent: Signal): void {
+    const split = getSignalCapability(signalRegistry.require(parent.type), 'split-on-death');
+    if (!split || parent.variantId !== parent.type) return;
+    const route = this.routeForSignal(parent);
     const lastSafeDistance = Math.max(0, route.length - 1);
     for (let index = 0; index < split.count; index += 1) {
       const offset = (index - (split.count - 1) / 2) * split.spacing;
       const childDistance = Math.max(0, Math.min(lastSafeDistance, parent.distance + offset));
       const at = route.pointAtDistance(childDistance);
       const maxHp = Math.max(1, Math.round(parent.maxHp * split.healthScale));
-      const child: Enemy = {
+      const child: Signal = {
         id: this.nextId++,
         type: parent.type,
+        variantId: split.childVariantId as SignalVariantId,
         routeId: parent.routeId,
         progress: childDistance / route.length,
         distance: childDistance,
@@ -1884,23 +1892,22 @@ export class GameEngine {
         reward: Math.max(1, Math.round(parent.reward * split.rewardScale)),
         coreDamage: Math.max(1, Math.round(parent.coreDamage * split.coreDamageScale)),
         radius: parent.radius * split.radiusScale,
-        splitGeneration: parent.splitGeneration + 1,
         slowFactor: 0,
         slowTime: 0,
         hitFlash: 0,
-        ...createEnemyShield(undefined, 1),
+        ...createSignalShield(undefined, 1),
         statuses: [],
         dead: false,
       };
-      this.enemies.push(child);
-      this.outcomeFor(this.wave, this.enemyVariant(child)).spawned += 1;
-      this.enemyIndex.update(child);
+      this.signals.push(child);
+      this.outcomeFor(this.wave, this.signalVariant(child)).spawned += 1;
+      this.signalIndex.update(child);
     }
   }
 
-  private applyStatus(enemy: Enemy, status: StatusApplication): boolean {
-    if (enemy.dead || status.duration <= 0) return false;
-    const existing = enemy.statuses.find((item) => item.id === status.id);
+  private applyStatus(signal: Signal, status: StatusApplication): boolean {
+    if (signal.dead || status.duration <= 0) return false;
+    const existing = signal.statuses.find((item) => item.id === status.id);
     if (existing) {
       existing.remaining = Math.max(existing.remaining, status.duration);
       existing.duration = status.duration;
@@ -1919,7 +1926,7 @@ export class GameEngine {
       }
       return false;
     }
-    enemy.statuses.push({
+    signal.statuses.push({
       ...status,
       remaining: status.duration,
       tickTimer: status.interval,
@@ -1928,43 +1935,43 @@ export class GameEngine {
     return true;
   }
 
-  private updateEnemyStatuses(enemy: Enemy, delta: number): void {
-    for (const status of enemy.statuses) {
+  private updateSignalStatuses(signal: Signal, delta: number): void {
+    for (const status of signal.statuses) {
       const activeDelta = Math.min(delta, Math.max(0, status.remaining));
       status.remaining -= delta;
       status.tickTimer -= activeDelta;
       if (status.particle) {
         const particleInterval = Math.max(FIXED_SIMULATION_STEP, status.particle.interval);
         status.particleTimer -= activeDelta;
-        while (status.particleTimer <= 0 && !enemy.dead) {
+        while (status.particleTimer <= 0 && !signal.dead) {
           this.effects.spawn(status.particle.effectId, {
-            position: enemy.position,
-            rotation: enemy.angle,
+            position: signal.position,
+            rotation: signal.angle,
             color: status.color,
-            data: { radius: enemy.radius },
+            data: { radius: signal.radius },
           });
           status.particleTimer += particleInterval;
         }
       }
-      while (status.tickTimer <= 0 && !enemy.dead) {
-        this.applyDamage(enemy, status.damage, status.color);
+      while (status.tickTimer <= 0 && !signal.dead) {
+        this.applyDamage(signal, status.damage, status.color);
         status.tickTimer += status.interval;
       }
     }
     let aliveCount = 0;
-    for (const status of enemy.statuses) {
+    for (const status of signal.statuses) {
       if (status.remaining <= 0) continue;
-      enemy.statuses[aliveCount] = status;
+      signal.statuses[aliveCount] = status;
       aliveCount += 1;
     }
-    enemy.statuses.length = aliveCount;
+    signal.statuses.length = aliveCount;
   }
 
   private updateVisuals(delta: number): void {
-    for (const enemy of this.enemies) {
-      enemy.hitFlash = Math.max(0, enemy.hitFlash - delta * 7);
-      enemy.shieldHitFlash = Math.max(0, enemy.shieldHitFlash - delta * 6);
-      enemy.shieldRippleAge = Math.min(2, enemy.shieldRippleAge + delta);
+    for (const signal of this.signals) {
+      signal.hitFlash = Math.max(0, signal.hitFlash - delta * 7);
+      signal.shieldHitFlash = Math.max(0, signal.shieldHitFlash - delta * 6);
+      signal.shieldRippleAge = Math.min(2, signal.shieldRippleAge + delta);
     }
     for (const text of this.floatingTexts) {
       text.life -= delta;
@@ -1980,23 +1987,23 @@ export class GameEngine {
   }
 
   private cleanEntities(): void {
-    let aliveEnemyCount = 0;
-    for (const enemy of this.enemies) {
-      if (enemy.dead) this.enemyIndex.remove(enemy.id);
-      let keep = !enemy.dead;
+    let aliveSignalCount = 0;
+    for (const signal of this.signals) {
+      if (signal.dead) this.signalIndex.remove(signal.id);
+      let keep = !signal.dead;
       if (!keep) {
-        for (const split of this.pendingEnemySplits) {
-          if (!split.spawned && split.parent === enemy) {
+        for (const split of this.pendingSignalSplits) {
+          if (!split.spawned && split.parent === signal) {
             keep = true;
             break;
           }
         }
       }
       if (!keep) continue;
-      this.enemies[aliveEnemyCount] = enemy;
-      aliveEnemyCount += 1;
+      this.signals[aliveSignalCount] = signal;
+      aliveSignalCount += 1;
     }
-    this.enemies.length = aliveEnemyCount;
+    this.signals.length = aliveSignalCount;
 
     let aliveProjectileCount = 0;
     for (const projectile of this.projectiles) {
@@ -2027,9 +2034,9 @@ export class GameEngine {
   }
 
   private checkWaveEnd(delta: number): void {
-    const splitPending = this.pendingEnemySplits.some((split) => !split.spawned);
+    const splitPending = this.pendingSignalSplits.some((split) => !split.spawned);
     const hasPendingSpawns = this.spawnLanes.some((lane) => lane.queue.length > 0);
-    if (this.status !== 'wave' || hasPendingSpawns || this.enemies.length > 0 || splitPending) {
+    if (this.status !== 'wave' || hasPendingSpawns || this.signals.length > 0 || splitPending) {
       this.waveClearDelayLeft = null;
       return;
     }

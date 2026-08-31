@@ -48,13 +48,13 @@ export const toxinModule: ModuleDefinition = {
   compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
   targetEffect: {
     channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, enemy, projectile, targetEffectChannel, combat }) => {
+    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
       if (targetEffectChannel === 'secondary-hit') {
         engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
         return;
       }
-      if (!enemy) return;
-      const entered = combat.applyStatus(enemy, {
+      if (!signal) return;
+      const entered = combat.applyStatus(signal, {
         id: 'toxin', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
       });
       if (entered && projectile?.behavior === 'static') {

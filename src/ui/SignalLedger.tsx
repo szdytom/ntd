@@ -1,23 +1,15 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ENEMIES } from '../game/config';
-import type { EnemyType, EnemyVariant } from '../game/types';
+import type { SignalId, SignalVariantId } from '../game/types';
 import type { SignalStats } from '../defense-archive';
-import { enemyName } from '../i18n/presentation';
+import { signalName } from '../i18n/presentation';
+import { signalRegistry } from '../signals';
 import { SignalIcon } from './SignalIcon';
 import './SignalLedger.css';
 
-const SIGNAL_BASE = [...Object.keys(ENEMIES) as EnemyType[]];
-const FRACTURE_INDEX = SIGNAL_BASE.indexOf('fracture');
-const ALL_SIGNAL_VARIANTS: EnemyVariant[] = FRACTURE_INDEX < 0
-  ? [...SIGNAL_BASE, 'fracture-fragment']
-  : [
-    ...SIGNAL_BASE.slice(0, FRACTURE_INDEX + 1),
-    'fracture-fragment',
-    ...SIGNAL_BASE.slice(FRACTURE_INDEX + 1),
-  ];
+const ALL_SIGNAL_VARIANTS = signalRegistry.variants();
 
-const emptySignal = (variant: EnemyVariant): SignalStats => ({
+const emptySignal = (variant: SignalVariantId): SignalStats => ({
   variant,
   spawned: 0,
   defeated: 0,
@@ -28,18 +20,18 @@ const emptySignal = (variant: EnemyVariant): SignalStats => ({
   purificationRate: 0,
 });
 
-const signalColor = (variant: EnemyVariant): string => ENEMIES[signalIconType(variant)].color;
+const signalColor = (variant: SignalVariantId): string => signalRegistry.require(signalIconType(variant)).visual.color;
 
-export const signalIconType = (variant: EnemyVariant): EnemyType => (
-  variant === 'fracture-fragment' ? 'fracture' : variant
+export const signalIconType = (variant: SignalVariantId): SignalId => (
+  signalRegistry.signalIdForVariant(variant)
 );
 
 export const signalLabel = (
   t: ReturnType<typeof useTranslation>['t'],
-  variant: EnemyVariant,
-): string => variant === 'fracture-fragment'
-  ? t('enemyArchive.fragments.name')
-  : enemyName(t, variant as EnemyType);
+  variant: SignalVariantId,
+): string => signalRegistry.variant(variant)?.text.nameKey
+  ? t(signalRegistry.variant(variant)!.text.nameKey)
+  : signalName(t, variant as SignalId);
 
 export function SignalLedger({
   signals,

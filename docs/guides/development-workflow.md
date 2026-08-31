@@ -35,7 +35,7 @@ For one Vitest file, pass it through the script:
 npm test -- tests/compiler.test.ts
 ```
 
-Tests protect software contracts, not the current balance baseline. Read [Testing boundaries](testing-boundaries.md) before asserting production damage, energy, enemy stats, wave composition, map coordinates, or report totals.
+Tests protect software contracts, not the current balance baseline. Read [Testing boundaries](testing-boundaries.md) before asserting production damage, energy, signal stats, wave composition, map coordinates, or report totals.
 
 ## Match the repository boundaries
 

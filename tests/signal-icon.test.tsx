@@ -2,7 +2,7 @@
 
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ANVIL_SHAPE, FRACTURE_SHAPE } from '../src/game/enemy-shapes';
+import { ANVIL_SHAPE, FRACTURE_SHAPE } from '../src/signals/visuals/geometry';
 import { SignalIcon } from '../src/ui/SignalIcon';
 
 afterEach(cleanup);

@@ -111,8 +111,8 @@ export const singularityModule: ModuleDefinition = {
       color,
     });
     if (!projectile) return;
-    for (const enemy of combat.nearbyEnemies(position, projectile.shot.static?.gravity?.radius ?? stats.radius)) {
-      combat.affectTarget(enemy, projectile, 'static');
+    for (const signal of combat.nearbyEnemies(position, projectile.shot.static?.gravity?.radius ?? stats.radius)) {
+      combat.affectTarget(signal, projectile, 'static');
     }
   },
 };

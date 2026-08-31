@@ -34,7 +34,7 @@ The foundation tokens in [`foundation.css`](../../src/styles/foundation.css) est
 | Ground | — | `#efedf3` | page outside the composed surface |
 | Paper | — | `#ffffff` | readable content cells and control faces |
 
-Treat these as a small construction kit, not a requirement to place every color on every screen. A screen normally needs ink, paper, one structural color, and one contextual accent. The Arc Workshop uses yellow for its header, violet for the program area, and mint for the library; the Signal Compendium replaces most fixed accenting with the selected enemy's `--enemy-accent`.
+Treat these as a small construction kit, not a requirement to place every color on every screen. A screen normally needs ink, paper, one structural color, and one contextual accent. The Arc Workshop uses yellow for its header, violet for the program area, and mint for the library; the Signal Compendium replaces most fixed accenting with the selected signal's `--signal-accent`.
 
 Use the contextual accent in two strengths:
 
@@ -96,12 +96,12 @@ At `620px` and below, the Workshop becomes a vertical document: tower context, p
 
 ### Signal Compendium
 
-[`EnemyArchive.tsx`](../../src/ui/EnemyArchive.tsx) and [`EnemyArchive.css`](../../src/ui/EnemyArchive.css) use a different rectangular hierarchy because the task is inspection rather than construction:
+[`SignalArchive.tsx`](../../src/ui/SignalArchive.tsx) and [`SignalArchive.css`](../../src/ui/SignalArchive.css) use a different rectangular hierarchy because the task is inspection rather than construction:
 
 ```text
 ┌─ back ─┬──────────── title ────────────┬─ language ─┬─ signal seal ─┐
 ├──────────── 270px signal index ────────┼──────── selected record ───┤
-│ repeated enemy rows                    │ specimen stage │ data sheet │
+│ repeated signal rows                    │ specimen stage │ data sheet │
 │ selected row gains an accent edge      │ crosshair/grid │ title      │
 │                                        │ orbit + subject│ 2 × 2 stats │
 │                                        │                │ 2 analyses │
@@ -109,9 +109,9 @@ At `620px` and below, the Workshop becomes a vertical document: tower context, p
 └────────────────────────────────────────┴────────────────┴────────────┘
 ```
 
-Here the selected enemy accent travels across the composition: index marker, specimen grid, orbit, seal, stat fills, and analysis tint. That repetition makes separate rectangles feel like one record without surrounding them in another decorative card.
+Here the selected signal accent travels across the composition: index marker, specimen grid, orbit, seal, stat fills, and analysis tint. That repetition makes separate rectangles feel like one record without surrounding them in another decorative card.
 
-The specimen stage is the screen's one expressive exception. Crosshairs, a square grid, circular orbits, and the animated enemy create a geometric “observation instrument” inside an otherwise rigid frame. Keep surrounding data panels quieter so this signature remains legible.
+The specimen stage is the screen's one expressive exception. Crosshairs, a square grid, circular orbits, and the animated signal create a geometric “observation instrument” inside an otherwise rigid frame. Keep surrounding data panels quieter so this signature remains legible.
 
 The desktop record gives the specimen and data unequal flexible columns. At `760px`, the index becomes a horizontal strip and the record stacks; at `480px`, the stat matrix becomes one column. The identity travels through accent and borders even though the geometry changes.
 
@@ -120,7 +120,7 @@ The desktop record gives the specimen and data unequal flexible columns. At `760
 Use shapes consistently with their scale and job:
 
 - **Rectangles** own layout, actions, meters, tags, and selected edges.
-- **Squares and diamonds** carry module/enemy symbols, compact status, and signal identity.
+- **Squares and diamonds** carry module/signal symbols, compact status, and signal identity.
 - **Polygons** connect UI presentation to battlefield entities.
 - **Circles and orbits** indicate range, observation, energy, or motion; they should sit inside a rectangular region rather than replace the page structure.
 
@@ -162,7 +162,7 @@ Do not add a badge, tooltip, border, and background change for the same state. O
 Declare page ink, paper, and contextual accent at the component root. Pass object identity through a CSS custom property rather than generating per-entity class names:
 
 ```tsx
-<article style={{ '--subject-accent': enemy.color } as CSSProperties}>
+<article style={{ '--subject-accent': signal.color } as CSSProperties}>
   ...
 </article>
 ```

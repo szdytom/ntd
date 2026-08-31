@@ -17,7 +17,7 @@ export function GameHeader({
   const drafting = Boolean(snapshot.draft);
   const waveDisabled = snapshot.status !== 'planning' || drafting;
   const launchLabel = snapshot.status === 'wave'
-    ? t('header.signals', { count: snapshot.enemiesAlive + snapshot.waveQueue })
+    ? t('header.signals', { count: snapshot.signalsAlive + snapshot.waveQueue })
     : snapshot.status === 'reward'
       ? t('header.awaitingDraft')
       : t('header.launch');
