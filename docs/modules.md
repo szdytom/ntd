@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 34 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 35 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -45,7 +45,6 @@ Modifiers patch the next emitted projectile.
 | `searing-sigil` | Searing Sigil | Propagates a heavy burning status |
 | `starfire-matrix` | Starfire Matrix | Propagates a rapid legendary burning status |
 | `colossus` | Colossus Core | Enlarges and strengthens the next projectile |
-| `reclaim-circuit` | Reclaim Circuit | Converts health damage into tower energy |
 | `focus-core` | Focus Core | Converts extra projectiles, repeats, and pierce into one focused shot |
 | `condense-core` | Condense Core | Converts area radius into direct damage |
 
@@ -66,6 +65,8 @@ Logic modules alter how the next projectile is scheduled, aimed, or wrapped.
 | `seeker` | Seeker Protocol | Turns the next projectile toward a live target |
 | `barrage` | Four-Beat Clock | Repeats the next shot in a rapid sequence |
 | `economizer` | Economizer Circuit | Reduces the next cast's compiled energy cost |
+| `emergency-battery` | Emergency Battery | Reduces the next projectile's energy cost by a flat amount |
+| `reclaim-circuit` | Reclaim Circuit | Converts health damage into tower energy |
 | `impact-trigger` | Impact Trigger | Releases payloads after a health-damaging collision |
 | `timer-trigger` | Timer Trigger | Releases payloads when its timer ends or it collides first |
 | `expiration-trigger` | Expiration Trigger | Releases payloads when the carrier reaches its normal end |

@@ -33,7 +33,7 @@ const effects: readonly EffectDefinition[] = [
 
 export const reclaimCircuitModule: ModuleDefinition = {
   id: 'reclaim-circuit',
-  kind: 'modifier',
+  kind: 'logic',
   tags: [],
   icon: ReclaimCircuitIcon,
   meta: {

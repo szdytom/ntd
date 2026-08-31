@@ -58,7 +58,7 @@ describe('new module compilation', () => {
 
   it('registers the advanced modules', () => {
     expect(['singularity', 'reclaim-circuit', 'focus-core', 'condense-core', 'double-fork'].map((id) => registry.require(id).kind))
-      .toEqual(['static', 'modifier', 'modifier', 'modifier', 'modifier']);
+      .toEqual(['static', 'logic', 'modifier', 'modifier', 'modifier']);
     expect(registry.require('reclaim-circuit').meta).toMatchObject({ rarity: 'epic', energy: 10 });
     expect(registry.require('fork').meta).toMatchObject({ rarity: 'epic', energy: 34 });
     expect(registry.require('double-fork').meta).toMatchObject({ rarity: 'rare', energy: 18 });

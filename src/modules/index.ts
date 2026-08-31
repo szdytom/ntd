@@ -3,6 +3,7 @@ import { barrageModule } from './barrage';
 import { colossusModule } from './colossus';
 import { condenseCoreModule } from './condense-core';
 import { doubleForkModule } from './double-fork';
+import { emergencyBatteryModule } from './emergency-battery';
 import { economizerModule } from './economizer';
 import { emberCoatingModule } from './ember-coating';
 import { emberFieldModule } from './ember-field';
@@ -60,6 +61,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(condenseCoreModule)
     .register(barrageModule)
     .register(economizerModule)
+    .register(emergencyBatteryModule)
     .register(reclaimCircuitModule)
     .register(proximityMineModule)
     .register(singularityModule)

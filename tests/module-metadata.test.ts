@@ -18,7 +18,7 @@ describe('module metadata', () => {
       expect(module.meta.color).toMatch(/^#[0-9a-f]{6}$/i);
       expect(module.meta.tint).toMatch(/^#[0-9a-f]{6}$/i);
       expect(Number.isFinite(module.meta.energy)).toBe(true);
-      expect(module.meta.energy).toBeGreaterThanOrEqual(0);
+      if (module.meta.energy < 0) expect(module.kind).toBe('logic');
       expect(Object.keys(MODULE_RARITIES)).toContain(module.meta.rarity);
       expect(Array.isArray(module.tags)).toBe(true);
       expect(new Set(module.tags).size).toBe(module.tags.length);
