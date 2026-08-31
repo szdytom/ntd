@@ -67,7 +67,7 @@
 .micro-bar i { display: block; height: 100%; background: #ff637a; transition: width .2s ease; }
 
 .top-actions { display: flex; align-items: stretch; justify-content: flex-end; gap: 0; background: #fff; }
-.top-actions > .language-switcher { width: 62px; flex: 0 0 auto; border-right: 2px solid var(--bar-ink); }
+.top-actions > .settings-panel { width: 62px; flex: 0 0 auto; border-right: 2px solid var(--bar-ink); }
 .speed-switch { display: grid; grid-template-columns: 1fr 1fr; height: auto; overflow: hidden; border: 0; border-right: 2px solid var(--bar-ink); border-radius: 0; background: #fff; }
 .speed-switch button { width: 45px; border: 0; border-right: 1px solid var(--bar-ink); color: #6f6977; background: #fff; cursor: pointer; font-family: var(--font-mono); font-size: 13px; font-weight: 800; }
 .speed-switch button:last-child { border-right: 0; }

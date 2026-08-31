@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './GameSession.css';
 import type { GameEngine } from '../game/engine';
 import type { EnemyType } from '../game/types';
@@ -8,15 +10,42 @@ import { Workshop } from './Workshop';
 import { Toast } from './Toast';
 import { RewardDraft } from './RewardDraft';
 import { TutorialGuide } from './TutorialGuide';
+import type { DefenseArchiveRepository } from '../defense-archive';
+import type { ToastState } from './useGameState';
 
-export function GameSession({ engine, onExit, onOpenArchive, onTutorialResolved }: {
+export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onTutorialResolved }: {
   engine: GameEngine;
+  defenseArchive: DefenseArchiveRepository;
   onExit: () => void;
   onOpenArchive: (type: EnemyType) => void;
   onTutorialResolved: () => void;
 }) {
+  const { t } = useTranslation();
   const { view, toast } = useGameState(engine);
+  const [defenseArchiveToast, setDefenseArchiveToast] = useState<ToastState | null>(null);
   const { game: snapshot, selectedTower: tower } = view;
+  useEffect(() => engine.subscribe((event) => {
+    const operation = event.type === 'defense-archive-fact'
+      ? defenseArchive.recordFact(event.fact, { standard: engine.mode === 'standard', tutorial: engine.tutorialEnabled })
+      : event.type === 'defense-completed' ? defenseArchive.recordDefense(event.report) : null;
+    if (!operation) return;
+    void operation.then((unlocked) => {
+      if (unlocked.length === 0) return;
+      const first = t(`defenseArchive.achievements.${unlocked[0]}.name`);
+      setDefenseArchiveToast({
+        message: unlocked.length === 1
+          ? t('defenseArchive.achievementUnlocked', { name: first })
+          : t('defenseArchive.achievementsUnlocked', { name: first, count: unlocked.length }),
+        tone: 'good',
+        nonce: Date.now(),
+      });
+    }).catch(() => setDefenseArchiveToast({ message: t('defenseArchive.writeError'), tone: 'warn', nonce: Date.now() }));
+  }), [defenseArchive, engine, t]);
+  useEffect(() => {
+    if (!defenseArchiveToast) return;
+    const timeout = window.setTimeout(() => setDefenseArchiveToast(null), 2_700);
+    return () => window.clearTimeout(timeout);
+  }, [defenseArchiveToast]);
   return <div className="app-shell">
     <div className="game-console">
       <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} />
@@ -31,7 +60,7 @@ export function GameSession({ engine, onExit, onOpenArchive, onTutorialResolved 
         </Battlefield>
       </div>
     </div>
-    <Toast toast={toast} />
+    <Toast toast={defenseArchiveToast ?? toast} />
     <TutorialGuide engine={engine} view={view} onResolved={onTutorialResolved} />
   </div>;
 }

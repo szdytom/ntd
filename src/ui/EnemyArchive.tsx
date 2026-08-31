@@ -5,7 +5,7 @@ import { ENEMIES, LEVELS } from '../game/config';
 import type { EnemyType } from '../game/types';
 import { enemyName, levelName } from '../i18n/presentation';
 import { EnemySpecimen } from './EnemySpecimen';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsPanel } from './SettingsPanel';
 import { Tag } from './Tag';
 import './EnemyArchive.css';
 
@@ -114,7 +114,7 @@ export function EnemyArchive({ onBack, initialType = 'spark', backToBattlefield 
       <div>
         <h1>{t('enemyArchive.title')}</h1>
       </div>
-      <LanguageSwitcher />
+      <SettingsPanel />
       <div className="enemy-archive-seal" aria-hidden="true"><i /><b>{String(selectedIndex + 1).padStart(2, '0')}</b><span /></div>
     </header>
 

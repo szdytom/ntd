@@ -8,5 +8,6 @@ These pages describe established behavior. They explain why the current implemen
 - [Cross-cutting combat mechanics](combat-runtime.md): target-effect propagation, shield and armor ordering, the persistent spatial index, and configured enemy traits.
 - [Route graphs](route-graphs.md): rooted map trees, route resolution, multi-lane spawning, and cross-branch ordering.
 - [Rendering pipeline](rendering-pipeline.md): scene composition, effect layers, emissive rendering, WebGL post-processing, and fallback.
+- [Defense archive](defense-archive.md): combat telemetry, IndexedDB records, aggregate statistics, and achievement eligibility.
 
 For change recipes and verification checklists, use the [guides](../guides/README.md).

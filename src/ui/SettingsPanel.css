@@ -1,10 +1,10 @@
-.language-switcher {
+.settings-panel {
   position: relative;
   display: grid;
   place-items: center;
 }
 
-.language-trigger {
+.settings-trigger {
   display: grid;
   width: 46px;
   height: 46px;
@@ -19,11 +19,11 @@
   transition: color .14s ease, background .14s ease, transform .14s ease;
 }
 
-.language-trigger:hover,
-.language-trigger[aria-expanded='true'] { color: #fff; background: var(--purple, #6558e8); }
-.language-trigger:disabled,
-.language-trigger:disabled:hover { color: #8c8793; background: #e7e4ea; cursor: not-allowed; }
-.language-trigger:active { transform: translateY(1px); }
+.settings-trigger:hover,
+.settings-trigger[aria-expanded='true'] { color: #fff; background: var(--purple, #6558e8); }
+.settings-trigger:disabled,
+.settings-trigger:disabled:hover { color: #8c8793; background: #e7e4ea; cursor: not-allowed; }
+.settings-trigger:active { transform: translateY(1px); }
 .settings-glyph { font-family: var(--font-sans); font-size: 21px; font-weight: 800; line-height: 1; }
 
 .settings-backdrop {
@@ -98,29 +98,47 @@
 .language-options button b { font-size: 13px; }
 .language-options button i { color: var(--purple, #6558e8); font-size: 15px; font-style: normal; font-weight: 900; text-align: center; }
 
-.enemy-archive-head > .language-switcher .language-trigger { border-radius: 0; }
+.settings-storage-section { border-top: 2px solid var(--ink, #252134); background: #fff; }
+.settings-storage-action { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
+.settings-storage-action button {
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink, #252134);
+  color: var(--ink, #252134);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 850;
+  text-align: left;
+}
+.settings-storage-action button:hover { background: color-mix(in srgb, #ff637a 18%, #fff); }
+.settings-storage-action button.armed { color: #fff; background: #d9284e; }
+.settings-storage-action button:disabled { cursor: default; opacity: .72; }
+.settings-storage-action > span { min-height: 25px; padding-top: 6px; color: #a31c3b; font-size: 11px; line-height: 1.25; }
 
-.level-select-utilities > .language-switcher .language-trigger {
+.enemy-archive-head > .settings-panel .settings-trigger { border-radius: 0; }
+
+.level-select-utilities > .settings-panel .settings-trigger {
   width: 40px;
   height: 40px;
   border-radius: 0;
 }
 
-.enemy-archive-head > .language-switcher {
+.enemy-archive-head > .settings-panel {
   grid-column: 3;
   grid-row: 1;
   border-right: 2px solid var(--archive-ink, #252134);
   background: #fff;
 }
 
-.top-actions > .language-switcher .language-trigger { width: 100%; height: 100%; border: 0; border-radius: 0; }
+.top-actions > .settings-panel .settings-trigger { width: 100%; height: 100%; border: 0; border-radius: 0; }
 
 @media (max-width: 620px) {
-  .top-actions > .language-switcher .language-trigger { width: 100%; height: 100%; border-radius: 0; }
+  .top-actions > .settings-panel .settings-trigger { width: 100%; height: 100%; border-radius: 0; }
   .settings-backdrop { padding: 10px; }
   .settings-dialog > header { min-height: 62px; padding-left: 15px; }
   .settings-dialog h2 { font-size: 19px; }
   .settings-section { grid-template-columns: 1fr; gap: 8px; padding: 13px; }
   .settings-section-copy { padding: 3px 1px; }
   .language-options button { min-height: 60px; }
+  .settings-storage-action > span { min-height: 20px; }
 }

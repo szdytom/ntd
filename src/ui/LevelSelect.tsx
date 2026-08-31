@@ -8,7 +8,7 @@ import type { CreativeSetup, DifficultyId, EnemyType, GameMode } from '../game/t
 import { difficultyName, levelDescription, levelName } from '../i18n/presentation';
 import { CalibrationSlider } from './CalibrationSlider';
 import { LevelMap } from './LevelMap';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsPanel } from './SettingsPanel';
 import { Tag } from './Tag';
 import './LevelSelect.css';
 
@@ -73,9 +73,10 @@ export interface LevelSelection {
   difficultyId: DifficultyId;
 }
 
-export function LevelSelect({ onStart, onOpenArchive }: {
+export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive }: {
   onStart: (selection: LevelSelection) => void;
   onOpenArchive: () => void;
+  onOpenDefenseArchive: () => void;
 }) {
   const { t } = useTranslation();
   const [rememberedSelection] = useState(readRememberedSelection);
@@ -217,13 +218,17 @@ export function LevelSelect({ onStart, onOpenArchive }: {
             <span>{t('levelSelect.sectorHint')}</span>
           </div>
           <div className="level-select-utilities">
+            <button className="defense-archive-entry" onClick={onOpenDefenseArchive} aria-label={t('defenseArchive.entryAria')}>
+              <span className="defense-archive-entry-marks" aria-hidden="true"><i /><i /><i /><i /></span>
+              <strong>{t('defenseArchive.entry')}</strong>
+            </button>
             <button className="enemy-archive-entry" onClick={onOpenArchive} aria-label={t('enemyArchive.entryAria')}>
               <span className="enemy-archive-entry-spectrum" aria-hidden="true">
                 {ARCHIVE_ENEMY_TYPES.map((type) => <i key={type} style={{ '--signal-color': ENEMIES[type].color } as CSSProperties} />)}
               </span>
               <strong>{t('enemyArchive.entry')}</strong>
             </button>
-            <LanguageSwitcher />
+            <SettingsPanel />
           </div>
         </header>
         <div className="level-carousel">

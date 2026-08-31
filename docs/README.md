@@ -28,6 +28,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | [Cross-cutting combat mechanics](internals/combat-runtime.md) | Target-effect propagation, damage ordering, spatial queries, and configured enemy traits |
 | [Route graphs](internals/route-graphs.md) | Multi-entrance paths and per-enemy route sampling |
 | [Rendering pipeline](internals/rendering-pipeline.md) | Canvas layers, effects, bloom, distortion, and fallback |
+| [Defense archive](internals/defense-archive.md) | Defense telemetry, local persistence, statistics, and achievement rules |
 
 ## Modification guides
 

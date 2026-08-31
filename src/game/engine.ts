@@ -35,6 +35,8 @@ import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
 import type {
   CreativeSetup,
+  DefenseCompletedReport,
+  DefenseWaveReport,
   DifficultyId,
   Enemy,
   EnemyType,
@@ -43,6 +45,7 @@ import type {
   GameMode,
   GameSnapshot,
   GameViewSnapshot,
+  DefenseArchiveFact,
   ModuleId,
   Point,
   Projectile,
@@ -53,6 +56,8 @@ import type {
   SplitRift,
   TargetingMode,
   Tower,
+  EnemyOutcomeTally,
+  EnemyVariant,
 } from './types';
 
 type Listener = (event: GameEvent) => void;
@@ -105,6 +110,16 @@ const TERRAIN_TRIGGER_CROSSING_TICKS = 'terrain-trigger:crossing-ticks';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
   ...Object.values(ENEMIES).map((enemy) => Math.max(enemy.radius, enemy.shield?.radius ?? 0)),
 );
+const emptyEnemyTally = (): EnemyOutcomeTally => ({
+  spawned: 0,
+  defeated: 0,
+  leaked: 0,
+  remaining: 0,
+  queued: 0,
+  coreDamage: 0,
+});
+const createRunId = (): string => globalThis.crypto?.randomUUID?.()
+  ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
 const normalizeCreativeCoreStability = (value: number): number => Number.isFinite(value)
   ? Math.max(1, Math.min(Number.MAX_SAFE_INTEGER, Math.round(value)))
@@ -143,6 +158,7 @@ export class GameEngine {
   speed = 1;
   paused = false;
   elapsed = 0;
+  private combatElapsed = 0;
   visualElapsed = 0;
   pointer: Point | null = null;
 
@@ -175,6 +191,11 @@ export class GameEngine {
   private previousDraftChoices = new Set<ModuleId>();
   private draftsWithoutRare = 0;
   private creativeSetup: CreativeSetup;
+  private runId = createRunId();
+  private runStartedAt = Date.now();
+  private defenseCompleted = false;
+  private readonly defenseArchiveFacts = new Set<DefenseArchiveFact>();
+  private readonly waveOutcomes = new Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>();
   private readonly combatApi: ModuleCombatApi = {
     // Unsorted, non-allocating: consumers must not retain the returned array.
     nearbyEnemies: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
@@ -280,6 +301,115 @@ export class GameEngine {
 
   private emit(event: GameEvent): void {
     this.listeners.forEach((listener) => listener(event));
+  }
+
+  private emitDefenseArchiveFact(fact: DefenseArchiveFact): void {
+    if (this.defenseArchiveFacts.has(fact)) return;
+    this.defenseArchiveFacts.add(fact);
+    this.emit({ type: 'defense-archive-fact', fact });
+  }
+
+  private enemyVariant(enemy: Pick<Enemy, 'type' | 'splitGeneration'>): EnemyVariant {
+    return enemy.type === 'fracture' && enemy.splitGeneration > 0 ? 'fracture-fragment' : enemy.type;
+  }
+
+  private outcomeFor(wave: number, variant: EnemyVariant): EnemyOutcomeTally {
+    let outcomes = this.waveOutcomes.get(wave);
+    if (!outcomes) {
+      outcomes = {};
+      this.waveOutcomes.set(wave, outcomes);
+    }
+    const existing = outcomes[variant];
+    if (existing) return existing;
+    const created = emptyEnemyTally();
+    outcomes[variant] = created;
+    return created;
+  }
+
+  private inspectTowerAchievements(tower: Tower): void {
+    const definitions = tower.slots
+      .filter((moduleId): moduleId is ModuleId => moduleId !== null)
+      .map((moduleId) => this.modules.get(moduleId))
+      .filter((definition) => definition !== undefined);
+    const program = this.modules.compile(tower.slots);
+    if (program.shots.length > 0 && program.wraps > 0) this.emitDefenseArchiveFact('wrapped-program-configured');
+    if (
+      tower.slots.length >= 5
+      && definitions.length === tower.slots.length
+      && definitions.every((definition) => definition.meta.rarity === 'legendary')
+    ) this.emitDefenseArchiveFact('legendary-tower-configured');
+    if (new Set(definitions.map((definition) => definition.kind)).size === 5) {
+      this.emitDefenseArchiveFact('five-kinds-configured');
+    }
+  }
+
+  private completedDefenseReport(): DefenseCompletedReport {
+    const waves = new Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>();
+    for (const [wave, outcomes] of this.waveOutcomes) {
+      waves.set(wave, Object.fromEntries(Object.entries(outcomes).map(([variant, tally]) => [
+        variant,
+        { ...tally! },
+      ])) as Partial<Record<EnemyVariant, EnemyOutcomeTally>>);
+    }
+    for (const enemy of this.enemies) {
+      if (!enemy.dead) this.outcomeForReport(waves, this.wave, this.enemyVariant(enemy)).remaining += 1;
+    }
+    for (const lane of this.spawnLanes) {
+      for (const type of lane.queue) this.outcomeForReport(waves, this.wave, type).queued += 1;
+    }
+    const waveReports: DefenseWaveReport[] = [...waves.entries()]
+      .sort(([left], [right]) => left - right)
+      .map(([wave, enemies]) => ({ wave, enemies }));
+    return {
+      runId: this.runId,
+      startedAt: this.runStartedAt,
+      endedAt: Date.now(),
+      simulationSeconds: this.combatElapsed,
+      result: this.status === 'won' ? 'won' : 'lost',
+      mode: this.mode,
+      tutorial: this.tutorialEnabled,
+      levelId: this.level.id,
+      difficultyId: this.difficulty.id,
+      waveReached: this.wave,
+      maxWaves: this.maxWaves,
+      score: this.score,
+      core: this.core,
+      maxCore: this.maxCore,
+      shards: this.shards,
+      waves: waveReports,
+      inventory: this.modules.list()
+        .map((definition) => ({ moduleId: definition.id, count: this.getModuleCount(definition.id) }))
+        .filter((entry) => entry.count > 0),
+      towers: this.towers.map((tower) => ({
+        padIndex: tower.padIndex,
+        level: tower.level,
+        targeting: tower.targeting,
+        slots: [...tower.slots],
+      })),
+    };
+  }
+
+  private outcomeForReport(
+    waves: Map<number, Partial<Record<EnemyVariant, EnemyOutcomeTally>>>,
+    wave: number,
+    variant: EnemyVariant,
+  ): EnemyOutcomeTally {
+    let outcomes = waves.get(wave);
+    if (!outcomes) {
+      outcomes = {};
+      waves.set(wave, outcomes);
+    }
+    const existing = outcomes[variant];
+    if (existing) return existing;
+    const created = emptyEnemyTally();
+    outcomes[variant] = created;
+    return created;
+  }
+
+  private completeDefense(): void {
+    if (this.defenseCompleted || (this.status !== 'won' && this.status !== 'lost')) return;
+    this.defenseCompleted = true;
+    this.emit({ type: 'defense-completed', report: this.completedDefenseReport() });
   }
 
   getSnapshot(): GameSnapshot {
@@ -469,7 +599,9 @@ export class GameEngine {
   setTargeting(mode: TargetingMode): void {
     const tower = this.getSelectedTower();
     if (!tower) return;
+    const changed = tower.targeting !== mode;
     tower.targeting = mode;
+    if (changed && mode !== 'core-nearest') this.emitDefenseArchiveFact('targeting-mode-configured');
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -498,6 +630,7 @@ export class GameEngine {
     tower.cooldown = Math.max(0.55, Math.round(tower.cooldown * 0.96 * 100) / 100);
     tower.range += 10;
     if (tower.level === 3 || tower.level === 5) tower.slots.push(null);
+    if (tower.level === MAX_TOWER_LEVEL) this.emitDefenseArchiveFact('tower-maxed');
     this.effects.spawnMany(['game:tower-build-ring', 'game:tower-build-sparks'], {
       position: tower.position,
       color: this.getTowerColor(tower),
@@ -525,6 +658,7 @@ export class GameEngine {
     if (!entrance) return;
     if (!this.level.graph.entrances.includes(entrance)) throw new Error(`Unknown route entrance: ${entrance}`);
     this.spawnEnemy(type, entrance);
+    this.emitDefenseArchiveFact('creative-signal-spawned');
     this.emitState();
   }
 
@@ -596,6 +730,7 @@ export class GameEngine {
     const tower = this.buildTower(padIndex);
     this.towers.push(tower);
     this.selectedTowerId = tower.id;
+    if (this.towers.length >= 2) this.emitDefenseArchiveFact('second-tower-built');
     const color = this.getTowerColor(tower);
     this.effects.spawnMany(['game:tower-build-ring', 'game:tower-build-sparks'], { position: tower.position, color });
     this.emit({
@@ -625,6 +760,7 @@ export class GameEngine {
       }
     }
     tower.slots[slotIndex] = moduleId;
+    this.inspectTowerAchievements(tower);
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -645,6 +781,8 @@ export class GameEngine {
     const toModule = tower.slots[to] ?? null;
     tower.slots[from] = toModule;
     tower.slots[to] = fromModule;
+    if (fromModule !== toModule) this.emitDefenseArchiveFact('module-order-changed');
+    this.inspectTowerAchievements(tower);
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -710,9 +848,15 @@ export class GameEngine {
       : Math.round(this.level.startingShards * this.difficulty.economy);
     this.score = 0;
     this.elapsed = 0;
+    this.combatElapsed = 0;
     this.visualElapsed = 0;
     this.simulationAccumulator = 0;
     this.paused = false;
+    this.runId = createRunId();
+    this.runStartedAt = Date.now();
+    this.defenseCompleted = false;
+    this.defenseArchiveFacts.clear();
+    this.waveOutcomes.clear();
     this.draft = null;
     this.previousDraftChoices.clear();
     this.draftsWithoutRare = 0;
@@ -756,7 +900,9 @@ export class GameEngine {
   }
 
   private stepSimulation(delta: number): void {
+    const combatActive = this.status === 'wave';
     this.elapsed += delta;
+    if (combatActive) this.combatElapsed += delta;
     this.updateVisuals(delta);
     this.effects.update(delta);
 
@@ -823,10 +969,12 @@ export class GameEngine {
       dead: false,
     };
     this.enemies.push(enemy);
+    this.outcomeFor(this.wave, this.enemyVariant(enemy)).spawned += 1;
     this.enemyIndex.update(enemy);
   }
 
   private updateEnemies(delta: number): void {
+    let lostThisStep = false;
     for (const enemy of this.enemies) {
       if (enemy.dead) {
         this.enemyIndex.remove(enemy.id);
@@ -864,6 +1012,9 @@ export class GameEngine {
       if (enemy.distance >= route.length) {
         enemy.dead = true;
         const damage = enemy.coreDamage;
+        const outcome = this.outcomeFor(this.wave, this.enemyVariant(enemy));
+        outcome.leaked += 1;
+        outcome.coreDamage += damage;
         this.core = Math.max(0, this.core - damage);
         this.effects.spawn('game:core-hit', {
           position: this.getCorePosition(),
@@ -872,10 +1023,14 @@ export class GameEngine {
         this.emit({ type: 'toast', message: i18n.t('toast.coreDamaged', { damage }), tone: 'warn' });
         if (this.core <= 0) {
           this.status = 'lost';
-          this.emitState();
+          lostThisStep = true;
         }
       }
       this.enemyIndex.update(enemy);
+    }
+    if (lostThisStep) {
+      this.completeDefense();
+      this.emitState();
     }
   }
 
@@ -966,6 +1121,9 @@ export class GameEngine {
     if (!isStatic && !target) return;
     const launchOrigin = origin ?? tower.position;
     const triggeredCast = origin !== undefined;
+    if (blueprint.modules.some((moduleId) => this.modules.get(moduleId)?.kind === 'trail')) {
+      this.emitDefenseArchiveFact('trail-module-fired');
+    }
     const spawnDistance = triggeredCast ? 4 : 27;
     const interception = target && !isStatic && blueprint.aim !== 'direct'
       ? findPathInterception({
@@ -1656,6 +1814,7 @@ export class GameEngine {
     });
     if (enemy.hp <= 0) {
       enemy.dead = true;
+      this.outcomeFor(this.wave, this.enemyVariant(enemy)).defeated += 1;
       this.enemyIndex.remove(enemy.id);
       this.shards += enemy.reward;
       this.score += enemy.maxHp;
@@ -1734,6 +1893,7 @@ export class GameEngine {
         dead: false,
       };
       this.enemies.push(child);
+      this.outcomeFor(this.wave, this.enemyVariant(child)).spawned += 1;
       this.enemyIndex.update(child);
     }
   }
@@ -1887,6 +2047,7 @@ export class GameEngine {
     this.shards += bonus;
     if (this.wave >= this.maxWaves) {
       this.status = 'won';
+      this.completeDefense();
       this.emit({ type: 'toast', message: i18n.t('toast.victory'), tone: 'good' });
     } else if (this.mode === 'standard' && !this.tutorialEnabled) {
       this.beginModuleDraft(this.level.moduleDraft.wavePicks);

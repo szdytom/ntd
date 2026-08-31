@@ -2,11 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { defaultLanguage, supportedLanguages, type SupportedLanguage } from '../i18n';
-import './LanguageSwitcher.css';
+import { defenseArchiveRepository as defaultDefenseArchiveRepository, type DefenseArchiveRepository } from '../defense-archive';
+import './SettingsPanel.css';
 
-export function LanguageSwitcher({ disabled = false }: { disabled?: boolean }) {
+export function SettingsPanel({
+  disabled = false,
+  defenseArchiveRepository = defaultDefenseArchiveRepository,
+  onDefenseArchiveCleared,
+}: {
+  disabled?: boolean;
+  defenseArchiveRepository?: DefenseArchiveRepository;
+  onDefenseArchiveCleared?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [clearState, setClearState] = useState<'idle' | 'armed' | 'clearing' | 'cleared' | 'error'>('idle');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const language = supportedLanguages.find((option) => option === i18n.resolvedLanguage) ?? defaultLanguage;
@@ -16,22 +26,46 @@ export function LanguageSwitcher({ disabled = false }: { disabled?: boolean }) {
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
       setOpen(false);
+      setClearState('idle');
       triggerRef.current?.focus();
     };
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [open]);
+  useEffect(() => {
+    if (clearState !== 'armed') return;
+    const timeout = window.setTimeout(() => setClearState('idle'), 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [clearState]);
+
+  const closeSettings = (): void => {
+    setOpen(false);
+    setClearState('idle');
+    triggerRef.current?.focus();
+  };
 
   const chooseLanguage = (option: SupportedLanguage): void => {
     void i18n.changeLanguage(option);
   };
 
+  const clearDefenseArchive = (): void => {
+    if (clearState !== 'armed') {
+      setClearState('armed');
+      return;
+    }
+    setClearState('clearing');
+    void defenseArchiveRepository.clearAll().then(() => {
+      setClearState('cleared');
+      onDefenseArchiveCleared?.();
+    }).catch(() => setClearState('error'));
+  };
+
   return (
-    <div className="language-switcher">
+    <div className="settings-panel">
       <button
         ref={triggerRef}
         type="button"
-        className="language-trigger"
+        className="settings-trigger"
         aria-label={t('settings.title')}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -42,15 +76,13 @@ export function LanguageSwitcher({ disabled = false }: { disabled?: boolean }) {
       </button>
       {open ? createPortal(<div className="settings-backdrop" onMouseDown={(event) => {
         if (event.target !== event.currentTarget) return;
-        setOpen(false);
-        triggerRef.current?.focus();
+        closeSettings();
       }}>
         <div ref={dialogRef} className="settings-dialog" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
           <header>
             <div><span className="settings-glyph" aria-hidden="true">⚙</span><h2>{t('settings.title')}</h2></div>
             <button type="button" className="settings-close" onClick={() => {
-              setOpen(false);
-              triggerRef.current?.focus();
+              closeSettings();
             }} aria-label={t('settings.close')}>×</button>
           </header>
           <section className="settings-section">
@@ -71,6 +103,25 @@ export function LanguageSwitcher({ disabled = false }: { disabled?: boolean }) {
                   <i aria-hidden="true">{option === language ? '✓' : ''}</i>
                 </button>
               ))}
+            </div>
+          </section>
+          <section className="settings-section settings-storage-section">
+            <div className="settings-section-copy">
+              <strong>{t('settings.defenseArchiveTitle')}</strong>
+              <span>{t('settings.defenseArchiveDescription')}</span>
+            </div>
+            <div className="settings-storage-action">
+              <button
+                type="button"
+                className={clearState === 'armed' ? 'armed' : ''}
+                disabled={clearState === 'clearing' || clearState === 'cleared'}
+                onClick={clearDefenseArchive}
+              >{t(clearState === 'armed' ? 'settings.clearDefenseArchiveAgain'
+                : clearState === 'clearing' ? 'settings.clearingDefenseArchive'
+                  : clearState === 'cleared' ? 'settings.defenseArchiveCleared'
+                    : 'defenseArchive.clear')}</button>
+              <span role="status" aria-live="polite">{clearState === 'armed' ? t('settings.clearDefenseArchiveWarning')
+                : clearState === 'error' ? t('settings.clearDefenseArchiveError') : ''}</span>
             </div>
           </section>
         </div>

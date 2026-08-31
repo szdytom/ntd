@@ -1,6 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsPanel } from './SettingsPanel';
 import './TutorialOffer.css';
 
 export function TutorialOffer({ onAccept, onDecline }: {
@@ -45,7 +45,7 @@ export function TutorialOffer({ onAccept, onDecline }: {
         aria-describedby="tutorial-offer-description"
         onKeyDown={keepFocusInDialog}
       >
-        <header><span>{t('tutorialOffer.eyebrow')}</span><LanguageSwitcher /></header>
+        <header><span>{t('tutorialOffer.eyebrow')}</span><SettingsPanel /></header>
         <div className="tutorial-offer-copy">
           <h2 id="tutorial-offer-title">{t('tutorialOffer.title')}</h2>
           <p id="tutorial-offer-description">{t('tutorialOffer.body')}</p>

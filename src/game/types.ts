@@ -294,6 +294,68 @@ export interface GameViewSnapshot {
   moduleInventory: Readonly<Record<ModuleId, ModuleInventorySnapshot>>;
 }
 
+export type EnemyVariant = EnemyType | 'fracture-fragment';
+
+export interface EnemyOutcomeTally {
+  spawned: number;
+  defeated: number;
+  leaked: number;
+  remaining: number;
+  queued: number;
+  coreDamage: number;
+}
+
+export interface DefenseWaveReport {
+  wave: number;
+  enemies: Readonly<Partial<Record<EnemyVariant, EnemyOutcomeTally>>>;
+}
+
+export interface DefenseTowerReport {
+  padIndex: number;
+  level: number;
+  targeting: TargetingMode;
+  slots: readonly (ModuleId | null)[];
+}
+
+export interface DefenseInventoryEntry {
+  moduleId: ModuleId;
+  count: number;
+}
+
+export interface DefenseCompletedReport {
+  runId: string;
+  startedAt: number;
+  endedAt: number;
+  simulationSeconds: number;
+  result: 'won' | 'lost';
+  mode: GameMode;
+  tutorial: boolean;
+  levelId: string;
+  difficultyId: DifficultyId;
+  waveReached: number;
+  maxWaves: number;
+  score: number;
+  core: number;
+  maxCore: number;
+  shards: number;
+  waves: readonly DefenseWaveReport[];
+  inventory: readonly DefenseInventoryEntry[];
+  towers: readonly DefenseTowerReport[];
+}
+
+export type DefenseArchiveFact =
+  | 'creative-signal-spawned'
+  | 'second-tower-built'
+  | 'module-order-changed'
+  | 'wrapped-program-configured'
+  | 'targeting-mode-configured'
+  | 'tower-maxed'
+  | 'trail-module-fired'
+  | 'legendary-tower-configured'
+  | 'five-kinds-configured';
+
 export type GameEvent =
   | { type: 'state'; snapshot: GameSnapshot }
-  | { type: 'toast'; message: string; tone?: 'info' | 'good' | 'warn' };
+  | { type: 'toast'; message: string; tone?: 'info' | 'good' | 'warn' }
+  | { type: 'defense-archive-fact'; fact: DefenseArchiveFact }
+  | { type: 'defense-completed'; report: DefenseCompletedReport };

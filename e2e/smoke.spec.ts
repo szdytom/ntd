@@ -227,6 +227,65 @@ test('signal compendium exposes every signal profile from its own entry', async 
   await expect(page.getByRole('region', { name: /\u9009\u62e9\u9632\u5fa1\u533a/ })).toBeVisible();
 });
 
+test('defense archive reads, filters, details, and clears IndexedDB records', async ({ page }) => {
+  await prepareReturningPlayer(page);
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('prism-bastion-defense-archive', 1);
+      request.onupgradeneeded = () => {
+        const defenses = request.result.createObjectStore('defenses', { keyPath: 'id' });
+        defenses.createIndex('endedAt', 'endedAt');
+        defenses.createIndex('result', 'result');
+        defenses.createIndex('levelId', 'levelId');
+        defenses.createIndex('difficultyId', 'difficultyId');
+        request.result.createObjectStore('achievementState', { keyPath: 'id' });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction('defenses', 'readwrite');
+      transaction.objectStore('defenses').add({
+        id: 'e2e-defense', schemaVersion: 1, runId: 'e2e-defense',
+        startedAt: 1_700_000_000_000, endedAt: 1_700_000_120_000, simulationSeconds: 210,
+        result: 'won', mode: 'standard', tutorial: false, levelId: 'white-prism', difficultyId: 'hard',
+        waveReached: 5, maxWaves: 5, score: 2345, core: 17, maxCore: 20, shards: 51,
+        waves: [{ wave: 1, enemies: { spark: { spawned: 5, defeated: 4, leaked: 1, remaining: 0, queued: 0, coreDamage: 3 } } }],
+        inventory: [{ moduleId: 'pulse', count: 3 }, { moduleId: 'frost', count: 2 }],
+        towers: [{ padIndex: 0, level: 3, targeting: 'hp-highest', slots: ['frost', 'pulse', null] }],
+        build: { commit: 'e2e1234', commitDate: '2026-08-31' },
+      });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  });
+
+  await page.getByRole('button', { name: 'Open defense archive' }).click();
+  await expect(page.getByRole('heading', { name: 'Defense Archive' })).toBeVisible();
+  await expect(page.getByText('Defense sectors')).toBeVisible();
+  await expect(page.locator('.defense-archive-metric.metric-1 strong')).toHaveText('1');
+  await page.getByRole('tab', { name: 'Defense sectors' }).click();
+  await expect(page.getByRole('heading', { name: 'White Prism' })).toBeVisible();
+  await expect(page.getByText('Wave performance')).toBeVisible();
+  await expect(page.getByText('Signal outcomes recorded only in this sector')).toBeVisible();
+  await page.getByRole('tab', { name: 'Achievements' }).click();
+  await page.getByRole('tab', { name: /Defense records/ }).click();
+  await page.getByLabel('Difficulty').selectOption('hard');
+  await page.getByRole('button', { name: /White Prism/ }).click();
+  await expect(page.getByText('e2e1234 · 2026-08-31')).toBeVisible();
+  await expect(page.getByText('Final module inventory')).toBeVisible();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settings = page.getByRole('dialog', { name: 'Settings' });
+  await settings.getByRole('button', { name: 'Clear archive' }).click();
+  await expect(page.getByRole('dialog', { name: 'Clear the defense archive?' })).toHaveCount(0);
+  await settings.getByRole('button', { name: 'Click again to clear everything' }).click();
+  await expect(settings.getByRole('button', { name: 'Defense archive cleared' })).toBeVisible();
+  await settings.getByRole('button', { name: 'Close settings' }).click();
+  await expect(page.getByRole('tab', { name: /Defense records/ })).toContainText('0');
+});
+
 test('creative economy and signal controls are independent from the workshop', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.goto('/');

@@ -5,9 +5,11 @@ import { DEFAULT_DIFFICULTY_ID } from '../game/difficulty';
 import { GameEngine } from '../game/engine';
 import type { EnemyType } from '../game/types';
 import { EnemyArchive } from './EnemyArchive';
+import { DefenseArchive } from './DefenseArchive';
 import { GameSession } from './GameSession';
 import { LevelSelect, type LevelSelection } from './LevelSelect';
 import { TutorialOffer } from './TutorialOffer';
+import { defenseArchiveRepository } from '../defense-archive';
 import './App.css';
 
 export const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
@@ -43,6 +45,7 @@ const tutorialSelection = (): LevelSelection => ({
 export function App() {
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const [archiveType, setArchiveType] = useState<EnemyType | null>(null);
+  const [defenseArchiveOpen, setDefenseArchiveOpen] = useState(false);
   const [tutorialOfferOpen, setTutorialOfferOpen] = useState(() => !tutorialOfferWasResolved());
   const start = (selection: LevelSelection): void => setEngine(new GameEngine(selection));
   const declineTutorial = (): void => {
@@ -54,17 +57,20 @@ export function App() {
     start(tutorialSelection());
   };
   return <>
-    {archiveType
+    {defenseArchiveOpen
+      ? <DefenseArchive repository={defenseArchiveRepository} onBack={() => setDefenseArchiveOpen(false)} />
+      : archiveType
       ? <EnemyArchive initialType={archiveType} onBack={() => setArchiveType(null)} backToBattlefield={Boolean(engine)} />
       : engine
         ? <GameSession
           engine={engine}
+          defenseArchive={defenseArchiveRepository}
           onExit={() => setEngine(null)}
           onOpenArchive={setArchiveType}
           onTutorialResolved={rememberTutorialOfferResolution}
         />
-        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType('spark')} />}
-    {tutorialOfferOpen && !engine && !archiveType
+        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType('spark')} onOpenDefenseArchive={() => setDefenseArchiveOpen(true)} />}
+    {tutorialOfferOpen && !engine && !archiveType && !defenseArchiveOpen
       ? <TutorialOffer onAccept={acceptTutorial} onDecline={declineTutorial} />
       : null}
   </>;

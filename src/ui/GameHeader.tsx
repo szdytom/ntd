@@ -1,7 +1,7 @@
 import type { GameEngine } from '../game/engine';
 import type { GameSnapshot } from '../game/types';
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import { SettingsPanel } from './SettingsPanel';
 import './GameHeader.css';
 
 export function GameHeader({
@@ -48,7 +48,7 @@ export function GameHeader({
       </div>
 
       <div className="top-actions">
-        <LanguageSwitcher disabled={drafting} />
+        <SettingsPanel disabled={drafting} />
         <div className="speed-switch" role="group" aria-label={t('header.speed')}>
           {[1, 2].map((speed) => (
             <button key={speed} disabled={drafting} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
