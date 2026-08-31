@@ -196,4 +196,25 @@ describe('expiration and terrain trigger modules', () => {
     engine.update(FIXED_SIMULATION_STEP);
     expect(staticPayloads(engine)).toHaveLength(1);
   });
+
+  it('releases on a collision before completing a centerline crossing', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 89 });
+    engine.spawnCreativeSignal('block');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a collision target');
+    placeSignal(engine, signal, 180);
+    const shot = engine.modules.compile(['terrain-trigger', 'pulse', 'proximity-mine']).shots[0];
+    if (!shot) throw new Error('Expected a terrain carrier');
+    const projectile = addProjectile(
+      engine,
+      shot,
+      { x: signal.position.x, y: signal.position.y - 90 },
+      { x: 0, y: shot.speed },
+    );
+
+    updateUntil(engine, () => projectile.life <= 0);
+
+    expect(projectile.triggered).toBe(true);
+    expect(staticPayloads(engine)).toHaveLength(1);
+  });
 });

@@ -1626,27 +1626,30 @@ export class GameEngine {
 
   private hitSignal(projectile: Projectile, signal: Signal): void {
     const damageDealt = this.combatApi.dealDamage(signal, projectile.damage, projectile.color, projectile);
-    if (damageDealt <= 0) {
-      projectile.life = 0;
-      return;
+    if (damageDealt > 0) {
+      this.modules.dispatch('onHit', projectile.modules, {
+        effects: this.effects,
+        position: { ...signal.position },
+        rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
+        color: projectile.color,
+        shot: projectile.shot,
+        projectile,
+        signal,
+        damageDealt,
+        combat: this.combatApi,
+      });
     }
-    this.modules.dispatch('onHit', projectile.modules, {
-      effects: this.effects,
-      position: { ...signal.position },
-      rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
-      color: projectile.color,
-      shot: projectile.shot,
-      projectile,
-      signal,
-      damageDealt,
-      combat: this.combatApi,
-    });
+    const triggerType = projectile.shot.trigger?.type;
     if (
-      (projectile.shot.trigger?.type === 'impact' || projectile.shot.trigger?.type === 'timer') &&
+      (triggerType === 'timer' || triggerType === 'terrain' || (triggerType === 'impact' && damageDealt > 0)) &&
       !projectile.triggered
     ) {
       projectile.triggered = true;
       this.triggerProjectile(projectile, signal);
+    }
+    if (damageDealt <= 0) {
+      projectile.life = 0;
+      return;
     }
     if (projectile.splash > 0) {
       const nearbyEnemies = this.signalIndex.collectWithinRadius(

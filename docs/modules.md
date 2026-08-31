@@ -70,6 +70,6 @@ Logic modules alter how the next projectile is scheduled, aimed, or wrapped.
 | `impact-trigger` | Impact Trigger | Releases payloads after a health-damaging collision |
 | `timer-trigger` | Timer Trigger | Releases payloads when its timer ends or it collides first |
 | `expiration-trigger` | Expiration Trigger | Releases payloads when the carrier reaches its normal end |
-| `terrain-trigger` | Terrain Trigger | Releases payloads after crossing a route centerline |
+| `terrain-trigger` | Terrain Trigger | Releases payloads after crossing a route centerline or colliding early |
 
 The [module compiler explanation](internals/module-compiler.md) describes how these categories interact. The [module extension guide](guides/adding-a-module.md) covers implementation work.
