@@ -1,6 +1,6 @@
 import { coneSparks } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
-import { drawProjectileGlow } from './render-utils';
+import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
 
@@ -13,6 +13,7 @@ const ArcboltIcon = createModuleIcon(<>
 </>);
 
 const color = '#4361ee';
+const dischargeCount = 5;
 const stats = {
   damage: 22,
   speed: 500,
@@ -21,6 +22,11 @@ const stats = {
   chainDamageMultiplier: 0.78,
   chainRadius: 118,
 } as const;
+
+function dischargeNoise(seed: number): number {
+  const value = Math.sin(seed) * 43_758.5453;
+  return value - Math.floor(value);
+}
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -79,14 +85,69 @@ export const arcboltModule: ModuleDefinition = {
   effects,
   compile: (context) => context.emitProjectile({ damage: stats.damage, speed: stats.speed, size: stats.size }),
   renderProjectile: ({ ctx, projectile }) => {
-    drawProjectileGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius, color);
+    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 5, color, 0.18);
     ctx.save();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
+    ctx.translate(projectile.position.x, projectile.position.y);
+
+    const dischargeFrame = Math.floor(projectile.age * 22);
+    for (let index = 0; index < dischargeCount; index += 1) {
+      const seed = projectile.id * 17.17 + dischargeFrame * 3.31 + index * 7.13;
+      const angle = index * Math.PI * 2 / dischargeCount + dischargeNoise(seed) * 0.9;
+      const length = 14 + dischargeNoise(seed + 1.7) * 10;
+      const bend = (dischargeNoise(seed + 3.1) - 0.5) * 7;
+      const startX = Math.cos(angle) * 4.5;
+      const startY = Math.sin(angle) * 4.5;
+      const middleX = Math.cos(angle) * length * 0.52 + Math.cos(angle + Math.PI / 2) * bend;
+      const middleY = Math.sin(angle) * length * 0.52 + Math.sin(angle + Math.PI / 2) * bend;
+      const endX = Math.cos(angle) * length;
+      const endY = Math.sin(angle) * length;
+
+      ctx.globalAlpha = index % 2 === 0 ? 0.95 : 0.78;
+      ctx.strokeStyle = index % 2 === 0 ? '#e9edff' : '#7890ff';
+      ctx.lineWidth = index % 2 === 0 ? 1.1 : 0.85;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(middleX, middleY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      if (index % 2 === dischargeFrame % 2) {
+        const branchAngle = angle + (dischargeNoise(seed + 5.3) > 0.5 ? 0.72 : -0.72);
+        const branchLength = 4 + dischargeNoise(seed + 7.9) * 3;
+        ctx.globalAlpha *= 0.72;
+        ctx.beginPath();
+        ctx.moveTo(middleX, middleY);
+        ctx.lineTo(
+          middleX + Math.cos(branchAngle) * branchLength,
+          middleY + Math.sin(branchAngle) * branchLength,
+        );
+        ctx.stroke();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.rotate(projectile.age * 3.5);
+    ctx.fillStyle = '#17215c';
+    ctx.strokeStyle = '#7890ff';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(projectile.position.x - 2, projectile.position.y - 5);
-    ctx.lineTo(projectile.position.x + 2, projectile.position.y - 1);
-    ctx.lineTo(projectile.position.x - 1, projectile.position.y + 5);
+    for (let index = 0; index < 6; index += 1) {
+      const angle = index * Math.PI / 3;
+      const x = Math.cos(angle) * 5.4;
+      const y = Math.sin(angle) * 5.4;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-2.2, -3.1);
+    ctx.lineTo(1.1, -0.6);
+    ctx.lineTo(-0.9, 3.1);
     ctx.stroke();
     ctx.restore();
   },
