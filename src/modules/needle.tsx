@@ -1,6 +1,5 @@
 import { coneSparks, shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
-import { drawGlow } from '../game/glow';
 import { projectileAngle } from './render-utils';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
@@ -50,20 +49,36 @@ export const needleModule: ModuleDefinition = {
   }),
   renderProjectile: ({ ctx, projectile }) => {
     const angle = projectileAngle(projectile.velocity);
-    drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 10, color, 0.9);
     ctx.save();
     ctx.translate(projectile.position.x, projectile.position.y);
     ctx.rotate(angle);
-    ctx.fillStyle = color;
+
+    ctx.fillStyle = '#86183f';
+    ctx.strokeStyle = '#ff6fa5';
+    ctx.lineWidth = 0.9;
     ctx.beginPath();
-    ctx.moveTo(11, 0);
-    ctx.lineTo(-4, -3.5);
-    ctx.lineTo(-1, 0);
-    ctx.lineTo(-4, 3.5);
+    ctx.moveTo(13, 0);
+    ctx.lineTo(-4.5, -3);
+    ctx.lineTo(-1.5, 0);
+    ctx.lineTo(-4.5, 3);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(1, -1, 6, 2);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(-3.3, -2.3);
+    ctx.lineTo(-1.5, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#fff0f6';
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(-2.3, -1.7);
+    ctx.lineTo(12, 0);
+    ctx.stroke();
     ctx.restore();
   },
   onCast: ({ effects: engine, position, rotation }) => engine.spawn('module:needle:muzzle', { position, rotation, color }),
