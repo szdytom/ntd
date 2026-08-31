@@ -8,6 +8,7 @@ import type {
   Point,
   Projectile,
   ShotBlueprint,
+  SpaceRiftVisual,
   StaticProjectileSpec,
   Tower,
   TriggerSpec,
@@ -141,6 +142,8 @@ export interface RiftOptions {
   modifierInterval: number;
   effectInterval: number;
   color: string;
+  initialPosition?: Point;
+  visual?: SpaceRiftVisual;
   jitter?: number;
   hitEffectId?: string;
 }
@@ -159,6 +162,7 @@ export interface ModuleDefinition {
   readonly meta: ModuleMeta;
   readonly effects?: readonly EffectDefinition[];
   readonly targetEffect?: ModuleTargetEffect;
+  readonly hideProjectile?: boolean;
   compile(context: ModuleCompileContext): void;
   renderProjectile?(context: ProjectileRenderContext): void;
   renderProjectileBloom?(context: ProjectileRenderContext): void;

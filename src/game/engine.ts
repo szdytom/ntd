@@ -1289,7 +1289,7 @@ export class GameEngine {
             this.combatApi.displace(signal, displacement);
           }
         }
-        if (projectile.age >= config.armTime && projectile.triggerCooldown <= 0) {
+        if (config.maxTriggers > 0 && projectile.age >= config.armTime && projectile.triggerCooldown <= 0) {
           const target = this.signalIndex.findNearestWithinRadius(projectile.position, config.triggerRadius);
           if (target) {
             projectile.triggerCooldown = config.cooldown;
@@ -1425,7 +1425,7 @@ export class GameEngine {
     const key = `${source.id}:${localKey}`;
     let rift = this.spaceRiftByKey.get(key);
     if (!rift) {
-      const start = source.trail[0] ?? source.position;
+      const start = options.initialPosition ?? source.trail[0] ?? source.position;
       rift = {
         id: this.nextId++,
         key,
@@ -1452,6 +1452,12 @@ export class GameEngine {
     rift.effectInterval = Math.max(FIXED_SIMULATION_STEP, options.effectInterval);
     rift.duration = options.duration;
     rift.remaining = options.duration;
+    if (options.visual) {
+      rift.visual = {
+        ...options.visual,
+        center: { ...options.visual.center },
+      };
+    }
     const nextPoint = this.offsetRiftPoint(source, position, options.jitter ?? 0, rift.points.length);
     const last = rift.points[rift.points.length - 1];
     if (last && Math.hypot(nextPoint.x - last.x, nextPoint.y - last.y) < 0.25) return;

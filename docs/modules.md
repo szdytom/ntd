@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 35 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 36 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -24,6 +24,7 @@ Static payloads are deployed at a trigger position. They cannot be cast as root 
 | ID | Display name | Role |
 | --- | --- | --- |
 | `proximity-mine` | Hex Proximity Mine | Arms, waits for a nearby signal, and detonates |
+| `rift-barrier` | Rift Barrier | Forms four persistent spatial rifts in a hollow diamond |
 | `tesla-node` | Tesla Sentry | Repeatedly shocks nearby targets |
 | `ember-field` | Ember Scorch Field | Maintains a low-cost burning area |
 | `toxic-cloud` | Emerald Toxic Cloud | Maintains a corrosive area |

@@ -175,6 +175,12 @@ export interface SplitRift {
   duration: number;
 }
 
+export interface SpaceRiftVisual {
+  type: 'diamond';
+  center: Point;
+  radius: number;
+}
+
 export interface SpaceRift {
   id: number;
   key: string;
@@ -189,6 +195,7 @@ export interface SpaceRift {
   contacts: Map<number, SpaceRiftContact>;
   remaining: number;
   duration: number;
+  visual?: SpaceRiftVisual;
   hitEffectId?: string;
 }
 

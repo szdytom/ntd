@@ -17,6 +17,7 @@ import { needleModule } from './needle';
 import { novaModule } from './nova';
 import { overdriveModule } from './overdrive';
 import { resonantTrailModule } from './resonant-trail';
+import { riftBarrierModule } from './rift-barrier';
 import { riftTrailModule } from './rift-trail';
 import { pulseModule } from './pulse';
 import { proximityMineModule } from './proximity-mine';
@@ -64,6 +65,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(emergencyBatteryModule)
     .register(reclaimCircuitModule)
     .register(proximityMineModule)
+    .register(riftBarrierModule)
     .register(singularityModule)
     .register(teslaNodeModule)
     .register(emberFieldModule)

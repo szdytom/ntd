@@ -87,7 +87,9 @@ export class ModuleRegistry {
 
   renderProjectile(moduleIds: readonly ModuleId[], context: ProjectileRenderContext): void {
     const source = context.projectile.shot.source;
-    this.definitions.get(source)?.renderProjectile?.(context);
+    const sourceDefinition = this.definitions.get(source);
+    if (sourceDefinition?.hideProjectile) return;
+    sourceDefinition?.renderProjectile?.(context);
     for (const id of moduleIds) {
       const definition = this.definitions.get(id);
       if (id !== source && definition && this.isEffectiveForShot(definition, source)) {
@@ -99,7 +101,9 @@ export class ModuleRegistry {
   renderProjectileBloom(moduleIds: readonly ModuleId[], context: ProjectileRenderContext): boolean {
     let rendered = false;
     const source = context.projectile.shot.source;
-    const sourceRenderer = this.definitions.get(source)?.renderProjectileBloom;
+    const sourceDefinition = this.definitions.get(source);
+    if (sourceDefinition?.hideProjectile) return true;
+    const sourceRenderer = sourceDefinition?.renderProjectileBloom;
     if (sourceRenderer) {
       sourceRenderer(context);
       rendered = true;

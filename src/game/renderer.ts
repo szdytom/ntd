@@ -12,6 +12,7 @@ import i18n from '../i18n';
 import { DEFAULT_SIGNAL_ID, getSignalCapability, signalRegistry } from '../signals';
 import { WORLD } from './config';
 import { clamp, distanceSquared, seededNoise } from './math';
+import { resolveDiamondRiftRadii } from './rift-visuals';
 import { drawSignalBody, drawSignalShield, hexToRgb, traceRegularPolygon } from '../signals/visuals/canvas';
 import {
   buildSuppressionLinkPoints,
@@ -64,6 +65,7 @@ export class GameRenderer {
   private readonly riftLeftY: number[] = [];
   private readonly riftRightX: number[] = [];
   private readonly riftRightY: number[] = [];
+  private readonly drawnDiamondRiftSources = new Set<number>();
   private readonly shieldDistortions: ShieldDistortion[] = [];
   private readonly shieldDistortionPool: ShieldDistortion[] = [];
   private readonly shieldDistortionColors = new Map<string, ShieldDistortion['color']>();
@@ -447,10 +449,17 @@ export class GameRenderer {
       bloomCtx.lineCap = 'butt';
       bloomCtx.lineJoin = 'miter';
     }
+    this.drawnDiamondRiftSources.clear();
     for (const rift of this.engine.spaceRifts) {
       if (rift.points.length < 2) continue;
       const collapse = rift.source.life > 0 ? 1 : clamp(rift.remaining / RIFT_COLLAPSE_DURATION, 0, 1);
       if (collapse <= 0) continue;
+      if (rift.visual?.type === 'diamond') {
+        if (this.drawnDiamondRiftSources.has(rift.source.id)) continue;
+        this.drawnDiamondRiftSources.add(rift.source.id);
+        this.drawDiamondRiftEdges(rift, collapse, bloomCtx);
+        continue;
+      }
       const pointCount = this.buildRiftEdges(rift, time, collapse);
       this.drawRiftEjectionParticles(rift, time, collapse, bloomCtx);
 
@@ -511,10 +520,24 @@ export class GameRenderer {
       riftMaskCtx.save();
       riftMaskCtx.fillStyle = '#ffffff';
     }
+    this.drawnDiamondRiftSources.clear();
     for (const rift of this.engine.spaceRifts) {
       if (rift.points.length < 2) continue;
       const collapse = rift.source.life > 0 ? 1 : clamp(rift.remaining / RIFT_COLLAPSE_DURATION, 0, 1);
       if (collapse <= 0) continue;
+      if (rift.visual?.type === 'diamond') {
+        if (this.drawnDiamondRiftSources.has(rift.source.id)) continue;
+        this.drawnDiamondRiftSources.add(rift.source.id);
+        this.traceDiamondRiftInterior(this.ctx, rift, collapse);
+        this.ctx.fill();
+        if (!bloomCtx) continue;
+        this.traceDiamondRiftInterior(bloomCtx, rift, collapse);
+        bloomCtx.fill();
+        if (!riftMaskCtx) continue;
+        this.traceDiamondRiftInterior(riftMaskCtx, rift, collapse);
+        riftMaskCtx.fill();
+        continue;
+      }
       const pointCount = this.buildRiftEdges(rift, time, collapse);
 
       this.ctx.globalAlpha = 0.96;
@@ -534,6 +557,81 @@ export class GameRenderer {
     this.ctx.restore();
     if (bloomCtx) bloomCtx.restore();
     if (riftMaskCtx) riftMaskCtx.restore();
+  }
+
+  private drawDiamondRiftEdges(
+    rift: SpaceRift,
+    collapse: number,
+    bloomCtx: CanvasRenderingContext2D | null,
+  ): void {
+    this.ctx.globalAlpha = 0.24;
+    this.ctx.strokeStyle = rift.color;
+    this.ctx.lineWidth = 7;
+    this.traceDiamondRiftEdges(this.ctx, rift, collapse);
+    this.ctx.globalAlpha = 0.84;
+    this.ctx.strokeStyle = '#d9b8f4';
+    this.ctx.lineWidth = 3.1;
+    this.traceDiamondRiftEdges(this.ctx, rift, collapse);
+    this.ctx.globalAlpha = 0.98;
+    this.ctx.strokeStyle = '#ffffff';
+    this.ctx.lineWidth = 1.6;
+    this.traceDiamondRiftEdges(this.ctx, rift, collapse);
+
+    if (!bloomCtx) return;
+    bloomCtx.globalAlpha = 0.4;
+    bloomCtx.strokeStyle = rift.color;
+    bloomCtx.lineWidth = 5.5;
+    this.traceDiamondRiftEdges(bloomCtx, rift, collapse);
+    bloomCtx.globalAlpha = 0.86;
+    bloomCtx.strokeStyle = '#f3ddff';
+    bloomCtx.lineWidth = 1.2;
+    this.traceDiamondRiftEdges(bloomCtx, rift, collapse);
+  }
+
+  private traceDiamondRiftEdges(
+    ctx: CanvasRenderingContext2D,
+    rift: SpaceRift,
+    collapse: number,
+  ): void {
+    const visual = rift.visual;
+    if (visual?.type !== 'diamond') return;
+    const radii = resolveDiamondRiftRadii(visual.radius, rift.width, collapse);
+    ctx.beginPath();
+    this.addDiamondPath(ctx, visual.center, radii.outer, false);
+    this.addDiamondPath(ctx, visual.center, radii.inner, true);
+    ctx.stroke();
+  }
+
+  private traceDiamondRiftInterior(
+    ctx: CanvasRenderingContext2D,
+    rift: SpaceRift,
+    collapse: number,
+  ): void {
+    const visual = rift.visual;
+    if (visual?.type !== 'diamond') return;
+    const radii = resolveDiamondRiftRadii(visual.radius, rift.width, collapse);
+    ctx.beginPath();
+    this.addDiamondPath(ctx, visual.center, radii.outer, false);
+    this.addDiamondPath(ctx, visual.center, radii.inner, true);
+  }
+
+  private addDiamondPath(
+    ctx: CanvasRenderingContext2D,
+    center: Point,
+    radius: number,
+    reverse: boolean,
+  ): void {
+    ctx.moveTo(center.x, center.y - radius);
+    if (reverse) {
+      ctx.lineTo(center.x - radius, center.y);
+      ctx.lineTo(center.x, center.y + radius);
+      ctx.lineTo(center.x + radius, center.y);
+    } else {
+      ctx.lineTo(center.x + radius, center.y);
+      ctx.lineTo(center.x, center.y + radius);
+      ctx.lineTo(center.x - radius, center.y);
+    }
+    ctx.closePath();
   }
 
   private buildRiftEdges(rift: SpaceRift, time: number, collapse: number): number {
