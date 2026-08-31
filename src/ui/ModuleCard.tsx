@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react';
+import { useRef, type DragEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ModuleDefinition } from '../modules';
 import { moduleShortName, rarityLabel } from '../i18n/presentation';
@@ -16,16 +16,23 @@ export function ModuleCard({ definition, tutorialId, selected, exhausted, invent
 }) {
   const { t } = useTranslation();
   const Icon = definition.icon;
+  const lastQuickInstallAt = useRef(Number.NEGATIVE_INFINITY);
   const dragStart = (event: DragEvent<HTMLButtonElement>): void => {
     if (exhausted) { event.preventDefault(); return; }
     event.dataTransfer.setData('text/module', definition.id);
     event.dataTransfer.effectAllowed = 'copy';
   };
+  const quickInstall = (event: MouseEvent<HTMLButtonElement>): void => {
+    if (exhausted || event.timeStamp - lastQuickInstallAt.current < 500) return;
+    lastQuickInstallAt.current = event.timeStamp;
+    onQuickInstall();
+  };
   return (
     <button className={`module-card rarity-${definition.meta.rarity} ${selected ? 'selected' : ''} ${exhausted ? 'exhausted' : ''}`}
       data-tutorial-module={tutorialId}
+      data-touch-module={exhausted ? undefined : definition.id}
       style={moduleVariableStyle(definition)} draggable={!exhausted} onDragStart={dragStart} onClick={onSelect}
-      onDoubleClick={() => { if (!exhausted) onQuickInstall(); }}
+      onDoubleClick={quickInstall}
       title={exhausted ? t('moduleCard.exhaustedTitle') : t('moduleCard.installTitle')}>
       <span className={`kind-badge ${definition.kind}`}>{KIND_SYMBOL[definition.kind]}</span>
       <span className="rarity-mark">{rarityLabel(t, definition.meta.rarity)}</span>

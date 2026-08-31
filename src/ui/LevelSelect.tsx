@@ -9,6 +9,7 @@ import { difficultyName, levelDescription, levelName } from '../i18n/presentatio
 import { SIGNAL_IDS, signalRegistry } from '../signals';
 import { CalibrationSlider } from './CalibrationSlider';
 import { LevelMap } from './LevelMap';
+import { MobileFullscreenButton } from './MobileFullscreenButton';
 import { SettingsPanel } from './SettingsPanel';
 import { Tag } from './Tag';
 import './LevelSelect.css';
@@ -228,6 +229,7 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive }: {
               </span>
               <strong>{t('signalArchive.entry')}</strong>
             </button>
+            <MobileFullscreenButton />
             <SettingsPanel />
           </div>
         </header>

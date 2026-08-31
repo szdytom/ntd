@@ -131,6 +131,39 @@ test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await expect(page.getByRole('button', { name: /\u5f00\u59cb\u90e8\u7f72/ })).toBeVisible();
 });
 
+test('compact landscape hides home metadata and contains the signal compendium', async ({ page }) => {
+  await prepareReturningPlayer(page);
+  await page.setViewportSize({ width: 1133, height: 744 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Creative/ }).click();
+
+  await expect(page.locator('.home-meta')).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+  await page.getByRole('button', { name: 'Open signal compendium' }).click();
+  await expect(page.getByRole('heading', { name: 'Signal Compendium' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
+  const indexHeading = page.locator('.signal-archive-index-head');
+  const indexList = page.locator('.signal-archive-index-list');
+  const headingTop = await indexHeading.evaluate((element) => element.getBoundingClientRect().top);
+  await indexList.evaluate((element) => { element.scrollTop = 160; });
+  expect(await indexList.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await indexHeading.evaluate((element) => element.getBoundingClientRect().top)).toBe(headingTop);
+});
+
+test('compact landscape gives workshop module cards readable widths', async ({ page }) => {
+  await prepareReturningPlayer(page);
+  await page.setViewportSize({ width: 1133, height: 744 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Creative/ }).click();
+  await page.getByRole('button', { name: /Start deployment/ }).click();
+  await clickBattlefieldAt(page, towerPad(defaultLevel, 0));
+
+  const grid = page.getByLabel('Tower module workshop').locator('.module-grid.all-modules');
+  const columnCount = await grid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
+  expect(columnCount).toBe(4);
+  expect((await grid.locator('.module-card').first().boundingBox())?.width ?? 0).toBeGreaterThan(150);
+});
+
 test('the multi-entrance sector renders its route tree and all battlefield entrances', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.goto('/');

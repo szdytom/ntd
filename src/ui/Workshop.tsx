@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot, ModuleId, Tower } from '../game/types';
@@ -11,10 +11,19 @@ import { ModuleSlot } from './ModuleSlot';
 import { ProgramReadout } from './ProgramReadout';
 import { TowerOverview } from './TowerOverview';
 import { Tag } from './Tag';
+import { useTouchModuleDrag } from './useTouchModuleDrag';
 import './Workshop.css';
 
 export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot }) {
   const { t } = useTranslation();
+  const workshopRef = useRef<HTMLElement>(null);
+  const installModule = useCallback((slot: number, moduleId: ModuleId) => {
+    engine.installModule(slot, moduleId);
+  }, [engine]);
+  const swapModules = useCallback((source: number, destination: number) => {
+    engine.swapModules(source, destination);
+  }, [engine]);
+  useTouchModuleDrag(workshopRef, installModule, swapModules);
   const { revision } = view;
   const definitions = useMemo(() => engine.getLibraryModules(), [engine, revision]);
   const [selectedModule, setSelectedModule] = useState<ModuleId | null>(() => definitions[0]?.id ?? null);
@@ -42,7 +51,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
   };
 
   return (
-    <aside className="workshop" aria-label={t('workshop.aria')}>
+    <aside ref={workshopRef} className="workshop" aria-label={t('workshop.aria')}>
       <div className="workshop-head">
         <h2>{t('workshop.title')} <span>{t('workshop.subtitle')}</span></h2>
         <div className="workshop-head-actions">

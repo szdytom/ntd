@@ -132,15 +132,23 @@
   cursor: pointer;
   font-size: 15px;
   line-height: 1;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.filled-slot:hover .slot-remove,
-.slot-remove:focus-visible {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .slot-remove { opacity: 0; }
+
+  .filled-slot:hover .slot-remove,
+  .slot-remove:focus-visible {
+    opacity: 1;
+  }
 }
 
 .slot-remove:hover {
   background: #e04f67;
+}
+
+.touch-dragging {
+  opacity: 0.62;
 }

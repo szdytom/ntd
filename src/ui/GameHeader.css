@@ -139,7 +139,7 @@
   .topbar {
     grid-template-columns: 54px minmax(0, 1fr);
     grid-template-rows: 54px 64px;
-    height: 118px;
+    height: 120px;
   }
   .exit-button { grid-column: 1; grid-row: 1; }
   .top-actions { grid-column: 2; grid-row: 1; }
@@ -149,7 +149,7 @@
 }
 
 @media (max-width: 620px) {
-  .topbar { grid-template-columns: 42px minmax(0, 1fr); grid-template-rows: 52px 64px; height: 116px; gap: 0; }
+  .topbar { grid-template-columns: 42px minmax(0, 1fr); grid-template-rows: 52px 64px; height: 118px; gap: 0; }
   .exit-button span { font-size: 20px; }
   .icon-button { width: 42px; height: auto; border-radius: 0; }
   .top-stats { height: auto; grid-template-columns: 1.2fr 1fr 1fr; border-radius: 0; }
