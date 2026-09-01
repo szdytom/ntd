@@ -454,6 +454,7 @@ export class GameRenderer {
       if (rift.points.length < 2) continue;
       const collapse = rift.source.life > 0 ? 1 : clamp(rift.remaining / RIFT_COLLAPSE_DURATION, 0, 1);
       if (collapse <= 0) continue;
+      if (rift.visual?.type === 'effects-only') continue;
       if (rift.visual?.type === 'diamond') {
         if (this.drawnDiamondRiftSources.has(rift.source.id)) continue;
         this.drawnDiamondRiftSources.add(rift.source.id);
@@ -525,6 +526,7 @@ export class GameRenderer {
       if (rift.points.length < 2) continue;
       const collapse = rift.source.life > 0 ? 1 : clamp(rift.remaining / RIFT_COLLAPSE_DURATION, 0, 1);
       if (collapse <= 0) continue;
+      if (rift.visual?.type === 'effects-only') continue;
       if (rift.visual?.type === 'diamond') {
         if (this.drawnDiamondRiftSources.has(rift.source.id)) continue;
         this.drawnDiamondRiftSources.add(rift.source.id);

@@ -98,3 +98,55 @@ export function statusOrbs(options: StatusOrbOptions): EffectDefinition {
     },
   };
 }
+
+interface FireParticlesOptions {
+  id: string;
+  lifetime?: number;
+  layer?: EffectLayer;
+  count: number;
+  distanceMin: number;
+  distanceMax: number;
+  liftMin: number;
+  liftMax: number;
+  sizeMin: number;
+  sizeMax: number;
+  hotColor: string;
+  emberColor: string;
+  smokeColor: string;
+  hotTimeMin?: number;
+  hotTimeMax?: number;
+  bloom?: number | false;
+}
+
+/** Seeded fire motes that cool from a hot core into embers and smoke. */
+export function fireParticles(options: FireParticlesOptions): EffectDefinition {
+  return {
+    id: options.id,
+    lifetime: options.lifetime ?? 0.62,
+    layer: options.layer ?? 'under-projectile',
+    bloom: options.bloom ?? 0.45,
+    render: (frame, painter) => {
+      for (let index = 0; index < options.count; index += 1) {
+        const angle = frame.random(index, 0, Math.PI * 2);
+        const travel = 4 + frame.easeOut(3) * frame.random(
+          index + 30,
+          options.distanceMin,
+          options.distanceMax,
+        );
+        const lift = frame.fin * frame.random(index + 50, options.liftMin, options.liftMax);
+        const hot = frame.fin < frame.random(
+          index + 70,
+          options.hotTimeMin ?? 0.42,
+          options.hotTimeMax ?? 0.68,
+        );
+        painter.circle(
+          frame.x + Math.cos(angle) * travel,
+          frame.y + Math.sin(angle) * travel - lift,
+          1 + frame.slope * frame.random(index + 90, options.sizeMin, options.sizeMax),
+          hot ? index % 3 === 0 ? options.hotColor : options.emberColor : options.smokeColor,
+          frame.fout * (hot ? 0.8 : 0.48),
+        );
+      }
+    },
+  };
+}

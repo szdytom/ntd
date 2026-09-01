@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 38 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 39 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -56,6 +56,7 @@ Modifiers patch the next emitted projectile.
 | ID | Display name | Role |
 | --- | --- | --- |
 | `resonant-trail` | Resonant Trail | Publishes damage waves along the carrier path |
+| `cinder-trail` | Cinderwake | Leaves a broad damaging fire wake that burns crossing signals |
 | `rift-trail` | Riftwake | Leaves persistent damaging spatial rifts along the carrier path |
 
 ## Logic and trigger modules

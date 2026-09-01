@@ -167,6 +167,8 @@ export interface SignalStatus {
   particle?: StatusParticleSpec;
 }
 
+export type SignalStatusApplication = Omit<SignalStatus, 'remaining' | 'tickTimer' | 'particleTimer'>;
+
 export interface StatusParticleSpec {
   effectId: string;
   interval: number;
@@ -178,16 +180,23 @@ export interface SplitRift {
   duration: number;
 }
 
-export interface SpaceRiftVisual {
+export type SpaceRiftVisual = {
   type: 'diamond';
   center: Point;
   radius: number;
+} | {
+  /** Collision is rendered entirely by module-owned effects. */
+  type: 'effects-only';
+};
+
+export interface SpaceRiftPoint extends Point {
+  age: number;
 }
 
 export interface SpaceRift {
   id: number;
   key: string;
-  points: Point[];
+  points: SpaceRiftPoint[];
   width: number;
   damagePerSecond: number;
   settlementInterval: number;
@@ -198,6 +207,9 @@ export interface SpaceRift {
   contacts: Map<number, SpaceRiftContact>;
   remaining: number;
   duration: number;
+  coverageGroup: string;
+  pointLifetime?: number;
+  contactStatus?: SignalStatusApplication;
   visual?: SpaceRiftVisual;
   hitEffectId?: string;
 }

@@ -16,7 +16,7 @@ Paste this fragment into the itch.io rich-text editor's HTML/code mode:
 <h2>Features</h2>
 
 <ul>
-  <li><strong>38 combinable modules</strong> across projectiles, modifiers, static payloads, trails, and logic.</li>
+  <li><strong>39 combinable modules</strong> across projectiles, modifiers, static payloads, trails, and logic.</li>
   <li><strong>Order-driven construction:</strong> modules affect what comes after them, so sequencing is as important as selection.</li>
   <li><strong>Standard Mode</strong> with limited inventory, module drafts, wave rewards, tower upgrades, and economy management.</li>
   <li><strong>Creative Mode</strong> with unlimited modules and shards, adjustable run settings, and a signal-spawning console.</li>

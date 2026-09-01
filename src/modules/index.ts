@@ -1,5 +1,6 @@
 import { arcboltModule } from './arcbolt';
 import { barrageModule } from './barrage';
+import { cinderTrailModule } from './cinder-trail';
 import { colossusModule } from './colossus';
 import { condenseCoreModule } from './condense-core';
 import { doubleForkModule } from './double-fork';
@@ -54,6 +55,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(seekerModule)
     .register(arcboltModule)
     .register(resonantTrailModule)
+    .register(cinderTrailModule)
     .register(riftTrailModule)
     .register(razorModule)
     .register(ricochetModule)

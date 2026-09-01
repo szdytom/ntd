@@ -202,8 +202,9 @@ export class GameEngine {
   private readonly moduleInventory = new Map<ModuleId, number>();
   private readonly signalIndex = new SignalSpatialIndex();
   private readonly spaceRiftByKey = new Map<string, SpaceRift>();
-  private readonly spaceRiftCoverage = new Map<Signal, SpaceRift>();
-  private readonly spaceRiftCrossings = new Map<Signal, Point>();
+  private readonly spaceRiftCoverage = new Map<string, SpaceRift>();
+  private readonly spaceRiftCrossings = new Map<string, Point>();
+  private readonly spaceRiftCoverageSignals = new Map<string, Signal>();
   private readonly spaceRiftEnemies = new Map<number, Signal>();
   private readonly routeCache = new Map<NodeId, PathSampler>();
   private readonly spatialCandidates: Signal[] = [];
@@ -1473,7 +1474,7 @@ export class GameEngine {
       rift = {
         id: this.nextId++,
         key,
-        points: [this.offsetRiftPoint(source, start, options.jitter ?? 0, 0)],
+        points: [{ ...this.offsetRiftPoint(source, start, options.jitter ?? 0, 0), age: 0 }],
         width: options.width,
         damagePerSecond: options.damagePerSecond,
         settlementInterval: Math.max(FIXED_SIMULATION_STEP, options.settlementInterval),
@@ -1484,6 +1485,11 @@ export class GameEngine {
         contacts: new Map(),
         remaining: options.duration,
         duration: options.duration,
+        coverageGroup: options.coverageGroup ?? 'rift-space',
+        ...(options.pointLifetime === undefined ? {} : {
+          pointLifetime: Math.max(FIXED_SIMULATION_STEP, options.pointLifetime),
+        }),
+        ...(options.contactStatus ? { contactStatus: options.contactStatus } : {}),
         ...(options.hitEffectId ? { hitEffectId: options.hitEffectId } : {}),
       };
       this.spaceRifts.push(rift);
@@ -1496,16 +1502,20 @@ export class GameEngine {
     rift.effectInterval = Math.max(FIXED_SIMULATION_STEP, options.effectInterval);
     rift.duration = options.duration;
     rift.remaining = options.duration;
+    rift.coverageGroup = options.coverageGroup ?? 'rift-space';
+    if (options.pointLifetime === undefined) delete rift.pointLifetime;
+    else rift.pointLifetime = Math.max(FIXED_SIMULATION_STEP, options.pointLifetime);
+    if (options.contactStatus) rift.contactStatus = options.contactStatus;
+    else delete rift.contactStatus;
     if (options.visual) {
-      rift.visual = {
-        ...options.visual,
-        center: { ...options.visual.center },
-      };
+      rift.visual = options.visual.type === 'diamond'
+        ? { ...options.visual, center: { ...options.visual.center } }
+        : options.visual;
     }
     const nextPoint = this.offsetRiftPoint(source, position, options.jitter ?? 0, rift.points.length);
     const last = rift.points[rift.points.length - 1];
     if (last && Math.hypot(nextPoint.x - last.x, nextPoint.y - last.y) < 0.25) return;
-    rift.points.push(nextPoint);
+    rift.points.push({ ...nextPoint, age: 0 });
   }
 
   private offsetRiftPoint(source: Projectile, point: Point, jitter: number, index: number): Point {
@@ -1527,6 +1537,7 @@ export class GameEngine {
     if (this.spaceRifts.length === 0) {
       this.spaceRiftCoverage.clear();
       this.spaceRiftCrossings.clear();
+      this.spaceRiftCoverageSignals.clear();
       this.spaceRiftEnemies.clear();
       return;
     }
@@ -1536,6 +1547,12 @@ export class GameEngine {
     }
     let aliveCount = 0;
     for (const rift of this.spaceRifts) {
+      if (rift.pointLifetime !== undefined) {
+        for (const point of rift.points) point.age += delta;
+        let expiredCount = 0;
+        while ((rift.points[expiredCount]?.age ?? 0) >= rift.pointLifetime) expiredCount += 1;
+        if (expiredCount > 0) rift.points.splice(0, expiredCount);
+      }
       if (rift.source.life <= 0) rift.remaining -= delta;
       if (rift.remaining <= 0) {
         for (const [signalId, contact] of rift.contacts) {
@@ -1551,16 +1568,19 @@ export class GameEngine {
     this.spaceRifts.length = aliveCount;
     this.spaceRiftCoverage.clear();
     this.spaceRiftCrossings.clear();
+    this.spaceRiftCoverageSignals.clear();
 
     for (const signal of this.spaceRiftEnemies.values()) {
       for (const rift of this.spaceRifts) {
         if (rift.points.length < 2) continue;
-        const coveredBy = this.spaceRiftCoverage.get(signal);
+        const coverageKey = this.spaceRiftCoverageKey(signal, rift);
+        const coveredBy = this.spaceRiftCoverage.get(coverageKey);
         if (coveredBy && coveredBy.damagePerSecond >= rift.damagePerSecond) continue;
         const crossing = this.findSpaceRiftCrossing(rift, signal);
         if (!crossing) continue;
-        this.spaceRiftCoverage.set(signal, rift);
-        this.spaceRiftCrossings.set(signal, crossing);
+        this.spaceRiftCoverage.set(coverageKey, rift);
+        this.spaceRiftCrossings.set(coverageKey, crossing);
+        this.spaceRiftCoverageSignals.set(coverageKey, signal);
       }
     }
 
@@ -1568,13 +1588,15 @@ export class GameEngine {
       const nextContacts = new Map<number, SpaceRiftContact>();
       for (const [signalId, previousContact] of rift.contacts) {
         const signal = this.spaceRiftEnemies.get(signalId);
-        if (signal && this.spaceRiftCoverage.get(signal) !== rift) {
+        if (signal && this.spaceRiftCoverage.get(this.spaceRiftCoverageKey(signal, rift)) !== rift) {
           this.settleSpaceRiftContact(rift, signal, previousContact, true);
         }
       }
-      for (const [signal, coveredBy] of this.spaceRiftCoverage) {
-        if (coveredBy !== rift || signal.dead) continue;
-        const crossing = this.spaceRiftCrossings.get(signal);
+      for (const [coverageKey, coveredBy] of this.spaceRiftCoverage) {
+        if (coveredBy !== rift) continue;
+        const signal = this.spaceRiftCoverageSignals.get(coverageKey);
+        if (!signal || signal.dead) continue;
+        const crossing = this.spaceRiftCrossings.get(coverageKey);
         if (!crossing) continue;
         const contact = rift.contacts.get(signal.id) ?? {
           pendingDamage: 0,
@@ -1591,6 +1613,7 @@ export class GameEngine {
         contact.settlementTimer -= delta;
         contact.modifierTimer -= delta;
         contact.effectTimer -= delta;
+        if (rift.contactStatus) this.applyStatus(signal, rift.contactStatus);
         if (contact.settlementTimer <= SIMULATION_TIME_EPSILON) {
           while (contact.settlementTimer <= SIMULATION_TIME_EPSILON) {
             contact.settlementTimer += rift.settlementInterval;
@@ -1601,6 +1624,10 @@ export class GameEngine {
       }
       rift.contacts = nextContacts;
     }
+  }
+
+  private spaceRiftCoverageKey(signal: Signal, rift: SpaceRift): string {
+    return `${signal.id}:${rift.coverageGroup}`;
   }
 
   private findSpaceRiftCrossing(rift: SpaceRift, signal: Signal): Point | null {

@@ -3,7 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import type { EffectEngine } from '../effects/engine';
 import type {
   Signal,
-  SignalStatus,
+  SignalStatusApplication,
   ModuleId,
   Point,
   Projectile,
@@ -108,7 +108,7 @@ export interface ModuleEffectContext {
   combat: ModuleCombatApi;
 }
 
-export type StatusApplication = Omit<SignalStatus, 'remaining' | 'tickTimer' | 'particleTimer'>;
+export type StatusApplication = SignalStatusApplication;
 export type TargetEffectChannel = 'damage' | 'static' | 'secondary-hit';
 
 /**
@@ -143,6 +143,11 @@ export interface RiftOptions {
   modifierInterval: number;
   effectInterval: number;
   color: string;
+  /** Keeps strongest-only overlap suppression within one trail family. */
+  coverageGroup?: string;
+  /** Expires old polyline points while the carrier is still active. */
+  pointLifetime?: number;
+  contactStatus?: StatusApplication;
   initialPosition?: Point;
   visual?: SpaceRiftVisual;
   jitter?: number;

@@ -1,5 +1,5 @@
 import type { EffectDefinition } from '../effects/types';
-import { statusOrbs } from '../effects/factories';
+import { fireParticles, statusOrbs } from '../effects/factories';
 import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
@@ -53,27 +53,19 @@ const effects: readonly EffectDefinition[] = [
       painter.circle(frame.x, frame.y, 8 * flash, '#ffffff', flash);
     },
   },
-  {
+  fireParticles({
     id: 'module:ember-field:embers',
-    lifetime: 0.62,
-    layer: 'under-projectile',
-    bloom: 0.45,
-    render: (frame, painter) => {
-      for (let index = 0; index < 14; index += 1) {
-        const angle = frame.random(index, 0, Math.PI * 2);
-        const travel = 4 + frame.easeOut(3) * frame.random(index + 30, 18, 67);
-        const lift = frame.fin * frame.random(index + 50, 3, 15);
-        const hot = frame.fin < frame.random(index + 70, 0.42, 0.68);
-        painter.circle(
-          frame.x + Math.cos(angle) * travel,
-          frame.y + Math.sin(angle) * travel - lift,
-          1 + frame.slope * frame.random(index + 90, 3, 7),
-          hot ? index % 3 === 0 ? brightColor : statusColor : smokeColor,
-          frame.fout * (hot ? 0.8 : 0.48),
-        );
-      }
-    },
-  },
+    count: 14,
+    distanceMin: 18,
+    distanceMax: 67,
+    liftMin: 3,
+    liftMax: 15,
+    sizeMin: 3,
+    sizeMax: 7,
+    hotColor: brightColor,
+    emberColor: statusColor,
+    smokeColor,
+  }),
   {
     id: 'module:ember-field:pulse',
     lifetime: 0.3,
