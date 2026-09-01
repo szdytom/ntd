@@ -59,6 +59,21 @@
   stroke-width: 1.4;
 }
 
+.signal-icon__hexagram-triangle {
+  fill: none;
+  stroke: var(--signal-icon-fill);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.7;
+}
+
+.signal-icon__hexagram-core {
+  fill: var(--signal-icon-dark);
+  stroke: var(--signal-icon-fill);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
 .signal-icon--monochrome .signal-icon__fracture-spike,
 .signal-icon--monochrome .signal-icon__fracture-core { stroke: #fff; }
 
@@ -75,3 +90,4 @@
 
 .signal-icon--monochrome .signal-icon__anvil-groove { display: none; }
 .signal-icon--monochrome .signal-icon__anvil-core { fill: #fff; stroke: none; }
+.signal-icon--monochrome .signal-icon__hexagram-core { fill: var(--signal-icon-detail); stroke: #fff; }

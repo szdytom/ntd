@@ -7,12 +7,13 @@ import { kiteSignal } from './kite';
 import { menderSignal } from './mender';
 import { radiantSignal } from './radiant';
 import { sparkSignal } from './spark';
+import { solarSignal } from './solar';
 import { surgeSignal } from './surge';
 import type { SignalDefinition, SignalVariantDefinition } from './types';
 
 export const SIGNAL_DEFINITIONS = [
   sparkSignal, surgeSignal, kiteSignal, blockSignal, hexSignal, menderSignal,
-  crownSignal, fractureSignal, anvilSignal, radiantSignal,
+  solarSignal, crownSignal, fractureSignal, anvilSignal, radiantSignal,
 ] as const satisfies readonly SignalDefinition[];
 
 export type SignalId = typeof SIGNAL_DEFINITIONS[number]['id'];

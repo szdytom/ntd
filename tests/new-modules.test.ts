@@ -93,6 +93,16 @@ describe('new module compilation', () => {
     });
   });
 
+  it('converts Arcbolt chains into a faster and stronger single-target shot', () => {
+    const base = registry.compile(['arcbolt']).shots[0];
+    const focused = registry.compile(['focus-core', 'arcbolt']).shots[0];
+
+    expect(base?.chainTargets).toBeGreaterThan(0);
+    expect(focused?.chainTargets).toBe(0);
+    expect(focused?.damage).toBeGreaterThan(base?.damage ?? 0);
+    expect(focused?.speed).toBeGreaterThan(base?.speed ?? 0);
+  });
+
   it('converts the final blast radius into single-target damage', () => {
     const base = registry.compile(['colossus', 'nova']).shots[0];
     const shot = registry.compile(['condense-core', 'colossus', 'nova']).shots[0];

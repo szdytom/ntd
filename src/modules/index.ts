@@ -12,6 +12,7 @@ import { expirationTriggerModule } from './expiration-trigger';
 import { forkModule } from './fork';
 import { frostModule } from './frost';
 import { focusCoreModule } from './focus-core';
+import { geodeBloomModule } from './geode-bloom';
 import { impactTriggerModule } from './impact-trigger';
 import { needleModule } from './needle';
 import { novaModule } from './nova';
@@ -21,6 +22,7 @@ import { riftBarrierModule } from './rift-barrier';
 import { riftTrailModule } from './rift-trail';
 import { pulseModule } from './pulse';
 import { proximityMineModule } from './proximity-mine';
+import { prismSlugModule } from './prism-slug';
 import { reclaimCircuitModule } from './reclaim-circuit';
 import { razorModule } from './razor';
 import { ricochetModule } from './ricochet';
@@ -39,9 +41,11 @@ import { voidBeamModule } from './void-beam';
 export function createModuleRegistry(): ModuleRegistry {
   return new ModuleRegistry()
     .register(pulseModule)
+    .register(prismSlugModule)
     .register(needleModule)
     .register(voidBeamModule)
     .register(novaModule)
+    .register(geodeBloomModule)
     .register(overdriveModule)
     .register(frostModule)
     .register(doubleForkModule)

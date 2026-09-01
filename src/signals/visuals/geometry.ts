@@ -25,6 +25,13 @@ export const ANVIL_SHAPE = {
   coreRadiusScale: 0.38,
 } as const;
 
+export const HEXAGRAM_SHAPE = {
+  triangleRotations: [-Math.PI / 2, Math.PI / 2],
+  coreRadiusScale: 0.34,
+  nodeOrbitScale: 0.76,
+  nodeRadiusScale: 0.075,
+} as const;
+
 export function regularPolygonPoints(
   radius: number,
   sides: number,

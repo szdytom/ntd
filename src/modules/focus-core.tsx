@@ -11,7 +11,7 @@ const FocusCoreIcon = createModuleIcon(<>
 </>);
 
 const color = '#e63973';
-const stats = { damagePerCharge: 0.55, speedPerCharge: 0.12, projectileCount: 1 } as const;
+const stats = { damagePerCharge: 0.9, speedPerCharge: 0.12, projectileCount: 1 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -44,7 +44,7 @@ export const focusCoreModule: ModuleDefinition = {
   tags: [],
   icon: FocusCoreIcon,
   meta: {
-    name: 'Focus Core', shortName: 'Focus', color, tint: '#ffe6ef', energy: 16, rarity: 'rare',
+    name: 'Focus Core', shortName: 'Focus', color, tint: '#ffe6ef', energy: 28, rarity: 'rare',
     text: {
       description: { count: stats.projectileCount },
       detail: {

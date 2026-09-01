@@ -37,6 +37,11 @@ export interface FullHealAfterLullCapability {
   delay: number;
 }
 
+export interface HealthRegenerationCapability {
+  kind: 'health-regeneration';
+  rate: number;
+}
+
 export interface SplitOnDeathCapability {
   kind: 'split-on-death';
   count: number;
@@ -67,12 +72,13 @@ export type SignalCapability =
   | ShieldCapability
   | DamageCapCapability
   | FullHealAfterLullCapability
+  | HealthRegenerationCapability
   | SplitOnDeathCapability
   | TowerSuppressionCapability;
 export type SignalCapabilityKind = SignalCapability['kind'];
 export type SignalCapabilityOf<Kind extends SignalCapabilityKind> = Extract<SignalCapability, { kind: Kind }>;
 
-export type SignalGeometry = 'polygon' | 'surge' | 'fracture' | 'anvil' | 'ring';
+export type SignalGeometry = 'polygon' | 'surge' | 'fracture' | 'anvil' | 'ring' | 'hexagram';
 export interface SignalVisualDefinition {
   color: string;
   geometry: SignalGeometry;

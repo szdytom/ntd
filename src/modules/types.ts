@@ -52,6 +52,7 @@ export interface ProjectileSpec {
   size: number;
   pierce?: number;
   splash?: number;
+  chainTargets?: number;
   lifetime?: number;
   static?: StaticProjectileSpec;
   collision?: 'signal' | 'none';

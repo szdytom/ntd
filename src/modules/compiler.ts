@@ -128,8 +128,12 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       let repeats = pending.repeats;
       let repeatDelay = pending.repeatDelay;
       let splash = (spec.splash ?? 0) + pending.splashBonus;
+      let chainTargets = Math.max(0, spec.chainTargets ?? 0);
       if (pending.focusConversion) {
-        const charge = Math.max(0, pierce) + Math.max(0, count - 1) + Math.max(0, repeats - 1);
+        const charge = Math.max(0, pierce)
+          + Math.max(0, count - 1)
+          + Math.max(0, repeats - 1)
+          + chainTargets;
         damageMultiplier *= 1 + charge * pending.focusConversion.damagePerCharge;
         speedMultiplier *= 1 + charge * pending.focusConversion.speedPerCharge;
         count = 1;
@@ -137,6 +141,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         pierce = 0;
         repeats = 1;
         repeatDelay = 0;
+        chainTargets = 0;
       }
       if (pending.condenseSplash) {
         damageMultiplier *= 1 + Math.max(0, splash) * pending.condenseSplash.damagePerRadius;
@@ -159,6 +164,7 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         seeking: pending.seeking,
         repeats,
         repeatDelay,
+        chainTargets,
         energyRefundMultiplier: pending.energyRefundMultiplier,
         energyCost: Math.max(1, Math.round((definition.meta.energy + pending.energy) * pending.energyMultiplier)),
         lifetime: spec.lifetime ?? 1.7,

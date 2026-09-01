@@ -24,4 +24,13 @@ describe('shared signal icon', () => {
     expect(container.querySelector('.signal-icon__anvil-core')).toBeTruthy();
     expect(container.querySelectorAll('.signal-icon__anvil-groove')).toHaveLength(ANVIL_SHAPE.sides);
   });
+
+  it('renders the Solar Sigil as two triangles with elite details', () => {
+    const { container } = render(<SignalIcon type="solar" />);
+    const triangles = [...container.querySelectorAll('.signal-icon__hexagram-triangle')];
+
+    expect(triangles).toHaveLength(2);
+    expect(triangles[0]?.getAttribute('points')).not.toBe(triangles[1]?.getAttribute('points'));
+    expect(container.querySelector('.signal-icon__hexagram-core')).toBeTruthy();
+  });
 });

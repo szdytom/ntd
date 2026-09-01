@@ -15,6 +15,7 @@ import {
   resetSignalFullHealTimer,
   signalRegistry,
   updateSignalFullHeal,
+  updateSignalHealthRegeneration,
 } from '../signals';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
@@ -1047,6 +1048,11 @@ export class GameEngine {
           data: { radius: signal.radius, sides: definition.visual.sides },
         });
       }
+      updateSignalHealthRegeneration(
+        signal,
+        getSignalCapability(definition, 'health-regeneration'),
+        delta,
+      );
       signal.slowTime = Math.max(0, signal.slowTime - delta);
       if (signal.slowTime <= 0) signal.slowFactor = 0;
       const movementPhase = signal.movementPhase ?? 0;

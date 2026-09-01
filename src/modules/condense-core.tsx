@@ -9,7 +9,7 @@ const CondenseCoreIcon = createModuleIcon(<>
 </>);
 
 const color = '#d1495b';
-const stats = { damagePerRadius: 0.015, splash: 0 } as const;
+const stats = { damagePerRadius: 0.025, splash: 0 } as const;
 
 const effects: readonly EffectDefinition[] = [
   {
@@ -32,7 +32,7 @@ export const condenseCoreModule: ModuleDefinition = {
   tags: ['area'],
   icon: CondenseCoreIcon,
   meta: {
-    name: 'Condense Core', shortName: 'Condense', color, tint: '#ffe9ec', energy: 17, rarity: 'uncommon',
+    name: 'Condense Core', shortName: 'Condense', color, tint: '#ffe9ec', energy: 25, rarity: 'uncommon',
     text: { detail: { damage: stats.damagePerRadius * 100 } },
   },
   effects,

@@ -156,7 +156,7 @@ export const LEVELS = [
       wave(['spark', 4], ['surge', 4], ['block', 7], ['hex', 2]),
       wave(['kite', 10], ['block', 7], ['hex', 2]),
       wave(['spark', 12], ['block', 8], ['hex', 5], ['anvil', 1]),
-      wave(['kite', 6], ['block', 3], ['hex', 7], ['radiant', 1, 'rose-circuit:0']),
+      wave(['kite', 6], ['block', 3], ['hex', 7], ['solar', 1], ['radiant', 1, 'rose-circuit:0']),
     ],
     moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2, 2), 4),
     startingShards: 250,

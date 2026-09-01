@@ -182,6 +182,20 @@ describe('target effect propagation', () => {
     }
   });
 
+  it('stops Arcbolt from chaining after Focus Core consumes its chain capacity', () => {
+    const { engine, signals } = prepareEngine([200, 240]);
+    const [direct, nearby] = signals;
+    if (!direct || !nearby) throw new Error('Expected two signals');
+    const shot = engine.modules.compile(['focus-core', 'arcbolt']).shots[0];
+    if (!shot) throw new Error('Expected a focused Arcbolt shot');
+    fireAt(engine, shot, direct);
+
+    advanceUntil(engine, () => direct.hp < direct.maxHp);
+
+    expect(direct.hp).toBeLessThan(direct.maxHp);
+    expect(nearby.hp).toBe(nearby.maxHp);
+  });
+
   it.each([
     ['proximity-mine', 0.6],
     ['toxic-cloud', 0.1],

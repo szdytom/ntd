@@ -1,5 +1,5 @@
 import { signalRegistry, type ShieldCapability, type SignalId } from '..';
-import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, regularPolygonPoints, traceFractureSpike, traceSurgeBody } from './geometry';
+import { ANVIL_SHAPE, FRACTURE_SHAPE, HEXAGRAM_SHAPE, fractureSpikeAngles, regularPolygonPoints, traceFractureSpike, traceSurgeBody } from './geometry';
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
@@ -73,6 +73,8 @@ export function drawSignalBody(ctx: CanvasRenderingContext2D, options: SignalBod
     drawFractureBody(ctx, radius, fillColor);
   } else if (visual.geometry === 'anvil') {
     drawAnvilBody(ctx, radius, fillColor);
+  } else if (visual.geometry === 'hexagram') {
+    drawHexagramBody(ctx, radius, fillColor);
   } else {
     ctx.fillStyle = fillColor;
     if (visual.geometry === 'ring') traceRing(ctx, radius, radius * 0.48);
@@ -121,6 +123,41 @@ export function drawSignalBody(ctx: CanvasRenderingContext2D, options: SignalBod
     }
   }
   ctx.restore();
+}
+
+function drawHexagramBody(ctx: CanvasRenderingContext2D, radius: number, fillColor: string): void {
+  const struck = fillColor === '#ffffff';
+  ctx.fillStyle = fillColor;
+  ctx.strokeStyle = struck ? '#ffffff' : '#fff3b0';
+  ctx.lineWidth = Math.max(2.5, radius * 0.11);
+  ctx.lineJoin = 'round';
+  for (const rotation of HEXAGRAM_SHAPE.triangleRotations) {
+    traceRegularPolygon(ctx, 0, 0, radius, 3, rotation);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.shadowColor = 'transparent';
+
+  ctx.fillStyle = struck ? '#ffffff' : '#8f620b';
+  ctx.strokeStyle = struck ? '#ffffff' : '#fff8d6';
+  ctx.lineWidth = Math.max(2, radius * 0.08);
+  traceRegularPolygon(ctx, 0, 0, radius * HEXAGRAM_SHAPE.coreRadiusScale, 6, 0);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = struck ? '#ffffff' : '#fff3b0';
+  for (let index = 0; index < 6; index += 1) {
+    const angle = -Math.PI / 2 + index * Math.PI / 3;
+    ctx.beginPath();
+    ctx.arc(
+      Math.cos(angle) * radius * HEXAGRAM_SHAPE.nodeOrbitScale,
+      Math.sin(angle) * radius * HEXAGRAM_SHAPE.nodeOrbitScale,
+      Math.max(2, radius * HEXAGRAM_SHAPE.nodeRadiusScale),
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+  }
 }
 
 function drawAnvilBody(ctx: CanvasRenderingContext2D, radius: number, fillColor: string): void {

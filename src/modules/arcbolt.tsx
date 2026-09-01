@@ -18,7 +18,7 @@ const stats = {
   damage: 22,
   speed: 500,
   size: 5,
-  maxChains: 4,
+  maxChains: 5,
   chainDamageMultiplier: 0.78,
   chainRadius: 118,
 } as const;
@@ -79,11 +79,16 @@ export const arcboltModule: ModuleDefinition = {
   tags: ['projectile'],
   icon: ArcboltIcon,
   meta: {
-    name: 'Arcbolt Core', shortName: 'Arcbolt', color, tint: '#e9edff', energy: 25, rarity: 'legendary',
+    name: 'Arcbolt Core', shortName: 'Arcbolt', color, tint: '#e9edff', energy: 31, rarity: 'legendary',
     text: { detail: { damage: stats.damage, chains: stats.maxChains } },
   },
   effects,
-  compile: (context) => context.emitProjectile({ damage: stats.damage, speed: stats.speed, size: stats.size }),
+  compile: (context) => context.emitProjectile({
+    damage: stats.damage,
+    speed: stats.speed,
+    size: stats.size,
+    chainTargets: stats.maxChains,
+  }),
   renderProjectile: ({ ctx, projectile }) => {
     drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 5, color, 0.18);
     ctx.save();
@@ -158,7 +163,8 @@ export const arcboltModule: ModuleDefinition = {
     const visited = [signal.id];
     let origin = { ...signal.position };
     let damage = projectile.damage * stats.chainDamageMultiplier;
-    for (let index = 0; index < stats.maxChains; index += 1) {
+    const maxChains = projectile.shot.chainTargets ?? stats.maxChains;
+    for (let index = 0; index < maxChains; index += 1) {
       const target = combat.nearestSignal(origin, stats.chainRadius, visited);
       if (!target) break;
       engine.spawn('module:arcbolt:chain', { position: origin, color, data: { ...target.position } });

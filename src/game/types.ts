@@ -38,6 +38,8 @@ export interface ShotBlueprint {
   seeking: number;
   repeats: number;
   repeatDelay: number;
+  /** Additional targets reached sequentially after the primary hit. */
+  chainTargets?: number;
   energyRefundMultiplier: number;
   energyCost: number;
   lifetime: number;

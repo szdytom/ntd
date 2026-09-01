@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { ANVIL_SHAPE, FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, regularPolygonPoints, surgeBodyPoints } from '../signals/visuals/geometry';
+import { ANVIL_SHAPE, FRACTURE_SHAPE, HEXAGRAM_SHAPE, fractureSpikeAngles, fractureSpikePoints, regularPolygonPoints, surgeBodyPoints } from '../signals/visuals/geometry';
 import type { SignalId } from '../game/types';
 import { signalRegistry } from '../signals';
 import './SignalIcon.css';
@@ -56,6 +56,22 @@ function anvilBody(): ReactNode {
   </>;
 }
 
+function hexagramBody(): ReactNode {
+  return <>
+    {HEXAGRAM_SHAPE.triangleRotations.map((rotation) => (
+      <polygon
+        className="signal-icon__hexagram-triangle"
+        key={rotation}
+        points={regularPolygon(BODY_RADIUS, 3, rotation)}
+      />
+    ))}
+    <polygon
+      className="signal-icon__hexagram-core"
+      points={regularPolygon(BODY_RADIUS * HEXAGRAM_SHAPE.coreRadiusScale * .76, 6, 0)}
+    />
+  </>;
+}
+
 function ringBody(orbitNodes: number): ReactNode {
   return <>
     <circle className="signal-icon__body" r={BODY_RADIUS} />
@@ -78,6 +94,7 @@ function signalBody(type: SignalId): ReactNode {
   const shape = visual.geometry;
   if (shape === 'fracture') return fractureBody();
   if (shape === 'anvil') return anvilBody();
+  if (shape === 'hexagram') return hexagramBody();
   if (shape === 'ring') return ringBody(visual.orbitNodes ?? 0);
   if (shape === 'surge') return <polygon className="signal-icon__body" points={pointList(surgeBodyPoints(BODY_RADIUS))} />;
   return regularBody(type);

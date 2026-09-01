@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 36 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 38 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
 
 ## Projectile modules
 
@@ -11,8 +11,10 @@ Projectile modules emit a castable shot and consume all pending modifiers.
 | ID | Display name | Role |
 | --- | --- | --- |
 | `pulse` | Pulse Round | Stable baseline projectile |
+| `prism-slug` | Prism Slug | Dense high-damage single-target projectile |
 | `needle` | Piercing Needle | Fast projectile that can pass through multiple targets |
 | `nova` | Micro Nova | Impact projectile with area damage |
+| `geode-bloom` | Geode Bloom | Heavy impact projectile with a large crystal blast |
 | `arcbolt` | Arcbolt Core | Impact projectile that chains damage to nearby signals |
 | `razor` | Returning Razor | Wide cutting projectile built for repeated contacts |
 | `void-beam` | Void Beam | Collisionless fixed-heading carrier for trail modules |
@@ -46,7 +48,7 @@ Modifiers patch the next emitted projectile.
 | `searing-sigil` | Searing Sigil | Propagates a heavy burning status |
 | `starfire-matrix` | Starfire Matrix | Propagates a rapid legendary burning status |
 | `colossus` | Colossus Core | Enlarges and strengthens the next projectile |
-| `focus-core` | Focus Core | Converts extra projectiles, repeats, and pierce into one focused shot |
+| `focus-core` | Focus Core | Converts extra projectiles, repeats, pierce, and chains into one focused shot |
 | `condense-core` | Condense Core | Converts area radius into direct damage |
 
 ## Trail modules
