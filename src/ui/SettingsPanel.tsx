@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { defaultLanguage, supportedLanguages, type SupportedLanguage } from '../i18n';
 import { defenseArchiveRepository as defaultDefenseArchiveRepository, type DefenseArchiveRepository } from '../defense-archive';
+import { setAutoPauseEnabled, useAutoPauseEnabled } from './preferences';
 import './SettingsPanel.css';
 
 export function SettingsPanel({
@@ -16,6 +17,7 @@ export function SettingsPanel({
 }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const autoPauseEnabled = useAutoPauseEnabled();
   const [clearState, setClearState] = useState<'idle' | 'armed' | 'clearing' | 'cleared' | 'error'>('idle');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,25 @@ export function SettingsPanel({
                   <span aria-hidden="true">{i18n.getFixedT(option)('settings.languageIcon')}</span>
                   <b>{i18n.getFixedT(option)('lang.name')}</b>
                   <i aria-hidden="true">{option === language ? '✓' : ''}</i>
+                </button>
+              ))}
+            </div>
+          </section>
+          <section className="settings-section settings-auto-pause-section">
+            <div className="settings-section-copy">
+              <strong>{t('settings.autoPauseTitle')}</strong>
+            </div>
+            <div className="auto-pause-options" role="group" aria-label={t('settings.autoPauseTitle')}>
+              {[true, false].map((enabled) => (
+                <button
+                  key={String(enabled)}
+                  type="button"
+                  aria-pressed={enabled === autoPauseEnabled}
+                  onClick={() => setAutoPauseEnabled(enabled)}
+                >
+                  <span aria-hidden="true">{enabled ? 'Ⅱ' : '▶'}</span>
+                  <b>{t(enabled ? 'settings.autoPauseEnabled' : 'settings.autoPauseDisabled')}</b>
+                  <i aria-hidden="true">{enabled === autoPauseEnabled ? '✓' : ''}</i>
                 </button>
               ))}
             </div>

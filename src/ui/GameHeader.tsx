@@ -54,8 +54,8 @@ export function GameHeader({
             <button key={speed} disabled={drafting} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
           ))}
         </div>
-        <button disabled={drafting} className={`icon-button pause-button ${snapshot.paused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.paused ? t('header.resume') : t('header.pause')}>
-          <span className="pause-glyph">{snapshot.paused ? '▶' : 'Ⅱ'}</span>
+        <button disabled={drafting} className={`icon-button pause-button ${snapshot.manuallyPaused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.manuallyPaused ? t('header.resume') : t('header.pause')}>
+          <span className="pause-glyph">{snapshot.manuallyPaused ? '▶' : 'Ⅱ'}</span>
         </button>
         <button
           className="launch-button"

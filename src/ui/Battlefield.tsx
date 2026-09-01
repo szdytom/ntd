@@ -39,11 +39,15 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
     ? t('battlefield.won')
     : snapshot.status === 'lost'
       ? t('battlefield.lost')
-      : snapshot.status === 'wave'
-        ? t('battlefield.contact')
-        : snapshot.status === 'reward'
-          ? t('battlefield.intercepting')
-          : snapshot.paused ? t('battlefield.paused') : t('battlefield.planning');
+      : snapshot.manuallyPaused
+        ? t('battlefield.paused')
+        : snapshot.paused
+          ? t('battlefield.autoPaused')
+          : snapshot.status === 'wave'
+            ? t('battlefield.contact')
+            : snapshot.status === 'reward'
+              ? t('battlefield.intercepting')
+              : t('battlefield.planning');
   const terminal = snapshot.status === 'won' || snapshot.status === 'lost';
   const runIndicator = snapshot.mode === 'creative'
     ? t('battlefield.creativeIndicator')

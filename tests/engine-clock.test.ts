@@ -29,4 +29,28 @@ describe('fixed simulation clock', () => {
     expect(engine.elapsed).toBe(0);
     expect(engine.visualElapsed).toBeCloseTo(0.1, 8);
   });
+
+  it('keeps manual pause independent from automatic pause conditions', () => {
+    const engine = engineWithSignal();
+
+    engine.setAutoPauseCondition('workshop', true);
+    expect(engine.getSnapshot()).toMatchObject({ paused: true, manuallyPaused: false });
+
+    engine.togglePause();
+    engine.setAutoPauseCondition('workshop', false);
+    expect(engine.getSnapshot()).toMatchObject({ paused: true, manuallyPaused: true });
+
+    engine.togglePause();
+    expect(engine.getSnapshot()).toMatchObject({ paused: false, manuallyPaused: false });
+  });
+
+  it('ignores automatic conditions when automatic pause is disabled', () => {
+    const engine = engineWithSignal();
+    engine.setAutoPauseCondition('page-focus', true);
+    engine.setAutoPauseEnabled(false);
+    engine.update(0.1);
+
+    expect(engine.getSnapshot().paused).toBe(false);
+    expect(engine.signals[0].distance).toBeGreaterThan(0);
+  });
 });

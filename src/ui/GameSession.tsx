@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './GameSession.css';
 import type { GameEngine } from '../game/engine';
@@ -24,6 +24,11 @@ export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onT
   const { view, toast } = useGameState(engine);
   const [defenseArchiveToast, setDefenseArchiveToast] = useState<ToastState | null>(null);
   const { game: snapshot, selectedTower: tower } = view;
+  const workshopOpen = Boolean(tower && !snapshot.draft);
+  useLayoutEffect(() => {
+    engine.setAutoPauseCondition('workshop', workshopOpen);
+    return () => engine.setAutoPauseCondition('workshop', false);
+  }, [engine, workshopOpen]);
   useEffect(() => engine.subscribe((event) => {
     const operation = event.type === 'defense-archive-fact'
       ? defenseArchive.recordFact(event.fact, { standard: engine.mode === 'standard', tutorial: engine.tutorialEnabled })

@@ -7,11 +7,13 @@ import i18n from '../src/i18n';
 import zhCN from '../src/i18n/locales/zh-CN.json';
 import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
 import { LEVEL_SELECTION_STORAGE_KEY } from '../src/ui/LevelSelect';
+import { AUTO_PAUSE_STORAGE_KEY } from '../src/ui/preferences';
 
 beforeEach(() => {
   try {
     globalThis.localStorage?.removeItem(TUTORIAL_OFFER_STORAGE_KEY);
     globalThis.localStorage?.removeItem(LEVEL_SELECTION_STORAGE_KEY);
+    globalThis.localStorage?.removeItem(AUTO_PAUSE_STORAGE_KEY);
   } catch {
     // localStorage is unavailable when jsdom uses an opaque origin.
   }

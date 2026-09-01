@@ -75,8 +75,10 @@
 .settings-section-copy strong { font-size: 15px; }
 .settings-section-copy span { margin-top: 5px; color: #77717f; font-size: 14px; line-height: 1.45; }
 
-.language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--ink, #252134); }
-.language-options button {
+.language-options,
+.auto-pause-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 2px solid var(--ink, #252134); }
+.language-options button,
+.auto-pause-options button {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) 18px;
   min-height: 64px;
@@ -90,13 +92,24 @@
   cursor: pointer;
   text-align: left;
 }
-.language-options button:last-child { border-right: 0; }
-.language-options button:hover { background: #efedf3; }
-.language-options button[aria-pressed='true'] { background: color-mix(in srgb, var(--purple, #6558e8) 18%, #fff); box-shadow: inset 0 -7px 0 var(--purple, #6558e8); }
-.language-options button > span { display: grid; width: 32px; height: 32px; place-items: center; color: #fff; background: var(--purple, #6558e8); font-size: 14px; font-weight: 900; }
-.language-options button:nth-child(2) > span { color: var(--ink, #252134); background: #ff637a; }
-.language-options button b { font-size: 13px; }
-.language-options button i { color: var(--purple, #6558e8); font-size: 15px; font-style: normal; font-weight: 900; text-align: center; }
+.language-options button:last-child,
+.auto-pause-options button:last-child { border-right: 0; }
+.language-options button:hover,
+.auto-pause-options button:hover { background: #efedf3; }
+.language-options button[aria-pressed='true'],
+.auto-pause-options button[aria-pressed='true'] { background: color-mix(in srgb, var(--purple, #6558e8) 18%, #fff); box-shadow: inset 0 -7px 0 var(--purple, #6558e8); }
+.language-options button > span,
+.auto-pause-options button > span { display: grid; width: 32px; height: 32px; place-items: center; color: #fff; background: var(--purple, #6558e8); font-size: 14px; font-weight: 900; }
+.language-options button:nth-child(2) > span,
+.auto-pause-options button:nth-child(2) > span { color: var(--ink, #252134); background: #ff637a; }
+.language-options button b,
+.auto-pause-options button b { font-size: 13px; }
+.language-options button i,
+.auto-pause-options button i { color: var(--purple, #6558e8); font-size: 15px; font-style: normal; font-weight: 900; text-align: center; }
+
+.settings-auto-pause-section { align-items: center; border-top: 2px solid var(--ink, #252134); background: #f0edff; }
+.settings-auto-pause-section .settings-section-copy { padding-block: 0; }
+.auto-pause-options button > span { font-family: var(--font-mono); font-size: 13px; }
 
 .settings-storage-section { border-top: 2px solid var(--ink, #252134); background: #fff; }
 .settings-storage-action { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
@@ -139,6 +152,7 @@
   .settings-dialog h2 { font-size: 19px; }
   .settings-section { grid-template-columns: 1fr; gap: 8px; padding: 13px; }
   .settings-section-copy { padding: 3px 1px; }
-  .language-options button { min-height: 60px; }
+  .language-options button,
+  .auto-pause-options button { min-height: 60px; }
   .settings-storage-action > span { min-height: 20px; }
 }

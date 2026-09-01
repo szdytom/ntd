@@ -307,6 +307,7 @@ export interface GameSnapshot {
   selectedTowerId: number | null;
   speed: number;
   paused: boolean;
+  manuallyPaused: boolean;
   draft: ModuleDraftSnapshot | null;
 }
 

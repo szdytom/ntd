@@ -419,6 +419,10 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   await page.getByRole('button', { name: '2×' }).click();
   await clickBattlefieldAt(page, towerPad(tutorialLevel, 1));
   await expect(workshop.locator('.tower-id')).toHaveText('Node 02');
+  await expect(page.locator('.live-dot')).not.toHaveClass(/combat/);
+  await page.getByRole('button', { name: 'Close workshop' }).click();
+  await expect(tutorial.getByRole('heading', { name: 'Reopen the tutorial tower' })).toBeVisible({ timeout: 45_000 });
+  await clickBattlefieldAt(page, towerPad(tutorialLevel, 1));
   await expect(tutorial.getByRole('heading', { name: 'This is not the tutorial tower' })).toBeVisible({ timeout: 45_000 });
   await tutorial.getByRole('button', { name: 'Close the current Arc Workshop' }).click();
   await expect(tutorial.getByRole('heading', { name: 'Reopen the tutorial tower' })).toBeVisible();

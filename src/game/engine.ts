@@ -70,6 +70,7 @@ import type {
 
 type Listener = (event: GameEvent) => void;
 type ViewListener = () => void;
+export type AutoPauseCondition = 'workshop' | 'signal-archive' | 'page-focus';
 
 interface SpawnLane {
   entrance: NodeId;
@@ -181,7 +182,9 @@ export class GameEngine {
   score = 0;
   selectedTowerId: number | null = null;
   speed = 1;
-  paused = false;
+  private manuallyPaused = false;
+  private autoPauseEnabled = true;
+  private readonly autoPauseConditions = new Set<AutoPauseCondition>();
   elapsed = 0;
   private combatElapsed = 0;
   visualElapsed = 0;
@@ -481,6 +484,7 @@ export class GameEngine {
       selectedTowerId: this.selectedTowerId,
       speed: this.speed,
       paused: this.paused,
+      manuallyPaused: this.manuallyPaused,
       draft: this.draft ? { ...this.draft, choices: [...this.draft.choices] } : null,
     };
   }
@@ -865,8 +869,26 @@ export class GameEngine {
   }
 
   togglePause(): void {
-    this.paused = !this.paused;
+    this.manuallyPaused = !this.manuallyPaused;
     this.emitState();
+  }
+
+  get paused(): boolean {
+    return this.manuallyPaused || (this.autoPauseEnabled && this.autoPauseConditions.size > 0);
+  }
+
+  setAutoPauseEnabled(enabled: boolean): void {
+    if (this.autoPauseEnabled === enabled) return;
+    const wasPaused = this.paused;
+    this.autoPauseEnabled = enabled;
+    if (wasPaused !== this.paused) this.emitState();
+  }
+
+  setAutoPauseCondition(condition: AutoPauseCondition, active: boolean): void {
+    const wasPaused = this.paused;
+    if (active) this.autoPauseConditions.add(condition);
+    else this.autoPauseConditions.delete(condition);
+    if (wasPaused !== this.paused) this.emitState();
   }
 
   setSpeed(speed: number): void {
@@ -899,7 +921,7 @@ export class GameEngine {
     this.combatElapsed = 0;
     this.visualElapsed = 0;
     this.simulationAccumulator = 0;
-    this.paused = false;
+    this.manuallyPaused = false;
     this.runId = createRunId();
     this.runStartedAt = Date.now();
     this.defenseCompleted = false;
