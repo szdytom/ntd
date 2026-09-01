@@ -1,5 +1,6 @@
 import { shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
+import { COMBAT_BALANCE } from '../game/balance';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
 
@@ -14,7 +15,7 @@ const color = '#9b5de5';
 const stats = {
   speedMultiplier: 0.96,
   pulseEveryTicks: 4,
-  damageMultiplier: 2,
+  damageMultiplier: 1.5,
   minimumDamage: 5,
   radius: 56,
 } as const;
@@ -53,10 +54,12 @@ export const resonantTrailModule: ModuleDefinition = {
   tags: ['trail'],
   icon: ResonantTrailIcon,
   meta: {
-    name: 'Resonant Trail', shortName: 'Resonance', color, tint: '#f1eaff', energy: 32, rarity: 'rare',
+    name: 'Resonant Trail', shortName: 'Resonance', color, tint: '#f1eaff', energy: 44, rarity: 'epic',
     text: { detail: {
-      ticks: stats.pulseEveryTicks,
+      interval: stats.pulseEveryTicks * COMBAT_BALANCE.projectileTrailInterval,
       damage: Math.round(stats.damageMultiplier * 100),
+      radius: stats.radius,
+      speed: Math.round((1 - stats.speedMultiplier) * 100),
     } },
   },
   effects,

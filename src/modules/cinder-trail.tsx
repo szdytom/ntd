@@ -3,6 +3,7 @@ import type { EffectDefinition } from '../effects/types';
 import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
+import { extendStatusTrail } from './status-trail';
 
 const CinderTrailIcon = createModuleIcon(<>
   <path className="module-icon__line" d="M22 5l7 11-7 11-4-7H9l3-4-3-4h9z" />
@@ -120,31 +121,22 @@ export const cinderTrailModule: ModuleDefinition = {
   },
   onTrail: ({ effects: engine, position, rotation, projectile, combat }) => {
     if (!projectile) return;
-    const updateKey = 'cinder-trail:last-age';
-    if (projectile.moduleState[updateKey] === projectile.age) return;
-    projectile.moduleState[updateKey] = projectile.age;
-    const stacks = projectile.modules.filter((id) => id === 'cinder-trail').length;
-    engine.spawn('module:cinder-trail:embers', { position, rotation, color });
-    combat.extendRift(projectile, 'cinder-trail', position, {
+    const extended = extendStatusTrail(combat, projectile, position, {
+      moduleId: 'cinder-trail',
       duration: stats.duration,
       width: stats.width,
-      damagePerSecond: projectile.damage * stats.damageMultiplierPerSecond * stacks,
+      damageMultiplierPerSecond: stats.damageMultiplierPerSecond,
       settlementInterval: stats.settlementInterval,
-      modifierInterval: stats.settlementInterval,
-      effectInterval: stats.settlementInterval,
       color,
-      coverageGroup: 'cinder-trail',
-      pointLifetime: stats.duration,
-      contactStatus: {
-        id: 'cinder-trail',
-        duration: stats.burnDuration,
-        interval: stats.burnInterval,
-        damage: stats.burnDamage * stacks,
-        color: darkColor,
-        particle: { effectId: burningEffectId, interval: 0.4 },
-      },
-      visual: { type: 'effects-only' },
+      statusDuration: stats.burnDuration,
+      statusInterval: stats.burnInterval,
+      statusDamage: stats.burnDamage,
+      statusColor: darkColor,
+      statusEffectId: burningEffectId,
+      statusParticleInterval: 0.4,
       hitEffectId: 'module:cinder-trail:contact',
     });
+    if (!extended) return;
+    engine.spawn('module:cinder-trail:embers', { position, rotation, color });
   },
 };

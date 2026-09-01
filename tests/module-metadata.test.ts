@@ -36,11 +36,11 @@ describe('module metadata', () => {
     }
   });
 
-  it('keeps resonant trail at its authored rare damage tier', () => {
+  it('keeps resonant trail at its rebalanced epic damage tier', () => {
     const resonance = registry.require('resonant-trail');
 
-    expect(resonance.meta.rarity).toBe('rare');
-    expect(resonance.meta.energy).toBe(32);
-    expect(resonance.meta.text?.detail?.damage).toBe(200);
+    expect(resonance.meta.rarity).toBe('epic');
+    expect(resonance.meta.energy).toBe(44);
+    expect(resonance.meta.text?.detail).toMatchObject({ damage: 150, interval: 0.26, radius: 56, speed: 4 });
   });
 });

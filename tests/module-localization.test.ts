@@ -56,6 +56,13 @@ describe('module localization values', () => {
     expect(moduleDetail(i18n.t, definition)).not.toContain('6.999999999999999');
   });
 
+  it('describes Resonant Trail cadence in seconds instead of engine ticks', () => {
+    const detail = moduleDetail(i18n.t, registry.require('resonant-trail'));
+
+    expect(detail).toContain('Pulses every 0.26 seconds');
+    expect(detail).not.toContain('trail ticks');
+  });
+
   it('falls back to English when a translated value is null', async () => {
     const key = 'test.nullFallback';
     i18n.addResources('en', 'translation', { [key]: 'English fallback' });

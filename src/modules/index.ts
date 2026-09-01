@@ -32,6 +32,7 @@ import { seekerModule } from './seeker';
 import { searingSigilModule } from './searing-sigil';
 import { singularityModule } from './singularity';
 import { starfireMatrixModule } from './starfire-matrix';
+import { starfireTrailModule } from './starfire-trail';
 import { teslaNodeModule } from './tesla-node';
 import { terrainTriggerModule } from './terrain-trigger';
 import { timerTriggerModule } from './timer-trigger';
@@ -56,6 +57,7 @@ export function createModuleRegistry(): ModuleRegistry {
     .register(arcboltModule)
     .register(resonantTrailModule)
     .register(cinderTrailModule)
+    .register(starfireTrailModule)
     .register(riftTrailModule)
     .register(razorModule)
     .register(ricochetModule)

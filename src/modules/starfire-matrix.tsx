@@ -3,6 +3,14 @@ import { statusOrbs } from '../effects/factories';
 import { drawGlow } from '../game/glow';
 import type { ModuleDefinition } from './types';
 import { createModuleIcon } from './icons';
+import {
+  starfallParticles,
+  STARFIRE_ACCENT as accent,
+  STARFIRE_COLOR as color,
+  STARFIRE_HOT_COLOR as hotColor,
+  STARFIRE_PLASMA_COLOR as plasmaColor,
+  STARFIRE_TINT,
+} from './starfire-effects';
 
 const StarfireMatrixIcon = createModuleIcon(<>
   <circle className="module-icon__line" cx="16" cy="16" r="10" />
@@ -13,11 +21,6 @@ const StarfireMatrixIcon = createModuleIcon(<>
   <path className="module-icon__fill" d="M16 10l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
 </>);
 
-const color = '#a855f7';
-const accent = '#ffd166';
-const hotColor = '#fff4c2';
-const plasmaColor = '#7c3aed';
-const smokeColor = '#352d45';
 const burningEffectId = 'module:starfire-matrix:burning';
 const stats = { damageMultiplier: 0.78, damage: 7, duration: 3.2, interval: 0.4 } as const;
 
@@ -65,43 +68,14 @@ const effects: readonly EffectDefinition[] = [
       painter.circle(frame.x, frame.y, 7 * flash, hotColor, flash);
     },
   },
-  {
+  starfallParticles({
     id: 'module:starfire-matrix:starfall',
     lifetime: 0.9,
-    layer: 'air',
+    count: 24,
+    distanceMin: 54,
+    distanceMax: 88,
     bloom: 1,
-    render: (frame, painter) => {
-      for (let index = 0; index < 24; index += 1) {
-        const angle = frame.random(index, 0, Math.PI * 2);
-        const startRadius = frame.random(index + 30, 54, 88);
-        const speed = frame.random(index + 60, 0.62, 1);
-        const radius = 8 + frame.easeOut(3) * startRadius * speed;
-        const x = frame.x + Math.cos(angle) * radius;
-        const y = frame.y + Math.sin(angle) * radius - frame.fin * frame.random(index + 90, 0, 12);
-        if (index % 4 === 0) {
-          painter.circle(
-            x,
-            y,
-            1.5 + frame.slope * frame.random(index + 120, 4, 8),
-            frame.fin < 0.54 ? plasmaColor : smokeColor,
-            frame.fout * 0.72,
-          );
-        } else {
-          const particleColor = index % 3 === 0 ? plasmaColor : index % 3 === 1 ? accent : frame.color;
-          painter.lineAngle(
-            x,
-            y,
-            angle,
-            4 + frame.random(index + 150, 10, 24) * frame.fout,
-            3.2 * frame.fout + 0.45,
-            particleColor,
-            frame.fout,
-          );
-          painter.circle(x, y, 1.7 + 2.8 * frame.fout, particleColor, frame.fout * 0.92);
-        }
-      }
-    },
-  },
+  }),
 ];
 
 export const starfireMatrixModule: ModuleDefinition = {
@@ -110,7 +84,7 @@ export const starfireMatrixModule: ModuleDefinition = {
   tags: ['status'],
   icon: StarfireMatrixIcon,
   meta: {
-    name: 'Starfire Matrix', shortName: 'Starfire', color, tint: '#f4e8ff', energy: 24, rarity: 'legendary',
+    name: 'Starfire Matrix', shortName: 'Starfire', color, tint: STARFIRE_TINT, energy: 24, rarity: 'legendary',
     text: { detail: {
       direct: Math.round((1 - stats.damageMultiplier) * 100),
       damage: stats.damage,

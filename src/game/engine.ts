@@ -1401,7 +1401,7 @@ export class GameEngine {
       if (reachedWorldBoundary) projectile.trailTimer = 0;
       projectile.trailTimer -= delta;
       if (projectile.trailTimer <= 0) {
-        projectile.trailTimer = 0.065;
+        projectile.trailTimer = COMBAT_BALANCE.projectileTrailInterval;
         this.modules.dispatch('onTrail', projectile.modules, {
           effects: this.effects,
           position: { ...projectile.position },
