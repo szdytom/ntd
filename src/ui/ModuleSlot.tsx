@@ -7,11 +7,12 @@ import { moduleDescription, moduleName, moduleShortName } from '../i18n/presenta
 import { KIND_SYMBOL, moduleVariableStyle } from './modulePresentation';
 import './ModuleSlot.css';
 
-export function ModuleSlot({ index, isLast, definition, selectedModule, engine }: {
+export function ModuleSlot({ index, isLast, definition, selectedModule, onSelectModule, engine }: {
   index: number;
   isLast: boolean;
   definition: ModuleDefinition | undefined;
   selectedModule: ModuleId | null;
+  onSelectModule: (moduleId: ModuleId) => void;
   engine: GameEngine;
 }) {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export function ModuleSlot({ index, isLast, definition, selectedModule, engine }
           <button className={`module-slot filled ${definition.kind}`} data-slot={index} data-touch-slot={index} data-tutorial-slot={index} style={moduleVariableStyle(definition)} draggable
             onDragStart={dragStart} onDragOver={(event) => { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }}
             onDragLeave={(event) => event.currentTarget.classList.remove('drag-over')} onDrop={drop} onKeyDown={keyDown}
-            onClick={() => { if (selectedModule) engine.installModule(index, selectedModule); }}
+            onClick={() => onSelectModule(definition.id)}
             aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
             aria-label={t('moduleSlot.filledAria', { slot: index + 1, module: moduleName(t, definition.id) })}
             title={t('moduleSlot.filledTitle', { module: moduleName(t, definition.id), description: moduleDescription(t, definition) })}>

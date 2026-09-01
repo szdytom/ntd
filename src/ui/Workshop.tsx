@@ -80,6 +80,11 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                   isLast={index === tower.slots.length - 1}
                   definition={moduleId ? engine.modules.get(moduleId) : undefined}
                   selectedModule={selectedModule}
+                  onSelectModule={(id) => {
+                    const installed = engine.modules.get(id);
+                    if (kindFilter !== 'all' && installed?.kind !== kindFilter) setKindFilter('all');
+                    setSelectedModule(id);
+                  }}
                   engine={engine}
                 />
               ))}

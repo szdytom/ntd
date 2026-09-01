@@ -75,6 +75,32 @@ describe('workshop touch dragging', () => {
     expect(engine.towers[0].slots.slice(0, 2)).toEqual(['pulse', 'frost']);
   });
 
+  it('yields a held touch gesture to native dragging when the browser starts it', () => {
+    const { container, engine } = renderWorkshop();
+    const card = container.querySelector<HTMLElement>('[data-touch-module="arcbolt"]');
+    const destination = container.querySelector<HTMLElement>('.module-slot[data-slot="2"]');
+    if (!card || !destination) throw new Error('Expected touch drag elements');
+    const transferred = new Map<string, string>();
+    const dataTransfer = {
+      setData: (type: string, value: string) => transferred.set(type, value),
+      getData: (type: string) => transferred.get(type) ?? '',
+      effectAllowed: 'none',
+    };
+
+    fireEvent.touchStart(card, { touches: touchList(touch(10, 20, 220)) });
+    vi.advanceTimersByTime(500);
+    const nativeDragStarted = fireEvent.dragStart(card, {
+      dataTransfer,
+    });
+    expect(nativeDragStarted).toBe(true);
+    expect(card.classList.contains('touch-dragging')).toBe(false);
+
+    fireEvent.dragOver(destination, { dataTransfer });
+    fireEvent.drop(destination, { dataTransfer });
+
+    expect(engine.towers[0].slots[2]).toBe('arcbolt');
+  });
+
   it('keeps a scroll gesture from becoming a drag before the hold delay', () => {
     const { container, engine } = renderWorkshop();
     const workshop = container.querySelector<HTMLElement>('.workshop');
@@ -100,5 +126,34 @@ describe('workshop touch dragging', () => {
     fireEvent.doubleClick(card, { timeStamp: 1_100 });
 
     expect(engine.towers[0].slots.filter((moduleId) => moduleId === 'arcbolt')).toHaveLength(1);
+  });
+});
+
+describe('workshop slot clicking', () => {
+  it('installs the selected module only when clicking an empty slot', () => {
+    const { container, engine } = renderWorkshop();
+    const card = container.querySelector<HTMLElement>('[data-touch-module="arcbolt"]');
+    const emptySlot = container.querySelector<HTMLElement>('.module-slot.empty[data-slot="2"]');
+    if (!card || !emptySlot) throw new Error('Expected a module card and empty slot');
+
+    fireEvent.click(card);
+    fireEvent.click(emptySlot);
+
+    expect(engine.towers[0].slots[2]).toBe('arcbolt');
+  });
+
+  it('selects an installed module instead of replacing its filled slot', () => {
+    const { container, engine } = renderWorkshop();
+    const arcboltCard = container.querySelector<HTMLElement>('[data-touch-module="arcbolt"]');
+    const pulseCard = container.querySelector<HTMLElement>('[data-touch-module="pulse"]');
+    const filledSlot = container.querySelector<HTMLElement>('.module-slot.filled[data-slot="1"]');
+    if (!arcboltCard || !pulseCard || !filledSlot) throw new Error('Expected module cards and a filled slot');
+
+    fireEvent.click(arcboltCard);
+    fireEvent.click(filledSlot);
+
+    expect(engine.towers[0].slots[1]).toBe('pulse');
+    expect(pulseCard.classList.contains('selected')).toBe(true);
+    expect(arcboltCard.classList.contains('selected')).toBe(false);
   });
 });

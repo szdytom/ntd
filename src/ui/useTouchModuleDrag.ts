@@ -133,12 +133,16 @@ export function useTouchModuleDrag(
     const contextMenu = (event: MouseEvent): void => {
       if (gesture?.active && sourceFrom(event.target)) event.preventDefault();
     };
+    const nativeDragStart = (event: DragEvent): void => {
+      if (gesture && sourceFrom(event.target)?.element === gesture.sourceElement) reset();
+    };
 
     root.addEventListener('touchstart', touchStart, { passive: true });
     root.addEventListener('touchmove', touchMove, { passive: false });
     root.addEventListener('touchend', touchEnd, { passive: false });
     root.addEventListener('touchcancel', reset);
     root.addEventListener('contextmenu', contextMenu);
+    root.addEventListener('dragstart', nativeDragStart, true);
     return () => {
       reset();
       root.removeEventListener('touchstart', touchStart);
@@ -146,6 +150,7 @@ export function useTouchModuleDrag(
       root.removeEventListener('touchend', touchEnd);
       root.removeEventListener('touchcancel', reset);
       root.removeEventListener('contextmenu', contextMenu);
+      root.removeEventListener('dragstart', nativeDragStart, true);
     };
   }, [installModule, rootRef, swapModules]);
 }
