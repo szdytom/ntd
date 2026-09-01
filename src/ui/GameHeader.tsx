@@ -48,7 +48,7 @@ export function GameHeader({
       </div>
 
       <div className="top-actions">
-        <SettingsPanel disabled={drafting} />
+        <SettingsPanel />
         <div className="speed-switch" role="group" aria-label={t('header.speed')}>
           {[1, 2].map((speed) => (
             <button key={speed} disabled={drafting} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
