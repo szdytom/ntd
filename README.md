@@ -4,17 +4,18 @@
 
 [![CI and GitHub Pages](https://github.com/szdytom/ntd/actions/workflows/ci.yml/badge.svg)](https://github.com/szdytom/ntd/actions/workflows/ci.yml)
 [![GitHub Pages](https://img.shields.io/badge/play-GitHub%20Pages-6c5ce7)](https://szdytom.github.io/ntd/)
+[![itch.io](https://img.shields.io/badge/play-itch.io-fa5c5c?logo=itchdotio&logoColor=white)](https://fang-erj.itch.io/ntd)
 
 Prism Bastion is a geometric tower-defense game built around modular programming. Load projectiles, modifiers, logic, trails, and triggers into tower slots; the compiler reads them from left to right and turns their order into an attack program. The same modules can produce radically different results when rearranged.
 
-**[Play online](https://szdytom.github.io/ntd/)**
+**[Play on itch.io](https://fang-erj.itch.io/ntd) · [Play on GitHub Pages](https://szdytom.github.io/ntd/)**
 
 ## Highlights
 
-- **Programmable builds:** 27 built-in modules cover piercing, forking, seeking, ricochet, area damage, damage over time, and nested triggers.
+- **Programmable builds:** 36 built-in modules cover piercing, forking, seeking, ricochet, area damage, damage over time, and nested triggers.
 - **Order is the rule:** modifiers and logic affect the next projectile to their right, while an unfinished cast block may wrap once to the beginning.
 - **Two game modes:** Standard mode includes inventory limits, opening drafts, post-wave rewards, and economic progression. Creative mode provides unlimited modules and shards plus a custom signal console.
-- **Four distinct maps and five difficulties:** every sector has its own route, deployment nodes, enemy multipliers, and wave plan.
+- **Five distinct sectors and five difficulties:** every sector has its own route, deployment nodes, enemy multipliers, and wave plan.
 - **Mechanically distinct bosses:** shields, death splitting, and local cooldown suppression are introduced separately and later combined.
 - **Reliable ballistics:** fixed-step simulation, continuous collision detection, path interception, piercing, and seeker retargeting support fast combat.
 - **Lightweight rendering stack:** React drives the interface, Canvas 2D renders the battlefield, and WebGL adds optional bloom and shield refraction with automatic fallback.
