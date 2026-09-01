@@ -12,7 +12,7 @@ export const MODULE_RARITIES: Record<ModuleRarity, ModuleRarityDefinition> = {
   common: { label: 'Common', color: '#8b8796', tint: '#f3f2f6', targetPower: 1, qualityPoints: 1 },
   uncommon: { label: 'Uncommon', color: '#00a878', tint: '#e9fbf5', targetPower: 1.25, qualityPoints: 2 },
   rare: { label: 'Rare', color: '#3478f6', tint: '#eaf1ff', targetPower: 1.6, qualityPoints: 3 },
-  epic: { label: 'Epic', color: '#9b5de5', tint: '#f4ebff', targetPower: 1.85, qualityPoints: 4 },
+  epic: { label: 'Epic', color: '#a51fc4', tint: '#f8e8fc', targetPower: 1.85, qualityPoints: 4 },
   legendary: { label: 'Legendary', color: '#ef8f00', tint: '#fff3d8', targetPower: 2.05, qualityPoints: 5 },
 };
 
