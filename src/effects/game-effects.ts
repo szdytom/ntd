@@ -8,6 +8,7 @@ interface ShieldEffectData {
 
 export const GAME_EFFECT_IDS = {
   fractureSplitRipple: 'game:fracture-split-ripple',
+  projectileExit: 'game:projectile-exit',
   shieldHit: 'game:shield-hit',
   shieldBreak: 'game:shield-break',
   shieldRestore: 'game:shield-restore',
@@ -19,6 +20,16 @@ export const gameEffects: readonly EffectDefinition[] = [
   coneSparks({ id: 'game:tower-build-sparks', lifetime: 0.48, count: 18, distance: 72, length: 10, stroke: 2 }),
   shockwave({ id: 'game:signal-pop-ring', lifetime: 0.28, radius: 32, stroke: 2.5, sides: 6 }),
   coneSparks({ id: 'game:signal-pop-sparks', lifetime: 0.42, count: 12, distance: 54, length: 9, stroke: 2 }),
+  coneSparks({
+    id: GAME_EFFECT_IDS.projectileExit,
+    lifetime: 0.28,
+    count: 8,
+    distance: 34,
+    cone: 0.48,
+    length: 10,
+    stroke: 1.5,
+    bloom: 0.9,
+  }),
   {
     id: GAME_EFFECT_IDS.fractureSplitRipple,
     lifetime: 0.46,

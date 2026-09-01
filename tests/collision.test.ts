@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { segmentCircleHitTime, segmentRegularPolygonHitTime } from '../src/game/collision';
+import { segmentCircleHitTime, segmentConvexExitTime, segmentRegularPolygonHitTime } from '../src/game/collision';
 import { isInsideRegularShield } from '../src/signals/capabilities/shield';
 
 describe('swept collision', () => {
@@ -24,5 +24,15 @@ describe('swept collision', () => {
 
     expect(time).not.toBeNull();
     expect(time ?? 1).toBeLessThan(0.2);
+  });
+
+  it('returns the point where a segment leaves a convex contact region', () => {
+    const time = segmentConvexExitTime(
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      (point) => Math.hypot(point.x, point.y) <= 10,
+    );
+
+    expect(time).toBeCloseTo(0.5, 2);
   });
 });

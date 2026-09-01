@@ -64,3 +64,22 @@ export function segmentRegularPolygonHitTime(
   }
   return null;
 }
+
+/** Returns when a segment leaves a convex region that contains its start. */
+export function segmentConvexExitTime(
+  start: Point,
+  end: Point,
+  contains: (point: Point) => boolean,
+): number | null {
+  if (!contains(start)) return 0;
+  if (contains(end)) return null;
+
+  let low = 0;
+  let high = 1;
+  for (let iteration = 0; iteration < 10; iteration += 1) {
+    const midpoint = (low + high) / 2;
+    if (contains(lerpPoint(start, end, midpoint))) low = midpoint;
+    else high = midpoint;
+  }
+  return clamp(high, 0, 1);
+}

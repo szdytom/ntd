@@ -18,7 +18,7 @@ import {
   updateSignalHealthRegeneration,
 } from '../signals';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
-import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
+import { segmentCircleHitTime, segmentConvexExitTime, segmentRegularPolygonHitTime } from './collision';
 import {
   DEFAULT_LEVEL_ID,
   getLevel,
@@ -35,7 +35,7 @@ import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../s
 import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '../signals/capabilities/shield';
 import { signalMovementSpeedMultiplier } from '../signals/capabilities/movement';
 import { findPathInterception } from './interception';
-import { angleBetween, distance, normalize, rotate, seededNoise } from './math';
+import { angleBetween, distance, lerpPoint, normalize, rotate, seededNoise } from './math';
 import { resolveRoute, type NodeId, type PathSampler } from './path';
 import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
@@ -76,6 +76,20 @@ interface SpawnLane {
   queue: SignalId[];
   timer: number;
 }
+
+interface ProjectileContact {
+  signal: Signal;
+  boundary: {
+    kind: 'circle';
+    radius: number;
+  } | {
+    kind: 'shield';
+    radius: number;
+    sides: number;
+    rotation: number;
+    padding: number;
+  };
+}
 const NO_EXCLUDED_ENEMY_IDS: readonly number[] = [];
 const CREATIVE_KIND_ORDER: Readonly<Record<ModuleKind, number>> = {
   projectile: 0,
@@ -112,6 +126,7 @@ export const WAVE_CLEAR_DELAY = 2;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
 const SIMULATION_TIME_EPSILON = 1e-9;
+const PROJECTILE_CONTACT_EPSILON = 1e-6;
 const SEEKING_RETARGET_RADIUS = 320;
 const TERRAIN_TRIGGER_CROSSING_TICKS = 'terrain-trigger:crossing-ticks';
 const MAX_ENEMY_COLLISION_RADIUS = Math.max(
@@ -193,6 +208,7 @@ export class GameEngine {
   private readonly routeCache = new Map<NodeId, PathSampler>();
   private readonly spatialCandidates: Signal[] = [];
   private readonly nearbyCandidates: Signal[] = [];
+  private readonly projectileContacts = new WeakMap<Projectile, ProjectileContact[]>();
   private readonly movementStart: Point = { x: 0, y: 0 };
   private readonly movementEnd: Point = { x: 0, y: 0 };
   private towerAuraCooldown = 1;
@@ -1402,8 +1418,9 @@ export class GameEngine {
       if (hit) {
         projectile.position.x = movementStart.x + (movementEnd.x - movementStart.x) * hit.time;
         projectile.position.y = movementStart.y + (movementEnd.y - movementStart.y) * hit.time;
-        this.hitSignal(projectile, hit.signal);
       }
+      this.releaseExitedProjectileContacts(projectile, movementStart, projectile.position);
+      if (hit) this.hitSignal(projectile, hit.signal);
 
       if (projectile.shot.trigger?.type === 'terrain' && !projectile.triggered) {
         const moved = distance(movementStart, projectile.position) > SIMULATION_TIME_EPSILON;
@@ -1658,6 +1675,7 @@ export class GameEngine {
   }
 
   private hitSignal(projectile: Projectile, signal: Signal): void {
+    const contact = this.createProjectileContact(projectile, signal);
     const damageDealt = this.combatApi.dealDamage(signal, projectile.damage, projectile.color, projectile);
     if (damageDealt > 0) {
       this.modules.dispatch('onHit', projectile.modules, {
@@ -1703,12 +1721,72 @@ export class GameEngine {
     projectile.pierce -= 1;
     if (projectile.pierce < 0) projectile.life = 0;
     else {
-      const exitDistance = (signal.radius + projectile.radius) * 2 + 2;
-      const velocityLength = Math.hypot(projectile.velocity.x, projectile.velocity.y) || 1;
-      projectile.position.x += projectile.velocity.x / velocityLength * exitDistance;
-      projectile.position.y += projectile.velocity.y / velocityLength * exitDistance;
+      const contacts = this.projectileContacts.get(projectile);
+      if (contacts) contacts.push(contact);
+      else this.projectileContacts.set(projectile, [contact]);
       if (projectile.seeking > 0) this.resolveSeekingTarget(projectile);
     }
+  }
+
+  private createProjectileContact(projectile: Projectile, signal: Signal): ProjectileContact {
+    const shield = getSignalCapability(signalRegistry.require(signal.type), 'shield');
+    if (shield && signal.shield > 0) {
+      return {
+        signal,
+        boundary: {
+          kind: 'shield',
+          radius: shield.radius * signal.shieldRadiusScale,
+          sides: shield.sides,
+          rotation: shield.rotation,
+          padding: projectile.radius,
+        },
+      };
+    }
+    return {
+      signal,
+      boundary: { kind: 'circle', radius: signal.radius + projectile.radius },
+    };
+  }
+
+  private releaseExitedProjectileContacts(projectile: Projectile, start: Point, end: Point): void {
+    const contacts = this.projectileContacts.get(projectile);
+    if (!contacts) return;
+    let activeCount = 0;
+    for (const contact of contacts) {
+      const exitTime = segmentConvexExitTime(
+        start,
+        end,
+        (point) => this.isInsideProjectileContact(contact, point),
+      );
+      if (exitTime === null) {
+        contacts[activeCount] = contact;
+        activeCount += 1;
+        continue;
+      }
+      this.effects.spawn(GAME_EFFECT_IDS.projectileExit, {
+        position: lerpPoint(start, end, exitTime),
+        rotation: Math.atan2(projectile.velocity.y, projectile.velocity.x),
+        color: projectile.color,
+      });
+    }
+    contacts.length = activeCount;
+    if (activeCount === 0) this.projectileContacts.delete(projectile);
+  }
+
+  private isInsideProjectileContact(contact: ProjectileContact, point: Point): boolean {
+    if (contact.boundary.kind === 'circle') {
+      return distance(contact.signal.position, point) <= contact.boundary.radius + PROJECTILE_CONTACT_EPSILON;
+    }
+    return isInsideRegularShield(
+      contact.signal.position.x,
+      contact.signal.position.y,
+      point.x,
+      point.y,
+      contact.boundary.radius,
+      contact.boundary.sides,
+      contact.boundary.rotation,
+      contact.boundary.padding + PROJECTILE_CONTACT_EPSILON,
+    );
   }
 
   private dispatchTargetEffect(
@@ -1769,6 +1847,7 @@ export class GameEngine {
       this.spatialCandidates,
     );
     for (const signal of candidates) {
+      if (this.projectileContacts.get(projectile)?.some((contact) => contact.signal.id === signal.id)) continue;
       const time = this.projectileHitTime(signal, projectile, start, end);
       if (time !== null && (!first || time < first.time)) first = { signal, time };
     }
