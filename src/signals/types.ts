@@ -32,6 +32,11 @@ export interface DamageCapCapability {
   continuousDamageCapPerSecond: number;
 }
 
+export interface FullHealAfterLullCapability {
+  kind: 'full-heal-after-lull';
+  delay: number;
+}
+
 export interface SplitOnDeathCapability {
   kind: 'split-on-death';
   count: number;
@@ -61,6 +66,7 @@ export type SignalCapability =
   | PulseMovementCapability
   | ShieldCapability
   | DamageCapCapability
+  | FullHealAfterLullCapability
   | SplitOnDeathCapability
   | TowerSuppressionCapability;
 export type SignalCapabilityKind = SignalCapability['kind'];

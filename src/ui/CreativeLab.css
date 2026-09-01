@@ -93,6 +93,11 @@
   background: var(--creative-ink);
 }
 
+.creative-signal-grid-fill {
+  min-height: 66px;
+  background: #eeedf2;
+}
+
 .creative-signal-grid > button {
   display: grid;
   min-width: 0;
@@ -164,6 +169,7 @@
   .creative-lab-head h2 { font-size: 17px; }
   .creative-lab-head small { font-size: 11px; }
   .creative-lab-body { grid-template-columns: 1fr; }
+  .creative-signal-grid-fill { min-height: 58px; }
   .creative-signal-grid > button { min-height: 58px; grid-template-columns: 38px minmax(0, 1fr) 29px; }
   .creative-signal-symbol { width: 27px; height: 27px; margin-left: 8px; }
   .creative-signal-name { padding: 0 5px; font-size: 12px; }
@@ -173,5 +179,6 @@
 }
 
 @media (max-width: 540px) {
-  .creative-lab .creative-signal-grid > button:last-child { grid-column: 1 / -1; }
+  .creative-lab .creative-signal-grid-fill { display: none; }
+  .creative-lab .creative-signal-grid > button:last-of-type { grid-column: 1 / -1; }
 }

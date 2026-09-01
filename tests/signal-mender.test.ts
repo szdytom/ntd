@@ -1,0 +1,108 @@
+import { describe, expect, it } from 'vitest';
+import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
+import type { Projectile, ShotBlueprint, Signal } from '../src/game/types';
+import {
+  getSignalCapability,
+  MENDER_OUT_OF_COMBAT_HEAL_DELAY,
+  resetSignalFullHealTimer,
+  signalRegistry,
+  updateSignalFullHeal,
+} from '../src/signals';
+
+const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
+  const at = engine.path.pointAtDistance(pathDistance);
+  signal.speed = 0;
+  signal.distance = pathDistance;
+  signal.progress = pathDistance / engine.path.length;
+  signal.position = at.position;
+  signal.angle = at.angle;
+};
+
+const fireAt = (engine: GameEngine, shot: ShotBlueprint, signal: Signal): void => {
+  const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
+  const launchGap = signal.radius + shot.size + 2;
+  const projectile: Projectile = {
+    id: 71_000,
+    towerId: engine.towers[0]?.id ?? -1,
+    position: {
+      x: signal.position.x - direction.x * launchGap,
+      y: signal.position.y - direction.y * launchGap,
+    },
+    velocity: { x: direction.x * shot.speed, y: direction.y * shot.speed },
+    targetId: signal.id,
+    damage: shot.damage,
+    speed: shot.speed,
+    radius: shot.size,
+    color: shot.color,
+    life: shot.lifetime,
+    pierce: shot.pierce,
+    slow: shot.slow,
+    splash: shot.splash,
+    seeking: shot.seeking,
+    modules: [...shot.modules],
+    shot,
+    trailTimer: 1,
+    moduleState: {},
+    behavior: 'linear',
+    age: 0,
+    triggered: false,
+    triggerCooldown: 0,
+    triggerCount: 0,
+    trail: [],
+  };
+  engine.projectiles.push(projectile);
+};
+
+describe('Mending Cell reconstruction', () => {
+  it('keeps the out-of-combat delay in the signal definition constant', () => {
+    const capability = getSignalCapability(signalRegistry.require('mender'), 'full-heal-after-lull');
+
+    expect(MENDER_OUT_OF_COMBAT_HEAL_DELAY).toBe(2.5);
+    expect(capability?.delay).toBe(MENDER_OUT_OF_COMBAT_HEAL_DELAY);
+  });
+
+  it('restarts the full-heal countdown whenever health damage is taken', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 102 });
+    engine.spawnCreativeSignal('mender');
+    const signal = engine.signals[0];
+    const capability = getSignalCapability(signalRegistry.require('mender'), 'full-heal-after-lull');
+    if (!signal || !capability) throw new Error('Expected a Mending Cell');
+    signal.hp -= 20;
+
+    resetSignalFullHealTimer(signal, capability, 20);
+    expect(updateSignalFullHeal(signal, capability, 2)).toBe(0);
+    resetSignalFullHealTimer(signal, capability, 1);
+    expect(updateSignalFullHeal(signal, capability, 2)).toBe(0);
+    expect(updateSignalFullHeal(signal, capability, 0.5)).toBe(20);
+    expect(signal.hp).toBe(signal.maxHp);
+  });
+
+  it('returns to full health after 2.5 seconds without further damage in combat', () => {
+    const engine = new GameEngine({ mode: 'creative', levelId: 'white-prism', seed: 103 });
+    const tower = engine.towers[0];
+    if (!tower) throw new Error('Expected a tower');
+    tower.slots.fill(null);
+    tower.energy = 0;
+    tower.energyRegen = 0;
+    engine.spawnCreativeSignal('mender');
+    const signal = engine.signals[0];
+    if (!signal) throw new Error('Expected a Mending Cell');
+    placeSignal(engine, signal, 200);
+    const shot = engine.modules.compile(['pulse']).shots[0];
+    if (!shot) throw new Error('Expected a projectile');
+    fireAt(engine, shot, signal);
+
+    for (let step = 0; step < 120 && signal.hp === signal.maxHp; step += 1) {
+      engine.update(FIXED_SIMULATION_STEP);
+    }
+    const damagedHp = signal.hp;
+    expect(damagedHp).toBeLessThan(signal.maxHp);
+
+    const delaySteps = Math.round(MENDER_OUT_OF_COMBAT_HEAL_DELAY / FIXED_SIMULATION_STEP);
+    for (let step = 1; step < delaySteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
+    expect(signal.hp).toBe(damagedHp);
+
+    engine.update(FIXED_SIMULATION_STEP);
+    expect(signal.hp).toBe(signal.maxHp);
+  });
+});

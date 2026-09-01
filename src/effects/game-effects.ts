@@ -11,6 +11,7 @@ export const GAME_EFFECT_IDS = {
   shieldHit: 'game:shield-hit',
   shieldBreak: 'game:shield-break',
   shieldRestore: 'game:shield-restore',
+  signalFullHeal: 'game:signal-full-heal',
 } as const;
 
 export const gameEffects: readonly EffectDefinition[] = [
@@ -107,6 +108,20 @@ export const gameEffects: readonly EffectDefinition[] = [
         0.5 + frame.slope * 3.5,
       );
       painter.light(frame.x, frame.y, radius * 1.3, frame.color, frame.slope * 0.28);
+    },
+  },
+  {
+    id: GAME_EFFECT_IDS.signalFullHeal,
+    lifetime: 0.55,
+    layer: 'air',
+    bloom: 0.9,
+    render: (frame, painter) => {
+      const radius = Math.max(12, (frame.data as ShieldEffectData | undefined)?.radius ?? 24);
+      const sides = Math.max(3, Math.round((frame.data as ShieldEffectData | undefined)?.sides ?? 7));
+      const expanded = radius * (0.45 + frame.easeOut(3) * 0.85);
+      painter.polygon(frame.x, frame.y, expanded, sides, frame.rotation, frame.color, frame.slope, 2 + frame.slope * 3);
+      painter.ring(frame.x, frame.y, expanded * 0.7, 1 + frame.slope * 2, '#ffffff', frame.slope * 0.72);
+      painter.light(frame.x, frame.y, expanded * 1.5, frame.color, frame.slope * 0.34);
     },
   },
   {

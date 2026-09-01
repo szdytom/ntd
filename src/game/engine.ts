@@ -10,7 +10,12 @@ import type {
   TargetEffectChannel,
 } from '../modules/types';
 import i18n from '../i18n';
-import { getSignalCapability, signalRegistry } from '../signals';
+import {
+  getSignalCapability,
+  resetSignalFullHealTimer,
+  signalRegistry,
+  updateSignalFullHeal,
+} from '../signals';
 import { COMBAT_BALANCE, ECONOMY_BALANCE } from './balance';
 import { segmentCircleHitTime, segmentRegularPolygonHitTime } from './collision';
 import {
@@ -1026,6 +1031,22 @@ export class GameEngine {
         this.signalIndex.remove(signal.id);
         continue;
       }
+      const fullHeal = getSignalCapability(definition, 'full-heal-after-lull');
+      const healed = updateSignalFullHeal(signal, fullHeal, delta);
+      if (healed > 0) {
+        this.floatingTexts.push({
+          position: { x: signal.position.x, y: signal.position.y - signal.radius - 8 },
+          text: `+${Math.round(healed)}`,
+          color: definition.visual.color,
+          life: 0.8,
+        });
+        this.effects.spawn(GAME_EFFECT_IDS.signalFullHeal, {
+          position: signal.position,
+          rotation: signal.angle,
+          color: definition.visual.color,
+          data: { radius: signal.radius, sides: definition.visual.sides },
+        });
+      }
       signal.slowTime = Math.max(0, signal.slowTime - delta);
       if (signal.slowTime <= 0) signal.slowFactor = 0;
       const movementPhase = signal.movementPhase ?? 0;
@@ -1894,6 +1915,12 @@ export class GameEngine {
         lifetimeScale: signal.variantId === signal.type ? definition.visual.deathEffectScale ?? 1 : 1,
       });
       this.queueSignalSplit(signal);
+    } else {
+      resetSignalFullHealTimer(
+        signal,
+        getSignalCapability(definition, 'full-heal-after-lull'),
+        result.healthDamage,
+      );
     }
     return result;
   }

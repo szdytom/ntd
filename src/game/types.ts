@@ -142,6 +142,7 @@ export interface Signal {
   radius: number;
   slowFactor: number;
   slowTime: number;
+  fullHealTimer?: number;
   hitFlash: number;
   shield: number;
   maxShield: number;

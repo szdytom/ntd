@@ -8,6 +8,9 @@ import { CalibrationSlider } from './CalibrationSlider';
 import { SignalIcon } from './SignalIcon';
 import './CreativeLab.css';
 
+const SIGNAL_GRID_COLUMNS = 3;
+const SIGNAL_GRID_EMPTY_CELLS = (SIGNAL_GRID_COLUMNS - SIGNAL_IDS.length % SIGNAL_GRID_COLUMNS) % SIGNAL_GRID_COLUMNS;
+
 export function CreativeLab({ engine, setup, onClose }: { engine: GameEngine; setup: CreativeSetup; onClose: () => void }) {
   const { t } = useTranslation();
   return <section className="creative-lab" role="dialog" aria-labelledby="creative-lab-title">
@@ -28,7 +31,13 @@ export function CreativeLab({ engine, setup, onClose }: { engine: GameEngine; se
         <span className="creative-signal-name">{name}</span>
         <b aria-hidden="true">＋</b>
       </button>;
-    })}</div>
+    })}{SIGNAL_GRID_EMPTY_CELLS > 0
+      ? <span
+        className="creative-signal-grid-fill"
+        style={{ gridColumn: `span ${SIGNAL_GRID_EMPTY_CELLS}` }}
+        aria-hidden="true"
+      />
+      : null}</div>
     <div className="creative-scales">
       <CalibrationSlider layout="stacked" label={t('levelSelect.healthScale')} min={0.25} max={5} step={0.25} value={setup.healthScale} onChange={(value) => engine.configureCreativeScales(value, setup.speedScale)} />
       <CalibrationSlider layout="stacked" label={t('levelSelect.speedScale')} min={0.25} max={3} step={0.25} value={setup.speedScale} onChange={(value) => engine.configureCreativeScales(setup.healthScale, value)} />
