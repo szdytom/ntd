@@ -23,7 +23,8 @@ Run the narrowest relevant check while editing, then run the full check before h
 | `npm run typecheck` | Strict TypeScript checking without output |
 | `npm test` | Vitest unit and component suite |
 | `npm run test:e2e` | Playwright browser smoke tests |
-| `npm run check:locales` | Flat, aligned locale resources and module placeholders |
+| `npm run format:locales` | Complete and canonically format locale resources |
+| `npm run check:locales` | Flat, aligned, formatted locale resources and module placeholders |
 | `npm run check:cjk` | Source-language boundary outside docs and locales |
 | `npm run perf:report` | Spatial-index comparison workload |
 | `npm run build` | Minified static assets in `dist/` |

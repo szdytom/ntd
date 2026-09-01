@@ -30,6 +30,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: resolveInitialLanguage(),
   fallbackLng: defaultLanguage,
+  returnNull: false,
   supportedLngs: supportedLanguages,
   keySeparator: false,
   interpolation: { escapeValue: false },

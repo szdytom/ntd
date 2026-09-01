@@ -19,6 +19,7 @@ describe('module localization values', () => {
     for (const locale of locales) {
       for (const [key, template] of Object.entries(locale)) {
         if (!/^modules\.[^.]+\.(description|detail)$/.test(key)) continue;
+        if (template === null) continue;
         expect(template.replace(placeholderPattern, ''), key).not.toMatch(/\d/);
       }
     }
@@ -31,7 +32,9 @@ describe('module localization values', () => {
         const suppliedValues = Object.keys(definition.meta.text?.[field] ?? {}).sort();
 
         for (const locale of locales) {
-          expect(placeholderNames(locale[key]), `${key} in localized text`).toEqual(suppliedValues);
+          const template = locale[key];
+          if (template === null) continue;
+          expect(placeholderNames(template), `${key} in localized text`).toEqual(suppliedValues);
         }
       }
     }
@@ -51,5 +54,18 @@ describe('module localization values', () => {
 
     expect(moduleDetail(i18n.t, definition)).toContain('7×8 starfire damage');
     expect(moduleDetail(i18n.t, definition)).not.toContain('6.999999999999999');
+  });
+
+  it('falls back to English when a translated value is null', async () => {
+    const key = 'test.nullFallback';
+    i18n.addResources('en', 'translation', { [key]: 'English fallback' });
+    i18n.addResources('zh-CN', 'translation', { [key]: null });
+
+    try {
+      await i18n.changeLanguage('zh-CN');
+      expect(i18n.t(key)).toBe('English fallback');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });

@@ -13,6 +13,7 @@ Prism Bastion is a geometric tower-defense game built around modular programming
 | `npm test` | Run Vitest unit and component tests |
 | `npm run test:e2e` | Run Playwright browser smoke tests |
 | `npm run check` | Run lint, type checking, tests, and a production build |
+| `npm run format:locales` | Complete and format locale files using the English key order |
 | `npm run balance:report` | Generate a balance report from current configuration |
 | `npm run perf:report` | Run the spatial-index performance report |
 
@@ -43,7 +44,7 @@ Technical documentation:
 
 All user-facing text is resolved through the shared i18next instance, including React components, tutorial copy, engine toasts, and Canvas labels. English is the fallback language; the initial locale follows a saved preference or the browser language.
 
-Translation resources live in `src/i18n/locales/` as flat JSON objects. Every key maps directly to a string, and matching keys must be added to both locale files. Do not embed user-facing copy in components or game logic. `npm run check:locales` verifies that the resources remain flat, aligned, and self-described. Outside documentation and locale files, source and test files intentionally contain no CJK characters.
+Translation resources live in `src/i18n/locales/` as flat JSON objects. Every English key maps directly to a string; other locales map each key to a translated string or `null`, which falls back to English. Add new keys to `en.json`, then run `npm run format:locales` to complete every locale and apply the English key order with canonical formatting. Do not embed user-facing copy in components or game logic. `npm run check:locales` verifies that the resources remain flat, aligned, formatted, and self-described. Outside documentation and locale files, source and test files intentionally contain no CJK characters.
 
 ## Commit messages
 
