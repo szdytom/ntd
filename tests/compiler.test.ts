@@ -10,7 +10,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['projectile'],
     icon: TestIcon,
     meta: {
-      name: 'Test Bolt', shortName: 'Bolt', color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({ damage: 10, speed: 100, size: 2 }),
   },
@@ -20,7 +20,7 @@ const definitions: ModuleDefinition[] = [
     tags: [],
     icon: TestIcon,
     meta: {
-      name: 'Test Power', shortName: 'Power', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ damageMultiplier: 2 }),
   },
@@ -30,7 +30,7 @@ const definitions: ModuleDefinition[] = [
     tags: [],
     icon: TestIcon,
     meta: {
-      name: 'Test Fork', shortName: 'Fork', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ count: 3, spread: 0.2 }),
   },
@@ -40,7 +40,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['repeat'],
     icon: TestIcon,
     meta: {
-      name: 'Test Echo', shortName: 'Echo', color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ repeats: 2, repeatDelay: 0.1 }),
   },
@@ -50,7 +50,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['trigger'],
     icon: TestIcon,
     meta: {
-      name: 'Test Impact', shortName: 'Impact', color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'impact', payloadCount: 1 }),
   },
@@ -60,7 +60,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['trigger'],
     icon: TestIcon,
     meta: {
-      name: 'Test Timer', shortName: 'Timer', color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'timer', payloadCount: 1, delay: 0.25 }),
   },
@@ -70,7 +70,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['static'],
     icon: TestIcon,
     meta: {
-      name: 'Test Field', shortName: 'Field', color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,
@@ -86,7 +86,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['route'],
     icon: TestIcon,
     meta: {
-      name: 'Test Route', shortName: 'Route', color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ seeking: 4 }),
   },
@@ -96,7 +96,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['projectile', 'fixed-route'],
     icon: TestIcon,
     meta: {
-      name: 'Test Fixed', shortName: 'Fixed', color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,
@@ -119,7 +119,7 @@ describe('module compiler', () => {
   it('applies modifiers to the projectile on their right', () => {
     const program = registry.compile(['test-power', 'test-bolt']);
 
-    expect(program.warnings).toEqual([]);
+    expect(program.diagnostics).toEqual([]);
     expect(program.energyCost).toBe(10);
     expect(program.shots).toHaveLength(1);
     expect(program.shots[0]).toMatchObject({ source: 'test-bolt', damage: 20 });
@@ -128,7 +128,7 @@ describe('module compiler', () => {
   it('wraps once to resolve a trailing modifier', () => {
     const program = registry.compile(['test-bolt', 'test-power']);
 
-    expect(program.warnings).toEqual([]);
+    expect(program.diagnostics).toEqual([]);
     expect(program.wraps).toBe(1);
     expect(program.shots).toHaveLength(2);
     expect(program.shots[0]).toMatchObject({ source: 'test-bolt', damage: 10 });
@@ -138,7 +138,7 @@ describe('module compiler', () => {
   it('builds nested trigger payloads and charges their energy', () => {
     const program = registry.compile(['test-impact', 'test-bolt', 'test-field']);
 
-    expect(program.warnings).toEqual([]);
+    expect(program.diagnostics).toEqual([]);
     expect(program.energyCost).toBe(20);
     expect(program.shots).toHaveLength(1);
     expect(program.shots[0].trigger).toEqual({ type: 'impact', payloadCount: 1 });
@@ -149,14 +149,20 @@ describe('module compiler', () => {
     const program = registry.compile(['test-field']);
 
     expect(program.shots).toEqual([]);
-    expect(program.warnings).toContain('Static projectile "Field" must be a trigger payload and cannot be cast directly');
+    expect(program.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'static-at-root',
+      moduleId: 'test-field',
+    }));
   });
 
   it('terminates unresolved trigger programs with a diagnostic', () => {
     const program = registry.compile(['test-impact', 'test-bolt']);
 
     expect(program.wraps).toBe(1);
-    expect(program.warnings.some((warning) => warning.includes('needs 1 payload'))).toBe(true);
+    expect(program.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'missing-payload',
+      moduleId: 'test-bolt',
+    }));
   });
 
   it('diagnoses conflicting triggers and keeps only the trigger nearest the projectile', () => {
@@ -171,15 +177,15 @@ describe('module compiler', () => {
   it('counts payload instances for every repeated carrier', () => {
     const program = registry.compile(['test-fork', 'test-impact', 'test-bolt', 'test-bolt']);
 
-    expect(program.summary).toContain('6 projectiles');
+    expect(program.projectileCount).toBe(6);
   });
 
   it('stacks consecutive echo modifiers multiplicatively', () => {
     const program = registry.compile(['test-echo', 'test-echo', 'test-bolt']);
 
-    expect(program.warnings).toEqual([]);
+    expect(program.diagnostics).toEqual([]);
     expect(program.shots[0]).toMatchObject({ repeats: 4, repeatDelay: 0.1 });
-    expect(program.summary).toContain('4 projectiles');
+    expect(program.projectileCount).toBe(4);
   });
 
   it('caches immutable programs by loadout', () => {

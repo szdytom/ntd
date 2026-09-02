@@ -20,6 +20,8 @@ Prism Bastion separates configuration, deterministic simulation, presentation me
 
 `GameEngine` is the authoritative owner of mutable combat state. It contains towers, signals, projectiles, effects, wave queues, inventory, and session status. Browser animation frames pass elapsed time to the engine, which converts it into fixed simulation steps.
 
+At construction, the engine resolves the session identity and tutorial context into one immutable `SessionRules` object. Product identity remains in `GameMode`; concrete behavior such as inventory limits, rewards, economy, wave configuration, and scenario controls reads the corresponding rule instead of branching on the mode name. See [Session rules](internals/session-rules.md) for the policy boundaries.
+
 Tower slot arrays are not interpreted during projectile flight. `ModuleRegistry` compiles a slot sequence into an immutable `TowerProgram`; the engine then casts the resulting `ShotBlueprint` trees. Module runtime behavior is invoked through hooks and a restricted combat API, so individual modules do not receive the engine itself.
 
 Route geometry is a rooted tree whose leaves are entrances and whose root is the core. Every signal receives one entrance ID at spawn time, and that ID resolves to a unique entrance-to-core polyline. Movement, interception, displacement, and core-distance targeting all use that per-signal route.

@@ -1,6 +1,6 @@
 import { coneSparks, shockwave } from '../effects/factories';
 import type { EffectDefinition } from '../effects/types';
-import type { ModuleDefinition } from './types';
+import { createDamageStatusModifier } from './damage-status';
 import { createModuleIcon } from './icons';
 
 const ToxinIcon = createModuleIcon(<>
@@ -30,38 +30,16 @@ const effects: readonly EffectDefinition[] = [
   },
 ];
 
-export const toxinModule: ModuleDefinition = {
+export const toxinModule = createDamageStatusModifier({
   id: 'toxin',
-  kind: 'modifier',
-  tags: ['status'],
   icon: ToxinIcon,
-  meta: {
-    name: 'Corrosive Spore', shortName: 'Corrosion', color, tint: '#efffdf', energy: 10, rarity: 'uncommon',
-    text: { detail: {
-      direct: Math.round((1 - stats.damageMultiplier) * 100),
-      damage: stats.damage,
-      ticks: stats.duration / stats.interval,
-      duration: stats.duration,
-    } },
-  },
+  color,
+  tint: '#efffdf',
+  energy: 10,
+  rarity: 'uncommon',
+  stats,
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
-  targetEffect: {
-    channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
-      if (targetEffectChannel === 'secondary-hit') {
-        engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
-        return;
-      }
-      if (!signal) return;
-      const entered = combat.applyStatus(signal, {
-        id: 'toxin', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
-      });
-      if (entered && projectile?.behavior === 'static') {
-        engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
-      }
-    },
-  },
+  hitEffectIds: ['module:toxin:infect', 'module:toxin:drops'],
   renderProjectile: ({ ctx, projectile }) => {
     ctx.save();
     ctx.fillStyle = color;
@@ -74,13 +52,10 @@ export const toxinModule: ModuleDefinition = {
     }
     ctx.restore();
   },
-  onHit: ({ effects: engine, position }) => {
-    engine.spawnMany(['module:toxin:infect', 'module:toxin:drops'], { position, color });
-  },
-  onTrail: ({ effects: engine, position, projectile }) => {
+  onTrail: ({ effects, position, projectile }) => {
     if (!projectile) return;
     const count = ((projectile.moduleState['toxin:trail'] as number | undefined) ?? 0) + 1;
     projectile.moduleState['toxin:trail'] = count;
-    if (count % 3 === 0) engine.spawn('module:toxin:trail', { position, color });
+    if (count % 3 === 0) effects.spawn('module:toxin:trail', { position, color });
   },
-};
+});

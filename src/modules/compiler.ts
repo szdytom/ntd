@@ -34,10 +34,8 @@ interface PendingState {
   };
   energy: number;
   moduleIds: ModuleId[];
-  moduleNames: string[];
   trigger?: TriggerSpec;
   triggerModuleId?: ModuleId;
-  triggerModuleName?: string;
   triggerEnergy: number;
 }
 
@@ -63,7 +61,6 @@ const freshPending = (): PendingState => ({
   energyRefundMultiplier: 0,
   energy: 0,
   moduleIds: [],
-  moduleNames: [],
   triggerEnergy: 0,
 });
 
@@ -84,7 +81,6 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
       diagnose({
         code: 'unknown-module',
         severity: 'error',
-        message: `Unregistered module: ${moduleId}`,
         moduleId,
       });
       return;
@@ -183,7 +179,6 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         diagnose({
           code: 'ineffective-combination',
           severity: 'warning',
-          message: `${pendingDefinition.meta.shortName} has no effect on ${definition.meta.shortName}`,
           moduleId: pendingId,
           relatedModuleId: moduleId,
         });
@@ -194,7 +189,6 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         diagnose({
           code: 'static-at-root',
           severity: 'error',
-          message: `Static projectile "${definition.meta.shortName}" must be a trigger payload and cannot be cast directly`,
           moduleId,
         });
         pending = freshPending();
@@ -218,23 +212,20 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
         diagnose({
           code: 'trigger-conflict',
           severity: 'error',
-          message: `${pending.triggerModuleName ?? pending.triggerModuleId} and ${definition.meta.shortName} cannot wrap the same projectile; using the nearer ${definition.meta.shortName}`,
           moduleId,
+          relatedModuleId: pending.triggerModuleId,
         });
         pending.energy -= pending.triggerEnergy;
         pending.moduleIds = pending.moduleIds.filter((id) => id !== pending.triggerModuleId);
-        pending.moduleNames = pending.moduleNames.filter((name) => name !== pending.triggerModuleName);
       }
       pending.trigger = { ...trigger };
       pending.triggerModuleId = moduleId;
-      pending.triggerModuleName = definition.meta.shortName;
       pending.triggerEnergy = definition.meta.energy;
     };
 
     if (definition.kind === 'modifier' || definition.kind === 'trail' || definition.kind === 'logic') {
       pending.energy += definition.meta.energy;
       pending.moduleIds.push(moduleId);
-      pending.moduleNames.push(definition.meta.shortName);
     }
     definition.compile({ moduleId, modifyNext, wrapNext, emitProjectile });
   };
@@ -252,28 +243,22 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     }
   }
 
-  if (pending.moduleNames.length > 0) {
+  if (pending.moduleIds.length > 0) {
     diagnose({
       code: 'unresolved-modifier',
       severity: 'error',
-      message: wraps > 0
-        ? `${pending.moduleNames.join(' + ')} still has no projectile after wrapping and will not take effect`
-        : `${pending.moduleNames.join(' + ')} has no following projectile and will not take effect`,
     });
   }
   if (shots.length === 0) {
     diagnose({
       code: 'missing-projectile',
       severity: 'error',
-      message: 'No directly castable projectile is present, so this tower cannot attack',
     });
   }
   for (const capture of captureStack) {
-    const carrier = registry.get(capture.shot.source)?.meta.shortName ?? capture.shot.source;
     diagnose({
       code: 'missing-payload',
       severity: 'error',
-      message: `${carrier} trigger ${wraps > 0 ? 'still ' : ''}needs ${capture.remaining} payloads`,
       moduleId: capture.shot.source,
     });
   }
@@ -296,10 +281,8 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
     shots,
     energyCost,
     wraps,
-    summary: shots.length === 0
-      ? 'Empty program'
-      : `${shots.length} casts · ${energyCost}⚡/cycle · ${projectileCount} projectiles${triggers > 0 ? ` · ${triggers} triggers` : ''}${wraps > 0 ? ' · ↻ wrap' : ''}`,
-    warnings: diagnostics.map((diagnostic) => diagnostic.message),
+    projectileCount,
+    triggerCount: triggers,
     diagnostics,
   };
   const freezeShot = (shot: ShotBlueprint): void => {
@@ -312,7 +295,6 @@ export function compileProgram(slots: Array<ModuleId | null>, registry: ModuleRe
   };
   shots.forEach(freezeShot);
   Object.freeze(program.shots);
-  Object.freeze(program.warnings);
   Object.freeze(program.diagnostics);
   return Object.freeze(program);
 }

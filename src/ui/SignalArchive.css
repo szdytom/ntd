@@ -1,11 +1,6 @@
 .signal-archive-shell {
-  --archive-ink: #252134;
-  --archive-paper: #fff;
-  --archive-yellow: #ffd447;
   width: min(1380px, calc(100% - 40px));
   min-height: 100dvh;
-  margin: 0 auto;
-  padding: 24px 0;
 }
 
 .signal-archive-head {
@@ -18,43 +13,6 @@
   border-radius: 18px 18px 0 0;
   background: var(--archive-paper);
 }
-
-.signal-archive-head > div:nth-child(2) {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 26px;
-  border-right: 2px solid var(--archive-ink);
-}
-
-.signal-archive-head h1 {
-  margin: 0;
-  color: var(--archive-ink);
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: .95;
-  letter-spacing: -.055em;
-}
-
-.signal-archive-back {
-  grid-column: 1;
-  grid-row: 1;
-  display: grid;
-  width: auto;
-  height: auto;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-right: 2px solid var(--archive-ink);
-  border-radius: 0;
-  color: var(--archive-ink);
-  background: var(--archive-yellow);
-  cursor: pointer;
-}
-
-.signal-archive-back span { font-size: 28px; line-height: 1; transition: transform .16s ease; }
-.signal-archive-back:hover { color: #fff; background: var(--purple); }
-.signal-archive-back:hover span { transform: translateX(-4px); }
 
 .signal-archive-seal {
   --seal-center-size: 12px;
@@ -226,7 +184,6 @@
 .specimen-toggle i { width: 8px; height: 8px; border: 1px solid var(--archive-ink); background: var(--signal-accent); transition: box-shadow .16s ease, transform .16s ease; }
 .specimen-toggle[aria-pressed='true'] { color: #fff; background: var(--signal-accent); }
 .specimen-toggle[aria-pressed='true'] i { background: #fff; box-shadow: -5px 4px 0 -1px #fff, 5px 4px 0 -1px #fff; transform: translateY(-2px); }
-.suppression-toggle[aria-pressed='true'] i { background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.28); transform: none; }
 .specimen-toggle:hover { transform: translate(calc(-50% + 2px), 2px); box-shadow: 2px 2px 0 var(--archive-ink); }
 
 .signal-archive-data {
@@ -297,7 +254,7 @@
 @media (max-width: 760px) {
   .signal-archive-shell { width: calc(100% - 14px); padding: 7px 0 78px; }
   .signal-archive-head { grid-template-columns: 56px minmax(0, 1fr) 58px 78px; min-height: 78px; border-radius: 12px 12px 0 0; }
-  .signal-archive-head > div:nth-child(2) { padding: 0 15px; }
+  .signal-archive-head .archive-title { padding: 0 15px; }
   .signal-archive-head h1 { font-size: 29px; }
   .signal-archive-seal { --seal-center-size: 10px; --seal-middle-size: 24px; --seal-outer-size: 38px; }
   .signal-archive-console { grid-template-columns: 1fr; overflow: visible; border-radius: 0 0 12px 12px; }

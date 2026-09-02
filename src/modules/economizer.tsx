@@ -35,7 +35,7 @@ export const economizerModule: ModuleDefinition = {
   tags: [],
   icon: EconomizerIcon,
   meta: {
-    name: 'Economizer Circuit', shortName: 'Economizer', color, tint: '#e3fff7', energy: 3, rarity: 'uncommon',
+    color, tint: '#e3fff7', energy: 3, rarity: 'uncommon',
     text: { detail: {
       energy: Math.round((1 - stats.energyMultiplier) * 100),
       damage: Math.round((1 - stats.damageMultiplier) * 100),

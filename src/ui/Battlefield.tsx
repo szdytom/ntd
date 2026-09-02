@@ -72,7 +72,7 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
               <small>{t(terminal
                 ? 'battlefield.noSignals'
                 : waveInProgress ? 'battlefield.currentWave' : 'battlefield.nextWave')}</small>
-              {engine.mode === 'creative' ? (
+              {engine.rules.scenarioControls === 'creative' ? (
                 <button
                   ref={creativeToggleRef}
                   className="creative-signal-toggle"
@@ -94,7 +94,7 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
           </div>
         </div>
 
-        {engine.mode === 'creative' && creativePanelOpen ? (
+        {engine.rules.scenarioControls === 'creative' && creativePanelOpen ? (
           <div ref={creativePanelRef} id="creative-signal-panel" className="creative-signal-panel">
             <CreativeLab engine={engine} setup={view.creativeSetup} onClose={() => {
               setCreativePanelOpen(false);

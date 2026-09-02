@@ -31,7 +31,7 @@ export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onT
   }, [engine, workshopOpen]);
   useEffect(() => engine.subscribe((event) => {
     const operation = event.type === 'defense-archive-fact'
-      ? defenseArchive.recordFact(event.fact, { standard: engine.mode === 'standard', tutorial: engine.tutorialEnabled })
+      ? defenseArchive.recordFact(event.fact, { standard: engine.rules.archive === 'standard', tutorial: engine.tutorialEnabled })
       : event.type === 'defense-completed' ? defenseArchive.recordDefense(event.report) : null;
     if (!operation) return;
     void operation.then((unlocked) => {

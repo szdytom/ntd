@@ -1,15 +1,11 @@
 .defense-archive-shell {
-  --archive-ink: #252134;
-  --archive-paper: #fff;
+  --archive-back-hover: var(--archive-purple);
   --archive-purple: #6558e8;
   --archive-mint: #13b88e;
   --archive-coral: #ff637a;
-  --archive-yellow: #ffd447;
   width: min(1440px, calc(100% - 40px));
   height: 100dvh;
   min-height: 600px;
-  margin: 0 auto;
-  padding: 24px 0;
 }
 
 .defense-archive-frame {
@@ -32,44 +28,6 @@
   border-bottom: 2px solid var(--archive-ink);
 }
 
-.defense-archive-back {
-  grid-column: 1;
-  grid-row: 1;
-  display: grid;
-  width: auto;
-  height: auto;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-right: 2px solid var(--archive-ink);
-  border-radius: 0;
-  color: var(--archive-ink);
-  background: var(--archive-yellow);
-  cursor: pointer;
-}
-.defense-archive-back span { font-size: 28px; line-height: 1; transition: transform .16s ease; }
-.defense-archive-back:hover { color: #fff; background: var(--archive-purple); }
-.defense-archive-back:hover span { transform: translateX(-4px); }
-
-.defense-archive-title {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 26px;
-  border-right: 2px solid var(--archive-ink);
-}
-.defense-archive-title {
-  min-width: 0;
-  gap: 20px;
-}
-.defense-archive-title h1 {
-  margin: 0;
-  color: var(--archive-ink);
-  font-size: clamp(34px, 4vw, 52px);
-  line-height: .95;
-  letter-spacing: -.055em;
-}
 .defense-archive-head > .settings-panel {
   grid-column: 3;
   grid-row: 1;
@@ -201,8 +159,6 @@
 .wave-table thead th { color: #fff; background: var(--archive-ink); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
 .defense-archive-table-section td { font-family: var(--font-mono); }
 .defense-archive-table-section td small { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
-
-.defense-archive-inline-empty { margin: 0; padding: 34px; color: var(--muted); font-size: 14px; text-align: center; }
 
 /* Category rail + cells, without cards nested inside category boxes. */
 .achievement-groups { padding: 0; }
@@ -345,7 +301,7 @@
 @media (min-width: 761px) and (max-height: 760px) {
   .defense-archive-shell { padding: 12px 0; }
   .defense-archive-head { min-height: 78px; }
-  .defense-archive-title h1 { font-size: clamp(34px, 3.6vw, 46px); }
+  .defense-archive-head .archive-title h1 { font-size: clamp(34px, 3.6vw, 46px); }
   .defense-archive-tabs button { min-height: 50px; }
   .defense-archive-footer { min-height: 40px; }
 }
@@ -354,8 +310,8 @@
   .defense-archive-shell { width: calc(100% - 20px); height: auto; min-height: 100dvh; padding: 10px 0; }
   .defense-archive-frame { min-height: calc(100vh - 20px); border-radius: 12px; }
   .defense-archive-head { grid-template-columns: 58px minmax(0, 1fr) 58px; min-height: 78px; }
-  .defense-archive-title { padding: 12px 14px; }
-  .defense-archive-title h1 { font-size: clamp(29px, 9vw, 36px); }
+  .defense-archive-head .archive-title { padding: 12px 14px; }
+  .defense-archive-head .archive-title h1 { font-size: clamp(29px, 9vw, 36px); }
   .defense-archive-head > .settings-panel { grid-column: 3; border-left: 2px solid var(--archive-ink); }
   .defense-archive-tabs button { min-height: 52px; padding: 5px; font-size: 12px; line-height: 1.15; }
   .defense-archive-tabs button::before { display: none; }
@@ -428,5 +384,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .defense-archive-loading i { animation: none; }
-  .defense-archive-back span { transition: none; }
 }

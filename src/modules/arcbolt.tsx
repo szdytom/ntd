@@ -79,7 +79,7 @@ export const arcboltModule: ModuleDefinition = {
   tags: ['projectile'],
   icon: ArcboltIcon,
   meta: {
-    name: 'Arcbolt Core', shortName: 'Arcbolt', color, tint: '#e9edff', energy: 31, rarity: 'legendary',
+    color, tint: '#e9edff', energy: 31, rarity: 'legendary',
     text: { detail: { damage: stats.damage, chains: stats.maxChains } },
   },
   effects,

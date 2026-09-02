@@ -5,7 +5,6 @@
   font-synthesis: none;
   --ink: #252134;
   --muted: #77717f;
-  --line: #d9d5df;
   --purple: #6558e8;
   --coral: #ff637a;
   --mint: #13b88e;
@@ -61,4 +60,17 @@ button:focus-visible {
 
 [hidden] {
   display: none !important;
+}
+
+@media (max-width: 900px) {
+  body { overflow: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }

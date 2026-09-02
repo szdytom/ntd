@@ -1,7 +1,7 @@
 import type { EffectDefinition } from '../effects/types';
 import { statusOrbs } from '../effects/factories';
 import { drawGlow } from '../game/glow';
-import type { ModuleDefinition } from './types';
+import { createDamageStatusModifier } from './damage-status';
 import { createModuleIcon } from './icons';
 
 const SearingSigilIcon = createModuleIcon(<>
@@ -83,39 +83,17 @@ const effects: readonly EffectDefinition[] = [
   },
 ];
 
-export const searingSigilModule: ModuleDefinition = {
+export const searingSigilModule = createDamageStatusModifier({
   id: 'searing-sigil',
-  kind: 'modifier',
-  tags: ['status'],
   icon: SearingSigilIcon,
-  meta: {
-    name: 'Searing Sigil', shortName: 'Searing', color, tint: '#ffe8e0', energy: 18, rarity: 'rare',
-    text: { detail: {
-      direct: Math.round((1 - stats.damageMultiplier) * 100),
-      damage: stats.damage,
-      ticks: stats.duration / stats.interval,
-      duration: stats.duration,
-    } },
-  },
+  color,
+  tint: '#ffe8e0',
+  energy: 18,
+  rarity: 'rare',
+  stats,
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
-  targetEffect: {
-    channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
-      if (targetEffectChannel === 'secondary-hit') {
-        engine.spawnMany(['module:searing-sigil:brand', 'module:searing-sigil:flare'], { position, color });
-        return;
-      }
-      if (!signal) return;
-      const entered = combat.applyStatus(signal, {
-        id: 'searing-sigil', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
-        particle: { effectId: burningEffectId, interval: 0.34 },
-      });
-      if (entered && projectile?.behavior === 'static') {
-        engine.spawnMany(['module:searing-sigil:brand', 'module:searing-sigil:flare'], { position, color });
-      }
-    },
-  },
+  hitEffectIds: ['module:searing-sigil:brand', 'module:searing-sigil:flare'],
+  statusParticle: { effectId: burningEffectId, interval: 0.34 },
   renderProjectile: ({ ctx, projectile }) => {
     const phase = projectile.life * 3.5 + projectile.id * 0.7;
     drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 16, color, 0.72);
@@ -137,7 +115,4 @@ export const searingSigilModule: ModuleDefinition = {
     ctx.fill();
     ctx.restore();
   },
-  onHit: ({ effects: engine, position }) => {
-    engine.spawnMany(['module:searing-sigil:brand', 'module:searing-sigil:flare'], { position, color });
-  },
-};
+});

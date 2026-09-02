@@ -39,7 +39,7 @@ export const riftBarrierModule: ModuleDefinition = {
   icon: RiftBarrierIcon,
   hideProjectile: true,
   meta: {
-    name: 'Rift Barrier', shortName: 'Barrier', color: RIFT_SPACE_COLOR, tint: RIFT_SPACE_TINT, energy: 46, rarity: 'epic',
+    color: RIFT_SPACE_COLOR, tint: RIFT_SPACE_TINT, energy: 46, rarity: 'epic',
     text: { detail: {
       damage: stats.damagePerSecond,
       radius: stats.radius,

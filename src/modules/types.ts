@@ -34,8 +34,6 @@ export interface ModuleIconProps { className?: string; }
 export type ModuleIconComponent = ComponentType<ModuleIconProps>;
 
 export interface ModuleMeta {
-  name: string;
-  shortName: string;
   color: string;
   tint: string;
   energy: number;

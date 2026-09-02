@@ -1,51 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { getSignalCapability, signalRegistry } from '../src/signals';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Signal, Projectile } from '../src/game/types';
-
-function placeSignal(engine: GameEngine, signal: Signal, pathDistance: number): void {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-}
+import type { Signal } from '../src/game/types';
+import { addTestProjectile, placeSignalOnPath as placeSignal } from './helpers/combat';
 
 function addLethalProjectile(engine: GameEngine, signal: Signal): void {
   const shot = engine.modules.compile(['pulse']).shots[0];
   if (!shot) throw new Error('Expected pulse to compile into a shot');
   const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
   const launchGap = signal.radius + shot.size + 1;
-  const projectile: Projectile = {
-    id: 20_000 + engine.projectiles.length,
-    towerId: engine.towers[0].id,
-    position: {
+  addTestProjectile(engine, shot, {
       x: signal.position.x - direction.x * launchGap,
       y: signal.position.y - direction.y * launchGap,
     },
-    velocity: { x: direction.x * shot.speed, y: direction.y * shot.speed },
-    targetId: signal.id,
-    damage: 100_000,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: 0,
-    slow: 0,
-    splash: 0,
-    seeking: 0,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 1,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
+    { x: direction.x * shot.speed, y: direction.y * shot.speed },
+    signal.id,
+    { damage: 100_000, pierce: 0, slow: 0, splash: 0, seeking: 0 },
+  );
 }
 
 describe('splitting signals', () => {

@@ -16,6 +16,7 @@ import { SectorArchive } from './SectorArchive';
 import { SignalLedger, signalIconType, signalLabel } from './SignalLedger';
 import { SignalIcon } from './SignalIcon';
 import { moduleVariableStyle } from './modulePresentation';
+import { ArchiveHeader } from './ArchiveHeader';
 import './DefenseArchive.css';
 
 type DefenseArchiveTab = 'overview' | 'sectors' | 'achievements' | 'history';
@@ -49,11 +50,14 @@ const DefenseArchiveHeader = ({ repository, onBack, onDefenseArchiveCleared }: {
   onDefenseArchiveCleared: () => void;
 }) => {
   const { t } = useTranslation();
-  return <header className="defense-archive-head">
-    <button className="defense-archive-back" onClick={onBack} aria-label={t('defenseArchive.back')}><span aria-hidden="true">←</span></button>
-    <div className="defense-archive-title"><h1>{t('defenseArchive.title')}</h1></div>
+  return <ArchiveHeader
+    className="defense-archive-head"
+    title={t('defenseArchive.title')}
+    backLabel={t('defenseArchive.back')}
+    onBack={onBack}
+  >
     <SettingsPanel defenseArchiveRepository={repository} onDefenseArchiveCleared={onDefenseArchiveCleared} />
-  </header>;
+  </ArchiveHeader>;
 };
 
 const Overview = ({ records }: { records: DefenseRecord[] }) => {
@@ -182,7 +186,7 @@ export function DefenseArchive({ repository, onBack }: { repository: DefenseArch
     setTab(nextTab);
     event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
   };
-  return <main className="defense-archive-shell">
+  return <main className="archive-shell defense-archive-shell">
     <div className="defense-archive-frame">
       <DefenseArchiveHeader repository={repository} onBack={onBack} onDefenseArchiveCleared={load} />
       <nav className="defense-archive-tabs" role="tablist" aria-label={t('defenseArchive.sections')}>{ARCHIVE_TABS.map((item, index) => <button

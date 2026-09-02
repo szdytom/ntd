@@ -56,7 +56,7 @@ export const singularityModule: ModuleDefinition = {
   tags: ['static', 'area'],
   icon: SingularityIcon,
   meta: {
-    name: 'Collapse Singularity', shortName: 'Singularity', color, tint: '#eee8ff', energy: 82, rarity: 'legendary',
+    color, tint: '#eee8ff', energy: 82, rarity: 'legendary',
     text: { detail: { duration: stats.duration, radius: stats.radius } },
   },
   effects,

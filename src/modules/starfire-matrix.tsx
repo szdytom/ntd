@@ -1,7 +1,7 @@
 import type { EffectDefinition } from '../effects/types';
 import { statusOrbs } from '../effects/factories';
 import { drawGlow } from '../game/glow';
-import type { ModuleDefinition } from './types';
+import { createDamageStatusModifier } from './damage-status';
 import { createModuleIcon } from './icons';
 import {
   starfallParticles,
@@ -78,39 +78,17 @@ const effects: readonly EffectDefinition[] = [
   }),
 ];
 
-export const starfireMatrixModule: ModuleDefinition = {
+export const starfireMatrixModule = createDamageStatusModifier({
   id: 'starfire-matrix',
-  kind: 'modifier',
-  tags: ['status'],
   icon: StarfireMatrixIcon,
-  meta: {
-    name: 'Starfire Matrix', shortName: 'Starfire', color, tint: STARFIRE_TINT, energy: 24, rarity: 'legendary',
-    text: { detail: {
-      direct: Math.round((1 - stats.damageMultiplier) * 100),
-      damage: stats.damage,
-      ticks: stats.duration / stats.interval,
-      duration: stats.duration,
-    } },
-  },
+  color,
+  tint: STARFIRE_TINT,
+  energy: 24,
+  rarity: 'legendary',
+  stats,
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
-  targetEffect: {
-    channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
-      if (targetEffectChannel === 'secondary-hit') {
-        engine.spawnMany(['module:starfire-matrix:implant', 'module:starfire-matrix:starfall'], { position, color });
-        return;
-      }
-      if (!signal) return;
-      const entered = combat.applyStatus(signal, {
-        id: 'starfire-matrix', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
-        particle: { effectId: burningEffectId, interval: 0.28 },
-      });
-      if (entered && projectile?.behavior === 'static') {
-        engine.spawnMany(['module:starfire-matrix:implant', 'module:starfire-matrix:starfall'], { position, color });
-      }
-    },
-  },
+  hitEffectIds: ['module:starfire-matrix:implant', 'module:starfire-matrix:starfall'],
+  statusParticle: { effectId: burningEffectId, interval: 0.28 },
   renderProjectile: ({ ctx, projectile }) => {
     const phase = projectile.life * 4.2 + projectile.id * 0.45;
     const radius = projectile.radius + 5;
@@ -148,7 +126,4 @@ export const starfireMatrixModule: ModuleDefinition = {
     ctx.stroke();
     ctx.restore();
   },
-  onHit: ({ effects: engine, position }) => {
-    engine.spawnMany(['module:starfire-matrix:implant', 'module:starfire-matrix:starfall'], { position, color });
-  },
-};
+});

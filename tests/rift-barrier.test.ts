@@ -2,16 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import { resolveDiamondRiftRadii } from '../src/game/rift-visuals';
 import type { Projectile, ShotBlueprint, Signal } from '../src/game/types';
+import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-  signal.hp = 1_000;
-  signal.maxHp = 1_000;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0, health: 1_000 });
 };
 
 const addProjectile = (
@@ -20,36 +14,7 @@ const addProjectile = (
   position: { x: number; y: number },
   velocity: { x: number; y: number },
   targetId: number,
-): Projectile => {
-  const projectile: Projectile = {
-    id: 60_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? 1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 0,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
-};
+): Projectile => addTestProjectile(engine, shot, position, velocity, targetId, { trailTimer: 0 });
 
 const deployBarrier = (engine: GameEngine, signal: Signal): Projectile => {
   const shot = engine.modules.compile(['impact-trigger', 'pulse', 'rift-barrier']).shots[0];

@@ -2,47 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Projectile, ShotBlueprint, Signal } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
+import { addTestProjectile, advanceEngineFor as advance } from './helpers/combat';
 
 const addProjectile = (
   engine: GameEngine,
   shot: ShotBlueprint,
   position: { x: number; y: number },
   velocity: { x: number; y: number },
-): Projectile => {
-  const projectile: Projectile = {
-    id: 90_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? -1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId: null,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 0,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
-};
-
-const advance = (engine: GameEngine, seconds: number): void => {
-  const steps = Math.ceil(seconds / FIXED_SIMULATION_STEP);
-  for (let step = 0; step < steps; step += 1) engine.update(FIXED_SIMULATION_STEP);
-};
+): Projectile => addTestProjectile(engine, shot, position, velocity, null, { trailTimer: 0 });
 
 const spawnSignalAt = (engine: GameEngine, position: { x: number; y: number }): Signal => {
   engine.spawnCreativeSignal('spark');

@@ -33,7 +33,7 @@ export const echoModule: ModuleDefinition = {
   tags: ['repeat'],
   icon: EchoIcon,
   meta: {
-    name: 'Echo Command', shortName: 'Echo', color, tint: '#f1e7f7', energy: 24, rarity: 'rare',
+    color, tint: '#f1e7f7', energy: 24, rarity: 'rare',
     text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } },
   },
   effects,

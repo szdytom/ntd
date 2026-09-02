@@ -41,7 +41,7 @@ export const colossusModule: ModuleDefinition = {
   tags: [],
   icon: ColossusIcon,
   meta: {
-    name: 'Colossus Core', shortName: 'Colossus', color, tint: '#fff0df', energy: 9, rarity: 'rare',
+    color, tint: '#fff0df', energy: 9, rarity: 'rare',
     text: { detail: {
       damage: Math.round((stats.damageMultiplier - 1) * 100),
       size: Math.round((stats.sizeMultiplier - 1) * 100),

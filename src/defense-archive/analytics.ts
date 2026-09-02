@@ -134,5 +134,3 @@ export function buildDefenseArchiveAnalytics(records: readonly DefenseRecord[]):
     signals: buildSignalStats(records),
   };
 }
-
-export const difficultyRank = (difficulty: DifficultyId): number => ['relaxed', 'easy', 'normal', 'hard', 'extreme'].indexOf(difficulty);

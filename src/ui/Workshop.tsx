@@ -113,7 +113,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                 const counts = view.moduleInventory[definition.id];
                 const available = counts?.available ?? 0;
                 const total = counts?.total ?? 0;
-                const exhausted = engine.mode === 'standard' && available === 0;
+                const exhausted = engine.rules.inventory === 'limited' && available === 0;
                 return (
                   <ModuleCard
                     key={definition.id}
@@ -121,7 +121,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                     tutorialId={definition.id}
                     selected={definition.id === selectedModule}
                     exhausted={exhausted}
-                    inventoryLabel={engine.mode === 'standard'
+                    inventoryLabel={engine.rules.inventory === 'limited'
                       ? exhausted ? t('workshop.inventoryExhausted', { total }) : t('workshop.inventoryAvailable', { available, total })
                       : undefined}
                     onSelect={() => setSelectedModule(definition.id)}

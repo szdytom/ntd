@@ -28,7 +28,7 @@ export const riftTrailModule: ModuleDefinition = {
   tags: ['trail', 'rift-space'],
   icon: RiftTrailIcon,
   meta: {
-    name: 'Riftwake', shortName: 'Riftwake', color: RIFT_SPACE_COLOR, tint: RIFT_SPACE_TINT, energy: 82, rarity: 'legendary',
+    color: RIFT_SPACE_COLOR, tint: RIFT_SPACE_TINT, energy: 82, rarity: 'legendary',
     text: { detail: {
       damage: stats.damageMultiplierPerSecond,
       width: RIFT_SPACE_CONTACT.width,

@@ -37,6 +37,8 @@ import { signalMovementSpeedMultiplier } from '../signals/capabilities/movement'
 import { findPathInterception } from './interception';
 import { angleBetween, distance, lerpPoint, normalize, rotate, seededNoise } from './math';
 import { resolveRoute, type NodeId, type PathSampler } from './path';
+import { createProjectileState } from './projectile';
+import { getSessionRules, type SessionRules } from './session-rules';
 import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
@@ -168,6 +170,7 @@ export class GameEngine {
   readonly effects = new EffectEngine();
   readonly modules = createModuleRegistry();
   readonly mode: GameMode;
+  readonly rules: SessionRules;
   readonly level: LevelDefinition;
   readonly difficulty: DifficultyDefinition;
   readonly path: PathSampler;
@@ -266,53 +269,72 @@ export class GameEngine {
     extendRift: (source, key, position, options) => this.extendSpaceRift(source, key, position, options),
   };
 
-  constructor(options: GameEngineOptions | number = {}) {
-    const normalized = typeof options === 'number' ? { seed: options } : options;
-    this.mode = normalized.mode ?? 'creative';
-    this.level = getLevel(normalized.levelId ?? DEFAULT_LEVEL_ID);
+  constructor(options: GameEngineOptions = {}) {
+    this.mode = options.mode ?? 'creative';
+    this.level = getLevel(options.levelId ?? DEFAULT_LEVEL_ID);
     this.tutorialEnabled = this.mode === 'standard' && this.level.id === TUTORIAL_LEVEL_ID;
-    this.difficulty = getDifficulty(normalized.difficultyId ?? DEFAULT_DIFFICULTY_ID);
+    this.rules = getSessionRules(this.mode, this.tutorialEnabled);
+    this.difficulty = getDifficulty(options.difficultyId ?? DEFAULT_DIFFICULTY_ID);
     const firstEntrance = this.level.graph.entrances[0];
     if (!firstEntrance) throw new Error(`Level ${this.level.id} requires an entrance`);
     this.path = this.routeFor(firstEntrance);
-    this.maxWaves = this.mode === 'creative'
-      ? normalizeCreativeWaveCount(normalized.creative?.waveCount ?? this.level.waves.length)
+    this.maxWaves = this.rules.waves === 'configured'
+      ? normalizeCreativeWaveCount(options.creative?.waveCount ?? this.level.waves.length)
       : this.level.waves.length;
-    this.maxCore = this.mode === 'creative'
-      ? normalizeCreativeCoreStability(normalized.creative?.coreStability ?? 20)
+    this.maxCore = this.rules.core === 'configured'
+      ? normalizeCreativeCoreStability(options.creative?.coreStability ?? 20)
       : 20;
     this.core = this.maxCore;
-    this.shards = this.mode === 'creative'
-      ? Number.POSITIVE_INFINITY
-      : Math.round(this.level.startingShards * this.difficulty.economy);
+    this.shards = this.startingShards();
     this.creativeSetup = {
-      healthScale: Math.max(0.25, Math.min(5, normalized.creative?.healthScale ?? 1)),
-      speedScale: Math.max(0.25, Math.min(3, normalized.creative?.speedScale ?? 1)),
+      healthScale: Math.max(0.25, Math.min(5, options.creative?.healthScale ?? 1)),
+      speedScale: Math.max(0.25, Math.min(3, options.creative?.speedScale ?? 1)),
       coreStability: this.maxCore,
       waveCount: this.maxWaves,
     };
-    this.towerRandom = createSeededRandom(normalized.seed ?? Math.floor(Math.random() * 0x1_0000_0000));
+    this.towerRandom = createSeededRandom(options.seed ?? Math.floor(Math.random() * 0x1_0000_0000));
     this.effects.registerMany(gameEffects);
     this.modules.registerEffects(this.effects);
-    if (this.tutorialEnabled) {
-      for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) this.moduleInventory.set(moduleId, count);
-    } else if (this.mode === 'standard') {
+    this.initializeStartingInventory();
+    this.towers.push(this.createStartingTower());
+    this.selectedTowerId = null;
+    this.beginInitialRewards();
+    this.refreshViewSnapshot();
+  }
+
+  private startingShards(): number {
+    return this.rules.economy === 'unlimited'
+      ? Number.POSITIVE_INFINITY
+      : Math.round(this.level.startingShards * this.difficulty.economy);
+  }
+
+  private initializeStartingInventory(): void {
+    this.moduleInventory.clear();
+    if (this.rules.setup === 'tutorial') {
+      for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) {
+        this.moduleInventory.set(moduleId, count);
+      }
+    } else if (this.rules.setup === 'standard') {
       this.moduleInventory.set('pulse', 3);
       this.moduleInventory.set('frost', 2);
     }
-    const first = this.buildTower(0);
-    if (this.tutorialEnabled) {
-      first.slots = Array.from({ length: 4 }, () => null);
+  }
+
+  private createStartingTower(): Tower {
+    const tower = this.buildTower(0);
+    if (this.rules.setup === 'tutorial') {
+      tower.slots = Array.from({ length: 4 }, () => null);
     } else {
-      first.slots[0] = 'frost';
-      first.slots[1] = 'pulse';
+      tower.slots[0] = 'frost';
+      tower.slots[1] = 'pulse';
     }
-    this.towers.push(first);
-    this.selectedTowerId = null;
-    if (this.mode === 'standard' && !this.tutorialEnabled) {
+    return tower;
+  }
+
+  private beginInitialRewards(): void {
+    if (this.rules.rewards === 'draft') {
       this.beginModuleDraft(this.level.moduleDraft.initialPicks);
     }
-    this.refreshViewSnapshot();
   }
 
   subscribe(listener: Listener): () => void {
@@ -470,7 +492,6 @@ export class GameEngine {
       status: this.status,
       mode: this.mode,
       levelId: this.level.id,
-      levelName: this.level.name,
       wave: this.wave,
       maxWaves: this.maxWaves,
       core: this.core,
@@ -599,7 +620,9 @@ export class GameEngine {
   }
 
   getModuleCount(moduleId: ModuleId): number {
-    return this.mode === 'creative' ? Number.POSITIVE_INFINITY : this.moduleInventory.get(moduleId) ?? 0;
+    return this.rules.inventory === 'unlimited'
+      ? Number.POSITIVE_INFINITY
+      : this.moduleInventory.get(moduleId) ?? 0;
   }
 
   getInstalledModuleCount(moduleId: ModuleId): number {
@@ -610,13 +633,13 @@ export class GameEngine {
   }
 
   getAvailableModuleCount(moduleId: ModuleId): number {
-    if (this.mode === 'creative') return Number.POSITIVE_INFINITY;
+    if (this.rules.inventory === 'unlimited') return Number.POSITIVE_INFINITY;
     return Math.max(0, this.getModuleCount(moduleId) - this.getInstalledModuleCount(moduleId));
   }
 
   getLibraryModules() {
     const definitions = this.modules.list();
-    return this.mode === 'creative'
+    return this.rules.inventory === 'unlimited'
       ? definitions.sort((left, right) => (
         CREATIVE_KIND_ORDER[left.kind] - CREATIVE_KIND_ORDER[right.kind]
         || CREATIVE_RARITY_ORDER[left.meta.rarity] - CREATIVE_RARITY_ORDER[right.meta.rarity]
@@ -679,14 +702,14 @@ export class GameEngine {
   }
 
   configureCreativeScales(healthScale: number, speedScale: number): void {
-    if (this.mode !== 'creative' || !Number.isFinite(healthScale) || !Number.isFinite(speedScale)) return;
+    if (this.rules.scenarioControls !== 'creative' || !Number.isFinite(healthScale) || !Number.isFinite(speedScale)) return;
     this.creativeSetup.healthScale = Math.max(0.25, Math.min(5, healthScale));
     this.creativeSetup.speedScale = Math.max(0.25, Math.min(3, speedScale));
     this.emitState();
   }
 
   spawnCreativeSignal(type: SignalId, requestedEntrance?: NodeId): void {
-    if (this.mode !== 'creative' || this.status === 'won' || this.status === 'lost') return;
+    if (this.rules.scenarioControls !== 'creative' || this.status === 'won' || this.status === 'lost') return;
     const entrance = requestedEntrance ?? this.level.graph.entrances[0];
     if (!entrance) return;
     if (!this.level.graph.entrances.includes(entrance)) throw new Error(`Unknown route entrance: ${entrance}`);
@@ -801,7 +824,7 @@ export class GameEngine {
       this.emit({ type: 'toast', message: i18n.t('toast.unknownModule', { module: moduleId }), tone: 'warn' });
       return;
     }
-    if (moduleId && this.mode === 'standard') {
+    if (moduleId && this.rules.inventory === 'limited') {
       const installedElsewhere = this.towers.reduce((sum, item) => sum + item.slots.reduce(
         (slotSum, installed, index) => slotSum + (installed === moduleId && !(item.id === tower.id && index === slotIndex) ? 1 : 0),
         0,
@@ -913,9 +936,7 @@ export class GameEngine {
     this.status = 'planning';
     this.wave = 0;
     this.core = this.maxCore;
-    this.shards = this.mode === 'creative'
-      ? Number.POSITIVE_INFINITY
-      : Math.round(this.level.startingShards * this.difficulty.economy);
+    this.shards = this.startingShards();
     this.score = 0;
     this.elapsed = 0;
     this.combatElapsed = 0;
@@ -932,25 +953,10 @@ export class GameEngine {
     this.draftAbandonsUsed = 0;
     this.lastDraftActionWasAbandon = false;
     this.pendingDraftQualityBoost = false;
-    this.moduleInventory.clear();
-    if (this.tutorialEnabled) {
-      for (const [moduleId, count] of Object.entries(TUTORIAL_MODULES)) this.moduleInventory.set(moduleId, count);
-    } else if (this.mode === 'standard') {
-      this.moduleInventory.set('pulse', 3);
-      this.moduleInventory.set('frost', 2);
-    }
-    const first = this.buildTower(0);
-    if (this.tutorialEnabled) {
-      first.slots = Array.from({ length: 4 }, () => null);
-    } else {
-      first.slots[0] = 'frost';
-      first.slots[1] = 'pulse';
-    }
-    this.towers.push(first);
+    this.initializeStartingInventory();
+    this.towers.push(this.createStartingTower());
     this.selectedTowerId = null;
-    if (this.mode === 'standard' && !this.tutorialEnabled) {
-      this.beginModuleDraft(this.level.moduleDraft.initialPicks);
-    }
+    this.beginInitialRewards();
     this.markConfigurationChanged();
     this.emitState();
   }
@@ -1011,8 +1017,8 @@ export class GameEngine {
     const definition = signalRegistry.require(type);
     const stats = definition.stats;
     const shield = getSignalCapability(definition, 'shield');
-    const creativeHealthScale = this.mode === 'creative' ? this.creativeSetup.healthScale : 1;
-    const creativeSpeedScale = this.mode === 'creative' ? this.creativeSetup.speedScale : 1;
+    const creativeHealthScale = this.rules.signalScaling === 'configured' ? this.creativeSetup.healthScale : 1;
+    const creativeSpeedScale = this.rules.signalScaling === 'configured' ? this.creativeSetup.speedScale : 1;
     const scale = Math.pow(COMBAT_BALANCE.waveHealthGrowth, Math.max(0, this.wave - 1))
       * this.level.signalHealthScale
       * this.difficulty.signalHealth
@@ -1272,7 +1278,7 @@ export class GameEngine {
     for (let index = 0; index < blueprint.count; index += 1) {
       const offset = (index - (blueprint.count - 1) / 2) * blueprint.spread;
       const direction = rotate({ x: 1, y: 0 }, baseAngle + offset);
-      const projectile: Projectile = {
+      const projectile = createProjectileState({
         id: this.nextId++,
         towerId: tower.id,
         position: isStatic ? { ...launchOrigin } : {
@@ -1281,27 +1287,9 @@ export class GameEngine {
         },
         velocity: isStatic ? { x: 0, y: 0 } : { x: direction.x * blueprint.speed, y: direction.y * blueprint.speed },
         targetId: target?.id ?? null,
-        damage: blueprint.damage,
-        speed: blueprint.speed,
-        radius: blueprint.size,
-        color: blueprint.color,
-        life: blueprint.static?.duration ?? blueprint.lifetime,
-        pierce: blueprint.pierce,
-        slow: blueprint.slow,
-        splash: blueprint.splash,
-        seeking: blueprint.seeking,
-        modules: [...blueprint.modules],
         shot: blueprint,
         ...(energyRefundBudget ? { energyRefundBudget } : {}),
-        trailTimer: 0,
-        moduleState: {},
-        behavior: isStatic ? 'static' : 'linear',
-        age: 0,
-        triggered: false,
-        triggerCooldown: 0,
-        triggerCount: 0,
-        trail: [],
-      };
+      });
       this.projectiles.push(projectile);
       if (isStatic) {
         this.modules.dispatch('onDeploy', projectile.modules, {
@@ -2245,7 +2233,7 @@ export class GameEngine {
   }
 
   private openingDraftGuarantee(round: number): Set<ModuleId> {
-    if (this.wave !== 0 || this.tutorialEnabled) return new Set();
+    if (this.wave !== 0 || this.rules.rewards !== 'draft') return new Set();
     const definitions = this.modules.list();
     const isOpeningStatic = (definition: ModuleDefinition): boolean => (
       definition.kind === 'static'
@@ -2353,7 +2341,7 @@ export class GameEngine {
       this.status = 'won';
       this.completeDefense();
       this.emit({ type: 'toast', message: i18n.t('toast.victory'), tone: 'good' });
-    } else if (this.mode === 'standard' && !this.tutorialEnabled) {
+    } else if (this.rules.rewards === 'draft') {
       this.beginModuleDraft(this.level.moduleDraft.wavePicks);
       this.emit({ type: 'toast', message: i18n.t('toast.waveReward', { bonus }), tone: 'good' });
     } else {

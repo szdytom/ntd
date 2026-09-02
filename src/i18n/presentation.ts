@@ -31,6 +31,5 @@ export const signalName = (t: TFunction, type: SignalId): string => t(signalRegi
 export const levelName = (t: TFunction, id: string): string => t(`levels.${id}.name`);
 export const levelDescription = (t: TFunction, id: string): string => t(`levels.${id}.description`);
 export const difficultyName = (t: TFunction, id: DifficultyId): string => t(`difficulties.${id}.name`);
-export const difficultyDescription = (t: TFunction, id: DifficultyId): string => t(`difficulties.${id}.description`);
 export const kindLabel = (t: TFunction, kind: ModuleKind): string => t(`kinds.${kind}`);
 export const rarityLabel = (t: TFunction, rarity: ModuleRarity): string => t(`rarities.${rarity}`);

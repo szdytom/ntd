@@ -982,7 +982,7 @@ export class GameRenderer {
         ctx.font = '700 11px Manrope, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.engine.mode === 'creative' ? i18n.t('canvas.unlimitedShards') : `${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
+        ctx.fillText(this.engine.rules.economy === 'unlimited' ? i18n.t('canvas.unlimitedShards') : `${ECONOMY_BALANCE.towerCost} ◇`, 0, 48);
       }
       ctx.restore();
     }

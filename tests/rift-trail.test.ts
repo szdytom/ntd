@@ -4,16 +4,10 @@ import { WORLD } from '../src/game/config';
 import { getSignalCapability, signalRegistry } from '../src/signals';
 import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
+import { addTestProjectile, advanceEngineFor as advance, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-  signal.hp = 1_000;
-  signal.maxHp = 1_000;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0, health: 1_000 });
 };
 
 const addProjectile = (
@@ -22,41 +16,7 @@ const addProjectile = (
   position: { x: number; y: number },
   velocity: { x: number; y: number },
   targetId: number,
-): Projectile => {
-  const projectile: Projectile = {
-    id: 50_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? 1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 0,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
-};
-
-const advance = (engine: GameEngine, seconds: number): void => {
-  const steps = Math.ceil(seconds / FIXED_SIMULATION_STEP);
-  for (let step = 0; step < steps; step += 1) engine.update(FIXED_SIMULATION_STEP);
-};
+): Projectile => addTestProjectile(engine, shot, position, velocity, targetId, { trailTimer: 0 });
 
 describe('void beam compatibility', () => {
   const registry = createModuleRegistry();

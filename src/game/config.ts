@@ -23,7 +23,6 @@ export interface LevelDefinition {
   id: string;
   name: string;
   sector: string;
-  description: string;
   difficulty: 1 | 2 | 3;
   accent: string;
   graph: RouteMap;
@@ -85,7 +84,6 @@ export const LEVELS = [
     id: 'starter-elbow',
     name: 'Launch Elbow',
     sector: 'SECTOR T-0',
-    description: 'A guided two-wave exercise with fixed modules.',
     difficulty: 1,
     accent: '#168aad',
     graph: legacyPathToGraph([
@@ -109,7 +107,6 @@ export const LEVELS = [
     id: 'white-prism',
     name: 'White Prism',
     sector: 'SECTOR A-7',
-    description: 'A balanced angular route with shields and splitting signals.',
     difficulty: 1,
     accent: '#6c5ce7',
     graph: legacyPathToGraph([
@@ -137,7 +134,6 @@ export const LEVELS = [
     id: 'rose-circuit',
     name: 'Rose Circuit',
     sector: 'SECTOR C-3',
-    description: 'A serpentine route with layered armor and suppression fields.',
     difficulty: 2,
     accent: '#ff5c8a',
     graph: legacyPathToGraph([
@@ -167,7 +163,6 @@ export const LEVELS = [
     id: 'verdant-fold',
     name: 'Verdant Fold',
     sector: 'SECTOR E-9',
-    description: 'A fast folded route combining splitting and local suppression.',
     difficulty: 3,
     accent: '#00b894',
     graph: legacyPathToGraph([
@@ -198,7 +193,6 @@ export const LEVELS = [
     id: 'triune-delta',
     name: 'Triune Delta',
     sector: 'SECTOR D-6',
-    description: 'Three incoming channels merge under increasingly mixed elite assaults.',
     difficulty: 3,
     accent: '#2f80ed',
     graph: createRouteMap([

@@ -2,16 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Signal, Point, Projectile, ShotBlueprint } from '../src/game/types';
 import { createModuleRegistry } from '../src/modules';
+import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-  signal.hp = 10_000;
-  signal.maxHp = 10_000;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0, health: 10_000 });
 };
 
 const addProjectile = (
@@ -20,36 +14,7 @@ const addProjectile = (
   position: Point,
   velocity: Point,
   life = shot.lifetime,
-): Projectile => {
-  const projectile: Projectile = {
-    id: 50_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? 1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId: null,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 1,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
-};
+): Projectile => addTestProjectile(engine, shot, position, velocity, null, { life });
 
 const staticPayloads = (engine: GameEngine): Projectile[] => (
   engine.projectiles.filter((projectile) => projectile.behavior === 'static')

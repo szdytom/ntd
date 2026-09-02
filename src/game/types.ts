@@ -77,8 +77,8 @@ export interface TowerProgram {
   shots: ShotBlueprint[];
   energyCost: number;
   wraps: number;
-  summary: string;
-  warnings: string[];
+  projectileCount: number;
+  triggerCount: number;
   diagnostics: ProgramDiagnostic[];
 }
 
@@ -94,7 +94,6 @@ export type ProgramDiagnosticCode =
 export interface ProgramDiagnostic {
   code: ProgramDiagnosticCode;
   severity: 'warning' | 'error';
-  message: string;
   moduleId?: ModuleId;
   relatedModuleId?: ModuleId;
 }
@@ -294,7 +293,6 @@ export interface GameSnapshot {
   status: GameStatus;
   mode: GameMode;
   levelId: string;
-  levelName: string;
   wave: number;
   maxWaves: number;
   core: number;

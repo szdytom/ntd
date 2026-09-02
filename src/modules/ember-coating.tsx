@@ -1,7 +1,7 @@
 import type { EffectDefinition } from '../effects/types';
 import { statusOrbs } from '../effects/factories';
 import { drawGlow } from '../game/glow';
-import type { ModuleDefinition } from './types';
+import { createDamageStatusModifier } from './damage-status';
 import { createModuleIcon } from './icons';
 
 const EmberCoatingIcon = createModuleIcon(<>
@@ -80,39 +80,17 @@ const effects: readonly EffectDefinition[] = [
   },
 ];
 
-export const emberCoatingModule: ModuleDefinition = {
+export const emberCoatingModule = createDamageStatusModifier({
   id: 'ember-coating',
-  kind: 'modifier',
-  tags: ['status'],
   icon: EmberCoatingIcon,
-  meta: {
-    name: 'Ember Coating', shortName: 'Ember', color, tint: '#fff0e6', energy: 6, rarity: 'common',
-    text: { detail: {
-      direct: Math.round((1 - stats.damageMultiplier) * 100),
-      damage: stats.damage,
-      ticks: stats.duration / stats.interval,
-      duration: stats.duration,
-    } },
-  },
+  color,
+  tint: '#fff0e6',
+  energy: 6,
+  rarity: 'common',
+  stats,
   effects,
-  compile: (context) => context.modifyNext({ damageMultiplier: stats.damageMultiplier }),
-  targetEffect: {
-    channels: ['damage', 'secondary-hit'],
-    apply: ({ effects: engine, position, signal, projectile, targetEffectChannel, combat }) => {
-      if (targetEffectChannel === 'secondary-hit') {
-        engine.spawnMany(['module:ember-coating:ignite', 'module:ember-coating:cinders'], { position, color });
-        return;
-      }
-      if (!signal) return;
-      const entered = combat.applyStatus(signal, {
-        id: 'ember-coating', duration: stats.duration, interval: stats.interval, damage: stats.damage, color,
-        particle: { effectId: burningEffectId, interval: 0.4 },
-      });
-      if (entered && projectile?.behavior === 'static') {
-        engine.spawnMany(['module:ember-coating:ignite', 'module:ember-coating:cinders'], { position, color });
-      }
-    },
-  },
+  hitEffectIds: ['module:ember-coating:ignite', 'module:ember-coating:cinders'],
+  statusParticle: { effectId: burningEffectId, interval: 0.4 },
   renderProjectile: ({ ctx, projectile }) => {
     const phase = projectile.life * 4 + projectile.id;
     drawGlow(ctx, projectile.position.x, projectile.position.y, projectile.radius + 12, color, 0.58);
@@ -137,7 +115,4 @@ export const emberCoatingModule: ModuleDefinition = {
     }
     ctx.restore();
   },
-  onHit: ({ effects: engine, position }) => {
-    engine.spawnMany(['module:ember-coating:ignite', 'module:ember-coating:cinders'], { position, color });
-  },
-};
+});

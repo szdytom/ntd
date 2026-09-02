@@ -92,7 +92,7 @@ export const starfireTrailModule: ModuleDefinition = {
   tags: ['trail', 'area', 'status'],
   icon: StarfireTrailIcon,
   meta: {
-    name: 'Starfire Wake', shortName: 'Starfire Wake', color, tint: STARFIRE_TINT, energy: 48, rarity: 'epic',
+    color, tint: STARFIRE_TINT, energy: 48, rarity: 'epic',
     text: { detail: {
       damage: Math.round(stats.damageMultiplierPerSecond * 100),
       width: stats.width,

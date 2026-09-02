@@ -37,7 +37,7 @@ export const reclaimCircuitModule: ModuleDefinition = {
   tags: [],
   icon: ReclaimCircuitIcon,
   meta: {
-    name: 'Reclaim Circuit', shortName: 'Reclaim', color, tint: '#e4fff1', energy: 10, rarity: 'epic',
+    color, tint: '#e4fff1', energy: 10, rarity: 'epic',
     text: { detail: {
       damage: Math.round((1 - stats.damageMultiplier) * 100),
       refund: Math.round(stats.energyRefundMultiplier * 100),

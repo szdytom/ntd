@@ -4,50 +4,22 @@ import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../s
 import { signalVisualRotation } from '../src/signals/visuals/canvas';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0 });
 };
 
 const fireAt = (engine: GameEngine, shot: ShotBlueprint, signal: Signal): Projectile => {
   const direction = { x: Math.cos(signal.angle), y: Math.sin(signal.angle) };
   const launchGap = signal.radius + shot.size + 2;
-  const projectile: Projectile = {
-    id: 70_000,
-    towerId: engine.towers[0]?.id ?? -1,
-    position: {
+  return addTestProjectile(engine, shot, {
       x: signal.position.x - direction.x * launchGap,
       y: signal.position.y - direction.y * launchGap,
     },
-    velocity: { x: direction.x * shot.speed, y: direction.y * shot.speed },
-    targetId: signal.id,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 1,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
+    { x: direction.x * shot.speed, y: direction.y * shot.speed },
+    signal.id,
+  );
 };
 
 describe('Prism Anvil layered armor elite', () => {

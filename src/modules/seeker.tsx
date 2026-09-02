@@ -40,7 +40,7 @@ export const seekerModule: ModuleDefinition = {
   tags: ['route'],
   icon: SeekerIcon,
   meta: {
-    name: 'Seeker Protocol', shortName: 'Seeker', color, tint: '#e2f4f8', energy: 10, rarity: 'uncommon',
+    color, tint: '#e2f4f8', energy: 10, rarity: 'uncommon',
   },
   effects,
   compile: (context) => context.modifyNext(stats),

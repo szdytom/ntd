@@ -2,52 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { GAME_EFFECT_IDS } from '../src/effects/game-effects';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import { distance } from '../src/game/math';
-import type { Point, Projectile, ShotBlueprint, Signal } from '../src/game/types';
+import type { Signal } from '../src/game/types';
+import { addTestProjectile as addProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-};
-
-const addProjectile = (
-  engine: GameEngine,
-  shot: ShotBlueprint,
-  position: Point,
-  velocity: Point,
-  targetId: number | null,
-): Projectile => {
-  const projectile: Projectile = {
-    id: 80_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? 1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 1,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0 });
 };
 
 describe('piercing projectile contacts', () => {

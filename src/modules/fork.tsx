@@ -40,7 +40,7 @@ export const forkModule: ModuleDefinition = {
   tags: [],
   icon: ForkIcon,
   meta: {
-    name: 'Triple Fork', shortName: 'Fork', color, tint: '#e1f8f1', energy: 34, rarity: 'epic',
+    color, tint: '#e1f8f1', energy: 34, rarity: 'epic',
     text: {
       description: { count: stats.count },
       detail: { count: stats.count, spread: stats.spreadDegrees },

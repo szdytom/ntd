@@ -54,7 +54,7 @@ export const resonantTrailModule: ModuleDefinition = {
   tags: ['trail'],
   icon: ResonantTrailIcon,
   meta: {
-    name: 'Resonant Trail', shortName: 'Resonance', color, tint: '#f1eaff', energy: 44, rarity: 'epic',
+    color, tint: '#f1eaff', energy: 44, rarity: 'epic',
     text: { detail: {
       interval: stats.pulseEveryTicks * COMBAT_BALANCE.projectileTrailInterval,
       damage: Math.round(stats.damageMultiplier * 100),

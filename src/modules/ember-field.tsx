@@ -99,7 +99,7 @@ export const emberFieldModule: ModuleDefinition = {
   tags: ['static', 'area', 'status'],
   icon: EmberFieldIcon,
   meta: {
-    name: 'Ember Scorch Field', shortName: 'Scorch Field', color, tint: '#fff1e8', energy: 18, rarity: 'common',
+    color, tint: '#fff1e8', energy: 18, rarity: 'common',
     text: { detail: {
       radius: stats.radius,
       pulseInterval: stats.pulseInterval,

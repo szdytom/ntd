@@ -5,6 +5,7 @@ import { LEVELS } from '../game/config';
 import type { SignalId } from '../game/types';
 import { signalName, levelName } from '../i18n/presentation';
 import { DEFAULT_SIGNAL_ID, getSignalCapability, SIGNAL_IDS, signalRegistry } from '../signals';
+import { ArchiveHeader } from './ArchiveHeader';
 import { SignalSpecimen } from './SignalSpecimen';
 import { SettingsPanel } from './SettingsPanel';
 import { Tag } from './Tag';
@@ -82,17 +83,16 @@ export function SignalArchive({ onBack, initialType = DEFAULT_SIGNAL_ID, backToB
     { key: 'coreDamage', label: t('signalArchive.stats.coreDamage'), display: formatValue(profile.coreDamage), value: profile.coreDamage, maximum: MAXIMUMS.coreDamage },
   ];
 
-  return <main className="signal-archive-shell" style={archiveStyle}>
-    <header className="signal-archive-head">
-      <button className="signal-archive-back" onClick={onBack} aria-label={t(backToBattlefield ? 'signalArchive.backToBattlefield' : 'signalArchive.back')}>
-        <span aria-hidden="true">←</span>
-      </button>
-      <div>
-        <h1>{t('signalArchive.title')}</h1>
-      </div>
+  return <main className="archive-shell signal-archive-shell" style={archiveStyle}>
+    <ArchiveHeader
+      className="signal-archive-head"
+      title={t('signalArchive.title')}
+      backLabel={t(backToBattlefield ? 'signalArchive.backToBattlefield' : 'signalArchive.back')}
+      onBack={onBack}
+    >
       <SettingsPanel />
       <div className="signal-archive-seal" aria-hidden="true"><i /><b>{String(selectedIndex + 1).padStart(2, '0')}</b><span /></div>
-    </header>
+    </ArchiveHeader>
 
     <section className="signal-archive-console">
       <nav className="signal-archive-index" aria-label={t('signalArchive.indexAria')}>

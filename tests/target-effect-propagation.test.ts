@@ -1,16 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
+import { GameEngine } from '../src/game/engine';
 import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import {
+  addTestProjectile as addProjectile,
+  advanceEngineFor as advanceFor,
+  advanceEngineUntil as advanceUntil,
+  placeSignalOnPath,
+} from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
-  const at = engine.path.pointAtDistance(pathDistance);
-  signal.speed = 0;
-  signal.distance = pathDistance;
-  signal.progress = pathDistance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-  signal.hp = 10_000;
-  signal.maxHp = 10_000;
+  placeSignalOnPath(engine, signal, pathDistance, { speed: 0, health: 10_000 });
 };
 
 const prepareEngine = (signalDistances: readonly number[]): { engine: GameEngine; signals: Signal[] } => {
@@ -27,43 +26,6 @@ const prepareEngine = (signalDistances: readonly number[]): { engine: GameEngine
     placeSignal(engine, signal, pathDistance);
   }
   return { engine, signals: engine.signals };
-};
-
-const addProjectile = (
-  engine: GameEngine,
-  shot: ShotBlueprint,
-  position: { x: number; y: number },
-  velocity: { x: number; y: number },
-  targetId: number | null,
-): Projectile => {
-  const projectile: Projectile = {
-    id: 60_000 + engine.projectiles.length,
-    towerId: engine.towers[0]?.id ?? -1,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.static?.duration ?? shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 1,
-    moduleState: {},
-    behavior: shot.static ? 'static' : 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
 };
 
 const fireAt = (engine: GameEngine, shot: ShotBlueprint, signal: Signal): Projectile => {
@@ -88,16 +50,6 @@ const deployAt = (engine: GameEngine, shot: ShotBlueprint, pathDistance: number)
   { x: 0, y: 0 },
   null,
 );
-
-const advanceUntil = (engine: GameEngine, condition: () => boolean, seconds = 1): void => {
-  const steps = Math.ceil(seconds / FIXED_SIMULATION_STEP);
-  for (let step = 0; step < steps && !condition(); step += 1) engine.update(FIXED_SIMULATION_STEP);
-};
-
-const advanceFor = (engine: GameEngine, seconds: number): void => {
-  const steps = Math.ceil(seconds / FIXED_SIMULATION_STEP);
-  for (let step = 0; step < steps; step += 1) engine.update(FIXED_SIMULATION_STEP);
-};
 
 const hasStatus = (signal: Signal, id: string): boolean => signal.statuses.some((status) => status.id === id);
 const isSlowed = (signal: Signal): boolean => signal.slowFactor < 1 && signal.slowTime > 0;

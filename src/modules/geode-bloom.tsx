@@ -68,7 +68,7 @@ export const geodeBloomModule: ModuleDefinition = {
   tags: ['projectile', 'area'],
   icon: GeodeBloomIcon,
   meta: {
-    name: 'Geode Bloom', shortName: 'Geode', color, tint: '#f8e8ff', energy: 40, rarity: 'epic',
+    color, tint: '#f8e8ff', energy: 40, rarity: 'epic',
     text: { detail: { damage: stats.damage, radius: stats.splash } },
   },
   effects,

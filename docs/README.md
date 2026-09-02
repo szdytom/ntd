@@ -26,6 +26,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | [Internals index](internals/README.md) | Which implementation explanation applies |
 | [Module compiler](internals/module-compiler.md) | Pending modifiers, wraparound, triggers, payloads, and hook dispatch |
 | [Module draft](internals/module-draft.md) | Adaptive quality, compatibility weights, and abandonment state |
+| [Session rules](internals/session-rules.md) | The boundary between session identity and executable behavior policies |
 | [Cross-cutting combat mechanics](internals/combat-runtime.md) | Target-effect propagation, damage ordering, spatial queries, and configured signal traits |
 | [Route graphs](internals/route-graphs.md) | Multi-entrance paths and per-signal route sampling |
 | [Rendering pipeline](internals/rendering-pipeline.md) | Canvas layers, effects, bloom, distortion, and fallback |

@@ -2,9 +2,7 @@ import type { DifficultyId } from './types';
 
 export interface DifficultyDefinition {
   id: DifficultyId;
-  name: string;
   rank: -2 | -1 | 0 | 1 | 2;
-  description: string;
   signalHealth: number;
   signalSpeed: number;
   towerDamage: number;
@@ -14,9 +12,7 @@ export interface DifficultyDefinition {
 export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   {
     id: 'relaxed',
-    name: 'Relaxed',
     rank: -2,
-    description: 'Explore module combinations with generous room for error.',
     signalHealth: 0.72,
     signalSpeed: 0.94,
     towerDamage: 1.18,
@@ -24,9 +20,7 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   },
   {
     id: 'easy',
-    name: 'Easy',
     rank: -1,
-    description: 'Reduces build pressure while preserving progression.',
     signalHealth: 0.86,
     signalSpeed: 0.97,
     towerDamage: 1.08,
@@ -34,9 +28,7 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   },
   {
     id: 'normal',
-    name: 'Standard',
     rank: 0,
-    description: 'Uses the designed baseline and standard economy.',
     signalHealth: 1,
     signalSpeed: 1,
     towerDamage: 1,
@@ -44,9 +36,7 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   },
   {
     id: 'hard',
-    name: 'Hard',
     rank: 1,
-    description: 'Demands tighter coverage and efficient sequencing.',
     signalHealth: 1.18,
     signalSpeed: 1.04,
     towerDamage: 0.94,
@@ -54,9 +44,7 @@ export const DIFFICULTIES: readonly DifficultyDefinition[] = [
   },
   {
     id: 'extreme',
-    name: 'Extreme',
     rank: 2,
-    description: 'Raises numerical pressure for mature builds.',
     signalHealth: 1.42,
     signalSpeed: 1.08,
     towerDamage: 0.86,

@@ -40,7 +40,7 @@ export const emergencyBatteryModule: ModuleDefinition = {
   tags: [],
   icon: EmergencyBatteryIcon,
   meta: {
-    name: 'Emergency Battery', shortName: 'Battery', color, tint: '#e7faef',
+    color, tint: '#e7faef',
     energy: -stats.energyReduction, rarity: 'uncommon',
     text: { detail: { energy: stats.energyReduction } },
   },

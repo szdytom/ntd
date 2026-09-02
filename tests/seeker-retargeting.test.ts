@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Signal, Point, Projectile } from '../src/game/types';
+import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, distance: number): void => {
-  signal.speed = 0;
-  signal.distance = distance;
-  signal.position = engine.path.pointAtDistance(distance).position;
+  placeSignalOnPath(engine, signal, distance, { speed: 0 });
 };
 
 const addSeekingNeedle = (
@@ -16,34 +15,7 @@ const addSeekingNeedle = (
 ): Projectile => {
   const shot = engine.modules.compile(['seeker', 'needle']).shots[0];
   if (!shot) throw new Error('Expected seeker and needle to compile into a shot');
-  const projectile: Projectile = {
-    id: 10_000 + engine.projectiles.length,
-    towerId: engine.towers[0].id,
-    position: { ...position },
-    velocity: { ...velocity },
-    targetId,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 0,
-    moduleState: {},
-    behavior: 'linear',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
+  return addTestProjectile(engine, shot, position, velocity, targetId, { trailTimer: 0 });
 };
 
 describe('seeking projectile retargeting', () => {

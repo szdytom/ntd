@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
 import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const createStaticProjectile = (
   engine: GameEngine,
@@ -8,45 +9,11 @@ const createStaticProjectile = (
   distance: number,
 ): Projectile => {
   const position = engine.path.pointAtDistance(distance).position;
-  const projectile: Projectile = {
-    id: 30_000 + engine.projectiles.length,
-    towerId: engine.towers[0].id,
-    position: { ...position },
-    velocity: { x: 0, y: 0 },
-    targetId: null,
-    damage: shot.damage,
-    speed: shot.speed,
-    radius: shot.size,
-    color: shot.color,
-    life: shot.static?.duration ?? shot.lifetime,
-    pierce: shot.pierce,
-    slow: shot.slow,
-    splash: shot.splash,
-    seeking: shot.seeking,
-    modules: [...shot.modules],
-    shot,
-    trailTimer: 0,
-    moduleState: {},
-    behavior: 'static',
-    age: 0,
-    triggered: false,
-    triggerCooldown: 0,
-    triggerCount: 0,
-    trail: [],
-  };
-  engine.projectiles.push(projectile);
-  return projectile;
+  return addTestProjectile(engine, shot, position, { x: 0, y: 0 }, null, { trailTimer: 0 });
 };
 
 const placeSignal = (engine: GameEngine, signal: Signal, distance: number, speed: number): void => {
-  const at = engine.path.pointAtDistance(distance);
-  signal.distance = distance;
-  signal.progress = distance / engine.path.length;
-  signal.position = at.position;
-  signal.angle = at.angle;
-  signal.speed = speed;
-  signal.hp = 10_000;
-  signal.maxHp = 10_000;
+  placeSignalOnPath(engine, signal, distance, { speed, health: 10_000 });
 };
 
 const proximityMineShot = (engine: GameEngine): ShotBlueprint => {

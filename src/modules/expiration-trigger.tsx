@@ -40,7 +40,7 @@ export const expirationTriggerModule: ModuleDefinition = {
   tags: ['trigger', 'reliable-trigger'],
   icon: ExpirationTriggerIcon,
   meta: {
-    name: 'Expiration Trigger', shortName: 'Expiration', color, tint: '#fff0e3', energy: 12, rarity: 'rare',
+    color, tint: '#fff0e3', energy: 12, rarity: 'rare',
     text: { detail: { payloads: stats.payloadCount } },
   },
   effects,

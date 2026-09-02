@@ -62,7 +62,7 @@ export const toxicCloudModule: ModuleDefinition = {
   tags: ['static', 'area', 'status'],
   icon: ToxicCloudIcon,
   meta: {
-    name: 'Emerald Toxic Cloud', shortName: 'Toxic Cloud', color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
+    color, tint: '#ebfbee', energy: 30, rarity: 'uncommon',
     text: { detail: {
       pulseInterval: stats.pulseInterval,
       damage: stats.damage,

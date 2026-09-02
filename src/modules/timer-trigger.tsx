@@ -35,7 +35,7 @@ export const timerTriggerModule: ModuleDefinition = {
   tags: ['trigger', 'reliable-trigger'],
   icon: TimerTriggerIcon,
   meta: {
-    name: 'Timer Trigger', shortName: 'Timer', color, tint: '#fff9d9', energy: 7, rarity: 'common',
+    color, tint: '#fff9d9', energy: 7, rarity: 'common',
     text: { detail: { delay: stats.delay, payloads: stats.payloadCount } },
   },
   effects,

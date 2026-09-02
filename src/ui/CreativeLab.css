@@ -179,6 +179,7 @@
 }
 
 @media (max-width: 540px) {
+  .creative-signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .creative-lab .creative-signal-grid-fill { display: none; }
   .creative-lab .creative-signal-grid > button:last-of-type { grid-column: 1 / -1; }
 }

@@ -13,8 +13,6 @@ describe('module metadata', () => {
     for (const module of modules) {
       expect(module.id.length).toBeGreaterThan(0);
       expect(typeof module.icon).toBe('function');
-      expect(module.meta.name.length).toBeGreaterThan(0);
-      expect(module.meta.shortName.length).toBeGreaterThan(0);
       expect(module.meta.color).toMatch(/^#[0-9a-f]{6}$/i);
       expect(module.meta.tint).toMatch(/^#[0-9a-f]{6}$/i);
       expect(Number.isFinite(module.meta.energy)).toBe(true);
