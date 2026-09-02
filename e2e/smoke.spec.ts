@@ -115,6 +115,29 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   expect(pageErrors).toEqual([]);
 });
 
+test('thought index plays real scenes and returns to deployment', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await prepareReturningPlayer(page);
+  await page.goto('/');
+
+  const entry = page.getByRole('button', { name: 'Open the thought index' });
+  await entry.click();
+  const index = page.getByRole('main', { name: 'Thought Index' });
+  await expect(index).toBeVisible();
+  await expect(index.getByRole('img', { name: 'Live combat demonstration' })).toBeVisible();
+  await expect(index.locator('.thought-module-badge')).toBeVisible();
+  await index.getByRole('button', { name: 'Play' }).click();
+  await expect(index.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await index.locator('button[data-thought-id="frost"]').click();
+  await expect(index.locator('.thought-stage')).toHaveAttribute('data-thought-id', 'frost');
+  await index.locator('.thought-transcript summary').click();
+  await expect(index.locator('.thought-transcript li').first()).toBeVisible();
+  await index.getByRole('button', { name: 'Return to deployment' }).click();
+  await expect(entry).toBeFocused();
+  expect(pageErrors).toEqual([]);
+});
+
 test('mobile setup keeps primary controls reachable', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.setViewportSize({ width: 390, height: 844 });

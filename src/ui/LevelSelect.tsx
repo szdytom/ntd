@@ -74,10 +74,11 @@ export interface LevelSelection {
   difficultyId: DifficultyId;
 }
 
-export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive }: {
+export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive, onOpenThought }: {
   onStart: (selection: LevelSelection) => void;
   onOpenArchive: () => void;
   onOpenDefenseArchive: () => void;
+  onOpenThought: () => void;
 }) {
   const { t } = useTranslation();
   const [rememberedSelection] = useState(readRememberedSelection);
@@ -219,6 +220,10 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive }: {
             <span>{t('levelSelect.sectorHint')}</span>
           </div>
           <div className="level-select-utilities">
+            <button className="thought-index-entry" onClick={onOpenThought} aria-label={t('thoughtIndex.entryAria')}>
+              <span className="thought-index-entry-trace" aria-hidden="true"><i /><i /><i /></span>
+              <strong>{t('thoughtIndex.entry')}</strong>
+            </button>
             <button className="defense-archive-entry" onClick={onOpenDefenseArchive} aria-label={t('defenseArchive.entryAria')}>
               <span className="defense-archive-entry-marks" aria-hidden="true"><i /><i /><i /><i /></span>
               <strong>{t('defenseArchive.entry')}</strong>

@@ -4,7 +4,7 @@ import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } f
 import { moduleVariableStyle } from './modulePresentation';
 import './ModuleInspector.css';
 
-export function ModuleInspector({ definition }: { definition: ModuleDefinition }) {
+export function ModuleInspector({ definition, onOpenThought }: { definition: ModuleDefinition; onOpenThought?: () => void }) {
   const { t } = useTranslation();
   const Icon = definition.icon;
   return <div className="module-inspector" style={moduleVariableStyle(definition)}>
@@ -21,5 +21,6 @@ export function ModuleInspector({ definition }: { definition: ModuleDefinition }
     </div>
     <p className="inspector-description">{moduleDescription(t, definition)}</p>
     <p className="inspector-detail">{moduleDetail(t, definition)}</p>
+    {onOpenThought ? <button className="inspector-thought" onClick={onOpenThought}>{t('thoughtIndex.viewThought')}</button> : null}
   </div>;
 }

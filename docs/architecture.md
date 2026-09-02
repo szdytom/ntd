@@ -22,13 +22,15 @@ Prism Bastion separates configuration, deterministic simulation, presentation me
 
 At construction, the engine resolves the session identity and tutorial context into one immutable `SessionRules` object. Product identity remains in `GameMode`; concrete behavior such as inventory limits, rewards, economy, wave configuration, and scenario controls reads the corresponding rule instead of branching on the mode name. See [Session rules](internals/session-rules.md) for the policy boundaries.
 
+Authored Thought Index scenes sit outside `GameMode`. A session-free `CombatRuntime` control surface drives the real compiler and combat loop, semantic combat events synchronize story beats, and both the battlefield and thought player render through the read-only `RenderWorld` boundary. See [Thought Index](internals/thought-index.md).
+
 Tower slot arrays are not interpreted during projectile flight. `ModuleRegistry` compiles a slot sequence into an immutable `TowerProgram`; the engine then casts the resulting `ShotBlueprint` trees. Module runtime behavior is invoked through hooks and a restricted combat API, so individual modules do not receive the engine itself.
 
 Route geometry is a rooted tree whose leaves are entrances and whose root is the core. Every signal receives one entrance ID at spawn time, and that ID resolves to a unique entrance-to-core polyline. Movement, interception, displacement, and core-distance targeting all use that per-signal route.
 
 ## Presentation boundaries
 
-React subscribes to immutable `GameViewSnapshot` objects for controls and panels. The Canvas renderer reads the live entity arrays because it renders every animation frame and must not wait for React snapshots. Toasts use a separate event subscription.
+React subscribes to immutable `GameViewSnapshot` objects for controls and panels. The Canvas renderer reads live entity arrays through the narrow `RenderWorld` interface because it renders every animation frame and must not wait for React snapshots. Toasts use a separate event subscription.
 
 The engine also publishes semantic defense archive facts and one immutable completion report when a defense reaches `won` or `lost`. `DefenseArchiveRepository` evaluates archive policy against the injected `IArchiveStorage`; combat code never opens storage or evaluates achievement policy.
 
@@ -46,7 +48,7 @@ UI controls ───────▶ GameEngine ◀────── module run
      │
      └──▶ presentation helpers ───▶ i18next resources
 
-GameRenderer ───▶ live engine entities + EffectEngine ───▶ Canvas/WebGL output
+GameRenderer ───▶ RenderWorld + EffectEngine ───▶ Canvas/WebGL output
 
 GameEngine ───▶ archive facts + completion report ───▶ DefenseArchiveRepository
                                                         │

@@ -11,10 +11,11 @@ import { ModuleSlot } from './ModuleSlot';
 import { ProgramReadout } from './ProgramReadout';
 import { TowerOverview } from './TowerOverview';
 import { Tag } from './Tag';
+import { thoughtRegistry } from '../thoughts';
 import { useTouchModuleDrag } from './useTouchModuleDrag';
 import './Workshop.css';
 
-export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot }) {
+export function Workshop({ engine, tower, view, onOpenThought }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot; onOpenThought?: (thoughtId: string) => void }) {
   const { t } = useTranslation();
   const workshopRef = useRef<HTMLElement>(null);
   const installModule = useCallback((slot: number, moduleId: ModuleId) => {
@@ -42,6 +43,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
   const selectedDefinition = selectedModule
     ? definitions.find((definition) => definition.id === selectedModule)
     : undefined;
+  const selectedThought = selectedDefinition ? thoughtRegistry.forModule(selectedDefinition.id) : undefined;
   const filterLabel = kindFilter === 'all' ? t('kinds.all') : kindLabel(t, kindFilter);
   const program = view.selectedProgram ?? engine.modules.compile(tower.slots);
 
@@ -63,7 +65,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
       <div className="workshop-body">
         <div className="workshop-side">
           <TowerOverview tower={tower} engine={engine} />
-          {selectedDefinition ? <ModuleInspector definition={selectedDefinition} /> : null}
+          {selectedDefinition ? <ModuleInspector definition={selectedDefinition} {...(selectedThought && onOpenThought ? { onOpenThought: () => onOpenThought(selectedThought.id) } : {})} /> : null}
         </div>
 
         <div className="workshop-main">
@@ -89,7 +91,7 @@ export function Workshop({ engine, tower, view }: { engine: GameEngine; tower: T
                 />
               ))}
             </div>
-            <ProgramReadout program={program} engine={engine} maxEnergy={tower.maxEnergy} />
+            <ProgramReadout program={program} engine={engine} maxEnergy={tower.maxEnergy} {...(onOpenThought ? { onOpenThought } : {})} />
           </section>
 
           <section className="library-section">

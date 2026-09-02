@@ -13,11 +13,13 @@ import { TutorialGuide } from './TutorialGuide';
 import type { DefenseArchiveRepository } from '../defense-archive';
 import type { ToastState } from './useGameState';
 
-export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onTutorialResolved }: {
+export function GameSession({ engine, defenseArchive, suspended = false, onExit, onOpenArchive, onOpenThought, onTutorialResolved }: {
   engine: GameEngine;
   defenseArchive: DefenseArchiveRepository;
+  suspended?: boolean;
   onExit: () => void;
   onOpenArchive: (type: SignalId) => void;
+  onOpenThought?: (thoughtId: string) => void;
   onTutorialResolved: () => void;
 }) {
   const { t } = useTranslation();
@@ -58,10 +60,11 @@ export function GameSession({ engine, defenseArchive, onExit, onOpenArchive, onT
         <Battlefield
           engine={engine}
           view={view}
+          suspended={suspended}
           onOpenArchive={onOpenArchive}
-          workshop={tower && !snapshot.draft ? <Workshop engine={engine} tower={tower} view={view} /> : null}
+          workshop={tower && !snapshot.draft ? <Workshop engine={engine} tower={tower} view={view} {...(onOpenThought ? { onOpenThought } : {})} /> : null}
         >
-          <RewardDraft engine={engine} snapshot={snapshot} inventory={view.moduleInventory} />
+          <RewardDraft engine={engine} snapshot={snapshot} inventory={view.moduleInventory} {...(onOpenThought ? { onOpenThought } : {})} />
         </Battlefield>
       </div>
     </div>

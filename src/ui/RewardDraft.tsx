@@ -5,9 +5,10 @@ import type { GameSnapshot, GameViewSnapshot } from '../game/types';
 import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } from '../i18n/presentation';
 import { moduleVariableStyle } from './modulePresentation';
 import { Tag } from './Tag';
+import { thoughtRegistry } from '../thoughts';
 import './RewardDraft.css';
 
-export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngine; snapshot: GameSnapshot; inventory: GameViewSnapshot['moduleInventory'] }) {
+export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { engine: GameEngine; snapshot: GameSnapshot; inventory: GameViewSnapshot['moduleInventory']; onOpenThought?: (thoughtId: string) => void }) {
   const { t } = useTranslation();
   const draft = snapshot.draft;
   const panelRef = useRef<HTMLElement>(null);
@@ -36,14 +37,22 @@ export function RewardDraft({ engine, snapshot, inventory }: { engine: GameEngin
     </header>
     <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);
+        const thought = thoughtRegistry.forModule(moduleId);
         const Icon = definition.icon;
-        return <button key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={() => engine.chooseDraftModule(moduleId)}>
+        return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest('button')) return;
+          engine.chooseDraftModule(moduleId);
+        }}>
           <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><span className="reward-icon"><Icon /></span>
           <strong>{moduleName(t, definition.id)}</strong>
           <small>{moduleDescription(t, definition)}</small>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>
           <em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
-        </button>;
+          <div className="reward-card-actions">
+            <button className="reward-choose" onClick={() => engine.chooseDraftModule(moduleId)}>{t('reward.choose')}</button>
+            {thought && onOpenThought ? <button className="reward-view-thought" onClick={() => onOpenThought(thought.id)}>{t('thoughtIndex.viewThought')}</button> : null}
+          </div>
+        </article>;
       })}</div>
     <footer className="reward-foot">
       <span>{draft.boosted ? <Tag tone="yellow">{t('reward.boosted')}</Tag> : null}{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</span>

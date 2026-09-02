@@ -1,1 +1,2 @@
 /* App owns screen selection only; mounted screens own their visual layout. */
+.app-content-covered { pointer-events: none; }

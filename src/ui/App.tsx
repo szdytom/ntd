@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../i18n';
 import { TUTORIAL_LEVEL_ID, getLevel } from '../game/config';
 import { DEFAULT_DIFFICULTY_ID } from '../game/difficulty';
@@ -12,6 +12,7 @@ import { LevelSelect, type LevelSelection } from './LevelSelect';
 import { TutorialOffer } from './TutorialOffer';
 import { defenseArchiveRepository } from '../defense-archive';
 import { getAutoPauseEnabled, useAutoPauseEnabled } from './preferences';
+import { ThoughtIndex } from './ThoughtIndex';
 import './App.css';
 
 export const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
@@ -49,6 +50,8 @@ export function App() {
   const [archiveType, setArchiveType] = useState<SignalId | null>(null);
   const [defenseArchiveOpen, setDefenseArchiveOpen] = useState(false);
   const [tutorialOfferOpen, setTutorialOfferOpen] = useState(() => !tutorialOfferWasResolved());
+  const [thoughtOpen, setThoughtOpen] = useState<{ id?: string } | null>(null);
+  const thoughtOriginRef = useRef<HTMLElement | null>(null);
   const autoPauseEnabled = useAutoPauseEnabled();
   const start = (selection: LevelSelection): void => {
     const nextEngine = new GameEngine(selection);
@@ -94,6 +97,16 @@ export function App() {
     engine?.setAutoPauseCondition('signal-archive', false);
     setArchiveType(null);
   };
+  const openThought = (id?: string): void => {
+    thoughtOriginRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    engine?.setAutoPauseCondition('thought-index', true);
+    setThoughtOpen(id ? { id } : {});
+  };
+  const closeThought = (): void => {
+    engine?.setAutoPauseCondition('thought-index', false);
+    setThoughtOpen(null);
+    requestAnimationFrame(() => thoughtOriginRef.current?.focus());
+  };
   const declineTutorial = (): void => {
     rememberTutorialOfferResolution();
     setTutorialOfferOpen(false);
@@ -103,6 +116,7 @@ export function App() {
     start(tutorialSelection());
   };
   return <>
+    <div className={thoughtOpen ? 'app-content-covered' : ''} inert={Boolean(thoughtOpen)} aria-hidden={thoughtOpen ? true : undefined}>
     {defenseArchiveOpen
       ? <DefenseArchive repository={defenseArchiveRepository} onBack={() => setDefenseArchiveOpen(false)} />
       : archiveType
@@ -110,14 +124,18 @@ export function App() {
       : engine
         ? <GameSession
           engine={engine}
+          suspended={Boolean(thoughtOpen)}
           defenseArchive={defenseArchiveRepository}
           onExit={() => setEngine(null)}
           onOpenArchive={openSignalArchive}
+          onOpenThought={openThought}
           onTutorialResolved={rememberTutorialOfferResolution}
         />
-        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType(DEFAULT_SIGNAL_ID)} onOpenDefenseArchive={() => setDefenseArchiveOpen(true)} />}
+        : <LevelSelect onStart={start} onOpenArchive={() => setArchiveType(DEFAULT_SIGNAL_ID)} onOpenDefenseArchive={() => setDefenseArchiveOpen(true)} onOpenThought={() => openThought()} />}
     {tutorialOfferOpen && !engine && !archiveType && !defenseArchiveOpen
       ? <TutorialOffer onAccept={acceptTutorial} onDecline={declineTutorial} />
       : null}
+    </div>
+    {thoughtOpen ? <ThoughtIndex {...(thoughtOpen.id ? { initialThoughtId: thoughtOpen.id } : {})} onBack={closeThought} backToBattlefield={Boolean(engine)} /> : null}
   </>;
 }

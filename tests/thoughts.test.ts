@@ -1,0 +1,264 @@
+import { describe, expect, it } from 'vitest';
+import en from '../src/i18n/locales/en.json';
+import { CombatRuntime } from '../src/game/combat-runtime';
+import type { CombatEvent } from '../src/game/combat-events';
+import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
+
+const runDirector = (director: ThoughtSceneDirector, seconds = 80): void => {
+  for (let step = 0; step < seconds * 120; step += 1) {
+    const status = director.getSnapshot().status;
+    if (status === 'completed' || status === 'error') return;
+    director.update(1 / 120);
+  }
+};
+
+const runUntilCue = (director: ThoughtSceneDirector, cueId: string, seconds = 30): void => {
+  for (let step = 0; step < seconds * 120 && director.getSnapshot().cueId !== cueId; step += 1) {
+    director.update(1 / 120);
+  }
+};
+
+const angleDistance = (left: number, right: number): number => (
+  Math.abs(((left - right + Math.PI * 3) % (Math.PI * 2)) - Math.PI)
+);
+
+describe('thought registry', () => {
+  it('maps every registered subject and diagnostic back to its thought', () => {
+    const definitions = thoughtRegistry.list();
+    expect(definitions.length).toBeGreaterThan(0);
+    expect(new Set(definitions.map((definition) => definition.id)).size).toBe(definitions.length);
+    for (const definition of definitions) {
+      expect(thoughtRegistry.forModule(definition.subject.moduleId)).toBe(definition);
+      for (const diagnostic of definition.relatedDiagnostics ?? []) {
+        expect(thoughtRegistry.forDiagnostic(diagnostic)).toBe(definition);
+      }
+    }
+  });
+
+  it('references existing English copy for every record and beat', () => {
+    for (const definition of thoughtRegistry.list()) {
+      expect(en[definition.titleKey as keyof typeof en]).toBeTruthy();
+      expect(en[definition.summaryKey as keyof typeof en]).toBeTruthy();
+      for (const beat of definition.beats) {
+        expect(en[beat.captionKey as keyof typeof en]).toBeTruthy();
+        for (const cue of beat.cues ?? []) {
+          if (cue.sectionTitleKey) {
+            expect(en[cue.sectionTitleKey as keyof typeof en]).toBeTruthy();
+          }
+          if (cue.overlay?.type === 'caption') {
+            expect(en[cue.overlay.textKey as keyof typeof en]).toBeTruthy();
+          }
+        }
+      }
+    }
+  });
+
+  it('derives authored timeline widths from timed cues', () => {
+    const authored = thoughtRegistry.list().filter((definition) => definition.beats.every((beat) => beat.cues));
+    expect(authored.length).toBeGreaterThan(0);
+    for (const definition of authored) {
+      for (const beat of definition.beats) {
+        const duration = beat.cues?.reduce((sum, cue) => sum + (cue.timelineWait ? 0 : (cue.duration ?? 0)), 0);
+        expect(beat.timelineDuration).toBeCloseTo(duration ?? 0);
+      }
+    }
+  });
+});
+
+describe('thought scenes', () => {
+  it('uses an authored local scene for Condensing Lens', () => {
+    const definition = thoughtRegistry.require('frost');
+    const scene = definition.scene;
+    if (!scene) throw new Error('Expected an authored scene');
+    const director = new ThoughtSceneDirector(definition);
+    expect(director.runtime.engine.level.id).toBe(`thought:${scene.id}`);
+    expect(director.runtime.engine.level.towerPads[0]).toEqual(scene.tower);
+    expect(director.runtime.engine.level.graph.edges).toHaveLength(scene.path.length - 1);
+    director.dispose();
+  });
+
+  it('estimates where a route enters and leaves tower range', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.scene);
+    if (!definition) throw new Error('Expected an authored scene');
+    const runtime = new CombatRuntime(definition.seed, definition.scene);
+    const tower = runtime.engine.towers[0];
+    const routeId = runtime.engine.level.graph.entrances[0];
+    if (!tower || !routeId) throw new Error('Expected a tower route');
+    const range = runtime.engine.estimateTowerAttackProgressRange(tower.id, routeId);
+    if (!range) throw new Error('Expected the route to cross tower range');
+    const route = runtime.engine.routeFor(routeId);
+    const entry = route.pointAtDistance(route.length * range.minimum).position;
+    const exit = route.pointAtDistance(route.length * range.maximum).position;
+    expect(range.minimum).toBeLessThan(range.maximum);
+    expect(Math.hypot(entry.x - tower.position.x, entry.y - tower.position.y)).toBeCloseTo(tower.range);
+    expect(Math.hypot(exit.x - tower.position.x, exit.y - tower.position.y)).toBeCloseTo(tower.range);
+    runtime.dispose();
+  });
+
+  it('spawns authored subjects relative to the tower range entry', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => beat.cues?.some((cue) => cue.actions?.some((action) => action.type === 'spawn-signal' && action.position?.type === 'tower-range-entry'))));
+    if (!definition) throw new Error('Expected a positioned signal action');
+    const action = definition.beats.flatMap((beat) => beat.cues ?? [])
+      .flatMap((cue) => cue.actions ?? [])
+      .find((candidate) => candidate.type === 'spawn-signal' && candidate.position?.type === 'tower-range-entry');
+    if (action?.type !== 'spawn-signal' || action.position?.type !== 'tower-range-entry') throw new Error('Expected a positioned signal');
+    const runtime = new CombatRuntime(definition.seed, definition.scene);
+    const tower = runtime.engine.towers[0];
+    const routeId = runtime.engine.level.graph.entrances[0];
+    if (!tower || !routeId) throw new Error('Expected a tower route');
+    const range = runtime.engine.estimateTowerAttackProgressRange(tower.id, routeId);
+    if (!range) throw new Error('Expected the route to cross tower range');
+    const route = runtime.engine.routeFor(routeId);
+    const expected = Math.max(0, range.minimum - (action.position.leadDistance ?? 0) / route.length);
+    runtime.spawnSignal(action.signal, action.position);
+    const signal = runtime.engine.signals.at(-1);
+    expect(signal?.progress).toBeCloseTo(expected);
+    runtime.dispose();
+  });
+
+  it('freezes timeline progress at authored indefinite waits', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => (
+      beat.cues?.some((cue) => cue.timelineWait && cue.waitForClear)
+    )));
+    if (!definition) throw new Error('Expected an authored indefinite wait');
+    const waitCue = definition.beats.flatMap((beat) => beat.cues ?? [])
+      .find((cue) => cue.timelineWait && cue.waitForClear);
+    if (!waitCue) throw new Error('Expected a clear-bound indefinite wait');
+    const director = new ThoughtSceneDirector(definition);
+    runUntilCue(director, waitCue.id, 80);
+    expect(director.getSnapshot().cueId).toBe(waitCue.id);
+    const progress = director.getTimelineProgress();
+    let samples = 0;
+    while (director.getSnapshot().cueId === waitCue.id && samples < 120 * 30) {
+      director.update(1 / 120);
+      if (director.getSnapshot().cueId === waitCue.id) {
+        expect(director.getTimelineProgress()).toBe(progress);
+        samples += 1;
+      }
+    }
+    expect(samples).toBeGreaterThan(0);
+    director.dispose();
+  });
+
+  it('keeps the captured combat subject alive while its state is explained', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => beat.cues?.some((cue) => (
+      cue.requireSignalState?.slowed === true && cue.overlay?.type === 'caption'
+    ))));
+    if (!definition) throw new Error('Expected a state-bound explanation');
+    const cue = definition.beats.flatMap((beat) => beat.cues ?? [])
+      .find((candidate) => candidate.requireSignalState?.slowed === true && candidate.overlay?.type === 'caption');
+    if (!cue?.requireSignalState) throw new Error('Expected a state-bound cue');
+    const director = new ThoughtSceneDirector(definition);
+    runUntilCue(director, cue.id, 80);
+    const signal = director.getBoundSignal(cue.requireSignalState.signalRef);
+    expect(director.getSnapshot().cueId).toBe(cue.id);
+    expect(signal?.dead).toBe(false);
+    expect(signal?.slowTime).toBeGreaterThan(0);
+    director.dispose();
+  });
+
+  it('eases the tower toward an authored orientation after a semantic wait', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => beat.cues?.some((cue) => cue.transition?.towerRotation !== undefined)));
+    if (!definition) throw new Error('Expected an authored tower orientation');
+    const cue = definition.beats.flatMap((beat) => beat.cues ?? [])
+      .find((candidate) => candidate.transition?.towerRotation !== undefined);
+    if (cue?.transition?.towerRotation === undefined || cue.duration === undefined) throw new Error('Expected a timed tower orientation');
+    const director = new ThoughtSceneDirector(definition);
+    runUntilCue(director, cue.id, 80);
+    expect(director.getSnapshot().cueId).toBe(cue.id);
+    const start = director.getRenderPresentation().towerRotation;
+    if (start === undefined) throw new Error('Expected a presentation rotation');
+    const initialDistance = angleDistance(start, cue.transition.towerRotation);
+    const midpoint = cue.duration / 2;
+    for (let elapsed = 0; elapsed < midpoint; elapsed += 1 / 120) director.update(1 / 120);
+    const rotation = director.getRenderPresentation().towerRotation;
+    if (rotation === undefined) throw new Error('Expected an interpolated presentation rotation');
+    expect(angleDistance(rotation, cue.transition.towerRotation)).toBeLessThan(initialDistance);
+    expect(angleDistance(rotation, cue.transition.towerRotation)).toBeGreaterThan(0);
+    director.dispose();
+  });
+
+  it.each(thoughtRegistry.list().map((definition) => [definition.id, definition] as const))(
+    'runs %s to completion against real combat events',
+    (_id, definition) => {
+      const director = new ThoughtSceneDirector(definition);
+      runDirector(director);
+      expect(director.getSnapshot().status).toBe('completed');
+      director.dispose();
+    },
+  );
+
+  it('publishes trigger before payload deployment', () => {
+    const runtime = new CombatRuntime(41);
+    const events: CombatEvent[] = [];
+    const unsubscribe = runtime.subscribe((event) => events.push(event));
+    runtime.setup({ slots: ['impact-trigger', 'pulse', 'proximity-mine'] });
+    runtime.spawnSignal('spark');
+    for (let step = 0; step < 16 * 120 && !events.some((event) => event.type === 'payload-deployed'); step += 1) {
+      runtime.update(1 / 120);
+    }
+    const triggerIndex = events.findIndex((event) => event.type === 'trigger-fired');
+    const payloadIndex = events.findIndex((event) => event.type === 'payload-deployed');
+    expect(triggerIndex).toBeGreaterThan(-1);
+    expect(payloadIndex).toBeGreaterThan(triggerIndex);
+    unsubscribe();
+    runtime.dispose();
+  });
+
+  it('uses the real compiler for focus conversion', () => {
+    const runtime = new CombatRuntime(43);
+    const forked = runtime.setup({ slots: ['double-fork', 'pulse'] }).shots[0];
+    const focused = runtime.setup({ slots: ['focus-core', 'double-fork', 'pulse'] }).shots[0];
+    expect(forked?.count).toBe(2);
+    expect(focused?.count).toBe(1);
+    expect(focused?.damage).toBeGreaterThan(forked?.damage ?? 0);
+    expect(focused?.speed).toBeGreaterThan(forked?.speed ?? 0);
+    runtime.dispose();
+  });
+
+  it('rebuilds deterministically when stepping backward', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.length > 1);
+    if (!definition) throw new Error('Expected a multi-beat thought');
+    const director = new ThoughtSceneDirector(definition);
+    const target = definition.beats.length - 1;
+    director.goTo(target);
+    expect(director.getSnapshot().beatIndex).toBe(target);
+    director.previous();
+    expect(director.getSnapshot()).toMatchObject({ beatIndex: target - 1, status: 'paused' });
+    director.dispose();
+  });
+
+  it('replays event-dependent state when a timeline unit is selected directly', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => beat.cues?.some((cue) => (
+      cue.waitFor?.type === 'payload-deployed' && cue.waitFor.moduleId !== undefined
+    ))));
+    if (!definition) throw new Error('Expected a payload-dependent timeline unit');
+    const sourceBeat = definition.beats.findIndex((beat) => beat.cues?.some((cue) => (
+      cue.waitFor?.type === 'payload-deployed' && cue.waitFor.moduleId !== undefined
+    )));
+    const payloadSource = definition.beats[sourceBeat]?.cues
+      ?.find((cue) => cue.waitFor?.type === 'payload-deployed' && cue.waitFor.moduleId !== undefined)
+      ?.waitFor?.moduleId;
+    if (!payloadSource) throw new Error('Expected an authored payload source');
+    const director = new ThoughtSceneDirector(definition);
+    const target = Math.min(sourceBeat + 1, definition.beats.length - 1);
+    director.goTo(target);
+    expect(director.getSnapshot().beatIndex).toBe(target);
+    expect(director.getSnapshot().status).not.toBe('error');
+    expect(director.runtime.engine.projectiles.some((projectile) => projectile.shot.source === payloadSource)).toBe(true);
+    director.dispose();
+  });
+
+  it('replays signal-state waits when selecting a later timeline unit', () => {
+    const definition = thoughtRegistry.list().find((candidate) => candidate.beats.some((beat) => (
+      beat.cues?.some((cue) => cue.waitForSignalStates)
+    )));
+    if (!definition) throw new Error('Expected a signal-state wait');
+    const director = new ThoughtSceneDirector(definition);
+    const target = definition.beats.length - 1;
+    director.goTo(target);
+    expect(director.getSnapshot().beatIndex).toBe(target);
+    expect(director.getSnapshot().status).not.toBe('error');
+    director.dispose();
+  });
+});

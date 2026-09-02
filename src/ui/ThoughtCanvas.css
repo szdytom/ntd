@@ -1,0 +1,17 @@
+.thought-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  background: #fbfafe;
+}
+
+.thought-canvas-error {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  padding: 24px;
+  color: #b62444;
+  background: #fff0f3;
+  font-weight: 750;
+}

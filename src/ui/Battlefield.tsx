@@ -11,9 +11,10 @@ import { CreativeLab } from './CreativeLab';
 import { Tag } from './Tag';
 import './Battlefield.css';
 
-export function Battlefield({ engine, view, onOpenArchive, workshop, children }: {
+export function Battlefield({ engine, view, suspended = false, onOpenArchive, workshop, children }: {
   engine: GameEngine;
   view: GameViewSnapshot;
+  suspended?: boolean;
   onOpenArchive: (type: SignalId) => void;
   workshop?: ReactNode;
   children?: ReactNode;
@@ -104,7 +105,7 @@ export function Battlefield({ engine, view, onOpenArchive, workshop, children }:
         ) : null}
 
         <div className="canvas-wrap">
-          <GameCanvas engine={engine} />
+          <GameCanvas engine={engine} suspended={suspended} />
           {spawns.map((spawn, index) => (
             <div className="spawn-label" key={engine.level.graph.entrances[index]} style={{ top: `${spawn.y / WORLD.height * 100}%` }}>
               <i /><span>{t('battlefield.spawn')}</span>

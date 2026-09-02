@@ -1,0 +1,352 @@
+.thought-scene-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.thought-placement-burst,
+.thought-compact-loadout {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 70%;
+  transform: translate(-50%, -50%);
+}
+
+.thought-placement-burst {
+  width: 1px;
+  height: 1px;
+}
+
+.thought-placement-burst i {
+  --particle-angle: calc(var(--particle-index) * 36deg);
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid #fff;
+  background: var(--thought-accent);
+  opacity: 0;
+  transform: rotate(var(--particle-angle)) translateY(-18px) rotate(calc(var(--particle-angle) * -1));
+  animation: thought-place-particle .78s cubic-bezier(.12, .7, .25, 1) both;
+}
+
+.thought-loadout-dialog {
+  --dialog-clip: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 18px 64%, 0 50%, 18px 36%);
+  --loadout-module-min-width: 120px;
+  position: absolute;
+  isolation: isolate;
+  z-index: 5;
+  display: flex;
+  min-height: 70px;
+  align-items: stretch;
+  gap: 0;
+  padding: 8px 8px 8px 28px;
+  background: var(--thought-ink);
+  clip-path: var(--dialog-clip);
+  filter: drop-shadow(5px 5px 0 color-mix(in srgb, var(--thought-accent) 64%, #fff));
+  opacity: 0;
+  transform-origin: left center;
+  transform: translateY(7px) scale(.98);
+  animation: thought-dialog-enter .28s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.thought-loadout-dialog[data-placement='left'] {
+  --dialog-clip: polygon(0 0, calc(100% - 18px) 0, calc(100% - 18px) 36%, 100% 50%, calc(100% - 18px) 64%, calc(100% - 18px) 100%, 0 100%);
+  padding: 8px 28px 8px 8px;
+  transform-origin: right center;
+}
+
+.thought-loadout-dialog[data-placement='top-right'] {
+  --dialog-clip: polygon(0 0, 100% 0, 100% calc(100% - 18px), 32% calc(100% - 18px), 25% 100%, 18% calc(100% - 18px), 0 calc(100% - 18px));
+  padding: 8px 8px 28px;
+  transform-origin: 25% bottom;
+}
+
+.thought-loadout-dialog[data-placement='top-left'] {
+  --dialog-clip: polygon(0 0, 100% 0, 100% calc(100% - 18px), 82% calc(100% - 18px), 75% 100%, 68% calc(100% - 18px), 0 calc(100% - 18px));
+  padding: 8px 8px 28px;
+  transform-origin: 75% bottom;
+}
+
+.thought-loadout-dialog[data-placement='bottom-right'] {
+  --dialog-clip: polygon(0 18px, 18% 18px, 25% 0, 32% 18px, 100% 18px, 100% 100%, 0 100%);
+  padding: 28px 8px 8px;
+  transform-origin: 25% top;
+}
+
+.thought-loadout-dialog[data-placement='bottom-left'] {
+  --dialog-clip: polygon(0 18px, 68% 18px, 75% 0, 82% 18px, 100% 18px, 100% 100%, 0 100%);
+  padding: 28px 8px 8px;
+  transform-origin: 75% top;
+}
+
+.thought-loadout-dialog.leaving {
+  animation: thought-dialog-leave .34s ease-in both;
+}
+
+.thought-loadout-module-reveal {
+  --module-gap: 0px;
+  --loadout-module-width: var(--loadout-module-min-width);
+  position: relative;
+  z-index: 2;
+  width: 0;
+  min-height: 54px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  opacity: 0;
+  animation: thought-loadout-module-reveal .58s cubic-bezier(.16, .82, .24, 1) both;
+}
+
+.thought-loadout-module-reveal + .thought-loadout-module-reveal {
+  --module-gap: 8px;
+}
+
+.thought-loadout-module {
+  --module-icon-surface: var(--chip-tint);
+  position: relative;
+  display: grid;
+  width: max-content;
+  min-width: var(--loadout-module-min-width);
+  height: 100%;
+  min-height: 54px;
+  box-sizing: border-box;
+  grid-template-columns: 48px minmax(48px, auto);
+  align-items: center;
+  border: 2px solid #5c5768;
+  color: #fff;
+  background: #312d3e;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.thought-loadout-module.active {
+  background: var(--chip-color);
+}
+
+.thought-loadout-module > span {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: var(--chip-color);
+  background: var(--chip-tint);
+  transition: color .18s ease, background-color .18s ease;
+}
+
+.thought-loadout-module.active > span {
+  color: #fff;
+  background: transparent;
+}
+
+.thought-loadout-module-reveal.replacing {
+  display: grid;
+}
+
+.thought-loadout-module-reveal.replacing .thought-loadout-module {
+  grid-area: 1 / 1;
+}
+
+.thought-loadout-module.outgoing {
+  animation: thought-loadout-module-out .42s cubic-bezier(.55, .04, .88, .4) both;
+}
+
+.thought-loadout-module.incoming {
+  animation: thought-loadout-module-in .46s .3s cubic-bezier(.12, .78, .22, 1) both;
+}
+
+.thought-loadout-dialog .module-icon { width: 36px; height: 36px; }
+.thought-loadout-dialog strong { padding: 0 9px; font-size: 14px; white-space: nowrap; }
+
+.thought-compact-loadout {
+  z-index: 5;
+  display: flex;
+  top: 79.5%;
+  gap: 0;
+  padding: 0;
+  border: 2px solid var(--thought-ink);
+  background: transparent;
+  opacity: 0;
+  animation: thought-compact-enter .3s ease-out both;
+}
+
+.thought-compact-loadout.leaving { animation: thought-compact-leave .3s ease-in both; }
+
+.thought-compact-loadout > span {
+  --module-icon-surface: transparent;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #fff;
+  background: var(--chip-color);
+}
+.thought-compact-loadout > span + span { border-left: 2px solid var(--thought-ink); }
+.thought-compact-loadout > span.active { box-shadow: inset 0 0 0 2px #fff; }
+
+.thought-compact-loadout .module-icon { width: 20px; height: 20px; }
+
+.thought-overlay-line {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.thought-overlay-line .thought-line-reveal {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+  animation: thought-leader-cycle var(--cue-duration) linear both;
+}
+
+.thought-overlay-line .thought-line-dashes {
+  fill: none;
+  stroke: var(--thought-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 8 7;
+  vector-effect: non-scaling-stroke;
+}
+
+.thought-overlay-line .thought-line-target {
+  fill: #fff;
+  stroke: var(--thought-accent);
+  stroke-width: 2.25;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thought-focus-cycle var(--cue-duration) ease both;
+}
+
+.thought-scene-overlay .thought-scene-callout {
+  position: absolute;
+  z-index: 5;
+  top: 19%;
+  left: 50%;
+  width: fit-content;
+  max-width: min(360px, calc(100% - 40px));
+  padding: 12px 15px 13px;
+  border: 2px solid #fff;
+  outline: 2px solid var(--thought-ink);
+  color: #fff;
+  background: color-mix(in srgb, var(--thought-ink) 96%, transparent);
+  box-shadow: 5px 5px 0 var(--thought-accent);
+  opacity: 0;
+  transform: translateY(7px);
+  animation: thought-callout-cycle var(--cue-duration) ease both;
+}
+
+.thought-scene-overlay .thought-scene-callout p {
+  margin: 0;
+  font-size: clamp(12px, 1.5vw, 16px);
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.thought-scene-overlay .thought-scene-callout strong {
+  display: block;
+  margin-top: 7px;
+  color: #d9d5df;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.thought-scene-overlay .thought-scene-error {
+  top: auto;
+  right: 18px;
+  bottom: 18px;
+  left: auto;
+  animation: thought-dialog-enter .22s ease-out both;
+}
+
+@keyframes thought-place-particle {
+  0% { opacity: 0; transform: rotate(var(--particle-angle)) translateY(-10px) rotate(calc(var(--particle-angle) * -1)) scale(.4); }
+  24% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--particle-angle)) translateY(-66px) rotate(calc(var(--particle-angle) * -1)) scale(.85); }
+}
+
+@keyframes thought-dialog-enter {
+  from { opacity: 0; transform: translateY(7px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes thought-dialog-leave {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-6px) scale(.985); }
+}
+
+@keyframes thought-loadout-module-reveal {
+  0% { width: 0; margin-left: 0; opacity: 0; }
+  24% { opacity: 1; }
+  100% { width: var(--loadout-module-width); margin-left: var(--module-gap); opacity: 1; }
+}
+
+@keyframes thought-loadout-module-out {
+  0%, 20% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(.94); }
+}
+
+@keyframes thought-loadout-module-in {
+  from { opacity: 0; transform: translateY(10px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes thought-compact-enter {
+  from { opacity: 0; transform: translate(-50%, -44%) scale(.82); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes thought-compact-leave {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -56%) scale(.86); }
+}
+
+@keyframes thought-leader-cycle {
+  0%, 7% { stroke-dashoffset: 1; }
+  16%, 88% { stroke-dashoffset: 0; }
+  96%, 100% { stroke-dashoffset: 1; }
+}
+
+@keyframes thought-focus-cycle {
+  0%, 7% { opacity: 0; transform: rotate(45deg) scale(.35); }
+  16%, 88% { opacity: 1; transform: rotate(45deg) scale(1); }
+  96%, 100% { opacity: 0; transform: rotate(45deg) scale(.35); }
+}
+
+@keyframes thought-callout-cycle {
+  0%, 15% { opacity: 0; transform: translateY(7px); }
+  23%, 82% { opacity: 1; transform: translateY(0); }
+  90%, 100% { opacity: 0; transform: translateY(-5px); }
+}
+
+@media (max-width: 620px) {
+  .thought-loadout-dialog { --loadout-module-min-width: 92px; }
+  .thought-loadout-module { grid-template-columns: 40px minmax(42px, auto); }
+  .thought-loadout-dialog .module-icon { width: 30px; height: 30px; }
+  .thought-loadout-dialog strong { padding: 0 7px; font-size: 12px; }
+  .thought-scene-overlay .thought-scene-callout { width: fit-content; max-width: min(320px, calc(100% - 24px)); padding: 9px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thought-placement-burst { display: none; }
+  .thought-loadout-dialog,
+  .thought-loadout-module-reveal,
+  .thought-loadout-module.outgoing,
+  .thought-loadout-module.incoming,
+  .thought-compact-loadout,
+  .thought-overlay-line .thought-line-reveal,
+  .thought-overlay-line .thought-line-target,
+  .thought-scene-overlay .thought-scene-callout { animation: none; opacity: 1; }
+  .thought-loadout-module-reveal { width: var(--loadout-module-width); margin-left: var(--module-gap); }
+  .thought-loadout-module.outgoing { display: none; }
+  .thought-overlay-line .thought-line-reveal { stroke-dashoffset: 0; }
+}

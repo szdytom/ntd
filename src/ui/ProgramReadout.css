@@ -8,6 +8,9 @@
   background: #faf9fc;
 }
 
+.program-thought-link { flex: none; min-height: 30px; padding: 4px 8px; border: 1px solid currentColor; border-radius: 0; color: #252134; background: #fff; font-size: 11px; font-weight: 800; cursor: pointer; }
+.program-thought-link:hover { background: #ffd447; }
+
 .program-readout > div {
   min-width: 0;
   flex: 1;

@@ -115,6 +115,20 @@
   hyphens: auto;
 }
 
+.inspector-thought {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 10px;
+  border: 2px solid #252134;
+  border-radius: 0;
+  color: #252134;
+  background: color-mix(in srgb, var(--module-color) 14%, #fff);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.inspector-thought:hover { color: #fff; background: var(--module-color); }
+
 .inspector-description {
   margin-top: 12px;
   color: #625d6d;
