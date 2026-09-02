@@ -15,6 +15,7 @@ export interface TowerVisualOptions {
 export function drawTowerBody(ctx: CanvasRenderingContext2D, options: TowerVisualOptions): void {
   const flash = options.flash ?? 0;
   ctx.save();
+  const inheritedAlpha = ctx.globalAlpha;
   ctx.shadowColor = 'rgba(44, 38, 76, 0.16)';
   ctx.shadowBlur = 13;
   ctx.shadowOffsetY = 5;
@@ -54,11 +55,11 @@ export function drawTowerBody(ctx: CanvasRenderingContext2D, options: TowerVisua
 
   ctx.rotate(options.rotation);
   ctx.fillStyle = options.color;
-  ctx.globalAlpha = 0.16 + flash * 0.22;
+  ctx.globalAlpha = inheritedAlpha * (0.16 + flash * 0.22);
   ctx.beginPath();
   ctx.roundRect(-3, -10, 36 + flash * 5, 20, 8);
   ctx.fill();
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = inheritedAlpha;
   ctx.fillStyle = '#332f48';
   ctx.beginPath();
   ctx.roundRect(-2, -7, 28, 14, 6);

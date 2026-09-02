@@ -21,7 +21,7 @@ import {
   strokeSuppressionLink,
 } from '../signals/visuals/suppression';
 import { drawTowerBody, type TowerVisualOptions } from './tower-visuals';
-import type { GameEngine } from './engine';
+import type { RenderWorld } from './render-world';
 import type { Signal, Point, Projectile, SpaceRift, Tower } from './types';
 import type { ProjectileRenderContext } from '../modules/types';
 
@@ -41,6 +41,74 @@ const PAD_DASH = [5, 5];
 const RANGE_DASH = [7, 7];
 const NO_DASH: number[] = [];
 const RIFT_COLLAPSE_DURATION = 0.5;
+
+export interface RenderCamera {
+  readonly center: Point;
+  readonly height: number;
+  readonly bottomFocus?: { readonly worldY: number; readonly padding: number };
+}
+
+export interface GameRendererOptions {
+  readonly camera?: RenderCamera;
+  readonly groundPattern?: 'dots' | 'grid';
+  readonly towerColor?: string;
+  readonly getPresentation?: () => GameRenderPresentation;
+  readonly showDecorations?: boolean;
+  readonly showTowerPads?: boolean;
+  readonly showSelection?: boolean;
+  readonly showTowerLabels?: boolean;
+  readonly showCore?: boolean;
+  readonly showPathMarkers?: boolean;
+  readonly showFloatingText?: boolean;
+}
+
+export interface GameRenderPresentation {
+  readonly pathProgress: number;
+  readonly towerPadOpacity?: number;
+  readonly towerOpacity: number;
+  readonly signalOpacity: number;
+  readonly towerRotation?: number;
+  readonly towerPadOpacities?: readonly number[];
+  readonly towerOpacities?: readonly number[];
+  readonly towerRotations?: readonly number[];
+}
+
+export interface RenderBounds {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+export const resolveRenderBounds = (
+  cssWidth: number,
+  cssHeight: number,
+  camera?: RenderCamera,
+): RenderBounds => {
+  if (!camera) return { x: 0, y: 0, width: WORLD.width, height: WORLD.height };
+  const aspect = Math.max(1, cssWidth) / Math.max(1, cssHeight);
+  let height = clamp(camera.height, 1, WORLD.height);
+  let width = height * aspect;
+  if (width > WORLD.width) {
+    width = WORLD.width;
+    height = width / aspect;
+  }
+  const bounds = {
+    x: clamp(camera.center.x - width / 2, 0, WORLD.width - width),
+    y: clamp(camera.center.y - height / 2, 0, WORLD.height - height),
+    width,
+    height,
+  };
+  if (camera.bottomFocus) {
+    const scale = Math.min(cssWidth / bounds.width, cssHeight / bounds.height);
+    const focusY = (camera.bottomFocus.worldY - bounds.y) * scale;
+    const maximumY = cssHeight - camera.bottomFocus.padding;
+    if (focusY > maximumY) {
+      bounds.y = clamp(bounds.y + (focusY - maximumY) / scale, 0, WORLD.height - height);
+    }
+  }
+  return bounds;
+};
 
 export class GameRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -99,7 +167,11 @@ export class GameRenderer {
   private riftSpaceConfigurationRevision = -1;
   private riftSpaceActive = false;
 
-  constructor(private canvas: HTMLCanvasElement, private engine: GameEngine) {
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private engine: RenderWorld,
+    private readonly options: GameRendererOptions = {},
+  ) {
     const context = this.scene.getContext('2d', { alpha: false });
     const backgroundContext = this.background.getContext('2d', { alpha: false });
     if (!context) throw new Error('Canvas 2D context is unavailable');
@@ -130,9 +202,10 @@ export class GameRenderer {
     this.scene.height = pixelHeight;
     this.background.width = pixelWidth;
     this.background.height = pixelHeight;
-    this.scale = Math.min(this.cssWidth / WORLD.width, this.cssHeight / WORLD.height);
-    this.offsetX = (this.cssWidth - WORLD.width * this.scale) / 2;
-    this.offsetY = (this.cssHeight - WORLD.height * this.scale) / 2;
+    const view = resolveRenderBounds(this.cssWidth, this.cssHeight, this.options.camera);
+    this.scale = Math.min(this.cssWidth / view.width, this.cssHeight / view.height);
+    this.offsetX = (this.cssWidth - view.width * this.scale) / 2 - view.x * this.scale;
+    this.offsetY = (this.cssHeight - view.height * this.scale) / 2 - view.y * this.scale;
     this.rebuildBackground();
     if (this.bloom) this.bloom.resize(this.cssWidth, this.cssHeight, this.dpr);
     else {
@@ -172,22 +245,35 @@ export class GameRenderer {
     ctx.translate(this.offsetX, this.offsetY);
     ctx.scale(this.scale, this.scale);
 
-    this.drawDecorations();
+    const presentation = this.options.getPresentation?.();
+    if (presentation) this.drawPath(ctx, presentation.pathProgress);
+    if (this.options.showDecorations !== false) this.drawDecorations();
     this.engine.effects.render(ctx, 'ground', bloomCtx);
     this.drawSpaceRifts(bloomCtx ?? null, riftMaskCtx);
     this.drawSignalAuraSources(bloomCtx ?? null);
     this.drawSingularityFields(bloomCtx ?? null);
-    this.drawTowerPads();
-    this.drawSelectionRange();
-    this.drawTowers();
+    if (this.options.showTowerPads !== false) this.drawTowerPads(
+      presentation?.towerPadOpacity,
+      presentation?.towerPadOpacities,
+    );
+    if (this.options.showSelection !== false) this.drawSelectionRange();
+    this.drawTowers(
+      presentation?.towerRotation,
+      presentation?.towerOpacity,
+      presentation?.towerRotations,
+      presentation?.towerOpacities,
+    );
     this.engine.effects.render(ctx, 'under-projectile', bloomCtx);
     this.drawProjectiles();
     this.engine.effects.render(ctx, 'projectile', bloomCtx);
+    ctx.save();
+    ctx.globalAlpha *= presentation?.signalOpacity ?? 1;
     this.drawEnemies();
+    ctx.restore();
     this.drawSignalAuraLinks(bloomCtx ?? null);
     this.engine.effects.render(ctx, 'air', bloomCtx);
-    this.drawFloatingText();
-    this.drawCore();
+    if (this.options.showFloatingText !== false) this.drawFloatingText();
+    if (this.options.showCore !== false) this.drawCore();
     this.engine.effects.render(ctx, 'overlay', bloomCtx);
 
     ctx.restore();
@@ -231,7 +317,7 @@ export class GameRenderer {
     ctx.translate(this.offsetX, this.offsetY);
     ctx.scale(this.scale, this.scale);
     this.drawGround(ctx);
-    this.drawPath(ctx);
+    if (!this.options.getPresentation) this.drawPath(ctx);
     ctx.restore();
   }
 
@@ -823,17 +909,32 @@ export class GameRenderer {
     ctx.fillStyle = '#fbfbfe';
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
-    ctx.fillStyle = '#e4e3ed';
-    for (let x = 24; x < WORLD.width; x += 32) {
-      for (let y = 22; y < WORLD.height; y += 32) {
-        if ((x / 32 + y / 32) % 3 < 0.5) continue;
-        ctx.globalAlpha = 0.55;
-        ctx.beginPath();
-        ctx.arc(x, y, 1.25, 0, Math.PI * 2);
-        ctx.fill();
+    if (this.options.groundPattern === 'grid') {
+      ctx.beginPath();
+      for (let x = 0; x <= WORLD.width; x += 34) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, WORLD.height);
       }
+      for (let y = 0; y <= WORLD.height; y += 34) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(WORLD.width, y);
+      }
+      ctx.strokeStyle = 'rgba(37, 33, 52, 0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = '#e4e3ed';
+      for (let x = 24; x < WORLD.width; x += 32) {
+        for (let y = 22; y < WORLD.height; y += 32) {
+          if ((x / 32 + y / 32) % 3 < 0.5) continue;
+          ctx.globalAlpha = 0.55;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.25, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
 
     const glow = ctx.createRadialGradient(530, 330, 20, 530, 330, 430);
     glow.addColorStop(0, `${this.engine.level.accent}0d`);
@@ -842,30 +943,41 @@ export class GameRenderer {
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
   }
 
-  private tracePath(ctx: CanvasRenderingContext2D): void {
+  private tracePath(ctx: CanvasRenderingContext2D, reveal = 1): void {
     ctx.beginPath();
+    const totalLength = this.engine.level.graph.edges.reduce((total, edge) => total + edge.length, 0);
+    let remaining = totalLength * clamp(reveal, 0, 1);
     for (const edge of this.engine.level.graph.edges) {
+      if (remaining <= 0) break;
       const start = this.engine.level.graph.nodes.get(edge.from)?.position;
       const end = this.engine.level.graph.nodes.get(edge.to)?.position;
       if (!start || !end) continue;
+      const visibleLength = Math.min(edge.length, remaining);
+      const progress = edge.length > 0 ? visibleLength / edge.length : 0;
       ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
+      ctx.lineTo(
+        start.x + (end.x - start.x) * progress,
+        start.y + (end.y - start.y) * progress,
+      );
+      remaining -= visibleLength;
     }
   }
 
-  private drawPath(ctx: CanvasRenderingContext2D): void {
+  private drawPath(ctx: CanvasRenderingContext2D, reveal = 1): void {
+    const pathProgress = clamp(reveal, 0, 1);
+    if (pathProgress <= 0) return;
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    this.tracePath(ctx);
+    this.tracePath(ctx, pathProgress);
     ctx.strokeStyle = 'rgba(49, 45, 72, 0.07)';
     ctx.lineWidth = 86;
     ctx.stroke();
-    this.tracePath(ctx);
+    this.tracePath(ctx, pathProgress);
     ctx.strokeStyle = '#f0eff5';
     ctx.lineWidth = 78;
     ctx.stroke();
-    this.tracePath(ctx);
+    this.tracePath(ctx, pathProgress);
     ctx.setLineDash([3, 14]);
     ctx.strokeStyle = '#cfccd9';
     ctx.lineWidth = 3;
@@ -873,13 +985,17 @@ export class GameRenderer {
     ctx.setLineDash([]);
 
     ctx.fillStyle = '#b8b5c6';
+    const totalLength = this.engine.level.graph.edges.reduce((total, edge) => total + edge.length, 0);
+    let remaining = totalLength * pathProgress;
     for (const edge of this.engine.level.graph.edges) {
+      if (remaining <= 0) break;
       const start = this.engine.level.graph.nodes.get(edge.from)?.position;
       const end = this.engine.level.graph.nodes.get(edge.to)?.position;
       if (!start || !end) continue;
+      const visibleLength = Math.min(edge.length, remaining);
       const angle = Math.atan2(end.y - start.y, end.x - start.x);
       const arrowGap = 105;
-      for (let arrowDistance = 46; arrowDistance < edge.length - 28; arrowDistance += arrowGap) {
+      for (let arrowDistance = 46; arrowDistance < visibleLength - 28; arrowDistance += arrowGap) {
         const progress = arrowDistance / edge.length;
         ctx.save();
         ctx.translate(
@@ -896,9 +1012,10 @@ export class GameRenderer {
         ctx.fill();
         ctx.restore();
       }
+      remaining -= visibleLength;
     }
 
-    for (const node of this.engine.level.graph.nodes.values()) {
+    if (pathProgress >= 1 && this.options.showPathMarkers !== false) for (const node of this.engine.level.graph.nodes.values()) {
       if (node.children.length < 2) continue;
       ctx.fillStyle = '#f8f7fb';
       ctx.strokeStyle = '#b8b5c6';
@@ -909,7 +1026,7 @@ export class GameRenderer {
       ctx.stroke();
     }
 
-    for (const entrance of this.engine.level.graph.entrances) {
+    if (pathProgress >= 1 && this.options.showPathMarkers !== false) for (const entrance of this.engine.level.graph.entrances) {
       const marker = this.engine.routeFor(entrance).pointAtDistance(42);
       ctx.save();
       ctx.translate(marker.position.x, marker.position.y);
@@ -940,20 +1057,23 @@ export class GameRenderer {
     ctx.globalAlpha = 1;
   }
 
-  private drawTowerPads(): void {
+  private drawTowerPads(presentationOpacity?: number, presentationOpacities?: readonly number[]): void {
     const ctx = this.ctx;
     for (let index = 0; index < this.engine.level.towerPads.length; index += 1) {
+      const opacity = presentationOpacities?.[index] ?? presentationOpacity ?? 1;
+      if (opacity <= 0) continue;
       let occupied = false;
       for (const tower of this.engine.towers) {
         if (tower.padIndex !== index) continue;
         occupied = true;
         break;
       }
-      if (occupied) continue;
+      if (occupied && presentationOpacity === undefined && presentationOpacities === undefined) continue;
       const pad = this.engine.level.towerPads[index];
       if (!pad) continue;
       const hovered = this.engine.pointer ? distanceSquared(this.engine.pointer, pad) < 38 * 38 : false;
       ctx.save();
+      ctx.globalAlpha *= opacity;
       ctx.translate(pad.x, pad.y);
       if (hovered) {
         ctx.fillStyle = 'rgba(108, 92, 231, 0.08)';
@@ -1139,14 +1259,26 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  private drawTowers(): void {
-    for (const tower of this.engine.towers) this.drawTower(tower);
+  private drawTowers(
+    rotationOverride?: number,
+    opacityOverride?: number,
+    rotationOverrides?: readonly number[],
+    opacityOverrides?: readonly number[],
+  ): void {
+    for (const tower of this.engine.towers) {
+      const opacity = opacityOverrides?.[tower.padIndex] ?? opacityOverride ?? 1;
+      if (opacity <= 0) continue;
+      this.ctx.save();
+      this.ctx.globalAlpha *= opacity;
+      this.drawTower(tower, rotationOverrides?.[tower.padIndex] ?? rotationOverride);
+      this.ctx.restore();
+    }
   }
 
-  private drawTower(tower: Tower): void {
+  private drawTower(tower: Tower, rotationOverride?: number): void {
     const ctx = this.ctx;
-    const color = this.engine.getTowerColor(tower);
-    const selected = tower.id === this.engine.selectedTowerId;
+    const color = this.options.towerColor ?? this.engine.getTowerColor(tower);
+    const selected = this.options.showSelection !== false && tower.id === this.engine.selectedTowerId;
     let programHasProjectile = false;
     for (const id of tower.slots) {
       if (!id || this.engine.modules.get(id)?.kind !== 'projectile') continue;
@@ -1166,10 +1298,11 @@ export class GameRenderer {
     options.selected = selected;
     options.energyRatio = tower.energy / tower.maxEnergy;
     options.level = tower.level;
-    options.rotation = tower.rotation;
+    options.rotation = rotationOverride ?? tower.rotation;
     options.flash = tower.flash;
     options.programHasProjectile = programHasProjectile;
-    options.label = labelRecord.label;
+    if (this.options.showTowerLabels === false) delete options.label;
+    else options.label = labelRecord.label;
     ctx.save();
     ctx.translate(tower.position.x, tower.position.y);
     drawTowerBody(ctx, options);

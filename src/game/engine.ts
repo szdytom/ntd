@@ -35,13 +35,19 @@ import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../s
 import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '../signals/capabilities/shield';
 import { signalMovementSpeedMultiplier } from '../signals/capabilities/movement';
 import { findPathInterception } from './interception';
-import { angleBetween, distance, lerpPoint, normalize, rotate, seededNoise } from './math';
+import { angleBetween, clamp, distance, distanceSquared, lerpPoint, normalize, rotate, seededNoise } from './math';
 import { resolveRoute, type NodeId, type PathSampler } from './path';
 import { createProjectileState } from './projectile';
 import { getSessionRules, type SessionRules } from './session-rules';
+import type { CombatEvent, CombatEventListener } from './combat-events';
 import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
+
+export interface TowerAttackProgressRange {
+  readonly minimum: number;
+  readonly maximum: number;
+}
 import type {
   CreativeSetup,
   DefenseCompletedReport,
@@ -66,13 +72,14 @@ import type {
   SplitRift,
   TargetingMode,
   Tower,
+  TowerProgram,
   SignalOutcomeTally,
   SignalVariantId,
 } from './types';
 
 type Listener = (event: GameEvent) => void;
 type ViewListener = () => void;
-export type AutoPauseCondition = 'workshop' | 'signal-archive' | 'page-focus';
+export type AutoPauseCondition = 'workshop' | 'signal-archive' | 'thought-index' | 'page-focus';
 
 interface SpawnLane {
   entrance: NodeId;
@@ -112,6 +119,7 @@ const CREATIVE_RARITY_ORDER: Readonly<Record<ModuleRarity, number>> = {
 export interface GameEngineOptions {
   seed?: number;
   levelId?: string;
+  level?: LevelDefinition;
   difficultyId?: DifficultyId;
   mode?: GameMode;
   creative?: Partial<CreativeSetup>;
@@ -194,6 +202,7 @@ export class GameEngine {
   pointer: Point | null = null;
 
   private listeners = new Set<Listener>();
+  private combatListeners = new Set<CombatEventListener>();
   private viewListeners = new Set<ViewListener>();
   private spawnLanes: SpawnLane[] = [];
   private waveClearDelayLeft: number | null = null;
@@ -247,12 +256,23 @@ export class GameEngine {
       }
       return result.healthDamage;
     },
-    affectTarget: (signal, source, channel) => this.dispatchTargetEffect(source, signal, channel),
+    affectTarget: (signal, source, channel) => {
+      if (channel === 'secondary-hit') {
+        this.emitCombat({
+          type: 'secondary-hit',
+          projectileId: source.id,
+          signalId: signal.id,
+          shot: source.shot,
+        });
+      }
+      this.dispatchTargetEffect(source, signal, channel);
+    },
     applySlow: (signal, factor, duration) => {
       if (signal.dead || factor <= 0 || duration <= 0) return false;
       const enteredSlow = signal.slowFactor <= 0 || signal.slowTime <= 0;
       signal.slowFactor = Math.max(signal.slowFactor, factor);
       signal.slowTime = Math.max(signal.slowTime, duration);
+      this.emitCombat({ type: 'signal-slowed', signalId: signal.id, factor, duration });
       return enteredSlow;
     },
     applyStatus: (signal, status) => this.applyStatus(signal, status),
@@ -271,7 +291,7 @@ export class GameEngine {
 
   constructor(options: GameEngineOptions = {}) {
     this.mode = options.mode ?? 'creative';
-    this.level = getLevel(options.levelId ?? DEFAULT_LEVEL_ID);
+    this.level = options.level ?? getLevel(options.levelId ?? DEFAULT_LEVEL_ID);
     this.tutorialEnabled = this.mode === 'standard' && this.level.id === TUTORIAL_LEVEL_ID;
     this.rules = getSessionRules(this.mode, this.tutorialEnabled);
     this.difficulty = getDifficulty(options.difficultyId ?? DEFAULT_DIFFICULTY_ID);
@@ -342,6 +362,11 @@ export class GameEngine {
     return () => this.listeners.delete(listener);
   }
 
+  subscribeCombat(listener: CombatEventListener): () => void {
+    this.combatListeners.add(listener);
+    return () => this.combatListeners.delete(listener);
+  }
+
   subscribeView = (listener: ViewListener): (() => void) => {
     this.viewListeners.add(listener);
     return () => this.viewListeners.delete(listener);
@@ -355,6 +380,10 @@ export class GameEngine {
 
   private emit(event: GameEvent): void {
     this.listeners.forEach((listener) => listener(event));
+  }
+
+  private emitCombat(event: CombatEvent): void {
+    this.combatListeners.forEach((listener) => listener(event));
   }
 
   private emitDefenseArchiveFact(fact: DefenseArchiveFact): void {
@@ -580,6 +609,16 @@ export class GameEngine {
     return this.towers.find((tower) => tower.id === this.selectedTowerId) ?? null;
   }
 
+  compileTowerProgram(towerId: number): TowerProgram | null {
+    const tower = this.towers.find((candidate) => candidate.id === towerId);
+    if (!tower) return null;
+    const program = this.modules.compile(tower.slots);
+    if (this.combatListeners.size > 0) {
+      this.emitCombat({ type: 'program-compiled', towerId, slots: [...tower.slots], program });
+    }
+    return program;
+  }
+
   getTowerColor(tower: Tower): string {
     return TOWER_COLORS[tower.id % TOWER_COLORS.length] ?? TOWER_COLORS[0] ?? '#6c5ce7';
   }
@@ -598,6 +637,81 @@ export class GameEngine {
 
   routeForSignal(signal: Signal): PathSampler {
     return this.routeFor(signal.routeId);
+  }
+
+  estimateTowerAttackProgressRange(towerId: number, requestedRoute?: NodeId): TowerAttackProgressRange | null {
+    const tower = this.towers.find((candidate) => candidate.id === towerId);
+    const routeId = requestedRoute ?? this.level.graph.entrances[0];
+    if (!tower || !routeId || tower.range <= 0) return null;
+    const route = this.routeFor(routeId);
+    if (route.length <= 0) return null;
+    const rangeSquared = tower.range * tower.range;
+    const contains = (progress: number): boolean => (
+      distanceSquared(tower.position, route.pointAtDistance(route.length * progress).position) <= rangeSquared
+    );
+    const sampleDistance = Math.max(2, tower.range / 48);
+    const sampleCount = Math.min(2048, Math.max(64, Math.ceil(route.length / sampleDistance)));
+    let firstInside = -1;
+    let lastInside = -1;
+    for (let index = 0; index <= sampleCount; index += 1) {
+      if (!contains(index / sampleCount)) continue;
+      if (firstInside < 0) firstInside = index;
+      lastInside = index;
+    }
+    if (firstInside < 0) {
+      const nearest = clamp(route.nearestDistance(tower.position) / route.length, 0, 1);
+      if (!contains(nearest)) return null;
+      const step = 1 / sampleCount;
+      const lower = Math.max(0, nearest - step);
+      const upper = Math.min(1, nearest + step);
+      const refineFromOutside = (outside: number, inside: number): number => {
+        let low = outside;
+        let high = inside;
+        for (let iteration = 0; iteration < 16; iteration += 1) {
+          const midpoint = (low + high) / 2;
+          if (contains(midpoint)) high = midpoint;
+          else low = midpoint;
+        }
+        return high;
+      };
+      const refineToOutside = (inside: number, outside: number): number => {
+        let low = inside;
+        let high = outside;
+        for (let iteration = 0; iteration < 16; iteration += 1) {
+          const midpoint = (low + high) / 2;
+          if (contains(midpoint)) low = midpoint;
+          else high = midpoint;
+        }
+        return low;
+      };
+      return {
+        minimum: contains(lower) ? lower : refineFromOutside(lower, nearest),
+        maximum: contains(upper) ? upper : refineToOutside(nearest, upper),
+      };
+    }
+    let minimum = firstInside / sampleCount;
+    if (firstInside > 0) {
+      let outside = (firstInside - 1) / sampleCount;
+      let inside = minimum;
+      for (let iteration = 0; iteration < 16; iteration += 1) {
+        const midpoint = (outside + inside) / 2;
+        if (contains(midpoint)) inside = midpoint;
+        else outside = midpoint;
+      }
+      minimum = inside;
+    }
+    let maximum = lastInside / sampleCount;
+    if (lastInside < sampleCount) {
+      let inside = maximum;
+      let outside = (lastInside + 1) / sampleCount;
+      for (let iteration = 0; iteration < 16; iteration += 1) {
+        const midpoint = (inside + outside) / 2;
+        if (contains(midpoint)) inside = midpoint;
+        else outside = midpoint;
+      }
+      maximum = inside;
+    }
+    return { minimum, maximum };
   }
 
   distanceToCore(signal: Signal): number {
@@ -708,14 +822,46 @@ export class GameEngine {
     this.emitState();
   }
 
-  spawnCreativeSignal(type: SignalId, requestedEntrance?: NodeId): void {
+  spawnCreativeSignal(type: SignalId, requestedEntrance?: NodeId, routeProgress = 0): void {
     if (this.rules.scenarioControls !== 'creative' || this.status === 'won' || this.status === 'lost') return;
     const entrance = requestedEntrance ?? this.level.graph.entrances[0];
     if (!entrance) return;
     if (!this.level.graph.entrances.includes(entrance)) throw new Error(`Unknown route entrance: ${entrance}`);
-    this.spawnSignal(type, entrance);
+    this.spawnSignal(type, entrance, routeProgress);
     this.emitDefenseArchiveFact('creative-signal-spawned');
     this.emitState();
+  }
+
+  /** Removes signals without treating them as defeated or leaked. */
+  deleteSignals(signalIds: readonly number[]): number {
+    if (signalIds.length === 0) return 0;
+    const ids = new Set(signalIds);
+    let removed = 0;
+    let aliveCount = 0;
+    for (const signal of this.signals) {
+      if (ids.has(signal.id)) {
+        this.signalIndex.remove(signal.id);
+        removed += 1;
+        continue;
+      }
+      this.signals[aliveCount] = signal;
+      aliveCount += 1;
+    }
+    this.signals.length = aliveCount;
+    if (removed === 0) return 0;
+
+    let splitCount = 0;
+    for (const split of this.pendingSignalSplits) {
+      if (ids.has(split.parent.id)) continue;
+      this.pendingSignalSplits[splitCount] = split;
+      splitCount += 1;
+    }
+    this.pendingSignalSplits.length = splitCount;
+    for (const tower of this.towers) {
+      if (tower.targetId !== null && ids.has(tower.targetId)) tower.targetId = null;
+    }
+    this.emitState();
+    return removed;
   }
 
   chooseDraftModule(moduleId: ModuleId): void {
@@ -1013,7 +1159,7 @@ export class GameEngine {
     }
   }
 
-  private spawnSignal(type: SignalId, routeId: NodeId): void {
+  private spawnSignal(type: SignalId, routeId: NodeId, routeProgress = 0): void {
     const definition = signalRegistry.require(type);
     const stats = definition.stats;
     const shield = getSignalCapability(definition, 'shield');
@@ -1024,14 +1170,16 @@ export class GameEngine {
       * this.difficulty.signalHealth
       * creativeHealthScale;
     const route = this.routeFor(routeId);
-    const at = route.pointAtDistance(0);
+    const progress = clamp(Number.isFinite(routeProgress) ? routeProgress : 0, 0, 1);
+    const signalDistance = route.length * progress;
+    const at = route.pointAtDistance(signalDistance);
     const signal: Signal = {
       id: this.nextId++,
       type,
       variantId: type,
       routeId,
-      progress: 0,
-      distance: 0,
+      progress,
+      distance: signalDistance,
       position: at.position,
       angle: at.angle,
       hp: Math.round(stats.health * scale),
@@ -1049,6 +1197,7 @@ export class GameEngine {
       dead: false,
     };
     this.signals.push(signal);
+    this.emitCombat({ type: 'signal-spawned', signalId: signal.id, signalType: signal.type });
     this.outcomeFor(this.wave, this.signalVariant(signal)).spawned += 1;
     this.signalIndex.update(signal);
   }
@@ -1114,6 +1263,7 @@ export class GameEngine {
       if (signal.distance >= route.length) {
         signal.dead = true;
         const damage = signal.coreDamage;
+        this.emitCombat({ type: 'signal-leaked', signalId: signal.id, signalType: signal.type, coreDamage: damage });
         const outcome = this.outcomeFor(this.wave, this.signalVariant(signal));
         outcome.leaked += 1;
         outcome.coreDamage += damage;
@@ -1156,8 +1306,19 @@ export class GameEngine {
 
       if (!target || tower.cooldownLeft > 0) continue;
       const program = this.modules.compile(tower.slots);
+      if (this.combatListeners.size > 0) {
+        this.emitCombat({ type: 'program-compiled', towerId: tower.id, slots: [...tower.slots], program });
+      }
       if (program.shots.length === 0 || tower.energy < program.energyCost) continue;
+      const energyBeforeCast = tower.energy;
       tower.energy -= program.energyCost;
+      this.emitCombat({
+        type: 'tower-energy-changed',
+        towerId: tower.id,
+        before: energyBeforeCast,
+        after: tower.energy,
+        reason: 'cast',
+      });
       tower.cooldownLeft = tower.cooldown;
       tower.flash = 1;
       const energyRefundBudget: EnergyRefundBudget = {
@@ -1215,7 +1376,7 @@ export class GameEngine {
       const tower = this.towers.find((item) => item.id === cast.towerId);
       const target = this.signals.find((item) => item.id === cast.targetId && !item.dead) ?? (tower ? this.findTarget(tower) : null);
       if (tower && (target || cast.blueprint.static)) {
-        this.castShot(tower, cast.blueprint, target, cast.origin, cast.energyRefundBudget);
+        this.castShot(tower, cast.blueprint, target, cast.origin, cast.energyRefundBudget, cast.parentProjectileId);
       }
       cast.delay = -999;
     }
@@ -1234,12 +1395,16 @@ export class GameEngine {
     target: Signal | null,
     origin?: Point,
     energyRefundBudget?: EnergyRefundBudget,
+    parentProjectileId?: number,
   ): void {
     const isStatic = blueprint.static !== undefined;
     if (isStatic && origin === undefined) return;
     if (!isStatic && !target) return;
     const launchOrigin = origin ?? tower.position;
     const triggeredCast = origin !== undefined;
+    if (!triggeredCast) {
+      this.emitCombat({ type: 'tower-cast', towerId: tower.id, targetId: target?.id ?? null, shot: blueprint });
+    }
     if (blueprint.modules.some((moduleId) => this.modules.get(moduleId)?.kind === 'trail')) {
       this.emitDefenseArchiveFact('trail-module-fired');
     }
@@ -1291,6 +1456,21 @@ export class GameEngine {
         ...(energyRefundBudget ? { energyRefundBudget } : {}),
       });
       this.projectiles.push(projectile);
+      this.emitCombat({
+        type: 'projectile-spawned',
+        towerId: tower.id,
+        projectileId: projectile.id,
+        shot: blueprint,
+        payload: triggeredCast,
+      });
+      if (parentProjectileId !== undefined) {
+        this.emitCombat({
+          type: 'payload-deployed',
+          parentProjectileId,
+          projectileId: projectile.id,
+          shot: blueprint,
+        });
+      }
       if (isStatic) {
         this.modules.dispatch('onDeploy', projectile.modules, {
           effects: this.effects,
@@ -1714,6 +1894,13 @@ export class GameEngine {
   private hitSignal(projectile: Projectile, signal: Signal): void {
     const contact = this.createProjectileContact(projectile, signal);
     const damageDealt = this.combatApi.dealDamage(signal, projectile.damage, projectile.color, projectile);
+    this.emitCombat({
+      type: 'projectile-hit',
+      projectileId: projectile.id,
+      signalId: signal.id,
+      damage: damageDealt,
+      shot: projectile.shot,
+    });
     if (damageDealt > 0) {
       this.modules.dispatch('onHit', projectile.modules, {
         effects: this.effects,
@@ -1736,6 +1923,12 @@ export class GameEngine {
       this.triggerProjectile(projectile, signal);
     }
     if (damageDealt <= 0) {
+      this.emitCombat({
+        type: 'projectile-absorbed',
+        projectileId: projectile.id,
+        signalId: signal.id,
+        shot: projectile.shot,
+      });
       projectile.life = 0;
       return;
     }
@@ -1918,6 +2111,16 @@ export class GameEngine {
   }
 
   private triggerProjectile(projectile: Projectile, target: Signal | null): void {
+    const trigger = projectile.shot.trigger;
+    if (trigger) {
+      this.emitCombat({
+        type: 'trigger-fired',
+        projectileId: projectile.id,
+        signalId: target?.id ?? null,
+        trigger,
+        shot: projectile.shot,
+      });
+    }
     this.modules.dispatch('onTrigger', projectile.modules, {
       effects: this.effects,
       position: { ...projectile.position },
@@ -1938,7 +2141,7 @@ export class GameEngine {
       for (let repeat = 0; repeat < payload.repeats; repeat += 1) {
         const delay = payloadIndex * 0.04 + repeat * payload.repeatDelay;
         if (delay <= 0) {
-          this.castShot(tower, payload, target, projectile.position, projectile.energyRefundBudget);
+          this.castShot(tower, payload, target, projectile.position, projectile.energyRefundBudget, projectile.id);
         }
         else {
           if (!target && !payload.static) continue;
@@ -1948,6 +2151,7 @@ export class GameEngine {
             targetId: target?.id ?? -1,
             delay,
             origin: { ...projectile.position },
+            parentProjectileId: projectile.id,
             ...(projectile.energyRefundBudget
               ? { energyRefundBudget: projectile.energyRefundBudget }
               : {}),
@@ -1967,10 +2171,18 @@ export class GameEngine {
       : requested;
     if (refunded <= 0) return;
     if (projectile.energyRefundBudget) projectile.energyRefundBudget.remaining -= refunded;
+    const energyBeforeRefund = tower.energy;
     tower.energy = Math.min(
       tower.maxEnergy,
       tower.energy + refunded,
     );
+    this.emitCombat({
+      type: 'tower-energy-changed',
+      towerId: tower.id,
+      before: energyBeforeRefund,
+      after: tower.energy,
+      reason: 'refund',
+    });
   }
 
   private displaceSignal(signal: Signal, distanceDelta: number): void {
@@ -2019,6 +2231,12 @@ export class GameEngine {
     if (result.healthDamage <= 0) return result;
 
     signal.hp -= result.healthDamage;
+    this.emitCombat({
+      type: 'signal-damaged',
+      signalId: signal.id,
+      damage: result.healthDamage,
+      remainingHealth: Math.max(0, signal.hp),
+    });
     this.floatingTexts.push({
       position: { x: signal.position.x + (seededNoise(signal.id + this.elapsed + 17) - 0.5) * 18, y: signal.position.y - 18 },
       text: `${Math.round(result.healthDamage)}`,
@@ -2027,6 +2245,7 @@ export class GameEngine {
     });
     if (signal.hp <= 0) {
       signal.dead = true;
+      this.emitCombat({ type: 'signal-defeated', signalId: signal.id, signalType: signal.type });
       this.outcomeFor(this.wave, this.signalVariant(signal)).defeated += 1;
       this.signalIndex.remove(signal.id);
       this.shards += signal.reward;
@@ -2145,6 +2364,7 @@ export class GameEngine {
       tickTimer: status.interval,
       particleTimer: status.particle?.interval ?? 0,
     });
+    this.emitCombat({ type: 'status-applied', signalId: signal.id, statusId: status.id, duration: status.duration });
     return true;
   }
 

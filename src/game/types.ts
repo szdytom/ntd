@@ -268,6 +268,7 @@ export interface ScheduledCast {
   targetId: number;
   delay: number;
   origin?: Point;
+  parentProjectileId?: number;
   energyRefundBudget?: EnergyRefundBudget;
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game/engine';
+import type { CombatEvent } from '../src/game/combat-events';
 import { DRAFT_BALANCE } from '../src/modules';
 
 describe('engine command and view boundary', () => {
@@ -203,6 +204,22 @@ describe('engine command and view boundary', () => {
     engine.spawnCreativeSignal('crown');
     engine.spawnCreativeSignal('crown');
     expect(engine.signals.filter((signal) => signal.type === 'crown')).toHaveLength(2);
+  });
+
+  it('deletes signals without reporting a combat outcome', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
+    const events: CombatEvent[] = [];
+    const unsubscribe = engine.subscribeCombat((event) => events.push(event));
+    engine.spawnCreativeSignal('crown');
+    engine.spawnCreativeSignal('crown');
+    const signalIds = engine.signals.map((signal) => signal.id);
+    events.length = 0;
+
+    expect(engine.deleteSignals(signalIds)).toBe(signalIds.length);
+    expect(engine.signals.some((signal) => signalIds.includes(signal.id))).toBe(false);
+    expect(events.some((event) => event.type === 'signal-defeated' || event.type === 'signal-leaked')).toBe(false);
+    expect(engine.getSnapshot().signalsAlive).toBe(0);
+    unsubscribe();
   });
 
   it('publishes complete live signal counts for the active wave', () => {
