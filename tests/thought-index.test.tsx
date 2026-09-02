@@ -75,7 +75,10 @@ describe('thought index entry points', () => {
     expect(openThought).toHaveBeenCalledWith('pulse');
 
     await user.click(screen.getByRole('button', { name: /Arcbolt/ }));
-    expect(rendered.queryByRole('button', { name: 'View thought' })).toBeNull();
+    const arcboltThought = rendered.queryByRole('button', { name: 'View thought' });
+    expect(arcboltThought).not.toBeNull();
+    await user.click(arcboltThought!);
+    expect(openThought).toHaveBeenCalledWith('arcbolt');
   });
 
   it('opens a covered draft thought without consuming the draft choice', async () => {

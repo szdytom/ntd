@@ -1,0 +1,71 @@
+import {
+  defineBeat,
+  defineModuleThought,
+  explainLoadoutSlot,
+  finishRun,
+  fireCapturedRun,
+  introduceScene,
+  showPause,
+  timedCue,
+} from '../thoughts/authoring';
+import { straightRangePassScene } from '../thoughts/scenes';
+import { forkModule } from './fork';
+
+const copy = {
+  title: 'thoughts.fork.title',
+  summary: 'thoughts.fork.summary',
+  section: 'thoughts.fork.sections.split',
+  beatSplit: 'thoughts.fork.beats.split',
+  beatLand: 'thoughts.fork.beats.land',
+} as const;
+
+const targets = [
+  { signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 90 }, captureAs: 'first' },
+  { signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 60 }, captureAs: 'second' },
+  { signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 30 }, captureAs: 'third' },
+];
+
+export const forkThought = defineModuleThought(forkModule, {
+  titleKey: copy.title,
+  summaryKey: copy.summary,
+  seed: 83,
+  scene: straightRangePassScene({ towerSlots: 2, signalHealthScale: 3, signalSpeedScale: 0.85 }),
+  initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
+  beats: [
+    defineBeat({
+      id: 'construct', captionKey: copy.section, flow: 'compile',
+      cues: introduceScene({ slots: ['fork', 'pulse'] }),
+    }),
+    defineBeat({
+      id: 'show', captionKey: copy.section, flow: 'compile',
+      cues: [
+        timedCue('show-mod', 0.75, {
+          sectionTitleKey: copy.section,
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutMode: 'dialog', loadoutVisibleSlots: 1,
+        }),
+        timedCue('show-carrier', 0.6, { overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2 }),
+      ],
+    }),
+    defineBeat({
+      id: 'explain', captionKey: copy.beatSplit, flow: 'compile',
+      cues: [explainLoadoutSlot('point-mod', 4.2, copy.beatSplit, 0)],
+    }),
+    defineBeat({
+      id: 'fire', captionKey: copy.beatLand, flow: 'impact',
+      cues: fireCapturedRun('fire', {
+        carrier: 'pulse',
+        inputs: targets,
+        capture: { type: 'projectile-hit', moduleId: 'pulse', occurrence: 3 },
+      }),
+    }),
+    defineBeat({
+      id: 'show', captionKey: copy.beatLand, flow: 'impact',
+      cues: [showPause({ id: 'point-land', captionKey: copy.beatLand, target: { signalRef: 'first' }, requireAlive: 'first' })],
+    }),
+    defineBeat({
+      id: 'finish', captionKey: copy.section, flow: 'observe',
+      cues: finishRun('finish', -Math.PI / 2),
+    }),
+  ],
+});
