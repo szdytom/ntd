@@ -10,6 +10,8 @@ Every page in this documentation set has one purpose:
 2. **Internals** pages explain behavior that is difficult to reconstruct from individual source files.
 3. **Guides** provide safe modification paths and common failure cases without requiring full implementation knowledge.
 
+Reusable agent and contributor workflows live in the [project skill index](skills/README.md). Skills route a specific task through the relevant overview, internals, guide, source, and validation steps.
+
 If a page starts answering a different kind of question, follow its link to the matching page rather than expecting both answers in one place.
 
 ## Overviews

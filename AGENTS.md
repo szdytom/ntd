@@ -40,6 +40,11 @@ Technical documentation:
 - [Contributor guides](docs/guides/README.md)
 - [Implementation explanations](docs/internals/README.md)
 
+Project skills:
+
+- [Skill index](docs/skills/README.md)
+- [Thought Index authoring](docs/skills/thought-index-authoring/SKILL.md) — use when designing, reviewing, or implementing a module demonstration
+
 ### Internationalization
 
 All user-facing text is resolved through the shared i18next instance, including React components, tutorial copy, engine toasts, and Canvas labels. English is the fallback language; the initial locale follows a saved preference or the browser language.
