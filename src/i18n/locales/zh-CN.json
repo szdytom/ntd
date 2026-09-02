@@ -774,9 +774,12 @@
 	"thoughts.focusCore.sections.count": "先增加弹体数量",
 	"thoughts.focusCore.sections.focusCount": "把额外数量转为聚焦",
 	"thoughts.focusCore.sections.focusChain": "把连锁数量转为聚焦",
+	"thoughts.focusCore.sections.targets": "用贯注打出单体高伤害",
 	"thoughts.focusCore.beats.forked": "二分叉会让脉冲弹变成两枚",
 	"thoughts.focusCore.beats.consumeCount": "贯注聚能会收束额外的弹体数量",
 	"thoughts.focusCore.beats.countResult": "额外数量会转化为伤害和速度",
 	"thoughts.focusCore.beats.consumeChain": "贯注聚能也会收束连锁数量",
-	"thoughts.focusCore.beats.chainResult": "连锁数量同样会转化为伤害和速度"
+	"thoughts.focusCore.beats.chainResult": "连锁数量同样会转化为伤害和速度",
+	"thoughts.focusCore.beats.solarMatch": "贯注的单次高伤害可以压过太阳刻印的持续回复",
+	"thoughts.focusCore.beats.anvilMismatch": "棱晶砧会限制单次伤害，并不适合用贯注应对"
 }

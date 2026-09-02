@@ -16,6 +16,7 @@ const copy = {
     count: 'thoughts.focusCore.sections.count',
     focusCount: 'thoughts.focusCore.sections.focusCount',
     focusChain: 'thoughts.focusCore.sections.focusChain',
+    targets: 'thoughts.focusCore.sections.targets',
   },
   beats: {
     forked: 'thoughts.focusCore.beats.forked',
@@ -23,6 +24,8 @@ const copy = {
     countResult: 'thoughts.focusCore.beats.countResult',
     consumeChain: 'thoughts.focusCore.beats.consumeChain',
     chainResult: 'thoughts.focusCore.beats.chainResult',
+    solarMatch: 'thoughts.focusCore.beats.solarMatch',
+    anvilMismatch: 'thoughts.focusCore.beats.anvilMismatch',
   },
 } as const;
 
@@ -190,10 +193,14 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-chain-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('dismiss-chain-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        timedCue('dismiss-chain-compact', 0.35, {
+          loadoutMode: 'compact-leaving',
+          transition: { towerRotation: -Math.PI / 2 },
+          ease: 'smooth',
+        }),
         timedCue('configure-chain-focus', 0.2, {
           actions: [{ type: 'setup', slots: ['focus-core', 'arcbolt'] }],
-          loadoutMode: 'hidden', transition: { signalOpacity: 0, towerRotation: -Math.PI / 2 }, ease: 'smooth',
+          loadoutMode: 'hidden', transition: { signalOpacity: 0 }, ease: 'smooth',
         }),
         timedCue('show-chain-before-focus', 1, {
           overlay: { type: 'loadout', target: 'tower', placement: 'right' },
@@ -248,6 +255,98 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
         }),
         waitCue('wait-chain-focus-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 30, timelineWait: true }),
         timedCue('settle-chain-focus-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+      ],
+    }),
+    defineBeat({
+      id: 'introduce-focus-targets', captionKey: copy.beats.solarMatch, flow: 'focus',
+      cues: [
+        timedCue('configure-target-comparison', 0.2, {
+          actions: [{ type: 'setup', slots: ['focus-core', 'arcbolt'] }],
+          sectionTitleKey: copy.sections.targets,
+          loadoutMode: 'compact',
+          transition: { signalOpacity: 0 },
+        }),
+        timedCue('spawn-solar-target', 0.7, {
+          actions: [
+            { type: 'set-tower-casting', enabled: false },
+            {
+              type: 'spawn-signal', signal: 'solar', captureAs: 'solarTarget',
+              position: { type: 'tower-range-entry', leadDistance: 42 },
+            },
+          ],
+          transition: { signalOpacity: 1 }, ease: 'ease-out',
+        }),
+        timedCue('point-solar-match', 4.2, {
+          overlay: { type: 'caption', textKey: copy.beats.solarMatch, target: { signalRef: 'solarTarget' } },
+          requireSignalState: { signalRef: 'solarTarget', alive: true },
+        }),
+      ],
+    }),
+    defineBeat({
+      id: 'replace-solar-with-anvil', captionKey: copy.beats.anvilMismatch, flow: 'observe',
+      cues: [
+        waitCue('wait-solar-defeated', {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          waitForSignalStates: [{ signalRef: 'solarTarget', alive: false }],
+          timeout: 12, timelineWait: true,
+        }),
+        timedCue('settle-solar-defeat', 0.5, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
+        }),
+        timedCue('configure-anvil-comparison', 0.2, {
+          actions: [{ type: 'setup', slots: ['focus-core', 'arcbolt'] }],
+          loadoutMode: 'compact',
+          transition: { signalOpacity: 0 },
+        }),
+        timedCue('spawn-anvil-target', 0.7, {
+          actions: [
+            { type: 'set-tower-casting', enabled: false },
+            {
+              type: 'spawn-signal', signal: 'anvil', captureAs: 'anvilTarget',
+              position: { type: 'tower-range-entry', leadDistance: 42 },
+            },
+          ],
+          transition: { signalOpacity: 1 }, ease: 'ease-out',
+        }),
+      ],
+    }),
+    defineBeat({
+      id: 'show-anvil-mismatch', captionKey: copy.beats.anvilMismatch, flow: 'observe',
+      cues: [
+        waitCue('wait-anvil-hit', {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          waitFor: { type: 'projectile-hit', moduleId: 'focus-core', captureAs: 'anvilHit' },
+          timeout: 12, timelineWait: true,
+        }),
+        timedCue('settle-anvil-hit', 0.08, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+        }),
+        timedCue('point-anvil-mismatch', 4.2, {
+          transitionDuration: 0.12, transition: { simulationRate: 0 }, ease: 'smooth',
+          overlay: { type: 'caption', textKey: copy.beats.anvilMismatch, target: { signalRef: 'anvilHit' } },
+          requireSignalState: { signalRef: 'anvilHit', alive: true },
+        }),
+      ],
+    }),
+    defineBeat({
+      id: 'finish-target-comparison', captionKey: copy.sections.targets, flow: 'observe',
+      cues: [
+        timedCue('restore-target-comparison', 0.8, {
+          transition: { simulationRate: 1 }, ease: 'smooth',
+        }),
+        timedCue('fade-anvil-target', 0.5, {
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('delete-anvil-target', 0.1, {
+          actions: [{ type: 'delete-signals' }],
+        }),
+        waitCue('wait-target-comparison-energy', {
+          waitForTowerEnergy: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('settle-target-comparison', 0.5, {
+          transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
+        }),
       ],
     }),
   ],

@@ -774,9 +774,12 @@
 	"thoughts.focusCore.sections.count": "First increase projectile count",
 	"thoughts.focusCore.sections.focusCount": "Turn extra count into Focus",
 	"thoughts.focusCore.sections.focusChain": "Turn chain count into Focus",
+	"thoughts.focusCore.sections.targets": "Use Focus for single-target damage",
 	"thoughts.focusCore.beats.forked": "Double Fork turns Pulse into two projectiles",
 	"thoughts.focusCore.beats.consumeCount": "Focus Core concentrates the extra projectile count",
 	"thoughts.focusCore.beats.countResult": "Extra count becomes damage and speed",
 	"thoughts.focusCore.beats.consumeChain": "Focus Core also concentrates chain count",
-	"thoughts.focusCore.beats.chainResult": "Chain count becomes damage and speed as well"
+	"thoughts.focusCore.beats.chainResult": "Chain count becomes damage and speed as well",
+	"thoughts.focusCore.beats.solarMatch": "Focus can overwhelm Solar Sigil's regeneration in one hit",
+	"thoughts.focusCore.beats.anvilMismatch": "Prism Anvil caps each hit, making Focus a poor match"
 }

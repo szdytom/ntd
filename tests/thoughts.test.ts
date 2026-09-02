@@ -2,19 +2,31 @@ import { describe, expect, it } from 'vitest';
 import en from '../src/i18n/locales/en.json';
 import { CombatRuntime } from '../src/game/combat-runtime';
 import type { CombatEvent } from '../src/game/combat-events';
+import { FIXED_SIMULATION_STEP } from '../src/game/engine';
 import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
 
-const runDirector = (director: ThoughtSceneDirector, seconds = 80): void => {
-  for (let step = 0; step < seconds * 120; step += 1) {
+const maximumDirectorSteps = (director: ThoughtSceneDirector): number => {
+  const seconds = director.definition.beats.reduce((total, beat) => {
+    if (!beat.cues) return total + Math.max(beat.duration ?? 0, beat.timeout ?? 0, beat.timelineDuration);
+    return total + beat.cues.reduce((cueTotal, cue) => (
+      cueTotal + Math.max(cue.duration ?? 0, cue.timeout ?? 0)
+    ), 0);
+  }, 0);
+  return Math.ceil(seconds / FIXED_SIMULATION_STEP) + 1;
+};
+
+const runDirector = (director: ThoughtSceneDirector, inspect?: () => void): void => {
+  for (let step = 0; step < maximumDirectorSteps(director); step += 1) {
     const status = director.getSnapshot().status;
     if (status === 'completed' || status === 'error') return;
-    director.update(1 / 120);
+    inspect?.();
+    director.update(FIXED_SIMULATION_STEP);
   }
 };
 
-const runUntilCue = (director: ThoughtSceneDirector, cueId: string, seconds = 30): void => {
-  for (let step = 0; step < seconds * 120 && director.getSnapshot().cueId !== cueId; step += 1) {
-    director.update(1 / 120);
+const runUntilCue = (director: ThoughtSceneDirector, cueId: string): void => {
+  for (let step = 0; step < maximumDirectorSteps(director) && director.getSnapshot().cueId !== cueId; step += 1) {
+    director.update(FIXED_SIMULATION_STEP);
   }
 };
 
@@ -125,12 +137,12 @@ describe('thought scenes', () => {
       .find((cue) => cue.timelineWait && cue.waitForClear);
     if (!waitCue) throw new Error('Expected a clear-bound indefinite wait');
     const director = new ThoughtSceneDirector(definition);
-    runUntilCue(director, waitCue.id, 80);
+    runUntilCue(director, waitCue.id);
     expect(director.getSnapshot().cueId).toBe(waitCue.id);
     const progress = director.getTimelineProgress();
     let samples = 0;
     while (director.getSnapshot().cueId === waitCue.id && samples < 120 * 30) {
-      director.update(1 / 120);
+      director.update(FIXED_SIMULATION_STEP);
       if (director.getSnapshot().cueId === waitCue.id) {
         expect(director.getTimelineProgress()).toBe(progress);
         samples += 1;
@@ -149,7 +161,7 @@ describe('thought scenes', () => {
       .find((candidate) => candidate.requireSignalState?.slowed === true && candidate.overlay?.type === 'caption');
     if (!cue?.requireSignalState) throw new Error('Expected a state-bound cue');
     const director = new ThoughtSceneDirector(definition);
-    runUntilCue(director, cue.id, 80);
+    runUntilCue(director, cue.id);
     const signal = director.getBoundSignal(cue.requireSignalState.signalRef);
     expect(director.getSnapshot().cueId).toBe(cue.id);
     expect(signal?.dead).toBe(false);
@@ -164,18 +176,41 @@ describe('thought scenes', () => {
       .find((candidate) => candidate.transition?.towerRotation !== undefined);
     if (cue?.transition?.towerRotation === undefined || cue.duration === undefined) throw new Error('Expected a timed tower orientation');
     const director = new ThoughtSceneDirector(definition);
-    runUntilCue(director, cue.id, 80);
+    runUntilCue(director, cue.id);
     expect(director.getSnapshot().cueId).toBe(cue.id);
     const start = director.getRenderPresentation().towerRotation;
     if (start === undefined) throw new Error('Expected a presentation rotation');
     const initialDistance = angleDistance(start, cue.transition.towerRotation);
     const midpoint = cue.duration / 2;
-    for (let elapsed = 0; elapsed < midpoint; elapsed += 1 / 120) director.update(1 / 120);
+    for (let elapsed = 0; elapsed < midpoint; elapsed += FIXED_SIMULATION_STEP) {
+      director.update(FIXED_SIMULATION_STEP);
+    }
     const rotation = director.getRenderPresentation().towerRotation;
     if (rotation === undefined) throw new Error('Expected an interpolated presentation rotation');
     expect(angleDistance(rotation, cue.transition.towerRotation)).toBeLessThan(initialDistance);
     expect(angleDistance(rotation, cue.transition.towerRotation)).toBeGreaterThan(0);
     director.dispose();
+  });
+
+  it('releases authored tower orientation before combat-driven aiming resumes', () => {
+    for (const definition of thoughtRegistry.list()) {
+      const cues = new Map(definition.beats.flatMap((beat) => beat.cues ?? []).map((cue) => [cue.id, cue]));
+      const director = new ThoughtSceneDirector(definition);
+      runDirector(director, () => {
+        const snapshot = director.getSnapshot();
+        const cue = cues.get(snapshot.cueId);
+        const resumesCasting = cue?.actions?.some((action) => (
+          action.type === 'set-tower-casting' && action.enabled
+        ));
+        if (resumesCasting) {
+          const presentation = director.getRenderPresentation();
+          expect(presentation.towerRotation, `${definition.id}/${snapshot.cueId}`).toBeUndefined();
+          expect(presentation.towerRotations, `${definition.id}/${snapshot.cueId}`).toBeUndefined();
+        }
+      });
+      expect(director.getSnapshot().status).toBe('completed');
+      director.dispose();
+    }
   });
 
   it.each(thoughtRegistry.list().map((definition) => [definition.id, definition] as const))(
@@ -195,7 +230,7 @@ describe('thought scenes', () => {
     runtime.setup({ slots: ['impact-trigger', 'pulse', 'proximity-mine'] });
     runtime.spawnSignal('spark');
     for (let step = 0; step < 16 * 120 && !events.some((event) => event.type === 'payload-deployed'); step += 1) {
-      runtime.update(1 / 120);
+      runtime.update(FIXED_SIMULATION_STEP);
     }
     const triggerIndex = events.findIndex((event) => event.type === 'trigger-fired');
     const payloadIndex = events.findIndex((event) => event.type === 'payload-deployed');
