@@ -290,9 +290,10 @@ export class ThoughtSceneDirector {
       this.advanceCue();
       return;
     }
-    if ((cue.waitFor || cue.waitForClear || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates) && this.cueElapsed >= (cue.timeout ?? 10)) {
+    if ((cue.waitFor || cue.waitForClear || cue.waitForSignalsOutOfRange || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates) && this.cueElapsed >= (cue.timeout ?? 10)) {
       this.status = 'error';
       const wait = cue.waitFor?.type
+        ?? (cue.waitForSignalsOutOfRange ? 'signals-out-of-range' : undefined)
         ?? (cue.waitForSignalsPastNode ? `route-node:${cue.waitForSignalsPastNode}` : 'scene-clear');
       this.error = `Timed out waiting for ${wait} in ${this.definition.id}/${this.currentBeat().id}/${cue.id}`;
       this.emit();
@@ -388,11 +389,12 @@ export class ThoughtSceneDirector {
     if (this.cueElapsed < minimumDuration) return false;
     if (cue.waitFor && !this.eventMatched) return false;
     if (cue.waitForClear && this.runtime.hasActiveSignals()) return false;
+    if (cue.waitForSignalsOutOfRange && !this.runtime.haveActiveSignalsLeftTowerRanges()) return false;
     if (cue.waitForSignalsPastNode && !this.runtime.haveActiveSignalsPassedNode(cue.waitForSignalsPastNode)) return false;
     if (cue.waitForTowerEnergy && !this.runtime.hasFullTowerEnergy()) return false;
     if (cue.waitForSignalStates && !cue.waitForSignalStates.every((requirement) => this.matchesSignalState(requirement))) return false;
     if (cue.waitForProjectileStates && !cue.waitForProjectileStates.every((requirement) => this.matchesProjectileState(requirement))) return false;
-    return Boolean(cue.duration !== undefined || cue.waitFor || cue.waitForClear || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates);
+    return Boolean(cue.duration !== undefined || cue.waitFor || cue.waitForClear || cue.waitForSignalsOutOfRange || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates);
   }
 
   private advanceCue(): void {
@@ -568,7 +570,7 @@ export class ThoughtSceneDirector {
   }
 
   private replayCue(cue: ThoughtCue): void {
-    const limit = cue.waitFor || cue.waitForClear || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates
+    const limit = cue.waitFor || cue.waitForClear || cue.waitForSignalsOutOfRange || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates
       ? (cue.timeout ?? 10)
       : (cue.duration ?? 0);
     const step = 1 / 120;
@@ -583,6 +585,7 @@ export class ThoughtSceneDirector {
     }
     if (!this.cueComplete(cue)) {
       const wait = cue.waitFor?.type
+        ?? (cue.waitForSignalsOutOfRange ? 'signals-out-of-range' : undefined)
         ?? (cue.waitForSignalsPastNode ? `route-node:${cue.waitForSignalsPastNode}` : 'scene-clear');
       throw new Error(`Could not rebuild ${this.definition.id}/${this.currentBeat().id}/${cue.id}: ${wait}`);
     }

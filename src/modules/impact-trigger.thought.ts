@@ -160,7 +160,13 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
           actions: [{ type: 'set-tower-casting', enabled: true }],
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
-        timedCue('fade-pierce-scene', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
+        waitCue('wait-pierce-scene-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('fade-pierce-scene', 0.5, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
         settleTowerForReset('settle-pierce-clear'),
       ],
     }),
@@ -212,8 +218,17 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
     defineBeat({
       id: 'finish-shield', captionKey: copy.sections.shield, flow: 'observe',
       cues: [
-        timedCue('restore-shield-time', 1.35, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-        timedCue('fade-shield-target', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
+        timedCue('restore-shield-time', 1.35, {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          transition: { simulationRate: 1 }, ease: 'smooth',
+        }),
+        waitCue('wait-shield-target-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('fade-shield-target', 0.5, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
         settleTowerForReset('settle-shield-rotation'),
         timedCue('reset-shield-scene', 0.2, {
           actions: [{ type: 'setup', slots: ['impact-trigger', 'pulse', 'toxic-cloud'] }],

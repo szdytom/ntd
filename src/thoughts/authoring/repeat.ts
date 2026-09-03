@@ -2,7 +2,7 @@ import type { ModuleDefinition } from '../../modules/types';
 import type { ThoughtDefinition } from '../types';
 import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import { defineBeat } from './beats';
-import { timedCue } from './cues';
+import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
@@ -87,11 +87,20 @@ export const buildRepeatThought = (options: RepeatThoughtOptions): ThoughtDefini
       defineBeat({
         id: 'construct-stack', captionKey: copy.sectionStack, flow: 'compile',
         cues: [
-          timedCue('restore-repeat-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-repeat-target', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-repeat-time', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-repeat-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-repeat-target-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-repeat-target', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-repeat-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-repeat-rotation'),
           timedCue('configure-stack', 0.2, {
             actions: [{ type: 'setup', slots: [module.id, module.id, 'pulse'] }], loadoutMode: 'hidden',
@@ -131,11 +140,20 @@ export const buildRepeatThought = (options: RepeatThoughtOptions): ThoughtDefini
       defineBeat({
         id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'focus',
         cues: [
-          timedCue('restore-stack-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-stack-target', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-stack-time', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-stack-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-stack-target-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-stack-target', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-stack-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-stack-rotation'),
           timedCue('configure-focus', 0.2, {
             actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }], loadoutMode: 'hidden',

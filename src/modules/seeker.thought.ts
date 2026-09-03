@@ -8,6 +8,7 @@ import {
   settleTowerForReset,
   showPause,
   timedCue,
+  waitCue,
 } from '../thoughts/authoring';
 import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { seekerModule } from './seeker';
@@ -74,11 +75,20 @@ export const seekerThought = defineModuleThought(seekerModule, {
     defineBeat({
       id: 'construct-fork-baseline', captionKey: copy.sections.fork, flow: 'compile',
       cues: [
-        timedCue('restore-prediction-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-        timedCue('fade-prediction-target', 0.45, {
-          actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+        timedCue('restore-prediction-time', 0.8, {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          transition: { simulationRate: 1 }, ease: 'smooth',
         }),
-        timedCue('dismiss-prediction-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        waitCue('wait-prediction-target-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('fade-prediction-target', 0.45, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('dismiss-prediction-compact', 0.35, {
+          actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+        }),
         settleTowerForReset('settle-prediction-rotation'),
         timedCue('configure-fork-baseline', 0.2, {
           actions: [{ type: 'setup', slots: ['fork', 'pulse'] }], loadoutMode: 'hidden',
@@ -109,11 +119,20 @@ export const seekerThought = defineModuleThought(seekerModule, {
     defineBeat({
       id: 'construct-guided-fork', captionKey: copy.sections.fork, flow: 'compile',
       cues: [
-        timedCue('restore-fork-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-        timedCue('fade-fork-target', 0.45, {
-          actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+        timedCue('restore-fork-time', 0.8, {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          transition: { simulationRate: 1 }, ease: 'smooth',
         }),
-        timedCue('dismiss-fork-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        waitCue('wait-fork-target-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('fade-fork-target', 0.45, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('dismiss-fork-compact', 0.35, {
+          actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+        }),
         settleTowerForReset('settle-fork-rotation'),
         timedCue('configure-guided-fork', 0.2, {
           actions: [{ type: 'setup', slots: ['seeker', 'fork', 'pulse'] }], loadoutMode: 'hidden',

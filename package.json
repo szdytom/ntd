@@ -12,6 +12,7 @@
     "format:locales": "node scripts/format-locales.mjs",
     "lint": "eslint .",
     "perf:report": "node --import tsx scripts/performance-report.ts",
+    "thoughts:report": "node --import tsx scripts/thought-choreography-report.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:watch": "vitest",

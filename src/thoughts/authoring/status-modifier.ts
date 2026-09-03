@@ -141,8 +141,16 @@ export const buildStatusModifierThought = (options: StatusModifierOptions): Thou
             transition: { simulationRate: 1 },
             ease: 'smooth',
           }),
-          timedCue('fade-area-signals', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-          timedCue('dismiss-area-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-area-signals-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-area-signals', 0.5, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-area-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-area-rotation'),
           timedCue('configure-static', 0.2, {
             actions: [{ type: 'setup', slots: ['impact-trigger', 'pulse', module.id, staticCarrier] }],

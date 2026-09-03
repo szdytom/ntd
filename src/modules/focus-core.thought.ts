@@ -333,9 +333,14 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
       id: 'finish-target-comparison', captionKey: copy.sections.targets, flow: 'observe',
       cues: [
         timedCue('restore-target-comparison', 0.8, {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
+        waitCue('wait-anvil-target-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
         timedCue('fade-anvil-target', 0.5, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
           transition: { signalOpacity: 0 }, ease: 'ease-out',
         }),
         timedCue('delete-anvil-target', 0.1, {

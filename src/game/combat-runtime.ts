@@ -189,6 +189,14 @@ export class CombatRuntime {
     return this.engine.signals.some((signal) => !signal.dead);
   }
 
+  haveActiveSignalsLeftTowerRanges(): boolean {
+    return this.engine.signals.every((signal) => (
+      signal.dead || this.engine.towers.every((tower) => (
+        Math.hypot(signal.position.x - tower.position.x, signal.position.y - tower.position.y) > tower.range
+      ))
+    ));
+  }
+
   haveActiveSignalsPassedNode(nodeId: string): boolean {
     if (!this.engine.level.graph.nodes.has(nodeId)) {
       throw new Error(`Unknown thought scenario route node: ${nodeId}`);

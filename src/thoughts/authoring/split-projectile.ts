@@ -2,7 +2,7 @@ import type { ModuleDefinition } from '../../modules/types';
 import type { ThoughtDefinition } from '../types';
 import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import { defineBeat } from './beats';
-import { timedCue } from './cues';
+import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import type { SignalSpawn } from './sequences';
@@ -91,8 +91,16 @@ export const buildSplitProjectileThought = (
             actions: [{ type: 'set-tower-casting', enabled: true }],
             transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('fade-split-targets', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-          timedCue('dismiss-split-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-split-targets-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-split-targets', 0.5, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-split-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-split-rotation'),
           timedCue('configure-focus', 0.2, {
             actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }],

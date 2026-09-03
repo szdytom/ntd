@@ -111,8 +111,20 @@ export const resetTo = (
     transition: { simulationRate: 1 },
     ease: 'smooth',
   }),
-  timedCue(`${prefix}-fade`, 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-  timedCue(`${prefix}-compact-leave`, 0.35, { loadoutMode: 'compact-leaving' }),
+  waitCue(`${prefix}-clear`, {
+    waitForSignalsOutOfRange: true,
+    timeout: 20,
+    timelineWait: true,
+  }),
+  timedCue(`${prefix}-fade`, 0.5, {
+    actions: [{ type: 'set-tower-casting', enabled: false }],
+    transition: { signalOpacity: 0 },
+    ease: 'ease-out',
+  }),
+  timedCue(`${prefix}-compact-leave`, 0.35, {
+    actions: [{ type: 'delete-signals' }],
+    loadoutMode: 'compact-leaving',
+  }),
   settleTowerForReset(`${prefix}-settle-rotation`),
   timedCue(`${prefix}-configure`, 0.2, {
     actions: [{ type: 'setup', slots: nextSlots }],

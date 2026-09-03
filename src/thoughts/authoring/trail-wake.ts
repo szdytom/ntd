@@ -163,11 +163,20 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
       defineBeat({
         id: 'construct-carrier-comparison', captionKey: copy.sectionCarrier, flow: 'compile',
         cues: [
-          timedCue('restore-basic-wake', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('clear-basic-wake', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-basic-wake', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-basic-wake-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-basic-wake-clear', {
+            waitForSignalsPastNode: PARALLEL_COMPARISON_MERGE_NODE, timeout: 20, timelineWait: true,
+          }),
+          timedCue('clear-basic-wake', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-basic-wake-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-basic-wake-rotation'),
           timedCue('configure-first-comparison', 0.2, {
             actions: [{
@@ -224,11 +233,16 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
       defineBeat({
         id: 'replace-comparison-carriers', captionKey: copy.sectionCarrier, flow: 'compile',
         cues: [
+          waitCue('wait-first-comparison-clear', {
+            waitForSignalsPastNode: PARALLEL_COMPARISON_MERGE_NODE, timeout: 20, timelineWait: true,
+          }),
           timedCue('fade-first-comparison', 0.45, {
-            actions: [{ type: 'set-tower-casting', enabled: false }, { type: 'delete-signals' }],
+            actions: [{ type: 'set-tower-casting', enabled: false }],
             transition: { signalOpacity: 0 }, ease: 'ease-out',
           }),
-          timedCue('dismiss-first-comparison-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          timedCue('dismiss-first-comparison-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           timedCue('show-before-second-comparison', 1, {
             overlay: { type: 'loadouts', targets: comparisonLoadouts },
             loadoutMode: 'dialog', loadoutVisibleSlots: 2,

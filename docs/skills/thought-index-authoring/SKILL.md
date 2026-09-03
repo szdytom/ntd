@@ -132,3 +132,5 @@ When implementing, follow [implementation.md](references/implementation.md). At 
 5. Confirm replay and scrubbing restore deterministic scene state.
 
 Tests should verify structure, semantic behavior, and invariants. Do not assert exact localized sentences or independently tunable choreography values.
+
+Treat choreography validation findings as warning-level review aids rather than universal gates; a focused storyboard may intentionally diverge when the choice is documented and visually reviewed.

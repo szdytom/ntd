@@ -84,6 +84,7 @@ export interface ThoughtCue {
   readonly duration?: number;
   readonly waitFor?: ThoughtEventMatcher;
   readonly waitForClear?: boolean;
+  readonly waitForSignalsOutOfRange?: boolean;
   readonly waitForSignalsPastNode?: string;
   readonly waitForTowerEnergy?: boolean;
   readonly waitForSignalStates?: readonly ThoughtSignalStateRequirement[];

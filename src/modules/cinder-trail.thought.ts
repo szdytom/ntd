@@ -230,6 +230,11 @@ export const cinderTrailThought = defineModuleThought(cinderTrailModule, {
     defineBeat({
       id: 'replace-comparison-carriers', captionKey: copy.sections.carrier, flow: 'compile',
       cues: [
+        waitCue('wait-first-comparison-merge', {
+          waitForSignalsPastNode: PARALLEL_COMPARISON_MERGE_NODE,
+          timeout: 20,
+          timelineWait: true,
+        }),
         timedCue('fade-first-comparison', 0.45, {
           actions: [{ type: 'set-tower-casting', enabled: false }],
           transition: { signalOpacity: 0 }, ease: 'ease-out',

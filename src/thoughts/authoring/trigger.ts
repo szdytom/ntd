@@ -6,7 +6,7 @@ import {
   straightRangePassScene,
 } from '../scenes';
 import { defineBeat } from './beats';
-import { timedCue } from './cues';
+import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
@@ -89,11 +89,20 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
       defineBeat({
         id: 'construct-collision', captionKey: copy.sectionCollision, flow: 'compile',
         cues: [
-          timedCue('restore-primary-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-primary-scene', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-primary-time', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-primary-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-primary-scene-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-primary-scene', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-primary-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           timedCue('show-before-collision', 1, {
             sectionTitleKey: copy.sectionCollision,
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
@@ -127,11 +136,20 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
       defineBeat({
         id: 'construct-shield', captionKey: copy.sectionShield, flow: 'compile',
         cues: [
-          timedCue('restore-collision-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-collision-scene', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-collision-time', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-collision-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-collision-scene-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-collision-scene', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-collision-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           settleTowerForReset('settle-collision-rotation'),
           timedCue('configure-shield', 0.2, {
             actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }], loadoutMode: 'hidden',
@@ -167,11 +185,21 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
       defineBeat({
         id: 'finish-shield', captionKey: copy.sectionShield, flow: 'observe',
         cues: [
-          timedCue('restore-shield-time', 1.35, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-shield-target', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-          settleTowerForReset('settle-shield-rotation'),
-          timedCue('reset-shield-scene', 0.2, {
-            actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }],
+          timedCue('finish-shield-restore', 1.35, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
+          }),
+          waitCue('finish-shield-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('finish-shield-delete', 0.2, {
+            actions: [{ type: 'set-tower-casting', enabled: false }, { type: 'delete-signals' }],
+          }),
+          waitCue('finish-shield-energy', {
+            waitForTowerEnergy: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('finish-shield-settle', 0.5, {
+            transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
           }),
         ],
       }),
@@ -259,11 +287,20 @@ export const buildExpirationTriggerThought = (options: ExpirationTriggerOptions)
       defineBeat({
         id: 'construct-shield', captionKey: copy.sectionShield, flow: 'compile',
         cues: [
-          timedCue('restore-expiration-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
-          timedCue('fade-expiration-scene', 0.45, {
-            actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+          timedCue('restore-expiration-time', 0.8, {
+            actions: [{ type: 'set-tower-casting', enabled: true }],
+            transition: { simulationRate: 1 }, ease: 'smooth',
           }),
-          timedCue('dismiss-expiration-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          waitCue('wait-expiration-scene-clear', {
+            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+          }),
+          timedCue('fade-expiration-scene', 0.45, {
+            actions: [{ type: 'set-tower-casting', enabled: false }],
+            transition: { signalOpacity: 0 }, ease: 'ease-out',
+          }),
+          timedCue('dismiss-expiration-compact', 0.35, {
+            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+          }),
           timedCue('configure-shield', 0.2, {
             loadoutMode: 'hidden',
           }),

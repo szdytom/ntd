@@ -53,7 +53,7 @@ export class ThoughtRegistry {
           cueIds.add(cue.id);
           if (definitionCueIds.has(cue.id)) throw new Error(`Thought ${definition.id} has duplicate cue ${cue.id}`);
           definitionCueIds.add(cue.id);
-          const waitsForState = cue.waitFor || cue.waitForClear || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates;
+          const waitsForState = cue.waitFor || cue.waitForClear || cue.waitForSignalsOutOfRange || cue.waitForSignalsPastNode || cue.waitForTowerEnergy || cue.waitForSignalStates || cue.waitForProjectileStates;
           if (cue.duration === undefined && !waitsForState) {
             throw new Error(`Thought ${definition.id} cue ${cue.id} requires a duration or wait`);
           }

@@ -105,6 +105,23 @@ describe('thought registry', () => {
     expect(violations).toEqual([]);
   });
 
+  it('keeps signals alive while their fade-out transition is running', () => {
+    const violations: string[] = [];
+
+    for (const definition of thoughtRegistry.list()) {
+      for (const beat of definition.beats) {
+        for (const cue of beat.cues ?? []) {
+          const deletesSignals = cue.actions?.some((action) => action.type === 'delete-signals') ?? false;
+          if (cue.transition?.signalOpacity === 0 && deletesSignals) {
+            violations.push(`${definition.id}/${beat.id}/${cue.id}`);
+          }
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it('returns visible towers to their default rotation before resetting combat', () => {
     const violations: string[] = [];
 

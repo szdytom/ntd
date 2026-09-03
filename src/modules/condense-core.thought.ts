@@ -8,6 +8,7 @@ import {
   settleTowerForReset,
   showPause,
   timedCue,
+  waitCue,
 } from '../thoughts/authoring';
 import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { condenseCoreModule } from './condense-core';
@@ -65,8 +66,16 @@ export const condenseCoreThought = defineModuleThought(condenseCoreModule, {
           actions: [{ type: 'set-tower-casting', enabled: true }],
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
-        timedCue('fade-blast-targets', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-        timedCue('dismiss-blast-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        waitCue('wait-blast-targets-clear', {
+          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
+        }),
+        timedCue('fade-blast-targets', 0.5, {
+          actions: [{ type: 'set-tower-casting', enabled: false }],
+          transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('dismiss-blast-compact', 0.35, {
+          actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
+        }),
         settleTowerForReset('settle-blast-rotation'),
         timedCue('configure-condense-loadout', 0.2, {
           actions: [{ type: 'setup', slots: ['condense-core', 'nova'] }],
