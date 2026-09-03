@@ -114,8 +114,29 @@
 .workshop .section-title h3 { display: block; margin: 0; color: var(--workshop-ink); font-size: 17px; white-space: nowrap; }
 .workshop .section-heading { display: flex; min-width: 0; align-items: baseline; gap: 12px; }
 .workshop .section-title small { display: block; margin: 0; color: #87818e; font-size: 14px; white-space: nowrap; }
-.workshop .section-title > button { padding: 6px 10px; border: 2px solid var(--workshop-ink); color: var(--workshop-ink); background: #fff; cursor: pointer; font-size: 14px; font-weight: 800; }
-.workshop .section-title > button:hover { color: #fff; background: #ff637a; }
+.workshop .section-title > .orchestration-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.workshop .orchestration-actions button {
+  padding: 6px 10px;
+  border: 2px solid var(--workshop-ink);
+  color: var(--workshop-ink);
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+.workshop .orchestration-actions button:not(.orchestration-clear):hover:not(:disabled),
+.workshop .orchestration-actions button:not(.orchestration-clear):focus-visible {
+  color: var(--workshop-ink);
+  background: var(--yellow);
+  outline: 0;
+}
+.workshop .orchestration-actions .orchestration-clear:hover:not(:disabled),
+.workshop .orchestration-actions .orchestration-clear:focus-visible {
+  color: #fff;
+  background: var(--coral);
+  outline: 0;
+}
+.workshop .orchestration-actions button:disabled { cursor: wait; opacity: .5; }
 
 .workshop .program-readout strong,
 .workshop .program-readout small { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
@@ -289,6 +310,8 @@
   .workshop-side,
   .workshop-main { overflow: visible; }
   .workshop-main { margin-top: 0; border-top: 2px solid var(--workshop-ink); border-left: 0; }
+  .workshop .program-section .section-title { flex-wrap: wrap; }
+  .workshop .section-title > .orchestration-actions { margin-left: auto; }
   .workshop .slot-flow { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .workshop .flow-arrow { display: none; }
   .workshop .module-grid,

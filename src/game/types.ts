@@ -10,15 +10,30 @@ export type ModuleId = string;
 export type GameMode = 'standard' | 'creative';
 export type DifficultyId = 'relaxed' | 'easy' | 'normal' | 'hard' | 'extreme';
 
-export type TargetingMode =
-  | 'core-nearest'
-  | 'core-farthest'
-  | 'hp-lowest'
-  | 'hp-highest'
-  | 'tower-nearest'
-  | 'tower-farthest'
-  | 'density-highest'
-  | 'density-lowest';
+export const TARGETING_MODES = [
+  'core-nearest',
+  'core-farthest',
+  'hp-lowest',
+  'hp-highest',
+  'tower-nearest',
+  'tower-farthest',
+  'density-highest',
+  'density-lowest',
+] as const;
+
+export type TargetingMode = (typeof TARGETING_MODES)[number];
+
+export interface TowerOrchestration {
+  readonly slots: readonly (ModuleId | null)[];
+  readonly targeting: TargetingMode;
+}
+
+export type CreativeOrchestrationApplyResult =
+  | { readonly ok: true }
+  | {
+    readonly ok: false;
+    readonly reason: 'unavailable' | 'too-many-slots' | 'unknown-module' | 'invalid-targeting';
+  };
 
 export interface ShotBlueprint {
   source: ModuleId;

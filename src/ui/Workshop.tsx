@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import type { GameViewSnapshot, ModuleId, Tower } from '../game/types';
+import { decodeOrchestration, encodeOrchestration } from '../game/orchestration-codec';
+import type { OrchestrationDecodeError } from '../game/orchestration-codec';
 import type { ModuleKind } from '../modules';
 import { kindLabel } from '../i18n/presentation';
 import { ModuleCard } from './ModuleCard';
@@ -15,7 +17,13 @@ import { thoughtRegistry } from '../thoughts';
 import { useTouchModuleDrag } from './useTouchModuleDrag';
 import './Workshop.css';
 
-export function Workshop({ engine, tower, view, onOpenThought }: { engine: GameEngine; tower: Tower; view: GameViewSnapshot; onOpenThought?: (thoughtId: string) => void }) {
+export function Workshop({ engine, tower, view, onOpenThought, onToast }: {
+  engine: GameEngine;
+  tower: Tower;
+  view: GameViewSnapshot;
+  onOpenThought?: (thoughtId: string) => void;
+  onToast?: (message: string, tone: 'good' | 'warn') => void;
+}) {
   const { t } = useTranslation();
   const workshopRef = useRef<HTMLElement>(null);
   const installModule = useCallback((slot: number, moduleId: ModuleId) => {
@@ -29,6 +37,7 @@ export function Workshop({ engine, tower, view, onOpenThought }: { engine: GameE
   const definitions = useMemo(() => engine.getLibraryModules(), [engine, revision]);
   const [selectedModule, setSelectedModule] = useState<ModuleId | null>(() => definitions[0]?.id ?? null);
   const [kindFilter, setKindFilter] = useState<'all' | ModuleKind>('all');
+  const [transferPending, setTransferPending] = useState<'import' | 'export' | null>(null);
   const visibleDefinitions = useMemo(
     () => kindFilter === 'all'
       ? definitions
@@ -52,6 +61,55 @@ export function Workshop({ engine, tower, view, onOpenThought }: { engine: GameE
     if (empty >= 0) engine.installModule(empty, id);
   };
 
+  const decodeErrorMessage = (reason: OrchestrationDecodeError): string => {
+    if (reason === 'invalid-checksum') return t('workshop.importChecksumError');
+    if (reason === 'unsupported-version') return t('workshop.importVersionError');
+    if (reason === 'unsupported-feature') return t('workshop.importFeatureError');
+    if (reason === 'unknown-module') return t('workshop.importModuleError');
+    return t('workshop.importFormatError');
+  };
+
+  const exportOrchestration = async (): Promise<void> => {
+    setTransferPending('export');
+    try {
+      const writeText = globalThis.navigator.clipboard?.writeText?.bind(globalThis.navigator.clipboard);
+      if (!writeText) throw new Error('Clipboard write is unavailable');
+      const token = encodeOrchestration({ slots: tower.slots, targeting: tower.targeting });
+      await writeText(token);
+      onToast?.(t('workshop.exportSuccess'), 'good');
+    } catch {
+      onToast?.(t('workshop.exportError'), 'warn');
+    } finally {
+      setTransferPending(null);
+    }
+  };
+
+  const importOrchestration = async (): Promise<void> => {
+    setTransferPending('import');
+    try {
+      const readText = globalThis.navigator.clipboard?.readText?.bind(globalThis.navigator.clipboard);
+      if (!readText) throw new Error('Clipboard read is unavailable');
+      const decoded = decodeOrchestration((await readText()).trim());
+      if (!decoded.ok) {
+        onToast?.(decodeErrorMessage(decoded.reason), 'warn');
+        return;
+      }
+      const applied = engine.applyCreativeOrchestration(decoded.value);
+      if (!applied.ok) {
+        const message = applied.reason === 'too-many-slots'
+          ? t('workshop.importSlotsError', { required: decoded.value.slots.length, available: tower.slots.length })
+          : t('workshop.importApplyError');
+        onToast?.(message, 'warn');
+        return;
+      }
+      onToast?.(t('workshop.importSuccess'), 'good');
+    } catch {
+      onToast?.(t('workshop.importClipboardError'), 'warn');
+    } finally {
+      setTransferPending(null);
+    }
+  };
+
   return (
     <aside ref={workshopRef} className="workshop" aria-label={t('workshop.aria')}>
       <div className="workshop-head">
@@ -72,7 +130,17 @@ export function Workshop({ engine, tower, view, onOpenThought }: { engine: GameE
           <section className="program-section">
             <div className="section-title">
               <div><i className="section-color program-color" aria-hidden="true" /><div className="section-heading"><h3>{t('workshop.arrange')}</h3><small>{t('workshop.leftToRight', { count: tower.slots.length })}</small></div></div>
-              <button onClick={() => engine.clearLoadout()}>{t('workshop.clear')}</button>
+              <div className="orchestration-actions" aria-busy={transferPending !== null}>
+                {engine.rules.scenarioControls === 'creative' ? <>
+                  <button className="orchestration-import" onClick={() => void importOrchestration()} disabled={transferPending !== null}>
+                    {t('workshop.import')}
+                  </button>
+                  <button className="orchestration-export" onClick={() => void exportOrchestration()} disabled={transferPending !== null}>
+                    {t('workshop.export')}
+                  </button>
+                </> : null}
+                <button className="orchestration-clear" onClick={() => engine.clearLoadout()} disabled={transferPending !== null}>{t('workshop.clear')}</button>
+              </div>
             </div>
             <div className="slot-flow" style={{ '--slot-count': tower.slots.length } as CSSProperties}>
               {tower.slots.map((moduleId, index) => (

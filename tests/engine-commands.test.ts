@@ -198,6 +198,50 @@ describe('engine command and view boundary', () => {
     expect(engine.towers[0].slots).toEqual(before);
   });
 
+  it('applies a creative orchestration atomically and clears remaining slots', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
+    const tower = engine.towers[0];
+    if (!tower) throw new Error('Expected a creative tower');
+    engine.selectTower(tower.id);
+    const revision = engine.getViewSnapshot().revision;
+
+    expect(engine.applyCreativeOrchestration({
+      slots: ['arcbolt', null, 'pulse'],
+      targeting: 'density-highest',
+    })).toEqual({ ok: true });
+    expect(tower.slots).toEqual(['arcbolt', null, 'pulse', ...Array<null>(tower.slots.length - 3).fill(null)]);
+    expect(tower.targeting).toBe('density-highest');
+    expect(engine.getViewSnapshot().revision).toBe(revision + 1);
+  });
+
+  it('rejects an oversized creative orchestration without partial changes', () => {
+    const engine = new GameEngine({ mode: 'creative', seed: 5 });
+    const tower = engine.towers[0];
+    if (!tower) throw new Error('Expected a creative tower');
+    engine.selectTower(tower.id);
+    const slotsBefore = [...tower.slots];
+    const targetingBefore = tower.targeting;
+
+    expect(engine.applyCreativeOrchestration({
+      slots: [...tower.slots, 'pulse'],
+      targeting: 'hp-highest',
+    })).toEqual({ ok: false, reason: 'too-many-slots' });
+    expect(tower.slots).toEqual(slotsBefore);
+    expect(tower.targeting).toBe(targetingBefore);
+  });
+
+  it('does not expose orchestration application to standard sessions', () => {
+    const engine = new GameEngine({ mode: 'standard', seed: 5 });
+    const tower = engine.towers[0];
+    if (!tower) throw new Error('Expected a standard tower');
+    engine.selectTower(tower.id);
+
+    expect(engine.applyCreativeOrchestration({ slots: ['pulse'], targeting: 'hp-lowest' })).toEqual({
+      ok: false,
+      reason: 'unavailable',
+    });
+  });
+
   it('allows multiple signals to be injected during a creative run', () => {
     const engine = new GameEngine({ mode: 'creative', seed: 5 });
 

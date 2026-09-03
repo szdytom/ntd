@@ -34,6 +34,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | [Route graphs](internals/route-graphs.md) | Multi-entrance paths and per-signal route sampling |
 | [Rendering pipeline](internals/rendering-pipeline.md) | Canvas layers, effects, bloom, distortion, and fallback |
 | [Defense archive](internals/defense-archive.md) | Defense telemetry, local persistence, statistics, and achievement rules |
+| [Orchestration tokens](internals/orchestration-tokens.md) | How creative-mode workshop configurations are encoded and applied safely |
 
 ## Modification guides
 

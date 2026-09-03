@@ -25,6 +25,7 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
   const { t } = useTranslation();
   const { view, toast } = useGameState(engine);
   const [defenseArchiveToast, setDefenseArchiveToast] = useState<ToastState | null>(null);
+  const [workshopToast, setWorkshopToast] = useState<ToastState | null>(null);
   const { game: snapshot, selectedTower: tower } = view;
   const workshopOpen = Boolean(tower && !snapshot.draft);
   useLayoutEffect(() => {
@@ -53,6 +54,11 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
     const timeout = window.setTimeout(() => setDefenseArchiveToast(null), 2_700);
     return () => window.clearTimeout(timeout);
   }, [defenseArchiveToast]);
+  useEffect(() => {
+    if (!workshopToast) return;
+    const timeout = window.setTimeout(() => setWorkshopToast(null), 2_700);
+    return () => window.clearTimeout(timeout);
+  }, [workshopToast]);
   return <div className={styles.appShell} data-app-shell>
     <div className={styles.gameConsole}>
       <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} />
@@ -63,13 +69,19 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
           view={view}
           suspended={suspended}
           onOpenArchive={onOpenArchive}
-          workshop={tower && !snapshot.draft ? <Workshop engine={engine} tower={tower} view={view} {...(onOpenThought ? { onOpenThought } : {})} /> : null}
+          workshop={tower && !snapshot.draft ? <Workshop
+            engine={engine}
+            tower={tower}
+            view={view}
+            onToast={(message, tone) => setWorkshopToast({ message, tone, nonce: Date.now() })}
+            {...(onOpenThought ? { onOpenThought } : {})}
+          /> : null}
         >
           <RewardDraft engine={engine} snapshot={snapshot} inventory={view.moduleInventory} {...(onOpenThought ? { onOpenThought } : {})} />
         </Battlefield>
       </div>
     </div>
-    <Toast toast={defenseArchiveToast ?? toast} />
+    <Toast toast={defenseArchiveToast ?? workshopToast ?? toast} />
     <TutorialGuide engine={engine} view={view} onResolved={onTutorialResolved} />
   </div>;
 }

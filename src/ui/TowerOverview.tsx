@@ -1,13 +1,9 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
+import { TARGETING_MODES } from '../game/types';
 import type { TargetingMode, Tower } from '../game/types';
 import './TowerOverview.css';
-
-const TARGETING_OPTIONS: readonly TargetingMode[] = [
-  'core-nearest', 'core-farthest', 'hp-lowest', 'hp-highest',
-  'tower-nearest', 'tower-farthest', 'density-highest', 'density-lowest',
-];
 
 export function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEngine }) {
   const { t } = useTranslation();
@@ -28,7 +24,7 @@ export function TowerOverview({ tower, engine }: { tower: Tower; engine: GameEng
     </div>
     <div className="tower-controls">
       <label><span>{t('tower.targeting')}</span><select value={tower.targeting} onChange={(event) => engine.setTargeting(event.target.value as TargetingMode)}>
-        {TARGETING_OPTIONS.map((option) => <option key={option} value={option}>{t(`tower.target.${option}`)}</option>)}
+        {TARGETING_MODES.map((option) => <option key={option} value={option}>{t(`tower.target.${option}`)}</option>)}
       </select></label>
       <button onClick={() => engine.upgradeSelectedTower()} disabled={upgradeCost === 0 || engine.status === 'wave'}
         title={upgradeCost === 0 ? t('tower.maxTitle') : t('tower.upgradeTitle')}>

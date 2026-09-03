@@ -43,12 +43,14 @@ import type { CombatEvent, CombatEventListener } from './combat-events';
 import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
+import { TARGETING_MODES } from './types';
 
 export interface TowerAttackProgressRange {
   readonly minimum: number;
   readonly maximum: number;
 }
 import type {
+  CreativeOrchestrationApplyResult,
   CreativeSetup,
   DefenseCompletedReport,
   DefenseWaveReport,
@@ -72,6 +74,7 @@ import type {
   SplitRift,
   TargetingMode,
   Tower,
+  TowerOrchestration,
   TowerProgram,
   SignalOutcomeTally,
   SignalVariantId,
@@ -1015,6 +1018,32 @@ export class GameEngine {
     tower.slots.fill(null);
     this.markConfigurationChanged();
     this.emitState();
+  }
+
+  applyCreativeOrchestration(orchestration: TowerOrchestration): CreativeOrchestrationApplyResult {
+    const tower = this.getSelectedTower();
+    if (this.rules.scenarioControls !== 'creative' || !tower) {
+      return { ok: false, reason: 'unavailable' };
+    }
+    if (orchestration.slots.length > tower.slots.length) {
+      return { ok: false, reason: 'too-many-slots' };
+    }
+    if (!TARGETING_MODES.some((mode) => mode === orchestration.targeting)) {
+      return { ok: false, reason: 'invalid-targeting' };
+    }
+    if (orchestration.slots.some((moduleId) => moduleId !== null && !this.modules.get(moduleId))) {
+      return { ok: false, reason: 'unknown-module' };
+    }
+
+    tower.slots.fill(null);
+    orchestration.slots.forEach((moduleId, index) => {
+      tower.slots[index] = moduleId;
+    });
+    tower.targeting = orchestration.targeting;
+    this.inspectTowerAchievements(tower);
+    this.markConfigurationChanged();
+    this.emitState();
+    return { ok: true };
   }
 
   startWave(): void {

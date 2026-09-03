@@ -12,5 +12,6 @@ These pages describe established behavior. They explain why the current implemen
 - [Route graphs](route-graphs.md): rooted map trees, route resolution, multi-lane spawning, and cross-branch ordering.
 - [Rendering pipeline](rendering-pipeline.md): scene composition, effect layers, emissive rendering, WebGL post-processing, and fallback.
 - [Defense archive](defense-archive.md): combat telemetry, IndexedDB records, aggregate statistics, and achievement eligibility.
+- [Orchestration tokens](orchestration-tokens.md): Arc Workshop clipboard encoding, stable identifiers, compatibility checks, and atomic application.
 
 For change recipes and verification checklists, use the [guides](../guides/README.md).

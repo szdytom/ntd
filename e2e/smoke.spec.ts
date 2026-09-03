@@ -194,6 +194,31 @@ test('compact landscape gives workshop module cards readable widths', async ({ p
   expect((await grid.locator('.module-card').first().boundingBox())?.width ?? 0).toBeGreaterThan(150);
 });
 
+test('compact portrait keeps the creative orchestration controls inside the workshop', async ({ page }) => {
+  await prepareReturningPlayer(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Creative/ }).click();
+  await page.getByRole('button', { name: /Start deployment/ }).click();
+  await clickBattlefieldAt(page, towerPad(defaultLevel, 0));
+
+  const workshop = page.getByLabel('Tower module workshop');
+  const actions = workshop.locator('.orchestration-actions');
+  const importButton = actions.getByRole('button', { name: 'Import' });
+  await expect(importButton).toBeVisible();
+  await expect(actions.getByRole('button', { name: 'Export' })).toBeVisible();
+  await expect(importButton).toHaveCSS('border-top-width', '2px');
+  await expect(importButton).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await importButton.hover();
+  await expect(importButton).toHaveCSS('background-color', 'rgb(255, 212, 71)');
+  const clearButton = actions.getByRole('button', { name: 'Clear' });
+  await clearButton.hover();
+  await expect(clearButton).toHaveCSS('background-color', 'rgb(255, 99, 122)');
+  const actionBounds = await actions.boundingBox();
+  const workshopBounds = await workshop.boundingBox();
+  expect(actionBounds?.width).toBeLessThanOrEqual(workshopBounds?.width ?? 0);
+});
+
 test('the multi-entrance sector renders its route tree and all battlefield entrances', async ({ page }) => {
   await prepareReturningPlayer(page);
   await page.goto('/');
