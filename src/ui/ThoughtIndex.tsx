@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { kindLabel } from '../i18n/presentation';
 import { thoughtRegistry, ThoughtSceneDirector } from '../thoughts';
 import { matchesThoughtSearch } from '../thoughts/search';
 import type { ThoughtChapter } from '../thoughts/types';
@@ -126,7 +127,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
             const records = visible.filter((candidate) => candidate.chapter === chapter);
             if (records.length === 0) return null;
             return <section key={chapter}>
-              <h2>{t(`thoughtIndex.chapters.${chapter}`)}</h2>
+              <h2>{kindLabel(t, chapter)}</h2>
               {records.map((candidate) => {
                 const module = director.runtime.engine.modules.require(candidate.subject.moduleId);
                 const RecordIcon = module.icon;
@@ -159,7 +160,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
             <div className="thought-module-badge" style={{ '--module-color': moduleUiColor(focalModule), '--module-tint': focalModule.meta.tint } as CSSProperties}>
               <span><FocalIcon /></span>
               <div>
-                <small>{t(snapshot.sectionTitleKey ? definition.titleKey : `thoughtIndex.chapters.${definition.chapter}`)}</small>
+                <small>{snapshot.sectionTitleKey ? t(definition.titleKey) : kindLabel(t, definition.chapter)}</small>
                 <strong key={snapshot.sectionTitleKey ?? definition.titleKey}>{t(snapshot.sectionTitleKey ?? definition.titleKey)}</strong>
               </div>
             </div>

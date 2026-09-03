@@ -75,9 +75,10 @@
 .thought-search input { width: 100%; min-height: 38px; padding: 7px 9px; border: 2px solid var(--thought-ink); border-radius: 0; color: var(--thought-ink); background: #fff; font-size: 14px; }
 
 .thought-records { height: calc(100% - 83px); overflow-y: auto; }
-.thought-records section + section { border-top: 2px solid var(--thought-ink); }
+.thought-records section { border-bottom: 2px solid var(--thought-ink); }
 .thought-records h2 { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--thought-ink); color: #625d6d; background: #f5f3f7; font-family: var(--font-mono); font-size: 12px; letter-spacing: .07em; text-transform: uppercase; }
 .thought-records button { display: grid; width: 100%; min-height: 78px; grid-template-columns: 50px minmax(0, 1fr); align-items: center; gap: 11px; padding: 10px 12px; border: 0; border-bottom: 1px solid #d9d5df; color: var(--thought-ink); background: #fff; cursor: pointer; text-align: left; transition: color .14s ease, background .14s ease; }
+.thought-records section > button:last-child { border-bottom: 0; }
 .thought-records button:hover { background: color-mix(in srgb, var(--record-accent) 9%, #fff); }
 .thought-records button.selected { color: #fff; background: var(--record-accent); }
 .thought-record-icon { --module-icon-surface: var(--record-tint); display: grid; width: 48px; height: 48px; place-items: center; border: 2px solid var(--thought-ink); color: var(--record-accent); background: var(--record-tint); transition: color .14s ease, background .14s ease, border-color .14s ease; }
@@ -119,7 +120,7 @@
 .thought-controls > button { border: 0; border-right: 2px solid var(--thought-ink); color: var(--thought-ink); background: #fff; cursor: pointer; font-size: 13px; font-weight: 800; }
 .thought-controls > button:last-child { border-right: 0; }
 .thought-controls > button:hover:not(:disabled) { background: color-mix(in srgb, var(--thought-accent) 14%, #fff); }
-.thought-controls > button:disabled { cursor: not-allowed; opacity: .38; }
+.thought-controls > button:disabled { color: color-mix(in srgb, var(--thought-ink) 38%, #fff); cursor: not-allowed; }
 .thought-controls > .thought-play { color: #fff; background: var(--thought-accent); }
 .thought-progress { --timeline-progress: 0; position: relative; display: flex; height: 22px; align-items: stretch; padding: 0 16px; border-top: 1px solid var(--thought-ink); background: var(--thought-ink); }
 .thought-progress::before,

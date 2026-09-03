@@ -130,6 +130,7 @@ test('thought index plays real scenes and returns to deployment', async ({ page 
   await expect(index).toBeVisible();
   await expect(index.getByRole('img', { name: 'Live combat demonstration' })).toBeVisible();
   await expect(index.locator('.thought-module-badge')).toBeVisible();
+  await expect(index.getByRole('button', { name: 'Previous' })).toHaveCSS('opacity', '1');
   await index.getByRole('button', { name: 'Play' }).click();
   await expect(index.getByRole('button', { name: 'Pause' })).toBeVisible();
   await index.locator('button[data-thought-id="frost"]').click();
