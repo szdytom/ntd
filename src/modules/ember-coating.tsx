@@ -84,6 +84,7 @@ export const emberCoatingModule = createDamageStatusModifier({
   id: 'ember-coating',
   icon: EmberCoatingIcon,
   color,
+  displayColor: '#e17935',
   tint: '#fff0e6',
   energy: 6,
   rarity: 'common',

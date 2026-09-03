@@ -13,6 +13,7 @@ interface DamageStatusModifierOptions {
   readonly id: string;
   readonly icon: ModuleIconComponent;
   readonly color: string;
+  readonly displayColor: string;
   readonly tint: string;
   readonly energy: number;
   readonly rarity: ModuleRarity;
@@ -32,6 +33,7 @@ export const createDamageStatusModifier = (options: DamageStatusModifierOptions)
   icon: options.icon,
   meta: {
     color: options.color,
+    displayColor: options.displayColor,
     tint: options.tint,
     energy: options.energy,
     rarity: options.rarity,

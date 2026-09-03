@@ -40,7 +40,7 @@ export const forkModule: ModuleDefinition = {
   tags: [],
   icon: ForkIcon,
   meta: {
-    color, tint: '#e1f8f1', energy: 34, rarity: 'epic',
+    color, displayColor: '#00a887', tint: '#e1f8f1', energy: 34, rarity: 'epic',
     text: {
       description: { count: stats.count },
       detail: { count: stats.count, spread: stats.spreadDegrees },

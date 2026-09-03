@@ -35,7 +35,7 @@ export const proximityMineModule: ModuleDefinition = {
   tags: ['static', 'area'],
   icon: ProximityMineIcon,
   meta: {
-    color, tint: '#ffe7ed', energy: 28, rarity: 'rare',
+    color, displayColor: '#ff3d6e', tint: '#ffe7ed', energy: 28, rarity: 'rare',
     text: { detail: { damage: stats.damage } },
   },
   effects,

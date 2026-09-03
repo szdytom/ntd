@@ -44,7 +44,7 @@ export const pulseModule: ModuleDefinition = {
   tags: ['projectile'],
   icon: PulseIcon,
   meta: {
-    color, tint: '#eeeaff', energy: 15, rarity: 'common',
+    color, displayColor: '#6c5ce7', tint: '#eeeaff', energy: 15, rarity: 'common',
     text: { detail: { damage: stats.damage } },
   },
   effects,

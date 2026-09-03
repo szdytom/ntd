@@ -34,7 +34,7 @@ export const terrainTriggerModule: ModuleDefinition = {
   tags: ['trigger'],
   icon: TerrainTriggerIcon,
   meta: {
-    color, tint: '#e8f1ff', energy: 9, rarity: 'uncommon',
+    color, displayColor: '#3a86ff', tint: '#e8f1ff', energy: 9, rarity: 'uncommon',
     text: { detail: { ticks: stats.crossingTicks, payloads: stats.payloadCount } },
   },
   effects,

@@ -7,6 +7,7 @@ import { ArchiveHeader } from './ArchiveHeader';
 import { SettingsPanel } from './SettingsPanel';
 import { ThoughtCanvas } from './ThoughtCanvas';
 import { ThoughtFlowOverlay } from './ThoughtFlowOverlay';
+import { moduleUiColor } from './modulePresentation';
 import './ThoughtIndex.css';
 
 const CHAPTERS: readonly ThoughtChapter[] = ['projectile', 'modifier', 'logic', 'trail', 'static'];
@@ -106,7 +107,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
   return <main
     ref={shellRef}
     className="thought-index-shell"
-    style={{ '--thought-accent': definition.accent } as CSSProperties}
+    style={{ '--thought-accent': moduleUiColor(focalModule) } as CSSProperties}
     tabIndex={-1}
     aria-label={t('thoughtIndex.title')}
   >
@@ -140,7 +141,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
                   data-thought-id={candidate.id}
                   className={candidate.id === selectedId ? 'selected' : ''}
                   style={{
-                    '--record-accent': candidate.accent,
+                    '--record-accent': moduleUiColor(module),
                     '--record-tint': module.meta.tint,
                   } as CSSProperties}
                   aria-current={candidate.id === selectedId ? 'page' : undefined}
@@ -161,7 +162,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
           <div className="thought-scene-window">
             <ThoughtCanvas director={director} />
             <ThoughtFlowOverlay director={director} snapshot={snapshot} />
-            <div className="thought-module-badge" style={{ '--module-color': focalModule.meta.color, '--module-tint': focalModule.meta.tint } as CSSProperties}>
+            <div className="thought-module-badge" style={{ '--module-color': moduleUiColor(focalModule), '--module-tint': focalModule.meta.tint } as CSSProperties}>
               <span><FocalIcon /></span>
               <div>
                 <small>{t(snapshot.sectionTitleKey ? definition.titleKey : `thoughtIndex.chapters.${definition.chapter}`)}</small>

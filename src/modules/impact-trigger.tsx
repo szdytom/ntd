@@ -33,7 +33,7 @@ export const impactTriggerModule: ModuleDefinition = {
   tags: ['trigger', 'reliable-trigger'],
   icon: ImpactTriggerIcon,
   meta: {
-    color, tint: '#ffe7f7', energy: 6, rarity: 'common',
+    color, displayColor: '#f15bb5', tint: '#ffe7f7', energy: 6, rarity: 'common',
     text: { detail: { carriers: stats.carrierCount, payloads: stats.payloadCount } },
   },
   effects,

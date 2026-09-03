@@ -10,7 +10,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['projectile'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 7, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 7, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({ damage: 10, speed: 100, size: 2 }),
   },
@@ -20,7 +20,7 @@ const definitions: ModuleDefinition[] = [
     tags: [],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ damageMultiplier: 2 }),
   },
@@ -30,7 +30,7 @@ const definitions: ModuleDefinition[] = [
     tags: [],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ count: 3, spread: 0.2 }),
   },
@@ -40,7 +40,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['repeat'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 4, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 4, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ repeats: 2, repeatDelay: 0.1 }),
   },
@@ -50,7 +50,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['trigger'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 5, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 5, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'impact', payloadCount: 1 }),
   },
@@ -60,7 +60,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['trigger'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 6, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 6, rarity: 'common',
     },
     compile: ({ wrapNext }) => wrapNext({ type: 'timer', payloadCount: 1, delay: 0.25 }),
   },
@@ -70,7 +70,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['static'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 8, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 8, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,
@@ -86,7 +86,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['route'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 2, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 2, rarity: 'common',
     },
     compile: ({ modifyNext }) => modifyNext({ seeking: 4 }),
   },
@@ -96,7 +96,7 @@ const definitions: ModuleDefinition[] = [
     tags: ['projectile', 'fixed-route'],
     icon: TestIcon,
     meta: {
-      color: '#ffffff', tint: '#eeeeee', energy: 3, rarity: 'common',
+      color: '#ffffff', displayColor: '#767676', tint: '#eeeeee', energy: 3, rarity: 'common',
     },
     compile: ({ emitProjectile }) => emitProjectile({
       damage: 1,

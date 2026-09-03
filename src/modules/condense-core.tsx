@@ -32,7 +32,7 @@ export const condenseCoreModule: ModuleDefinition = {
   tags: ['area'],
   icon: CondenseCoreIcon,
   meta: {
-    color, tint: '#ffe9ec', energy: 25, rarity: 'uncommon',
+    color, displayColor: '#d1495b', tint: '#ffe9ec', energy: 25, rarity: 'uncommon',
     text: { detail: { damage: stats.damagePerRadius * 100 } },
   },
   effects,

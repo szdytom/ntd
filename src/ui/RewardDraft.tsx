@@ -15,7 +15,7 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
   useEffect(() => {
     if (!draft) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    panelRef.current?.querySelector<HTMLButtonElement>('.reward-choose')?.focus();
     return () => previousFocus?.focus();
   }, [draft?.round]);
   if (!draft) return null;
@@ -39,18 +39,26 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
         const definition = engine.modules.require(moduleId);
         const thought = thoughtRegistry.forModule(moduleId);
         const Icon = definition.icon;
-        return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)} onClick={(event) => {
-          if (event.target instanceof Element && event.target.closest('button')) return;
-          engine.chooseDraftModule(moduleId);
-        }}>
-          <span className={`reward-kind ${definition.kind}`}>{rarityLabel(t, definition.meta.rarity)} · {kindLabel(t, definition.kind)}</span><span className="reward-icon"><Icon /></span>
-          <strong>{moduleName(t, definition.id)}</strong>
-          <small>{moduleDescription(t, definition)}</small>
+        return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)}>
+          <header className="reward-card-head">
+            <span className="reward-rarity">{rarityLabel(t, definition.meta.rarity)}</span>
+            <span className={`reward-kind ${definition.kind}`}>{kindLabel(t, definition.kind)}</span>
+          </header>
+          <div className="reward-card-primary">
+            <span className="reward-icon" aria-hidden="true"><Icon /></span>
+            <div className="reward-card-copy">
+              <strong>{moduleName(t, definition.id)}</strong>
+              <small>{moduleDescription(t, definition)}</small>
+            </div>
+          </div>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>
-          <em>{t('reward.owned', { energy: definition.meta.energy, count: inventory[moduleId]?.total ?? 0 })}</em>
+          <div className="reward-readouts">
+            <span><small>{t('reward.energy')}</small><strong>{definition.meta.energy}<i>⚡</i></strong></span>
+            <span><small>{t('reward.inventory')}</small><strong>{inventory[moduleId]?.total ?? 0}</strong></span>
+          </div>
           <div className="reward-card-actions">
-            <button className="reward-choose" onClick={() => engine.chooseDraftModule(moduleId)}>{t('reward.choose')}</button>
             {thought && onOpenThought ? <button className="reward-view-thought" onClick={() => onOpenThought(thought.id)}>{t('thoughtIndex.viewThought')}</button> : null}
+            <button className="reward-choose" onClick={() => engine.chooseDraftModule(moduleId)}>{t('reward.choose')}</button>
           </div>
         </article>;
       })}</div>

@@ -150,7 +150,7 @@ describe('level selection accessibility', () => {
     await user.click(screen.getByRole('button', { name: /Start deployment/ }));
 
     const draft = screen.getByRole('region', { name: 'Choose initial modules' });
-    await user.click(within(draft).getAllByRole('button')[0]);
+    await user.click(within(draft).getAllByRole('button', { name: 'Choose module' })[0]);
     expect(within(draft).getByText('2 / 3')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Open Prism Crown in the signal compendium' }));

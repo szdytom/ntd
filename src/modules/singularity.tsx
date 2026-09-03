@@ -56,7 +56,7 @@ export const singularityModule: ModuleDefinition = {
   tags: ['static', 'area'],
   icon: SingularityIcon,
   meta: {
-    color, tint: '#eee8ff', energy: 82, rarity: 'legendary',
+    color, displayColor: '#4c2a85', tint: '#eee8ff', energy: 82, rarity: 'legendary',
     text: { detail: { duration: stats.duration, radius: stats.radius } },
   },
   effects,

@@ -42,7 +42,7 @@ export const ricochetModule: ModuleDefinition = {
   tags: ['route'],
   icon: RicochetIcon,
   meta: {
-    color, tint: '#ffe7f2', energy: 19, rarity: 'rare',
+    color, displayColor: '#f72585', tint: '#ffe7f2', energy: 19, rarity: 'rare',
     text: { detail: { ricochets: stats.maxRicochets, radius: stats.radius } },
   },
   effects,

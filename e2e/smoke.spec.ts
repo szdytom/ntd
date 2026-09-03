@@ -107,7 +107,7 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   await expect(draft.getByText('QUALITY SIGNAL +1')).toBeVisible();
   await expect(abandon).toBeDisabled();
   for (let round = 1; round < defaultLevel.moduleDraft.initialPicks; round += 1) {
-    await draft.locator('.reward-card').first().click();
+    await draft.locator('.reward-choose').first().click();
   }
   await expect(draft).toHaveCount(0);
   await clickBattlefieldAt(page, towerPad(defaultLevel, 1));

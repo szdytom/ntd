@@ -33,7 +33,7 @@ export const razorModule: ModuleDefinition = {
   tags: ['projectile'],
   icon: RazorIcon,
   meta: {
-    color, tint: '#e3f8fc', energy: 24, rarity: 'rare',
+    color, displayColor: '#00a2c3', tint: '#e3f8fc', energy: 24, rarity: 'rare',
     text: { detail: { damage: stats.damage, targets: stats.maxTargets } },
   },
   effects,

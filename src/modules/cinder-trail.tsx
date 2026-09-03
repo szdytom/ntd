@@ -77,7 +77,7 @@ export const cinderTrailModule: ModuleDefinition = {
   tags: ['trail', 'area', 'status'],
   icon: CinderTrailIcon,
   meta: {
-    color, tint: '#fff0e6', energy: 28, rarity: 'uncommon',
+    color, displayColor: '#f86819', tint: '#fff0e6', energy: 28, rarity: 'uncommon',
     text: { detail: {
       damage: Math.round(stats.damageMultiplierPerSecond * 100),
       width: stats.width,

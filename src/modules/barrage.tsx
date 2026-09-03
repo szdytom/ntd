@@ -31,7 +31,7 @@ export const barrageModule: ModuleDefinition = {
   tags: ['repeat'],
   icon: BarrageIcon,
   meta: {
-    color, tint: '#ffe7ed', energy: 46, rarity: 'legendary',
+    color, displayColor: '#ef476f', tint: '#ffe7ed', energy: 46, rarity: 'legendary',
     text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } },
   },
   effects,

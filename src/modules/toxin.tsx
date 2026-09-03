@@ -34,6 +34,7 @@ export const toxinModule = createDamageStatusModifier({
   id: 'toxin',
   icon: ToxinIcon,
   color,
+  displayColor: '#54a800',
   tint: '#efffdf',
   energy: 10,
   rarity: 'uncommon',

@@ -44,7 +44,7 @@ export const focusCoreModule: ModuleDefinition = {
   tags: [],
   icon: FocusCoreIcon,
   meta: {
-    color, tint: '#ffe6ef', energy: 28, rarity: 'rare',
+    color, displayColor: '#e63973', tint: '#ffe6ef', energy: 28, rarity: 'rare',
     text: {
       description: { count: stats.projectileCount },
       detail: {

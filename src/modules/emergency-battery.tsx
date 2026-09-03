@@ -40,7 +40,7 @@ export const emergencyBatteryModule: ModuleDefinition = {
   tags: [],
   icon: EmergencyBatteryIcon,
   meta: {
-    color, tint: '#e7faef',
+    color, displayColor: '#29a964', tint: '#e7faef',
     energy: -stats.energyReduction, rarity: 'uncommon',
     text: { detail: { energy: stats.energyReduction } },
   },

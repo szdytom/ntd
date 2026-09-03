@@ -88,7 +88,7 @@ export const prismSlugModule: ModuleDefinition = {
   tags: ['projectile'],
   icon: PrismSlugIcon,
   meta: {
-    color, tint: '#e7f1ff', energy: 27, rarity: 'rare',
+    color, displayColor: '#2864c7', tint: '#e7f1ff', energy: 27, rarity: 'rare',
     text: { detail: { damage: stats.damage } },
   },
   effects,

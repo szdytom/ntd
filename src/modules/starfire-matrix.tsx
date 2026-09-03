@@ -82,6 +82,7 @@ export const starfireMatrixModule = createDamageStatusModifier({
   id: 'starfire-matrix',
   icon: StarfireMatrixIcon,
   color,
+  displayColor: '#a855f7',
   tint: STARFIRE_TINT,
   energy: 24,
   rarity: 'legendary',

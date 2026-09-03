@@ -41,6 +41,7 @@ export const ionModule: ModuleDefinition = {
     name: 'Ion Lens',
     shortName: 'Ion',
     color: '#00c2ff',
+    displayColor: '#0083ad',
     tint: '#e4f9ff',
     energy: 9,
     rarity: 'uncommon',
@@ -51,6 +52,8 @@ export const ionModule: ModuleDefinition = {
   compile: (context) => context.modifyNext({ speedMultiplier: stats.speedMultiplier }),
 };
 ```
+
+`color` belongs to combat rendering and effects. `displayColor` is the independently tunable DOM interface color and must maintain at least 3:1 contrast against white. It may match `color` when the original already passes.
 
 Do not duplicate concrete gameplay numbers in locale text. Module description and detail templates must use placeholders backed by the exact keys in `meta.text`.
 

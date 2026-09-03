@@ -87,6 +87,7 @@ export const searingSigilModule = createDamageStatusModifier({
   id: 'searing-sigil',
   icon: SearingSigilIcon,
   color,
+  displayColor: '#ff3d00',
   tint: '#ffe8e0',
   energy: 18,
   rarity: 'rare',

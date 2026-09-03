@@ -99,7 +99,7 @@ export const emberFieldModule: ModuleDefinition = {
   tags: ['static', 'area', 'status'],
   icon: EmberFieldIcon,
   meta: {
-    color, tint: '#fff1e8', energy: 18, rarity: 'common',
+    color, displayColor: '#ed7118', tint: '#fff1e8', energy: 18, rarity: 'common',
     text: { detail: {
       radius: stats.radius,
       pulseInterval: stats.pulseInterval,

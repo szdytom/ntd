@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { moduleShortName } from '../i18n/presentation';
 import type { ThoughtSceneDirector } from '../thoughts';
 import type { ThoughtOverlayTarget, ThoughtPlayerSnapshot } from '../thoughts/types';
+import { moduleUiColor } from './modulePresentation';
 import './ThoughtFlowOverlay.css';
 
 type OverlayPoint = readonly [number, number];
@@ -415,14 +416,14 @@ export function ThoughtFlowOverlay({ director, snapshot }: {
           >
             {previousModule && PreviousIcon ? <div
               className="thought-loadout-module outgoing"
-              style={{ '--chip-color': previousModule.meta.color, '--chip-tint': previousModule.meta.tint } as CSSProperties}
+              style={{ '--chip-color': moduleUiColor(previousModule), '--chip-tint': previousModule.meta.tint } as CSSProperties}
               aria-hidden="true"
             >
               <span className="thought-loadout-module-icon"><PreviousIcon /></span><strong>{moduleShortName(t, previousModule.id)}</strong>
             </div> : null}
             <div
               className={`thought-loadout-module${activeClass}${replacement ? ' incoming' : ''}`}
-              style={{ '--chip-color': module.meta.color, '--chip-tint': module.meta.tint } as CSSProperties}
+              style={{ '--chip-color': moduleUiColor(module), '--chip-tint': module.meta.tint } as CSSProperties}
             >
               <span className="thought-loadout-module-icon"><Icon /></span><strong>{moduleShortName(t, module.id)}</strong>
             </div>
@@ -446,7 +447,7 @@ export function ThoughtFlowOverlay({ director, snapshot }: {
             key={`${module.id}-${index}`}
             data-thought-slot={index}
             className={snapshot.highlightSlots.includes(index) ? 'active' : undefined}
-            style={{ '--chip-color': module.meta.color } as CSSProperties}
+            style={{ '--chip-color': moduleUiColor(module) } as CSSProperties}
           ><Icon /></span>;
         })}
       </div>)

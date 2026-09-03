@@ -96,6 +96,9 @@ describe('thought index entry points', () => {
     const openThought = vi.fn();
     render(<RewardDraft engine={engine} snapshot={engine.getSnapshot()} inventory={engine.getViewSnapshot().moduleInventory} onOpenThought={openThought} />);
     const panel = screen.getByRole('region', { name: 'Choose initial modules' });
+    expect(within(panel).getAllByRole('button', { name: 'Choose module' })).toHaveLength(4);
+    await user.click(panel.querySelector('.reward-card') as HTMLElement);
+    expect(engine.getSnapshot().draft).toEqual(before);
     await user.click(within(panel).getAllByRole('button', { name: 'View thought' })[0] as HTMLElement);
     expect(openThought).toHaveBeenCalledOnce();
     expect(engine.getSnapshot().draft).toEqual(before);

@@ -41,7 +41,7 @@ export const overdriveModule: ModuleDefinition = {
   tags: [],
   icon: OverdriveIcon,
   meta: {
-    color, tint: '#ffebeb', energy: 8, rarity: 'uncommon',
+    color, displayColor: '#ff5c5c', tint: '#ffebeb', energy: 8, rarity: 'uncommon',
     text: { detail: {
       damage: Math.round((stats.damageMultiplier - 1) * 100),
       speed: Math.round((stats.speedMultiplier - 1) * 100),

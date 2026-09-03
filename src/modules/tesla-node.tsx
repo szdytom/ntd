@@ -60,7 +60,7 @@ export const teslaNodeModule: ModuleDefinition = {
   tags: ['static', 'area'],
   icon: TeslaNodeIcon,
   meta: {
-    color, tint: '#e2f8ff', energy: 22, rarity: 'legendary',
+    color, displayColor: '#00a0d6', tint: '#e2f8ff', energy: 22, rarity: 'legendary',
     text: { detail: {
       damage: stats.damage,
       chainDamage: Math.round(stats.damage * stats.chainDamageMultiplier),

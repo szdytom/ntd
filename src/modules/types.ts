@@ -34,7 +34,10 @@ export interface ModuleIconProps { className?: string; }
 export type ModuleIconComponent = ComponentType<ModuleIconProps>;
 
 export interface ModuleMeta {
+  /** Original identity color used by combat rendering and effects. */
   color: string;
+  /** Accessible identity color used by DOM interface presentation. */
+  displayColor: string;
   tint: string;
   energy: number;
   rarity: ModuleRarity;

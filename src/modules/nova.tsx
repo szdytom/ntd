@@ -38,7 +38,7 @@ export const novaModule: ModuleDefinition = {
   tags: ['projectile', 'area'],
   icon: NovaIcon,
   meta: {
-    color, tint: '#fff1df', energy: 30, rarity: 'uncommon',
+    color, displayColor: '#d28237', tint: '#fff1df', energy: 30, rarity: 'uncommon',
     text: { detail: { damage: stats.damage, radius: stats.splash } },
   },
   effects,

@@ -32,7 +32,7 @@ export const frostModule: ModuleDefinition = {
   tags: ['status'],
   icon: FrostIcon,
   meta: {
-    color, tint: '#e4f7ff', energy: 5, rarity: 'common',
+    color, displayColor: '#009fdc', tint: '#e4f7ff', energy: 5, rarity: 'common',
     text: { detail: { slow: Math.round(stats.slow * 100), duration: stats.duration } },
   },
   effects,

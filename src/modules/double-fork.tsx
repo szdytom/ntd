@@ -44,7 +44,7 @@ export const doubleForkModule: ModuleDefinition = {
   tags: [],
   icon: DoubleForkIcon,
   meta: {
-    color, tint: '#e1f8f1', energy: 18, rarity: 'rare',
+    color, displayColor: '#20a486', tint: '#e1f8f1', energy: 18, rarity: 'rare',
     text: {
       description: { count: stats.count },
       detail: { count: stats.count, spread: stats.spreadDegrees },

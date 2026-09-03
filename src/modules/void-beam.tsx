@@ -136,7 +136,7 @@ export const voidBeamModule: ModuleDefinition = {
   tags: ['projectile', 'fixed-route', 'trail-carrier'],
   icon: VoidBeamIcon,
   meta: {
-    color, tint: '#e9ffed', energy: 21, rarity: 'uncommon',
+    color, displayColor: '#61a36c', tint: '#e9ffed', energy: 21, rarity: 'uncommon',
     text: { detail: { power: stats.damage, speed: stats.speed } },
   },
   effects,
