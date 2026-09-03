@@ -225,7 +225,17 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive, onOp
               <strong>{t('thoughtIndex.entry')}</strong>
             </button>
             <button className="defense-archive-entry" onClick={onOpenDefenseArchive} aria-label={t('defenseArchive.entryAria')}>
-              <span className="defense-archive-entry-marks" aria-hidden="true"><i /><i /><i /><i /></span>
+              <span className="defense-archive-entry-marks" aria-hidden="true">
+                <svg viewBox="0 0 44 30">
+                  <path className="defense-archive-sheet back" d="M8 1.5h25l8 8v16H8z" />
+                  <path className="defense-archive-sheet middle" d="M4.5 4.5h25l8 8v16h-33z" />
+                  <path className="defense-archive-sheet front" d="M1.5 7.5h25l8 8v13h-33z" />
+                  <path className="defense-archive-index" d="M6 12v12" />
+                  <path className="defense-archive-data primary" d="M12 13.5h11" />
+                  <path className="defense-archive-data secondary" d="M12 18h16" />
+                  <path className="defense-archive-data tertiary" d="M12 22.5h8" />
+                </svg>
+              </span>
               <strong>{t('defenseArchive.entry')}</strong>
             </button>
             <button className="signal-archive-entry" onClick={onOpenArchive} aria-label={t('signalArchive.entryAria')}>

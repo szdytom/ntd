@@ -74,6 +74,8 @@
   background: color-mix(in srgb, var(--purple) 8%, #fff);
 }
 
+.signal-archive-entry { gap: 16px; }
+
 .thought-index-entry-trace { display: flex; width: 30px; align-items: center; }
 .thought-index-entry-trace i { display: block; width: 9px; height: 9px; border: 2px solid var(--ink); transform: rotate(45deg); background: #fff; }
 .thought-index-entry-trace i + i { margin-left: 1px; }
@@ -101,21 +103,24 @@
 .signal-archive-entry > strong { font-size: 13px; white-space: nowrap; }
 
 .defense-archive-entry-marks {
-  display: flex;
-  width: 36px;
-  height: 25px;
-  align-items: flex-end;
-  gap: 3px;
-  padding: 3px 4px;
-  border: 1px solid var(--select-ink);
-  background: #f4f1ff;
+  display: block;
+  width: 39px;
+  height: 27px;
+  flex: none;
 }
 
-.defense-archive-entry-marks i { width: 4px; background: var(--purple); }
-.defense-archive-entry-marks i:nth-child(1) { height: 9px; }
-.defense-archive-entry-marks i:nth-child(2) { height: 17px; background: var(--mint); }
-.defense-archive-entry-marks i:nth-child(3) { height: 12px; background: var(--coral); }
-.defense-archive-entry-marks i:nth-child(4) { height: 19px; background: var(--yellow); }
+.defense-archive-entry-marks svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.defense-archive-sheet { stroke: var(--select-ink); stroke-linejoin: bevel; stroke-width: 1.5; }
+.defense-archive-sheet.back { fill: var(--purple); }
+.defense-archive-sheet.middle { fill: var(--yellow); }
+.defense-archive-sheet.front { fill: #fff; }
+.defense-archive-index,
+.defense-archive-data { fill: none; stroke-linecap: square; }
+.defense-archive-index { stroke: var(--mint); stroke-width: 4; }
+.defense-archive-data { stroke-width: 2; }
+.defense-archive-data.primary { stroke: var(--purple); }
+.defense-archive-data.secondary { stroke: var(--coral); }
+.defense-archive-data.tertiary { stroke: var(--mint); }
 .defense-archive-entry > strong { font-size: 13px; white-space: nowrap; }
 
 .mission-controls {
@@ -406,7 +411,7 @@
   .signal-archive-entry,
   .thought-index-entry { width: 42px; padding: 0 7px; }
   .defense-archive-entry { width: 42px; padding: 0 6px; }
-  .defense-archive-entry-marks { width: 27px; gap: 2px; padding-inline: 3px; }
+  .defense-archive-entry-marks { width: 28px; height: 21px; }
   .defense-archive-entry > strong { display: none; }
   .signal-archive-entry-spectrum { width: 26px; }
   .signal-archive-entry > strong { display: none; }
