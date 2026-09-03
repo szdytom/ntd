@@ -136,6 +136,7 @@
 }
 
 .thought-loadout-module.active > span {
+  --module-icon-surface: var(--chip-color);
   color: #fff;
   background: transparent;
 }
