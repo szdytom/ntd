@@ -70,11 +70,17 @@ export const overdriveThought = defineModuleThought(overdriveModule, {
     }),
     defineBeat({
       id: 'show-comparison-loadouts', captionKey: copy.section, flow: 'compile',
-      cues: [timedCue('show-both-loadouts', 3.2, {
-        sectionTitleKey: copy.section,
-        overlay: { type: 'loadouts', targets: loadoutTargets },
-        loadoutMode: 'dialog', loadoutVisibleSlots: 2,
-      })],
+      cues: [
+        timedCue('show-overdrive-modules', 0.75, {
+          sectionTitleKey: copy.section,
+          overlay: { type: 'loadouts', targets: loadoutTargets },
+          loadoutMode: 'dialog', loadoutVisibleSlots: 1,
+        }),
+        timedCue('show-overdrive-carriers', 2.45, {
+          overlay: { type: 'loadouts', targets: loadoutTargets },
+          loadoutVisibleSlots: 2,
+        }),
+      ],
     }),
     defineBeat({
       id: 'explain-overdrive', captionKey: copy.beatEmpower, flow: 'compile',

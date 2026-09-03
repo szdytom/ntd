@@ -403,6 +403,9 @@ export function ThoughtFlowOverlay({ director, snapshot }: {
           const replacement = snapshot.loadoutReplacements.find((candidate) => (
             candidate.towerIndex === target.towerIndex && candidate.slot === index
           ));
+          const addition = snapshot.loadoutAdditions.some((candidate) => (
+            candidate.towerIndex === target.towerIndex && candidate.slot === index
+          ));
           const previousModule = replacement
             ? director.runtime.engine.modules.require(replacement.from)
             : null;
@@ -411,7 +414,7 @@ export function ThoughtFlowOverlay({ director, snapshot }: {
           return <div
             ref={fitLoadoutModule}
             data-thought-slot={index}
-            className={`thought-loadout-module-reveal${replacement ? ' replacing' : ''}`}
+            className={`thought-loadout-module-reveal${addition ? ' adding' : ''}${replacement ? ' replacing' : ''}`}
             key={`loadout-slot-${index}`}
           >
             {previousModule && PreviousIcon ? <div

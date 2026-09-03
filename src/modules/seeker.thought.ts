@@ -5,6 +5,7 @@ import {
   finishRun,
   fireCapturedRun,
   introduceScene,
+  resetWithLoadoutReplacement,
   settleTowerForReset,
   showPause,
   timedCue,
@@ -74,31 +75,7 @@ export const seekerThought = defineModuleThought(seekerModule, {
     }),
     defineBeat({
       id: 'construct-fork-baseline', captionKey: copy.sections.fork, flow: 'compile',
-      cues: [
-        timedCue('restore-prediction-time', 0.8, {
-          actions: [{ type: 'set-tower-casting', enabled: true }],
-          transition: { simulationRate: 1 }, ease: 'smooth',
-        }),
-        waitCue('wait-prediction-target-clear', {
-          waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
-        }),
-        timedCue('fade-prediction-target', 0.45, {
-          actions: [{ type: 'set-tower-casting', enabled: false }],
-          transition: { signalOpacity: 0 }, ease: 'ease-out',
-        }),
-        timedCue('dismiss-prediction-compact', 0.35, {
-          actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
-        }),
-        settleTowerForReset('settle-prediction-rotation'),
-        timedCue('configure-fork-baseline', 0.2, {
-          actions: [{ type: 'setup', slots: ['fork', 'pulse'] }], loadoutMode: 'hidden',
-        }),
-        timedCue('show-fork-baseline', 3.2, {
-          sectionTitleKey: copy.sections.fork,
-          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
-          loadoutMode: 'dialog', loadoutVisibleSlots: 2,
-        }),
-      ],
+      cues: resetWithLoadoutReplacement('fork-baseline', ['fork', 'pulse'], copy.sections.fork),
     }),
     defineBeat({
       id: 'fire-fork-baseline', captionKey: copy.beats.split, flow: 'cast',

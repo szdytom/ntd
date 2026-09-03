@@ -190,10 +190,16 @@ export const cinderTrailThought = defineModuleThought(cinderTrailModule, {
     }),
     defineBeat({
       id: 'show-first-comparison', captionKey: copy.sections.carrier, flow: 'compile',
-      cues: [timedCue('show-first-comparison-loadouts', 3.2, {
-        overlay: { type: 'loadouts', targets: comparisonLoadouts },
-        loadoutMode: 'dialog', loadoutVisibleSlots: 2,
-      })],
+      cues: [
+        timedCue('show-first-comparison-trails', 0.75, {
+          overlay: { type: 'loadouts', targets: comparisonLoadouts },
+          loadoutMode: 'dialog', loadoutVisibleSlots: 1,
+        }),
+        timedCue('show-first-comparison-carriers', 2.45, {
+          overlay: { type: 'loadouts', targets: comparisonLoadouts },
+          loadoutVisibleSlots: 2,
+        }),
+      ],
     }),
     defineBeat({
       id: 'run-first-comparison', captionKey: copy.sections.carrier, flow: 'trail',

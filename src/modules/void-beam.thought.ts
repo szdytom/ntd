@@ -96,7 +96,14 @@ export const voidBeamThought = defineModuleThought(voidBeamModule, {
     }),
     defineBeat({
       id: 'construct-trail', captionKey: copy.sections.trail, flow: 'compile',
-      cues: resetTo('trail', ['cinder-trail', 'void-beam'], copy.sections.trail, 1),
+      cues: resetTo(
+        'trail',
+        ['cinder-trail', 'void-beam'],
+        copy.sections.trail,
+        1,
+        'right',
+        { start: 1, count: 1 },
+      ),
     }),
     defineBeat({
       id: 'show-trail-loadout', captionKey: copy.beats.trail, flow: 'trail',

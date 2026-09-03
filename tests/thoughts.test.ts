@@ -113,6 +113,41 @@ describe('thought registry', () => {
     expect(violations).toEqual([]);
   });
 
+  it('shows the first dialog module immediately and marks only later additions', () => {
+    const definition = thoughtRegistry.require('pulse');
+    const director = new ThoughtSceneDirector(definition);
+    const firstDialog = definition.beats.findIndex((beat) => beat.id === 'show-pulse');
+    const carrierDialog = definition.beats.findIndex((beat) => beat.id === 'construct-carrier');
+
+    director.goTo(firstDialog);
+    expect(director.getSnapshot().cueId).toBe('show-pulse-loadout');
+    expect(director.getSnapshot().loadoutAdditions).toEqual([]);
+
+    director.goTo(carrierDialog);
+    runUntilCue(director, 'insert-carrier-frost');
+    expect(director.getSnapshot().loadoutAdditions).toEqual([{
+      towerIndex: 0,
+      slot: 0,
+      moduleId: 'frost',
+    }]);
+    director.dispose();
+  });
+
+  it('opens a substantial rebuild by immediately animating its first module', () => {
+    const definition = thoughtRegistry.require('focus-core');
+    const director = new ThoughtSceneDirector(definition);
+    const chainDialog = definition.beats.findIndex((beat) => beat.id === 'construct-chain');
+
+    director.goTo(chainDialog);
+    runUntilCue(director, 'show-chain-loadout');
+    expect(director.getSnapshot().loadoutAdditions).toEqual([{
+      towerIndex: 0,
+      slot: 0,
+      moduleId: 'arcbolt',
+    }]);
+    director.dispose();
+  });
+
   it('keeps signals alive while their fade-out transition is running', () => {
     const violations: string[] = [];
 

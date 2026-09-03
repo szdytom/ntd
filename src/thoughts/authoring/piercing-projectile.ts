@@ -5,7 +5,7 @@ import { defineBeat } from './beats';
 import { timedCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, resetTo, showPause } from './sequences';
+import { finishRun, fireCapturedRun, resetTo, resetWithLoadoutReplacement, showPause } from './sequences';
 
 export interface PiercingProjectileCopy {
   readonly title: string;
@@ -93,7 +93,14 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'construct-guide', captionKey: copy.sectionGuide, flow: 'compile',
-        cues: resetTo('guide', ['seeker', module.id], copy.sectionGuide, 1, 'top-right'),
+        cues: resetTo(
+          'guide',
+          ['seeker', module.id],
+          copy.sectionGuide,
+          1,
+          'top-right',
+          { start: 1, count: 1 },
+        ),
       }),
       defineBeat({
         id: 'show-guide-loadout', captionKey: copy.beatGuide, flow: 'compile',
@@ -118,14 +125,11 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'construct-trail', captionKey: copy.sectionTrail, flow: 'compile',
-        cues: resetTo('trail', ['cinder-trail', module.id], copy.sectionTrail, 1, 'top-right'),
+        cues: resetWithLoadoutReplacement('trail', ['cinder-trail', module.id], copy.sectionTrail, 'top-right'),
       }),
       defineBeat({
         id: 'show-trail-loadout', captionKey: copy.beatTrail, flow: 'trail',
         cues: [
-          timedCue('show-trail-projectile', 2.45, {
-            overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2,
-          }),
           explainLoadoutSlot('point-trail-projectile', 4.2, copy.beatTrail, 1),
         ],
       }),
@@ -144,14 +148,11 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'compile',
-        cues: resetTo('focus', ['focus-core', module.id], copy.sectionFocus, 1, 'top-right'),
+        cues: resetWithLoadoutReplacement('focus', ['focus-core', module.id], copy.sectionFocus, 'top-right'),
       }),
       defineBeat({
         id: 'show-focus-loadout', captionKey: copy.beatFocus, flow: 'focus',
         cues: [
-          timedCue('show-focused-projectile', 2.45, {
-            overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2,
-          }),
           explainLoadoutSlot('point-focused-projectile', 4.2, copy.beatFocus, 1),
         ],
       }),

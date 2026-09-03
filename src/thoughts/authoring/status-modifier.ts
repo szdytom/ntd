@@ -5,9 +5,15 @@ import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import type { ThoughtDefinition } from '../types';
 import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
-import { timedCue, waitCue } from './cues';
+import { LOADOUT_ADDITION_CADENCE, timedCue, waitCue } from './cues';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, resetTo, settleTowerForReset, showPause } from './sequences';
+import {
+  finishRun,
+  fireCapturedRun,
+  resetWithLoadoutReplacement,
+  settleTowerForReset,
+  showPause,
+} from './sequences';
 
 export interface StatusModifierCopy {
   readonly title: string;
@@ -107,13 +113,7 @@ export const buildStatusModifierThought = (options: StatusModifierOptions): Thou
         id: 'construct-area',
         captionKey: copy.sectionArea,
         flow: 'compile',
-        cues: resetTo('area', [module.id, areaCarrier], copy.sectionArea, 1),
-      }),
-      defineBeat({
-        id: 'reveal-area',
-        captionKey: copy.sectionArea,
-        flow: 'compile',
-        cues: [timedCue('show-area-carrier', 2.45, { overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2 })],
+        cues: resetWithLoadoutReplacement('area', [module.id, areaCarrier], copy.sectionArea),
       }),
       defineBeat({
         id: 'fire-area',
@@ -156,17 +156,18 @@ export const buildStatusModifierThought = (options: StatusModifierOptions): Thou
             actions: [{ type: 'setup', slots: ['impact-trigger', 'pulse', module.id, staticCarrier] }],
             loadoutMode: 'hidden',
           }),
-          timedCue('show-static-trigger', 0.65, {
+          timedCue('show-static-trigger', LOADOUT_ADDITION_CADENCE, {
             sectionTitleKey: copy.sectionStatic,
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog',
             loadoutVisibleSlots: 1,
+            animateLoadoutChanges: true,
           }),
-          timedCue('show-static-carrier', 0.55, {
+          timedCue('show-static-carrier', LOADOUT_ADDITION_CADENCE, {
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutVisibleSlots: 2,
           }),
-          timedCue('show-static-modifier', 0.55, {
+          timedCue('show-static-modifier', LOADOUT_ADDITION_CADENCE, {
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutVisibleSlots: 3,
           }),

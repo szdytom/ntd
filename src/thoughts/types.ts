@@ -14,6 +14,11 @@ export interface ThoughtLoadoutReplacement {
   readonly from: ModuleId;
   readonly to: ModuleId;
 }
+export interface ThoughtLoadoutAddition {
+  readonly towerIndex: number;
+  readonly slot: number;
+  readonly moduleId: ModuleId;
+}
 export interface ThoughtLoadoutTarget {
   readonly towerIndex: number;
   readonly placement: ThoughtLoadoutPlacement;
@@ -158,6 +163,7 @@ export interface ThoughtPlayerSnapshot {
   readonly loadoutTargets: readonly ThoughtLoadoutTarget[];
   readonly loadoutVisibleSlots?: number;
   readonly loadoutVisibleRange?: { readonly start: number; readonly count: number };
+  readonly loadoutAdditions: readonly ThoughtLoadoutAddition[];
   readonly loadoutReplacements: readonly ThoughtLoadoutReplacement[];
   readonly placementBurst: boolean;
   readonly placementBurstTowerIndex: number;

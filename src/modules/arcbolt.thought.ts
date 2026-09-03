@@ -6,6 +6,7 @@ import {
   fireCapturedRun,
   introduceScene,
   resetTo,
+  resetWithLoadoutReplacement,
   showPause,
   timedCue,
 } from '../thoughts/authoring';
@@ -77,7 +78,14 @@ export const arcboltThought = defineModuleThought(arcboltModule, {
     }),
     defineBeat({
       id: 'construct-modifier', captionKey: copy.sections.modifier, flow: 'compile',
-      cues: resetTo('modifier', ['frost', 'arcbolt'], copy.sections.modifier, 1),
+      cues: resetTo(
+        'modifier',
+        ['frost', 'arcbolt'],
+        copy.sections.modifier,
+        1,
+        'right',
+        { start: 1, count: 1 },
+      ),
     }),
     defineBeat({
       id: 'show-modifier-loadout', captionKey: copy.beats.modifier, flow: 'compile',
@@ -106,14 +114,11 @@ export const arcboltThought = defineModuleThought(arcboltModule, {
     }),
     defineBeat({
       id: 'construct-focus', captionKey: copy.sections.focus, flow: 'compile',
-      cues: resetTo('focus', ['focus-core', 'arcbolt'], copy.sections.focus, 1),
+      cues: resetWithLoadoutReplacement('focus', ['focus-core', 'arcbolt'], copy.sections.focus),
     }),
     defineBeat({
       id: 'show-focus-loadout', captionKey: copy.beats.focus, flow: 'focus',
       cues: [
-        timedCue('show-focused-arcbolt', 2.45, {
-          overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2,
-        }),
         explainLoadoutSlot('point-focused-arcbolt', 4.2, copy.beats.focus, 1),
       ],
     }),

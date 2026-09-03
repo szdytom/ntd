@@ -1,6 +1,6 @@
 import type { CombatEvent } from '../game/combat-events';
 import { CombatRuntime } from '../game/combat-runtime';
-import type { Projectile, Signal, SpaceRift } from '../game/types';
+import type { ModuleId, Projectile, Signal, SpaceRift } from '../game/types';
 import type {
   ThoughtAction,
   ThoughtBeat,
@@ -43,6 +43,44 @@ const matchesEvent = (event: CombatEvent, matcher: ThoughtEventMatcher): boolean
 const targetForFlow = (flow: ThoughtBeat['flow']): ThoughtOverlayTarget => (
   flow === 'compile' || flow === 'focus' ? 'tower' : 'signal'
 );
+
+interface VisibleLoadoutEntry {
+  readonly moduleId: ModuleId;
+  readonly slot: number;
+}
+
+const addedLoadoutEntries = (
+  previous: readonly VisibleLoadoutEntry[],
+  current: readonly VisibleLoadoutEntry[],
+): readonly VisibleLoadoutEntry[] => {
+  const lengths = Array.from(
+    { length: previous.length + 1 },
+    () => Array<number>(current.length + 1).fill(0),
+  );
+  for (let previousIndex = previous.length - 1; previousIndex >= 0; previousIndex -= 1) {
+    for (let currentIndex = current.length - 1; currentIndex >= 0; currentIndex -= 1) {
+      lengths[previousIndex]![currentIndex] = previous[previousIndex]!.moduleId === current[currentIndex]!.moduleId
+        ? 1 + lengths[previousIndex + 1]![currentIndex + 1]!
+        : Math.max(lengths[previousIndex + 1]![currentIndex]!, lengths[previousIndex]![currentIndex + 1]!);
+    }
+  }
+
+  const retainedCurrentIndices = new Set<number>();
+  let previousIndex = 0;
+  let currentIndex = 0;
+  while (previousIndex < previous.length && currentIndex < current.length) {
+    if (previous[previousIndex]!.moduleId === current[currentIndex]!.moduleId) {
+      retainedCurrentIndices.add(currentIndex);
+      previousIndex += 1;
+      currentIndex += 1;
+    } else if (lengths[previousIndex + 1]![currentIndex]! >= lengths[previousIndex]![currentIndex + 1]!) {
+      previousIndex += 1;
+    } else {
+      currentIndex += 1;
+    }
+  }
+  return current.filter((_, index) => !retainedCurrentIndices.has(index));
+};
 
 const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
 const withoutTowerRotation = (scene: ThoughtSceneValues): ThoughtSceneValues => {
@@ -159,6 +197,7 @@ export class ThoughtSceneDirector {
   private loadoutTargets: ThoughtPlayerSnapshot['loadoutTargets'] = [{ towerIndex: 0, placement: 'right' }];
   private loadoutVisibleSlots: number | undefined;
   private loadoutVisibleRange: ThoughtPlayerSnapshot['loadoutVisibleRange'];
+  private loadoutAdditions: ThoughtPlayerSnapshot['loadoutAdditions'] = [];
   private loadoutReplacements: ThoughtPlayerSnapshot['loadoutReplacements'] = [];
   private placementBurst = false;
   private placementBurstTowerIndex = 0;
@@ -276,6 +315,7 @@ export class ThoughtSceneDirector {
       loadoutMode: this.loadoutMode,
       loadoutPlacement: this.loadoutPlacement,
       loadoutTargets: this.loadoutTargets,
+      loadoutAdditions: this.loadoutAdditions,
       loadoutReplacements: this.loadoutReplacements,
       ...(this.loadoutVisibleSlots === undefined ? {} : { loadoutVisibleSlots: this.loadoutVisibleSlots }),
       ...(this.loadoutVisibleRange ? { loadoutVisibleRange: this.loadoutVisibleRange } : {}),
@@ -441,6 +481,11 @@ export class ThoughtSceneDirector {
     this.eventMatched = false;
     this.eventMatchCount = 0;
     const cue = this.currentCue();
+    const previousLoadoutMode = this.loadoutMode;
+    const previousVisibleLoadouts = new Map(this.loadoutTargets.map(({ towerIndex }) => [
+      towerIndex,
+      this.visibleLoadoutEntries(towerIndex),
+    ]));
     const previousLoadouts = this.runtime.engine.towers.map((tower) => [...tower.slots]);
     const transitionsTowerEnergy = cue.transition?.towerEnergyRatio !== undefined
       || cue.transition?.towerEnergyRatios !== undefined;
@@ -514,6 +559,18 @@ export class ThoughtSceneDirector {
           : [];
       }))
       : [];
+    const replacementSlots = new Set(this.loadoutReplacements.map(({ towerIndex, slot }) => `${towerIndex}:${slot}`));
+    this.loadoutAdditions = this.loadoutMode === 'dialog'
+      && (previousLoadoutMode === 'dialog' || cue.animateLoadoutChanges === true)
+      ? this.loadoutTargets.flatMap(({ towerIndex }) => addedLoadoutEntries(
+        previousLoadoutMode === 'dialog' ? previousVisibleLoadouts.get(towerIndex) ?? [] : [],
+        this.visibleLoadoutEntries(towerIndex),
+      ).filter(({ slot }) => !replacementSlots.has(`${towerIndex}:${slot}`)).map(({ moduleId, slot }) => ({
+        towerIndex,
+        slot,
+        moduleId,
+      })))
+      : [];
     if (cue.waitFor) {
       const matchedEvents = this.events.filter((event) => matchesEvent(event, cue.waitFor!));
       this.eventMatchCount = matchedEvents.length;
@@ -578,6 +635,18 @@ export class ThoughtSceneDirector {
     }
   }
 
+  private visibleLoadoutEntries(towerIndex: number): readonly VisibleLoadoutEntry[] {
+    const entries = this.runtime.engine.towers[towerIndex]?.slots.flatMap((moduleId, slot) => (
+      moduleId ? [{ moduleId, slot }] : []
+    )) ?? [];
+    return this.loadoutVisibleRange
+      ? entries.slice(
+        this.loadoutVisibleRange.start,
+        this.loadoutVisibleRange.start + this.loadoutVisibleRange.count,
+      )
+      : entries.slice(0, this.loadoutVisibleSlots ?? entries.length);
+  }
+
   private resetSceneState(): void {
     this.sceneValues = { ...DEFAULT_SCENE, ...this.definition.initialScene };
     this.cueStartScene = this.sceneValues;
@@ -587,6 +656,7 @@ export class ThoughtSceneDirector {
     this.loadoutTargets = [{ towerIndex: 0, placement: 'right' }];
     this.loadoutVisibleSlots = undefined;
     this.loadoutVisibleRange = undefined;
+    this.loadoutAdditions = [];
     this.loadoutReplacements = [];
     this.placementBurst = false;
     this.placementBurstTowerIndex = 0;

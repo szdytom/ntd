@@ -51,7 +51,9 @@ Avoid fixed-time guesses for kills, hits, energy refill, or travel through range
 
 For loadout dialogue bubbles:
 
-- reveal modules in sequence when teaching composition;
+- show the first module immediately, then animate each added module when teaching composition;
+- when a new loadout differs by one insertion, removal, or replacement, preserve the previous presentation and animate that edit;
+- when it differs substantially, open the dialog while immediately adding the first module, then add the rest one at a time in program order; do not hold on an empty dialog;
 - show an existing loadout immediately when the story starts from a known configuration;
 - animate replacement from the old module to the new module;
 - expand or contract the bubble smoothly;

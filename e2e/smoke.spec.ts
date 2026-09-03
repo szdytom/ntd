@@ -139,6 +139,18 @@ test('thought index plays real scenes and returns to deployment', async ({ page 
   await index.getByRole('button', { name: 'Play' }).click();
   await index.locator('.thought-scene-overlay[data-cue="replace-area-carrier"]').waitFor();
   await expect(index.locator('.thought-loadout-module--incoming')).toHaveCSS('display', 'grid');
+  await index.locator('.thought-progress > button').nth(10).click();
+  await index.locator('.thought-scene-overlay[data-cue="show-static-payload"]').waitFor();
+  const revealedModules = index.locator('.thought-loadout-dialog .thought-loadout-module-reveal');
+  await expect(revealedModules).toHaveCount(4);
+  await revealedModules.last().evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
+  const moduleGaps = await revealedModules.evaluateAll((elements) => elements.slice(1).map((element, index) => {
+    const previous = elements[index]!.getBoundingClientRect();
+    return element.getBoundingClientRect().left - previous.right;
+  }));
+  expect(Math.max(...moduleGaps) - Math.min(...moduleGaps)).toBeLessThan(0.5);
   await index.locator('.thought-transcript summary').click();
   await expect(index.locator('.thought-transcript li').first()).toBeVisible();
   await index.getByRole('button', { name: 'Return to deployment' }).click();

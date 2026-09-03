@@ -93,10 +93,16 @@
   --loadout-module-width: var(--loadout-module-min-width);
   position: relative;
   z-index: 2;
-  width: 0;
+  width: var(--loadout-module-width);
+  margin-left: var(--module-gap);
   min-height: 54px;
   flex: 0 0 auto;
   overflow: hidden;
+  opacity: 1;
+}
+
+.thought-loadout-module-reveal.adding {
+  width: 0;
   opacity: 0;
   animation: thought-loadout-module-reveal .58s cubic-bezier(.16, .82, .24, 1) both;
 }
@@ -340,14 +346,14 @@
 @media (prefers-reduced-motion: reduce) {
   .thought-placement-burst { display: none; }
   .thought-loadout-dialog,
-  .thought-loadout-module-reveal,
+  .thought-loadout-module-reveal.adding,
   .thought-loadout-module--outgoing,
   .thought-loadout-module--incoming,
   .thought-compact-loadout,
   .thought-overlay-line .thought-line-reveal,
   .thought-overlay-line .thought-line-target,
   .thought-scene-overlay .thought-scene-callout { animation: none; opacity: 1; }
-  .thought-loadout-module-reveal { width: var(--loadout-module-width); margin-left: var(--module-gap); }
+  .thought-loadout-module-reveal.adding { width: var(--loadout-module-width); margin-left: var(--module-gap); }
   .thought-loadout-module--outgoing { display: none; }
   .thought-overlay-line .thought-line-reveal { stroke-dashoffset: 0; }
 }

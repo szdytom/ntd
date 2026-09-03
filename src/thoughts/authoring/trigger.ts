@@ -6,7 +6,7 @@ import {
   straightRangePassScene,
 } from '../scenes';
 import { defineBeat } from './beats';
-import { timedCue, waitCue } from './cues';
+import { LOADOUT_ADDITION_CADENCE, timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
@@ -48,12 +48,12 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
       defineBeat({
         id: 'show-primary-loadout', captionKey: copy.sectionPrimary, flow: 'compile',
         cues: [
-          timedCue('show-trigger', 0.65, {
+          timedCue('show-trigger', LOADOUT_ADDITION_CADENCE, {
             sectionTitleKey: copy.sectionPrimary,
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog', loadoutVisibleSlots: 1,
           }),
-          timedCue('show-carrier', 0.55, {
+          timedCue('show-carrier', LOADOUT_ADDITION_CADENCE, {
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2,
           }),
           timedCue('show-payload', 2.2, {
@@ -242,12 +242,12 @@ export const buildExpirationTriggerThought = (options: ExpirationTriggerOptions)
       defineBeat({
         id: 'show-expiration-loadout', captionKey: copy.sectionExpire, flow: 'compile',
         cues: [
-          timedCue('show-expiration-trigger', 0.65, {
+          timedCue('show-expiration-trigger', LOADOUT_ADDITION_CADENCE, {
             sectionTitleKey: copy.sectionExpire,
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog', loadoutVisibleSlots: 1,
           }),
-          timedCue('show-expiration-carrier', 0.55, {
+          timedCue('show-expiration-carrier', LOADOUT_ADDITION_CADENCE, {
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2,
           }),
           timedCue('show-expiration-payload', 2.2, {

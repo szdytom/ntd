@@ -105,6 +105,7 @@ export const resetTo = (
   sectionTitleKey: string,
   revealSlots: number,
   placement: ThoughtLoadoutPlacement = 'right',
+  revealRange?: { readonly start: number; readonly count: number },
 ): readonly ThoughtCue[] => [
   timedCue(`${prefix}-restore`, 1.35, {
     actions: [{ type: 'set-tower-casting', enabled: true }],
@@ -135,7 +136,47 @@ export const resetTo = (
     sectionTitleKey,
     overlay: { type: 'loadout', target: 'tower', placement },
     loadoutMode: 'dialog',
-    loadoutVisibleSlots: revealSlots,
+    ...(revealRange ? { loadoutVisibleRange: revealRange } : { loadoutVisibleSlots: revealSlots }),
+  }),
+];
+
+/** Reset the combat scene while keeping the previous dialog loadout visible for one animated replacement. */
+export const resetWithLoadoutReplacement = (
+  prefix: string,
+  nextSlots: readonly ModuleId[],
+  sectionTitleKey: string,
+  placement: ThoughtLoadoutPlacement = 'right',
+): readonly ThoughtCue[] => [
+  timedCue(`${prefix}-restore`, 1.35, {
+    actions: [{ type: 'set-tower-casting', enabled: true }],
+    transition: { simulationRate: 1 },
+    ease: 'smooth',
+  }),
+  waitCue(`${prefix}-clear`, {
+    waitForSignalsOutOfRange: true,
+    timeout: 20,
+    timelineWait: true,
+  }),
+  timedCue(`${prefix}-fade`, 0.5, {
+    actions: [{ type: 'set-tower-casting', enabled: false }],
+    transition: { signalOpacity: 0 },
+    ease: 'ease-out',
+  }),
+  timedCue(`${prefix}-compact-leave`, 0.35, {
+    actions: [{ type: 'delete-signals' }],
+    loadoutMode: 'compact-leaving',
+  }),
+  settleTowerForReset(`${prefix}-settle-rotation`),
+  timedCue(`${prefix}-title`, 0.75, {
+    sectionTitleKey,
+    overlay: { type: 'loadout', target: 'tower', placement },
+    loadoutMode: 'dialog',
+    loadoutVisibleSlots: nextSlots.length,
+  }),
+  timedCue(`${prefix}-replace`, 2.45, {
+    actions: [{ type: 'setup', slots: nextSlots }],
+    animateLoadoutChanges: true,
+    overlay: { type: 'loadout', target: 'tower', placement },
   }),
 ];
 

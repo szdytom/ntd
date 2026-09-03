@@ -68,13 +68,21 @@ export const colossusThought = defineModuleThought(colossusModule, {
     }),
     defineBeat({
       id: 'construct-condense', captionKey: copy.sectionCondense, flow: 'compile',
-      cues: resetTo('condense', ['condense-core', 'colossus', 'nova'], copy.sectionCondense, 1),
+      cues: resetTo(
+        'condense',
+        ['condense-core', 'colossus', 'nova'],
+        copy.sectionCondense,
+        2,
+        'right',
+        { start: 1, count: 2 },
+      ),
     }),
     defineBeat({
       id: 'show-condense', captionKey: copy.beatCondense, flow: 'focus',
       cues: [
         timedCue('show-condensed-colossus', 2.45, {
-          overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 3,
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutVisibleRange: { start: 0, count: 3 },
         }),
         explainLoadoutSlot('point-condensed-colossus', 4.2, copy.beatCondense, 1),
       ],

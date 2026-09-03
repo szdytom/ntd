@@ -1,5 +1,5 @@
 export { defineBeat } from './beats';
-export { timedCue, waitCue } from './cues';
+export { LOADOUT_ADDITION_CADENCE, timedCue, waitCue } from './cues';
 export { defineModuleThought } from './define';
 export type { ModuleThoughtOptions, ThoughtSceneContext, ThoughtSceneFactory } from './define';
 export { explainLoadoutSlot, introduceScene } from './recipes';
@@ -19,5 +19,13 @@ export { buildTrailWakeThought } from './trail-wake';
 export type { TrailWakeCopy } from './trail-wake';
 export { buildDeferredTriggerThought, buildExpirationTriggerThought } from './trigger';
 export type { DeferredTriggerCopy, ExpirationTriggerCopy } from './trigger';
-export { fireCapturedRun, finishRun, openRun, resetTo, settleTowerForReset, showPause } from './sequences';
+export {
+  fireCapturedRun,
+  finishRun,
+  openRun,
+  resetTo,
+  resetWithLoadoutReplacement,
+  settleTowerForReset,
+  showPause,
+} from './sequences';
 export type { FireCaptureOptions, ShowPauseOptions, SignalSpawn } from './sequences';

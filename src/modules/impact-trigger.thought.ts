@@ -3,6 +3,7 @@ import {
   defineModuleThought,
   explainLoadoutSlot,
   introduceScene,
+  LOADOUT_ADDITION_CADENCE,
   settleTowerForReset,
   timedCue,
   waitCue,
@@ -42,12 +43,12 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
     defineBeat({
       id: 'show-impact-loadout', captionKey: copy.sections.deploy, flow: 'compile',
       cues: [
-        timedCue('show-impact-trigger', 0.65, {
+        timedCue('show-impact-trigger', LOADOUT_ADDITION_CADENCE, {
           sectionTitleKey: copy.sections.deploy,
           overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
           loadoutMode: 'dialog', loadoutVisibleSlots: 1,
         }),
-        timedCue('show-impact-carrier', 0.55, {
+        timedCue('show-impact-carrier', LOADOUT_ADDITION_CADENCE, {
           overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2,
         }),
         timedCue('show-impact-payload', 2.2, {

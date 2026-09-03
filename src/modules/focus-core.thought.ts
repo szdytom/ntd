@@ -42,11 +42,17 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
     }),
     defineBeat({
       id: 'show-count-loadout', captionKey: copy.sections.count, flow: 'compile',
-      cues: [timedCue('show-fork-loadout', 3.2, {
-        sectionTitleKey: copy.sections.count,
-        overlay: { type: 'loadout', target: 'tower', placement: 'right' },
-        loadoutMode: 'dialog', loadoutVisibleSlots: 2,
-      })],
+      cues: [
+        timedCue('show-fork-module', 0.75, {
+          sectionTitleKey: copy.sections.count,
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutMode: 'dialog', loadoutVisibleSlots: 1,
+        }),
+        timedCue('show-fork-carrier', 2.45, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutVisibleSlots: 2,
+        }),
+      ],
     }),
     defineBeat({
       id: 'fire-forked-pulse', captionKey: copy.beats.forked, flow: 'cast',
@@ -163,6 +169,7 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           sectionTitleKey: copy.sections.focusChain,
           overlay: { type: 'loadout', target: 'tower', placement: 'right' },
           loadoutMode: 'dialog', loadoutVisibleSlots: 1,
+          animateLoadoutChanges: true,
         }),
       ],
     }),

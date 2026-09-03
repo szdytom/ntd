@@ -1,4 +1,10 @@
-import type { ThoughtCue, ThoughtDefinition } from '../src/thoughts/types';
+import type { ModuleId } from '../src/game/types';
+import type {
+  ThoughtCue,
+  ThoughtDefinition,
+  ThoughtLoadoutMode,
+  ThoughtLoadoutTarget,
+} from '../src/thoughts/types';
 
 const storedValues = new Map<string, string>();
 Object.defineProperty(globalThis, 'localStorage', {
@@ -13,7 +19,7 @@ Object.defineProperty(globalThis, 'localStorage', {
 const { FIXED_SIMULATION_STEP } = await import('../src/game/engine');
 const { thoughtRegistry, ThoughtSceneDirector } = await import('../src/thoughts');
 
-type WarningKind = 'fade-targetable' | 'missing-resolution' | 'unfinished-ending';
+type WarningKind = 'fade-targetable' | 'missing-resolution' | 'unfinished-ending' | 'loadout-continuity';
 
 interface ChoreographyWarning {
   readonly kind: WarningKind;
@@ -135,10 +141,203 @@ const inspectEnding = (definition: ThoughtDefinition): readonly ChoreographyWarn
   }];
 };
 
+interface LoadoutPresentation {
+  readonly location: string;
+  readonly modules: readonly ModuleId[];
+  readonly animateChanges: boolean;
+}
+
+interface LoadoutSession {
+  readonly towerIndex: number;
+  readonly presentations: readonly LoadoutPresentation[];
+}
+
+const sameModules = (left: readonly ModuleId[], right: readonly ModuleId[]): boolean => (
+  left.length === right.length && left.every((moduleId, index) => moduleId === right[index])
+);
+
+const editDistance = (left: readonly ModuleId[], right: readonly ModuleId[]): number => {
+  const distances = Array.from({ length: left.length + 1 }, (_, leftIndex) => (
+    Array.from({ length: right.length + 1 }, (_, rightIndex) => (
+      leftIndex === 0 ? rightIndex : rightIndex === 0 ? leftIndex : 0
+    ))
+  ));
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      distances[leftIndex]![rightIndex] = left[leftIndex - 1] === right[rightIndex - 1]
+        ? distances[leftIndex - 1]![rightIndex - 1]!
+        : 1 + Math.min(
+          distances[leftIndex - 1]![rightIndex]!,
+          distances[leftIndex]![rightIndex - 1]!,
+          distances[leftIndex - 1]![rightIndex - 1]!,
+        );
+    }
+  }
+  return distances[left.length]![right.length]!;
+};
+
+const inspectLoadoutContinuity = (definition: ThoughtDefinition): readonly ChoreographyWarning[] => {
+  const warnings: ChoreographyWarning[] = [];
+  const loadouts = new Map<number, readonly ModuleId[]>();
+  const previousSessions = new Map<number, readonly ModuleId[]>();
+  let mode: ThoughtLoadoutMode = 'hidden';
+  let targets: readonly ThoughtLoadoutTarget[] = [{ towerIndex: 0, placement: 'right' }];
+  let visibleSlots: number | undefined;
+  let visibleRange: { readonly start: number; readonly count: number } | undefined;
+  let activeSessions = new Map<number, LoadoutPresentation[]>();
+
+  const visibleModules = (towerIndex: number): readonly ModuleId[] => {
+    const modules = loadouts.get(towerIndex) ?? [];
+    return visibleRange
+      ? modules.slice(visibleRange.start, visibleRange.start + visibleRange.count)
+      : modules.slice(0, visibleSlots ?? modules.length);
+  };
+
+  const finishSessions = (): void => {
+    for (const [towerIndex, presentations] of activeSessions) {
+      if (presentations.length === 0) continue;
+      const session: LoadoutSession = { towerIndex, presentations };
+      const first = session.presentations[0]!;
+      const final = session.presentations.at(-1)!;
+      const previous = previousSessions.get(towerIndex);
+      const distance = previous ? editDistance(previous, final.modules) : undefined;
+
+      if (!previous) {
+        if (final.modules.length > 0 && (first.modules.length !== 1 || first.animateChanges)) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: first.location,
+            message: `tower ${towerIndex} first dialog should show one module immediately without an addition animation, then add the rest`,
+          });
+        }
+      } else if (distance !== undefined && distance <= 1) {
+        if (!sameModules(first.modules, previous)) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: first.location,
+            message: `tower ${towerIndex} can continue from [${previous.join(', ')}] with one edit instead of reopening as [${first.modules.join(', ')}]`,
+          });
+        }
+      } else {
+        const startsImmediateRebuild = first.animateChanges
+          && first.modules.length === 1
+          && first.modules[0] === final.modules[0];
+        if (!startsImmediateRebuild) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: first.location,
+            message: `tower ${towerIndex} changes substantially from [${previous.join(', ')}] to [${final.modules.join(', ')}]; open the new dialog while immediately adding its first module`,
+          });
+        }
+      }
+
+      for (let index = 1; index < session.presentations.length; index += 1) {
+        const before = session.presentations[index - 1]!;
+        const after = session.presentations[index]!;
+        const stepDistance = editDistance(before.modules, after.modules);
+        if (stepDistance > 1) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: after.location,
+            message: `tower ${towerIndex} changes ${stepDistance} modules in one dialog step`,
+          });
+        } else if (
+          stepDistance === 1
+          && before.modules.length === after.modules.length
+          && !after.animateChanges
+        ) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: after.location,
+            message: `tower ${towerIndex} replaces a module without animateLoadoutChanges`,
+          });
+        }
+      }
+
+      if (distance !== undefined && distance > 1) {
+        const expectedSteps = final.modules.map((_, index) => final.modules.slice(0, index + 1));
+        const actualSteps = session.presentations.map(({ modules }) => modules);
+        if (
+          first.animateChanges
+          && (actualSteps.length !== expectedSteps.length
+            || actualSteps.some((modules, index) => !sameModules(modules, expectedSteps[index] ?? [])))
+        ) {
+          warnings.push({
+            kind: 'loadout-continuity',
+            location: first.location,
+            message: `tower ${towerIndex} substantial rebuild should add [${final.modules.join(', ')}] one module at a time in order`,
+          });
+        }
+      }
+      previousSessions.set(towerIndex, final.modules);
+    }
+    activeSessions = new Map();
+  };
+
+  for (const beat of definition.beats) {
+    const beatCues: readonly ThoughtCue[] = beat.cues ?? [{
+      id: beat.id,
+      actions: beat.actions,
+      duration: beat.duration,
+      waitFor: beat.waitFor,
+      timeout: beat.timeout,
+      highlightSlots: beat.highlightSlots,
+    }];
+    for (const cue of beatCues) {
+      const nextMode = cue.loadoutMode ?? mode;
+      if (mode === 'dialog' && nextMode !== 'dialog') finishSessions();
+
+      if (cue.loadoutVisibleSlots !== undefined) {
+        visibleSlots = Math.max(0, Math.floor(cue.loadoutVisibleSlots));
+        visibleRange = undefined;
+      }
+      if (cue.loadoutVisibleRange) {
+        visibleRange = {
+          start: Math.max(0, Math.floor(cue.loadoutVisibleRange.start)),
+          count: Math.max(0, Math.floor(cue.loadoutVisibleRange.count)),
+        };
+        visibleSlots = undefined;
+      }
+      if (cue.overlay?.type === 'loadout') {
+        targets = [{
+          towerIndex: cue.overlay.target === 'tower' ? 0 : cue.overlay.target.towerIndex,
+          placement: cue.overlay.placement ?? 'right',
+        }];
+      } else if (cue.overlay?.type === 'loadouts') {
+        targets = cue.overlay.targets;
+      }
+      for (const action of cue.actions ?? []) {
+        if (action.type === 'setup') loadouts.set(0, action.slots);
+        if (action.type === 'setup-towers') {
+          for (const loadout of action.loadouts) loadouts.set(loadout.towerIndex, loadout.slots);
+        }
+      }
+
+      mode = nextMode;
+      if (mode !== 'dialog') continue;
+      for (const { towerIndex } of targets) {
+        const modules = visibleModules(towerIndex);
+        const presentations = activeSessions.get(towerIndex) ?? [];
+        if (!sameModules(presentations.at(-1)?.modules ?? [], modules) || presentations.length === 0) {
+          presentations.push({
+            location: `${definition.id}/${beat.id}/${cue.id}`,
+            modules,
+            animateChanges: cue.animateLoadoutChanges === true,
+          });
+          activeSessions.set(towerIndex, presentations);
+        }
+      }
+    }
+  }
+  finishSessions();
+  return warnings;
+};
+
 const warnings = thoughtRegistry.list().flatMap((definition) => [
   ...inspectRuntimeFades(definition),
   ...inspectResolutionStructure(definition),
   ...inspectEnding(definition),
+  ...inspectLoadoutContinuity(definition),
 ]);
 
 if (warnings.length === 0) {

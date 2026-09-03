@@ -5,7 +5,7 @@ import { defineBeat } from './beats';
 import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, resetTo, showPause } from './sequences';
+import { finishRun, fireCapturedRun, resetTo, resetWithLoadoutReplacement, showPause } from './sequences';
 
 export interface AreaProjectileCopy {
   readonly title: string;
@@ -115,7 +115,7 @@ export const buildAreaProjectileThought = (
       }),
       defineBeat({
         id: 'construct-modifier', captionKey: copy.sectionModifier, flow: 'compile',
-        cues: resetTo('modifier', ['frost', module.id], copy.sectionModifier, 1),
+        cues: resetTo('modifier', ['frost', module.id], copy.sectionModifier, 1, 'right', { start: 1, count: 1 }),
       }),
       defineBeat({
         id: 'show-modifier-loadout', captionKey: copy.beatModifier, flow: 'compile',
@@ -144,14 +144,11 @@ export const buildAreaProjectileThought = (
       }),
       defineBeat({
         id: 'construct-condense', captionKey: copy.sectionCondense, flow: 'compile',
-        cues: resetTo('condense', ['condense-core', module.id], copy.sectionCondense, 1),
+        cues: resetWithLoadoutReplacement('condense', ['condense-core', module.id], copy.sectionCondense),
       }),
       defineBeat({
         id: 'show-condense-loadout', captionKey: copy.beatCondense, flow: 'focus',
         cues: [
-          timedCue('show-condensed-carrier', 2.45, {
-            overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2,
-          }),
           explainLoadoutSlot('point-condense-core', 4.2, copy.beatCondense, 0),
         ],
       }),

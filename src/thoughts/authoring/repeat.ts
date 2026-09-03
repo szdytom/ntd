@@ -5,7 +5,13 @@ import { defineBeat } from './beats';
 import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
+import {
+  finishRun,
+  fireCapturedRun,
+  resetWithLoadoutReplacement,
+  settleTowerForReset,
+  showPause,
+} from './sequences';
 
 export interface RepeatCopy {
   readonly title: string;
@@ -139,35 +145,11 @@ export const buildRepeatThought = (options: RepeatThoughtOptions): ThoughtDefini
       }),
       defineBeat({
         id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'focus',
-        cues: [
-          timedCue('restore-stack-time', 0.8, {
-            actions: [{ type: 'set-tower-casting', enabled: true }],
-            transition: { simulationRate: 1 }, ease: 'smooth',
-          }),
-          waitCue('wait-stack-target-clear', {
-            waitForSignalsOutOfRange: true, timeout: 20, timelineWait: true,
-          }),
-          timedCue('fade-stack-target', 0.45, {
-            actions: [{ type: 'set-tower-casting', enabled: false }],
-            transition: { signalOpacity: 0 }, ease: 'ease-out',
-          }),
-          timedCue('dismiss-stack-compact', 0.35, {
-            actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
-          }),
-          settleTowerForReset('settle-stack-rotation'),
-          timedCue('configure-focus', 0.2, {
-            actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }], loadoutMode: 'hidden',
-          }),
-          timedCue('show-before-focus', 1, {
-            sectionTitleKey: copy.sectionFocus,
-            overlay: { type: 'loadout', target: 'tower', placement: 'right' },
-            loadoutMode: 'dialog', loadoutVisibleRange: { start: 1, count: 2 },
-          }),
-          timedCue('insert-focus-core', 2.4, {
-            overlay: { type: 'loadout', target: 'tower', placement: 'right' },
-            loadoutVisibleRange: { start: 0, count: 3 },
-          }),
-        ],
+        cues: resetWithLoadoutReplacement(
+          'focus',
+          ['focus-core', module.id, 'pulse'],
+          copy.sectionFocus,
+        ),
       }),
       defineBeat({
         id: 'explain-focus', captionKey: copy.beatFocus, flow: 'focus',

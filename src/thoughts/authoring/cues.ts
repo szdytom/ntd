@@ -1,5 +1,7 @@
 import type { ThoughtCue } from '../types';
 
+export const LOADOUT_ADDITION_CADENCE = 0.65;
+
 type TimedCueOptions = Omit<ThoughtCue, 'id' | 'duration'>;
 
 export const timedCue = (

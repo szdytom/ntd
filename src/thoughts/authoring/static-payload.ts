@@ -4,7 +4,7 @@ import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import type { ThoughtDefinition, ThoughtEventMatcher, ThoughtOverlayTarget } from '../types';
 import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
-import { timedCue, waitCue } from './cues';
+import { LOADOUT_ADDITION_CADENCE, timedCue, waitCue } from './cues';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import { finishRun, fireCapturedRun, showPause } from './sequences';
 
@@ -55,12 +55,12 @@ export const buildStaticPayloadThought = (options: StaticPayloadOptions): Though
       defineBeat({
         id: 'show', captionKey: copy.section, flow: 'compile',
         cues: [
-          timedCue('show-trigger', 0.65, {
+          timedCue('show-trigger', LOADOUT_ADDITION_CADENCE, {
             sectionTitleKey: copy.section,
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog', loadoutVisibleSlots: 1,
           }),
-          timedCue('show-carrier', 0.55, { overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2 }),
+          timedCue('show-carrier', LOADOUT_ADDITION_CADENCE, { overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 2 }),
           timedCue('show-payload', 2.2, { overlay: { type: 'loadout', target: 'tower', placement: 'top-right' }, loadoutVisibleSlots: 3 }),
         ],
       }),

@@ -3,6 +3,7 @@ import {
   defineModuleThought,
   explainLoadoutSlot,
   introduceScene,
+  LOADOUT_ADDITION_CADENCE,
   timedCue,
   waitCue,
 } from '../thoughts/authoring';
@@ -215,17 +216,18 @@ export const frostThought = defineModuleThought(frostModule, {
           loadoutMode: 'hidden',
           transition: { signalOpacity: 0 },
         }),
-        timedCue('show-static-trigger', 0.65, {
+        timedCue('show-static-trigger', LOADOUT_ADDITION_CADENCE, {
           sectionTitleKey: copy.sections.static,
           overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
           loadoutMode: 'dialog',
           loadoutVisibleSlots: 1,
+          animateLoadoutChanges: true,
         }),
-        timedCue('show-static-carrier', 0.55, {
+        timedCue('show-static-carrier', LOADOUT_ADDITION_CADENCE, {
           overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
           loadoutVisibleSlots: 2,
         }),
-        timedCue('show-static-modifier', 0.55, {
+        timedCue('show-static-modifier', LOADOUT_ADDITION_CADENCE, {
           overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
           loadoutVisibleSlots: 3,
         }),
