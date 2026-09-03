@@ -133,6 +133,7 @@ const TUTORIAL_MODULES: Readonly<Record<ModuleId, number>> = {
 };
 const MAX_TOWER_LEVEL = 5;
 export const FIXED_SIMULATION_STEP = 1 / 120;
+export const DEFAULT_TOWER_ROTATION = -Math.PI / 2;
 export const WAVE_CLEAR_DELAY = 2;
 const MAX_FRAME_DELTA = 0.1;
 const MAX_SIMULATION_STEPS = 24;
@@ -590,7 +591,7 @@ export class GameEngine {
       id: this.nextId++,
       padIndex,
       position: { ...pad },
-      rotation: -Math.PI / 2,
+      rotation: DEFAULT_TOWER_ROTATION,
       energy: stats.maxEnergy,
       maxEnergy: stats.maxEnergy,
       energyRegen: stats.energyRegen,

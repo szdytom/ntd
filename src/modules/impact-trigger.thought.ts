@@ -3,6 +3,7 @@ import {
   defineModuleThought,
   explainLoadoutSlot,
   introduceScene,
+  settleTowerForReset,
   timedCue,
   waitCue,
 } from '../thoughts/authoring';
@@ -97,7 +98,7 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-impact-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-impact-clear', 0.5, { transition: { towerRotation: 0 }, ease: 'smooth' }),
+        settleTowerForReset('settle-impact-clear'),
       ],
     }),
     defineBeat({
@@ -160,7 +161,7 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         timedCue('fade-pierce-scene', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-        timedCue('settle-pierce-clear', 0.5, { transition: { towerRotation: 0 }, ease: 'smooth' }),
+        settleTowerForReset('settle-pierce-clear'),
       ],
     }),
     defineBeat({
@@ -213,9 +214,9 @@ export const impactTriggerThought = defineModuleThought(impactTriggerModule, {
       cues: [
         timedCue('restore-shield-time', 1.35, { transition: { simulationRate: 1 }, ease: 'smooth' }),
         timedCue('fade-shield-target', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
+        settleTowerForReset('settle-shield-rotation'),
         timedCue('reset-shield-scene', 0.2, {
           actions: [{ type: 'setup', slots: ['impact-trigger', 'pulse', 'toxic-cloud'] }],
-          transition: { towerRotation: 0 }, ease: 'smooth',
         }),
       ],
     }),

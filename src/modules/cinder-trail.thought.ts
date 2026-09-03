@@ -2,6 +2,7 @@ import {
   defineBeat,
   defineModuleThought,
   explainLoadoutSlot,
+  settleTowerForReset,
   timedCue,
   waitCue,
 } from '../thoughts/authoring';
@@ -169,6 +170,7 @@ export const cinderTrailThought = defineModuleThought(cinderTrailModule, {
           transition: { signalOpacity: 0 }, ease: 'smooth',
         }),
         timedCue('dismiss-basic-cinder-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        settleTowerForReset('settle-basic-cinder-rotation'),
         timedCue('configure-first-comparison', 0.2, {
           actions: [{
             type: 'setup-towers',
@@ -237,6 +239,7 @@ export const cinderTrailThought = defineModuleThought(cinderTrailModule, {
           overlay: { type: 'loadouts', targets: comparisonLoadouts },
           loadoutMode: 'dialog', loadoutVisibleSlots: 2,
         }),
+        settleTowerForReset('settle-first-comparison-rotation'),
         timedCue('replace-comparison-carriers', 2.4, {
           actions: [{
             type: 'setup-towers',

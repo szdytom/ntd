@@ -5,6 +5,7 @@ import {
   finishRun,
   fireCapturedRun,
   introduceScene,
+  settleTowerForReset,
   showPause,
   timedCue,
 } from '../thoughts/authoring';
@@ -78,6 +79,7 @@ export const seekerThought = defineModuleThought(seekerModule, {
           actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
         }),
         timedCue('dismiss-prediction-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        settleTowerForReset('settle-prediction-rotation'),
         timedCue('configure-fork-baseline', 0.2, {
           actions: [{ type: 'setup', slots: ['fork', 'pulse'] }], loadoutMode: 'hidden',
         }),
@@ -112,6 +114,7 @@ export const seekerThought = defineModuleThought(seekerModule, {
           actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
         }),
         timedCue('dismiss-fork-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        settleTowerForReset('settle-fork-rotation'),
         timedCue('configure-guided-fork', 0.2, {
           actions: [{ type: 'setup', slots: ['seeker', 'fork', 'pulse'] }], loadoutMode: 'hidden',
         }),

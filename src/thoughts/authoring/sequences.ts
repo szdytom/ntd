@@ -1,4 +1,5 @@
 import type { ModuleId, SignalId } from '../../game/types';
+import { DEFAULT_TOWER_ROTATION } from '../../game/engine';
 import type { ScenarioSignalPosition } from '../../game/combat-runtime';
 import type {
   ThoughtAction,
@@ -20,6 +21,12 @@ export const openRun = (prefix: string): readonly ThoughtCue[] => [
   timedCue(`${prefix}-dismiss`, 0.45, { loadoutMode: 'dialog-leaving' }),
   timedCue(`${prefix}-compact`, 0.35, { loadoutMode: 'compact' }),
 ];
+
+/** Ease every visible tower to the engine's reset orientation before rebuilding combat state. */
+export const settleTowerForReset = (id: string): ThoughtCue => timedCue(id, 0.5, {
+  transition: { towerRotation: DEFAULT_TOWER_ROTATION },
+  ease: 'smooth',
+});
 
 export interface FireCaptureOptions {
   readonly carrier: ModuleId;
@@ -106,6 +113,7 @@ export const resetTo = (
   }),
   timedCue(`${prefix}-fade`, 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
   timedCue(`${prefix}-compact-leave`, 0.35, { loadoutMode: 'compact-leaving' }),
+  settleTowerForReset(`${prefix}-settle-rotation`),
   timedCue(`${prefix}-configure`, 0.2, {
     actions: [{ type: 'setup', slots: nextSlots }],
     loadoutMode: 'hidden',

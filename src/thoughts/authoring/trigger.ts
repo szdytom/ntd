@@ -9,7 +9,7 @@ import { defineBeat } from './beats';
 import { timedCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, showPause } from './sequences';
+import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
 
 export interface DeferredTriggerCopy {
   readonly title: string;
@@ -99,6 +99,7 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog', loadoutVisibleSlots: 3,
           }),
+          settleTowerForReset('settle-primary-rotation'),
           timedCue('replace-carrier-for-collision', 2.4, {
             actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }],
             animateLoadoutChanges: true,
@@ -131,6 +132,7 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
             actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
           }),
           timedCue('dismiss-collision-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-collision-rotation'),
           timedCue('configure-shield', 0.2, {
             actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }], loadoutMode: 'hidden',
           }),
@@ -167,9 +169,9 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
         cues: [
           timedCue('restore-shield-time', 1.35, { transition: { simulationRate: 1 }, ease: 'smooth' }),
           timedCue('fade-shield-target', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
+          settleTowerForReset('settle-shield-rotation'),
           timedCue('reset-shield-scene', 0.2, {
             actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }],
-            transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
           }),
         ],
       }),
@@ -270,6 +272,7 @@ export const buildExpirationTriggerThought = (options: ExpirationTriggerOptions)
             overlay: { type: 'loadout', target: 'tower', placement: 'top-right' },
             loadoutMode: 'dialog', loadoutVisibleSlots: 3,
           }),
+          settleTowerForReset('settle-expiration-rotation'),
           timedCue('replace-carrier-for-shield', 2.4, {
             actions: [{ type: 'setup', slots: [module.id, 'pulse', 'toxic-cloud'] }],
             animateLoadoutChanges: true,

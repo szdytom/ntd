@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import en from '../src/i18n/locales/en.json';
 import { CombatRuntime } from '../src/game/combat-runtime';
 import type { CombatEvent } from '../src/game/combat-events';
-import { FIXED_SIMULATION_STEP } from '../src/game/engine';
+import { DEFAULT_TOWER_ROTATION, FIXED_SIMULATION_STEP } from '../src/game/engine';
 import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
-import type { ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '../src/thoughts/types';
+import type { ThoughtCue, ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '../src/thoughts/types';
 
 const maximumDirectorSteps = (director: ThoughtSceneDirector): number => {
   const seconds = director.definition.beats.reduce((total, beat) => {
@@ -98,6 +98,51 @@ describe('thought registry', () => {
 
           mode = nextMode;
           placements = nextPlacements;
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('returns visible towers to their default rotation before resetting combat', () => {
+    const violations: string[] = [];
+
+    for (const definition of thoughtRegistry.list()) {
+      let initialized = false;
+      let towerOpacity = definition.initialScene?.towerOpacity ?? 1;
+      let towerOpacities = definition.initialScene?.towerOpacities;
+      let towerRotation = definition.initialScene?.towerRotation;
+      let towerRotations = definition.initialScene?.towerRotations;
+      const towerCount = definition.scene?.towerPads?.length ?? 1;
+
+      for (const beat of definition.beats) {
+        const cues: readonly ThoughtCue[] = beat.cues ?? [{ id: beat.id, actions: beat.actions }];
+        for (const cue of cues) {
+          const resetsCombat = cue.actions?.some((action) => (
+            action.type === 'setup' || action.type === 'setup-towers'
+          )) ?? false;
+
+          if (resetsCombat && initialized) {
+            for (let towerIndex = 0; towerIndex < towerCount; towerIndex += 1) {
+              const opacity = towerOpacities?.[towerIndex] ?? towerOpacity;
+              if (opacity <= 0) continue;
+              const rotation = towerRotations?.[towerIndex] ?? towerRotation;
+              if (rotation === undefined || angleDistance(rotation, DEFAULT_TOWER_ROTATION) > 1e-9) {
+                violations.push(`${definition.id}/${beat.id}/${cue.id}: tower ${towerIndex}`);
+              }
+            }
+          }
+
+          if (resetsCombat) {
+            initialized = true;
+            towerRotation = undefined;
+            towerRotations = undefined;
+          }
+          if (cue.transition?.towerOpacity !== undefined) towerOpacity = cue.transition.towerOpacity;
+          if (cue.transition?.towerOpacities !== undefined) towerOpacities = cue.transition.towerOpacities;
+          if (cue.transition?.towerRotation !== undefined) towerRotation = cue.transition.towerRotation;
+          if (cue.transition?.towerRotations !== undefined) towerRotations = cue.transition.towerRotations;
         }
       }
     }

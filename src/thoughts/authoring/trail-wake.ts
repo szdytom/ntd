@@ -10,6 +10,7 @@ import { defineBeat } from './beats';
 import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot } from './recipes';
+import { settleTowerForReset } from './sequences';
 
 export interface TrailWakeCopy {
   readonly title: string;
@@ -167,6 +168,7 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
             actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
           }),
           timedCue('dismiss-basic-wake-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-basic-wake-rotation'),
           timedCue('configure-first-comparison', 0.2, {
             actions: [{
               type: 'setup-towers',
@@ -231,6 +233,7 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
             overlay: { type: 'loadouts', targets: comparisonLoadouts },
             loadoutMode: 'dialog', loadoutVisibleSlots: 2,
           }),
+          settleTowerForReset('settle-first-comparison-rotation'),
           timedCue('replace-comparison-carriers', 2.4, {
             actions: [{
               type: 'setup-towers',

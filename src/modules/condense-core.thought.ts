@@ -5,6 +5,7 @@ import {
   finishRun,
   fireCapturedRun,
   introduceScene,
+  settleTowerForReset,
   showPause,
   timedCue,
 } from '../thoughts/authoring';
@@ -66,6 +67,7 @@ export const condenseCoreThought = defineModuleThought(condenseCoreModule, {
         }),
         timedCue('fade-blast-targets', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
         timedCue('dismiss-blast-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        settleTowerForReset('settle-blast-rotation'),
         timedCue('configure-condense-loadout', 0.2, {
           actions: [{ type: 'setup', slots: ['condense-core', 'nova'] }],
           loadoutMode: 'hidden',

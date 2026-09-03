@@ -7,7 +7,7 @@ import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
 import { timedCue, waitCue } from './cues';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, resetTo, showPause } from './sequences';
+import { finishRun, fireCapturedRun, resetTo, settleTowerForReset, showPause } from './sequences';
 
 export interface StatusModifierCopy {
   readonly title: string;
@@ -143,6 +143,7 @@ export const buildStatusModifierThought = (options: StatusModifierOptions): Thou
           }),
           timedCue('fade-area-signals', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
           timedCue('dismiss-area-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-area-rotation'),
           timedCue('configure-static', 0.2, {
             actions: [{ type: 'setup', slots: ['impact-trigger', 'pulse', module.id, staticCarrier] }],
             loadoutMode: 'hidden',

@@ -6,7 +6,7 @@ import { timedCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import type { SignalSpawn } from './sequences';
-import { finishRun, fireCapturedRun, showPause } from './sequences';
+import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
 
 export interface SplitProjectileCopy {
   readonly title: string;
@@ -93,6 +93,7 @@ export const buildSplitProjectileThought = (
           }),
           timedCue('fade-split-targets', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
           timedCue('dismiss-split-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-split-rotation'),
           timedCue('configure-focus', 0.2, {
             actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }],
             loadoutMode: 'hidden',

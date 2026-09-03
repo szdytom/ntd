@@ -5,7 +5,7 @@ import { defineBeat } from './beats';
 import { timedCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
-import { finishRun, fireCapturedRun, showPause } from './sequences';
+import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
 
 export interface RepeatCopy {
   readonly title: string;
@@ -92,6 +92,7 @@ export const buildRepeatThought = (options: RepeatThoughtOptions): ThoughtDefini
             actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
           }),
           timedCue('dismiss-repeat-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-repeat-rotation'),
           timedCue('configure-stack', 0.2, {
             actions: [{ type: 'setup', slots: [module.id, module.id, 'pulse'] }], loadoutMode: 'hidden',
           }),
@@ -135,6 +136,7 @@ export const buildRepeatThought = (options: RepeatThoughtOptions): ThoughtDefini
             actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
           }),
           timedCue('dismiss-stack-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+          settleTowerForReset('settle-stack-rotation'),
           timedCue('configure-focus', 0.2, {
             actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }], loadoutMode: 'hidden',
           }),
