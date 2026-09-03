@@ -48,6 +48,16 @@ export const qualityAnchors = (...values: number[]): readonly number[] => {
   return values;
 };
 
+export const qualityRamp = (count: number, start = 2, end = 3): readonly number[] => {
+  if (!Number.isInteger(count) || count <= 0) {
+    throw new RangeError('Module quality ramp count must be a positive integer');
+  }
+  if (count === 1) return qualityAnchors(start);
+  return qualityAnchors(...Array.from({ length: count }, (_, index) => (
+    start + (end - start) * index / (count - 1)
+  )));
+};
+
 const moduleDraft = (
   anchors: readonly number[],
   abandonLimit: number,
@@ -125,7 +135,7 @@ export const LEVELS = [
       wave(['spark', 10], ['block', 8], ['hex', 3], ['mender', 1]),
       wave(['kite', 4], ['block', 3], ['hex', 4], ['mender', 1], ['fracture', 1, 'white-prism:0']),
     ],
-    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2), 3),
+    moduleDraft: moduleDraft(qualityRamp(5), 2),
     startingShards: 240,
     signalHealthScale: 1,
     signalSpeedScale: 1,
@@ -154,7 +164,7 @@ export const LEVELS = [
       wave(['spark', 12], ['block', 8], ['hex', 5], ['anvil', 1]),
       wave(['kite', 6], ['block', 3], ['hex', 7], ['solar', 1], ['radiant', 1, 'rose-circuit:0']),
     ],
-    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2, 2), 4),
+    moduleDraft: moduleDraft(qualityRamp(6), 3),
     startingShards: 250,
     signalHealthScale: 1.08,
     signalSpeedScale: 1.03,
@@ -184,7 +194,7 @@ export const LEVELS = [
       wave(['spark', 12], ['block', 6], ['hex', 5], ['crown', 1, 'verdant-fold:0']),
       wave(['block', 8], ['hex', 5], ['fracture', 1, 'verdant-fold:0'], ['radiant', 1, 'verdant-fold:0']),
     ],
-    moduleDraft: moduleDraft(qualityAnchors(2, 2, 2, 2, 2, 2, 2), 4),
+    moduleDraft: moduleDraft(qualityRamp(7), 3),
     startingShards: 260,
     signalHealthScale: 1.16,
     signalSpeedScale: 1.08,
@@ -236,8 +246,8 @@ export const LEVELS = [
       ),
     ],
     moduleDraft: moduleDraft(
-      qualityAnchors(2, 2, 2, 2, 2, 2, 2, 2),
-      5,
+      qualityRamp(8),
+      4,
       { initialPicks: 5, wavePicks: 4 },
     ),
     startingShards: 340,

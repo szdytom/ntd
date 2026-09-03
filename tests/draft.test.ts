@@ -52,6 +52,7 @@ describe('module draft system', () => {
     const result = rollModuleDraft(options());
     expect(result.choices).toHaveLength(DRAFT_BALANCE.choicesPerOffer);
     expect(new Set(result.choices).size).toBe(DRAFT_BALANCE.choicesPerOffer);
+    expect(result.choiceWeights.map((candidate) => candidate.moduleId).sort()).toEqual([...result.choices].sort());
 
     const allProjectile = rollModuleDraft(options({ random: () => 0 })).choices;
     expect(allProjectile.every((id) => definitions.find((definition) => definition.id === id)?.kind === 'projectile')).toBe(true);
@@ -64,17 +65,21 @@ describe('module draft system', () => {
     expect(distant.base).toBe(DRAFT_BALANCE.minimumBaseWeight);
 
     const recent = weightFor('frost', { previousChoices: new Set<ModuleId>(['frost']) });
+    expect(recent.recent).toBe(DRAFT_BALANCE.recentChoiceMultiplier);
     expect(recent.multiplier).toBeCloseTo(DRAFT_BALANCE.recentChoiceMultiplier);
 
     const owned = weightFor('frost', { ownedCount: (id) => id === 'frost' ? 2 : 0 });
+    expect(owned.ownership).toBeCloseTo(1 / (1 + 2 * DRAFT_BALANCE.ownershipSlope));
     expect(owned.multiplier).toBeCloseTo(1 / (1 + 2 * DRAFT_BALANCE.ownershipSlope));
   });
 
   it('applies the projectile and trail-carrier compatibility rules', () => {
     const unavailable = () => 0;
-    expect(weightFor('pulse', {
+    const pulse = weightFor('pulse', {
       projectileDeficit: 1,
-    }).multiplier).toBe(DRAFT_BALANCE.projectileShortageMultiplier);
+    });
+    expect(pulse.projectileCompatibility).toBe(DRAFT_BALANCE.projectileShortageMultiplier);
+    expect(pulse.multiplier).toBe(DRAFT_BALANCE.projectileShortageMultiplier);
     expect(weightFor('void-beam', {
       availableCount: unavailable,
       projectileDeficit: 1,
@@ -82,9 +87,11 @@ describe('module draft system', () => {
       DRAFT_BALANCE.projectileShortageMultiplier * DRAFT_BALANCE.noTrailCarrierMultiplier,
     );
 
-    expect(weightFor('void-beam', {
+    const voidBeam = weightFor('void-beam', {
       availableCount: (id) => id === 'resonant-trail' ? 1 : 0,
-    }).multiplier).toBe(DRAFT_BALANCE.dependencyImbalanceMultiplier);
+    });
+    expect(voidBeam.trailCompatibility).toBe(DRAFT_BALANCE.dependencyImbalanceMultiplier);
+    expect(voidBeam.multiplier).toBe(DRAFT_BALANCE.dependencyImbalanceMultiplier);
   });
 
   it('reserves one slot for a weighted guarantee', () => {

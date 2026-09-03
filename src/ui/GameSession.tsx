@@ -26,6 +26,7 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
   const { view, toast } = useGameState(engine);
   const [defenseArchiveToast, setDefenseArchiveToast] = useState<ToastState | null>(null);
   const [workshopToast, setWorkshopToast] = useState<ToastState | null>(null);
+  const [advancedDraftVisible, setAdvancedDraftVisible] = useState(false);
   const { game: snapshot, selectedTower: tower } = view;
   const workshopOpen = Boolean(tower && !snapshot.draft);
   useLayoutEffect(() => {
@@ -59,6 +60,15 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
     const timeout = window.setTimeout(() => setWorkshopToast(null), 2_700);
     return () => window.clearTimeout(timeout);
   }, [workshopToast]);
+  useEffect(() => {
+    const toggleAdvancedDraft = (event: KeyboardEvent): void => {
+      if (event.key !== 'F3') return;
+      event.preventDefault();
+      if (!event.repeat) setAdvancedDraftVisible((visible) => !visible);
+    };
+    window.addEventListener('keydown', toggleAdvancedDraft);
+    return () => window.removeEventListener('keydown', toggleAdvancedDraft);
+  }, []);
   return <div className={styles.appShell} data-app-shell>
     <div className={styles.gameConsole}>
       <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} />
@@ -77,7 +87,13 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
             {...(onOpenThought ? { onOpenThought } : {})}
           /> : null}
         >
-          <RewardDraft engine={engine} snapshot={snapshot} inventory={view.moduleInventory} {...(onOpenThought ? { onOpenThought } : {})} />
+          <RewardDraft
+            engine={engine}
+            snapshot={snapshot}
+            inventory={view.moduleInventory}
+            advancedVisible={advancedDraftVisible}
+            {...(onOpenThought ? { onOpenThought } : {})}
+          />
         </Battlefield>
       </div>
     </div>

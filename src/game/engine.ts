@@ -1,6 +1,6 @@
 import { EffectEngine } from '../effects/engine';
 import { GAME_EFFECT_IDS, gameEffects } from '../effects/game-effects';
-import { createModuleRegistry } from '../modules';
+import { createModuleRegistry, DRAFT_BALANCE, MODULE_RARITIES } from '../modules';
 import type {
   ModuleCombatApi,
   ModuleDefinition,
@@ -238,6 +238,7 @@ export class GameEngine {
   private draftAbandonsUsed = 0;
   private lastDraftActionWasAbandon = false;
   private pendingDraftQualityBoost = false;
+  private pendingDraftHighestQuality: number | null = null;
   private creativeSetup: CreativeSetup;
   private runId = createRunId();
   private runStartedAt = Date.now();
@@ -539,7 +540,14 @@ export class GameEngine {
       speed: this.speed,
       paused: this.paused,
       manuallyPaused: this.manuallyPaused,
-      draft: this.draft ? { ...this.draft, choices: [...this.draft.choices] } : null,
+      draft: this.draft ? {
+        ...this.draft,
+        choices: [...this.draft.choices],
+        diagnostics: {
+          ...this.draft.diagnostics,
+          choiceWeights: this.draft.diagnostics.choiceWeights.map((weight) => ({ ...weight })),
+        },
+      } : null,
     };
   }
 
@@ -881,7 +889,7 @@ export class GameEngine {
       this.draft = {
         round: this.draft.round + 1,
         totalRounds: this.draft.totalRounds,
-        ...this.rollDraftOffer(this.draft.round + 1),
+        ...this.rollDraftOffer(this.draft.round + 1, this.draft.totalRounds),
       };
     }
     this.emitState();
@@ -892,6 +900,7 @@ export class GameEngine {
     this.draftAbandonsUsed += 1;
     this.lastDraftActionWasAbandon = true;
     this.pendingDraftQualityBoost = true;
+    this.pendingDraftHighestQuality = this.highestDraftQuality(this.draft.choices);
     if (this.draft.round >= this.draft.totalRounds) {
       this.draft = null;
       this.status = 'planning';
@@ -899,7 +908,7 @@ export class GameEngine {
       this.draft = {
         round: this.draft.round + 1,
         totalRounds: this.draft.totalRounds,
-        ...this.rollDraftOffer(this.draft.round + 1),
+        ...this.rollDraftOffer(this.draft.round + 1, this.draft.totalRounds),
       };
     }
     this.emitState();
@@ -1129,6 +1138,7 @@ export class GameEngine {
     this.draftAbandonsUsed = 0;
     this.lastDraftActionWasAbandon = false;
     this.pendingDraftQualityBoost = false;
+    this.pendingDraftHighestQuality = null;
     this.initializeStartingInventory();
     this.towers.push(this.createStartingTower());
     this.selectedTowerId = null;
@@ -2478,9 +2488,18 @@ export class GameEngine {
     this.projectiles.length = aliveProjectileCount;
   }
 
-  private canAbandonDraft(): boolean {
+  private highestDraftQuality(choices: readonly ModuleId[]): number {
+    return choices.reduce((highest, moduleId) => Math.max(
+      highest,
+      MODULE_RARITIES[this.modules.require(moduleId).meta.rarity].qualityPoints,
+    ), 1);
+  }
+
+  private canAbandonDraft(round: number, totalRounds: number): boolean {
+    const hasFutureOffer = round < totalRounds || this.wave < this.maxWaves - 1;
     return !this.lastDraftActionWasAbandon
-      && this.draftAbandonsUsed < this.level.moduleDraft.abandonLimit;
+      && this.draftAbandonsUsed < this.level.moduleDraft.abandonLimit
+      && hasFutureOffer;
   }
 
   private openingDraftGuarantee(round: number): Set<ModuleId> {
@@ -2527,9 +2546,11 @@ export class GameEngine {
     return Math.max(0, towersMissingProjectiles + affordableNewTowers - availableProjectiles);
   }
 
-  private rollDraftOffer(round: number): Pick<NonNullable<GameSnapshot['draft']>, 'choices' | 'boosted' | 'canAbandon' | 'abandonsRemaining'> {
+  private rollDraftOffer(round: number, totalRounds: number): Pick<NonNullable<GameSnapshot['draft']>, 'choices' | 'boosted' | 'canAbandon' | 'abandonsRemaining' | 'diagnostics'> {
     const boosted = this.pendingDraftQualityBoost;
+    const abandonedHighestQuality = boosted ? this.pendingDraftHighestQuality : null;
     this.pendingDraftQualityBoost = false;
+    this.pendingDraftHighestQuality = null;
     const definitions = this.modules.list();
     const inventoryAverage = calculateInventoryQuality(
       definitions,
@@ -2537,35 +2558,69 @@ export class GameEngine {
     );
     const anchors = this.level.moduleDraft.qualityAnchors;
     const anchor = anchors[this.wave] ?? anchors.at(-1) ?? 1;
+    const computedBaseline = calculateQualityCenter({
+      anchor,
+      inventoryAverage,
+      inventoryInfluence: this.level.moduleDraft.inventoryInfluence,
+      qualityBias: this.level.moduleDraft.qualityBias,
+    });
+    const appliedBoost = boosted ? DRAFT_BALANCE.abandonQualityBoost : 0;
     const qualityCenter = calculateQualityCenter({
       anchor,
       inventoryAverage,
       inventoryInfluence: this.level.moduleDraft.inventoryInfluence,
       qualityBias: this.level.moduleDraft.qualityBias,
-      boost: boosted ? 1 : 0,
+      boost: appliedBoost,
     });
-    const result = rollModuleDraft({
+    const projectileDeficit = this.projectileCoverageDeficit(definitions);
+    const guaranteedChoices = this.openingDraftGuarantee(round);
+    const roll = () => rollModuleDraft({
       definitions,
       ownedCount: (moduleId) => this.getModuleCount(moduleId),
       availableCount: (moduleId) => this.getAvailableModuleCount(moduleId),
       random: this.towerRandom,
       previousChoices: this.previousDraftChoices,
       qualityCenter,
-      projectileDeficit: this.projectileCoverageDeficit(definitions),
-      guaranteedChoices: this.openingDraftGuarantee(round),
+      projectileDeficit,
+      guaranteedChoices,
     });
+    let result = roll();
+    let retryCount = 0;
+    while (
+      abandonedHighestQuality !== null
+      && this.highestDraftQuality(result.choices) < abandonedHighestQuality
+      && retryCount < DRAFT_BALANCE.maxRetry
+    ) {
+      result = roll();
+      retryCount += 1;
+    }
+    const highestOfferedQuality = this.highestDraftQuality(result.choices);
     this.previousDraftChoices = result.previousChoices;
     return {
       choices: result.choices,
       boosted,
-      canAbandon: this.canAbandonDraft(),
+      canAbandon: this.canAbandonDraft(round, totalRounds),
       abandonsRemaining: Math.max(0, this.level.moduleDraft.abandonLimit - this.draftAbandonsUsed),
+      diagnostics: {
+        inventoryAverage,
+        qualityAnchor: anchor,
+        computedBaseline,
+        appliedBoost,
+        computedQuality: qualityCenter,
+        highestOfferedQuality,
+        abandonedHighestQuality,
+        retryCount,
+        maxRetry: DRAFT_BALANCE.maxRetry,
+        projectileDeficit,
+        guaranteedPoolSize: guaranteedChoices.size,
+        choiceWeights: result.choiceWeights.map((weight) => ({ ...weight })),
+      },
     };
   }
 
   private beginModuleDraft(totalRounds: number): void {
     this.previousDraftChoices.clear();
-    this.draft = { round: 1, totalRounds, ...this.rollDraftOffer(1) };
+    this.draft = { round: 1, totalRounds, ...this.rollDraftOffer(1, totalRounds) };
     this.status = 'reward';
   }
 

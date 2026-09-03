@@ -14,7 +14,7 @@ For every offer, the engine averages the quality points of all owned copies, inc
 b = clip((1-alpha) × anchor + alpha × inventoryAverage - bias + boost, 1, 5)
 ```
 
-Each level declares one anchor for the opening draft and one for every pre-final wave reward. A boost is `1` only for the offer immediately following an abandonment.
+Each level declares one anchor for the opening draft and one for every pre-final wave reward. Standard non-tutorial levels ramp those anchors from `2` to `3`, giving later reward batches an explicit quality progression in addition to inventory adaptation. A boost is `1.5` only for the offer immediately following an abandonment.
 
 ## Candidate weights
 
@@ -33,4 +33,10 @@ The draft performs weighted sampling without replacement. Catalog composition th
 
 ## Abandonment
 
-Abandoning consumes the current selection without adding inventory. Levels cap abandonments for the whole run, and two abandonments cannot be consecutive. The next offer receives a one-time quality boost; if abandonment ends a reward batch, both the boost and the consecutive-use lock carry into the next batch. Selecting a module clears the lock.
+Abandoning consumes the current selection without adding inventory. Levels cap abandonments at half their wave count for the whole run, and two abandonments cannot be consecutive. The next offer receives a one-time quality boost; if its highest-quality card is lower than the abandoned offer's best card, the engine retries the complete weighted draw up to `DRAFT_BALANCE.maxRetry` times, currently `2`. A retry is not a hard guarantee: the final allowed draw can still be lower.
+
+If abandonment ends a reward batch, the boost, comparison quality, and consecutive-use lock carry into the next batch. Selecting a module clears the lock. Abandonment is disabled on the last reward round before the final wave because no later draft exists to consume its boost.
+
+## Advanced diagnostics
+
+`F3` silently toggles production-available compact diagnostics on the reward screen. The footer appends `s` (inventory quality), `a` (reward anchor), `b` (computed baseline before uplift), `u` (one-time uplift), `q` (the final quality center used for card weights), then `(retry/maxRetry offerBest:abandonedBest:projectileDeficit:guaranteePool)`. Each card appends `b` (base weight), `r` (recent-choice factor), `o` (ownership factor), `t` (trail compatibility), `p` (projectile compatibility), `d` (dependency compatibility), and `w` (final weight). These fixed ASCII abbreviations deliberately avoid localized UI copy. The shortcut remains undiscoverable in the normal interface and serves advanced players and developers.

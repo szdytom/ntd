@@ -289,6 +289,34 @@ export interface ScheduledCast {
 
 export type GameStatus = 'planning' | 'wave' | 'reward' | 'won' | 'lost';
 
+export interface ModuleDraftChoiceDiagnostics {
+  moduleId: ModuleId;
+  quality: number;
+  base: number;
+  recent: number;
+  ownership: number;
+  trailCompatibility: number;
+  projectileCompatibility: number;
+  dependencyCompatibility: number;
+  multiplier: number;
+  weight: number;
+}
+
+export interface ModuleDraftDiagnostics {
+  inventoryAverage: number;
+  qualityAnchor: number;
+  computedBaseline: number;
+  appliedBoost: number;
+  computedQuality: number;
+  highestOfferedQuality: number;
+  abandonedHighestQuality: number | null;
+  retryCount: number;
+  maxRetry: number;
+  projectileDeficit: number;
+  guaranteedPoolSize: number;
+  choiceWeights: ModuleDraftChoiceDiagnostics[];
+}
+
 export interface ModuleDraftSnapshot {
   round: number;
   totalRounds: number;
@@ -296,6 +324,7 @@ export interface ModuleDraftSnapshot {
   boosted: boolean;
   canAbandon: boolean;
   abandonsRemaining: number;
+  diagnostics: ModuleDraftDiagnostics;
 }
 
 export interface CreativeSetup {

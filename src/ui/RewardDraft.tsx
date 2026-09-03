@@ -8,7 +8,13 @@ import { Tag } from './Tag';
 import { thoughtRegistry } from '../thoughts';
 import './RewardDraft.css';
 
-export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { engine: GameEngine; snapshot: GameSnapshot; inventory: GameViewSnapshot['moduleInventory']; onOpenThought?: (thoughtId: string) => void }) {
+export function RewardDraft({ engine, snapshot, inventory, advancedVisible = false, onOpenThought }: {
+  engine: GameEngine;
+  snapshot: GameSnapshot;
+  inventory: GameViewSnapshot['moduleInventory'];
+  advancedVisible?: boolean;
+  onOpenThought?: (thoughtId: string) => void;
+}) {
   const { t } = useTranslation();
   const draft = snapshot.draft;
   const panelRef = useRef<HTMLElement>(null);
@@ -20,11 +26,19 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
   }, [draft?.round]);
   if (!draft) return null;
   const isInitialDraft = snapshot.wave === 0;
+  const hasFutureOffer = draft.round < draft.totalRounds || snapshot.wave < snapshot.maxWaves - 1;
   const abandonUnavailable = draft.abandonsRemaining === 0
     ? t('reward.abandonUnavailableEmpty')
-    : t('reward.abandonUnavailableConsecutive');
+    : !hasFutureOffer
+      ? t('reward.abandonUnavailableFinal')
+      : t('reward.abandonUnavailableConsecutive');
   const abandonTitle = draft.canAbandon ? t('reward.abandonHint') : abandonUnavailable;
-  return <section className="reward-panel" ref={panelRef} role="region" aria-label={isInitialDraft ? t('reward.initialAria') : t('reward.waveAria')}>
+  const quality = (value: number): string => value.toFixed(2);
+  const compactWeight = (value: number): string => value.toFixed(2)
+    .replace(/^0\./, '.')
+    .replace(/\.00$/, '');
+  const diagnostics = draft.diagnostics;
+  return <section className={`reward-panel${advancedVisible ? ' advanced' : ''}`} ref={panelRef} role="region" aria-label={isInitialDraft ? t('reward.initialAria') : t('reward.waveAria')}>
     <header className="reward-head">
       <div className="reward-heading">
         <Tag className="reward-kicker" tone="yellow">{isInitialDraft ? t('reward.initialKicker') : t('reward.cleared', { wave: String(snapshot.wave).padStart(2, '0') })}</Tag>
@@ -38,6 +52,7 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
     <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);
         const thought = thoughtRegistry.forModule(moduleId);
+        const weight = diagnostics.choiceWeights.find((candidate) => candidate.moduleId === moduleId);
         const Icon = definition.icon;
         return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)}>
           <header className="reward-card-head">
@@ -52,6 +67,9 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
             </div>
           </div>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>
+          {advancedVisible && weight ? <code className="reward-card-debug">
+            b={compactWeight(weight.base)} r={compactWeight(weight.recent)} o={compactWeight(weight.ownership)} t={compactWeight(weight.trailCompatibility)} p={compactWeight(weight.projectileCompatibility)} d={compactWeight(weight.dependencyCompatibility)} w={compactWeight(weight.weight)}
+          </code> : null}
           <div className="reward-readouts">
             <span><small>{t('reward.energy')}</small><strong>{definition.meta.energy}<i>⚡</i></strong></span>
             <span><small>{t('reward.inventory')}</small><strong>{inventory[moduleId]?.total ?? 0}</strong></span>
@@ -63,7 +81,7 @@ export function RewardDraft({ engine, snapshot, inventory, onOpenThought }: { en
         </article>;
       })}</div>
     <footer className="reward-foot">
-      <span>{draft.boosted ? <Tag tone="yellow">{t('reward.boosted')}</Tag> : null}{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</span>
+      <span>{draft.boosted ? <Tag tone="yellow">{t('reward.boosted', { boost: diagnostics.appliedBoost })}</Tag> : null}<span>{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</span>{advancedVisible ? <code className="reward-advanced-inline">s={quality(diagnostics.inventoryAverage)} a={quality(diagnostics.qualityAnchor)} b={quality(diagnostics.computedBaseline)} u=+{quality(diagnostics.appliedBoost)} q={quality(diagnostics.computedQuality)} ({diagnostics.retryCount}/{diagnostics.maxRetry} {diagnostics.highestOfferedQuality}:{diagnostics.abandonedHighestQuality ?? '-'}:{diagnostics.projectileDeficit}:{diagnostics.guaranteedPoolSize})</code> : null}</span>
       <button
         className="reward-abandon"
         disabled={!draft.canAbandon}

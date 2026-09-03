@@ -99,15 +99,30 @@ describe('engine command and view boundary', () => {
       round: 1,
       boosted: false,
       canAbandon: true,
-      abandonsRemaining: 3,
+      abandonsRemaining: 2,
+      diagnostics: {
+        inventoryAverage: 1,
+        qualityAnchor: 2,
+        computedBaseline: 1.6,
+        appliedBoost: 0,
+        computedQuality: 1.6,
+        retryCount: 0,
+        maxRetry: DRAFT_BALANCE.maxRetry,
+      },
     });
 
+    const abandonedHighestQuality = engine.getSnapshot().draft?.diagnostics.highestOfferedQuality;
     engine.abandonDraft();
     expect(engine.getSnapshot().draft).toMatchObject({
       round: 2,
       boosted: true,
       canAbandon: false,
-      abandonsRemaining: 2,
+      abandonsRemaining: 1,
+      diagnostics: {
+        appliedBoost: DRAFT_BALANCE.abandonQualityBoost,
+        computedQuality: 3.1,
+        abandonedHighestQuality,
+      },
     });
     engine.abandonDraft();
     expect(engine.getSnapshot().draft?.round).toBe(2);
@@ -133,8 +148,62 @@ describe('engine command and view boundary', () => {
       round: 1,
       boosted: true,
       canAbandon: false,
-      abandonsRemaining: 1,
+      abandonsRemaining: 0,
     });
+  });
+
+  it('never offers an abandonment whose boost cannot reach another draft', () => {
+    const source = new GameEngine({ mode: 'standard', levelId: 'white-prism', seed: 3 }).level;
+    const engine = new GameEngine({
+      mode: 'standard',
+      seed: 3,
+      level: {
+        ...source,
+        id: 'terminal-draft-test',
+        waves: [[], []],
+        moduleDraft: {
+          ...source.moduleDraft,
+          initialPicks: 1,
+          wavePicks: 1,
+          qualityAnchors: [2, 3],
+          abandonLimit: 1,
+        },
+      },
+    });
+
+    const openingChoice = engine.getSnapshot().draft?.choices[0];
+    if (!openingChoice) throw new Error('Expected an opening choice');
+    engine.chooseDraftModule(openingChoice);
+    engine.startWave();
+    const delaySteps = Math.ceil(WAVE_CLEAR_DELAY / FIXED_SIMULATION_STEP) + 2;
+    for (let step = 0; step < delaySteps; step += 1) engine.update(FIXED_SIMULATION_STEP);
+
+    expect(engine.getSnapshot()).toMatchObject({
+      status: 'reward',
+      wave: 1,
+      maxWaves: 2,
+      draft: { round: 1, totalRounds: 1, canAbandon: false, abandonsRemaining: 1 },
+    });
+    const terminalOffer = engine.getSnapshot().draft;
+    engine.abandonDraft();
+    expect(engine.getSnapshot().draft).toEqual(terminalOffer);
+  });
+
+  it('retries a boosted offer when its best quality initially falls below the abandoned offer', () => {
+    let retriedDraft: NonNullable<ReturnType<GameEngine['getSnapshot']>['draft']> | null = null;
+    for (let seed = 1; seed <= 200 && !retriedDraft; seed += 1) {
+      const engine = new GameEngine({ mode: 'standard', seed });
+      engine.abandonDraft();
+      const draft = engine.getSnapshot().draft;
+      if (draft && draft.diagnostics.retryCount > 0) retriedDraft = draft;
+    }
+
+    expect(retriedDraft).not.toBeNull();
+    expect(retriedDraft?.diagnostics.retryCount).toBeLessThanOrEqual(DRAFT_BALANCE.maxRetry);
+    if ((retriedDraft?.diagnostics.retryCount ?? 0) < DRAFT_BALANCE.maxRetry) {
+      expect(retriedDraft?.diagnostics.highestOfferedQuality)
+        .toBeGreaterThanOrEqual(retriedDraft?.diagnostics.abandonedHighestQuality ?? 1);
+    }
   });
 
   it('uses the selected level module-draft counts for opening and wave rewards', () => {

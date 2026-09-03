@@ -17,12 +17,18 @@ export interface DraftWeight {
   moduleId: ModuleId;
   quality: number;
   base: number;
+  recent: number;
+  ownership: number;
+  trailCompatibility: number;
+  projectileCompatibility: number;
+  dependencyCompatibility: number;
   multiplier: number;
   weight: number;
 }
 
 export interface DraftRollResult {
   choices: ModuleId[];
+  choiceWeights: DraftWeight[];
   previousChoices: Set<ModuleId>;
 }
 
@@ -85,28 +91,48 @@ export function calculateModuleDraftWeights(options: DraftRollOptions): DraftWei
     const ownership = 1 / (
       1 + Math.max(0, options.ownedCount(definition.id)) * DRAFT_BALANCE.ownershipSlope
     );
-    let multiplier = recent * ownership;
+    let trailCompatibility = 1;
+    let projectileCompatibility = 1;
+    let dependencyCompatibility = 1;
 
     if (definition.tags.includes('trail-carrier')) {
-      if (availableTrails === 0) multiplier *= DRAFT_BALANCE.noTrailCarrierMultiplier;
-      else if (availableTrailCarriers === 0) multiplier *= DRAFT_BALANCE.dependencyImbalanceMultiplier;
+      if (availableTrails === 0) trailCompatibility = DRAFT_BALANCE.noTrailCarrierMultiplier;
+      else if (availableTrailCarriers === 0) trailCompatibility = DRAFT_BALANCE.dependencyImbalanceMultiplier;
     }
     if (needsProjectile && definition.kind === 'projectile') {
-      multiplier *= DRAFT_BALANCE.projectileShortageMultiplier;
+      projectileCompatibility = DRAFT_BALANCE.projectileShortageMultiplier;
     }
     if (availableStatics > availableTriggers && definition.tags.includes('trigger')) {
-      multiplier *= DRAFT_BALANCE.dependencyImbalanceMultiplier;
+      dependencyCompatibility = DRAFT_BALANCE.dependencyImbalanceMultiplier;
     }
     if (availableTriggers > availableStatics && definition.kind === 'static') {
-      multiplier *= DRAFT_BALANCE.dependencyImbalanceMultiplier;
+      dependencyCompatibility = DRAFT_BALANCE.dependencyImbalanceMultiplier;
     }
 
-    return { moduleId: definition.id, quality, base, multiplier, weight: base * multiplier };
+    const multiplier = recent
+      * ownership
+      * trailCompatibility
+      * projectileCompatibility
+      * dependencyCompatibility;
+
+    return {
+      moduleId: definition.id,
+      quality,
+      base,
+      recent,
+      ownership,
+      trailCompatibility,
+      projectileCompatibility,
+      dependencyCompatibility,
+      multiplier,
+      weight: base * multiplier,
+    };
   });
 }
 
 export function rollModuleDraft(options: DraftRollOptions): DraftRollResult {
-  const candidates = calculateModuleDraftWeights(options);
+  const weights = calculateModuleDraftWeights(options);
+  const candidates = [...weights];
   const choices: ModuleId[] = [];
 
   const takeWeightedCandidate = (eligible: readonly DraftWeight[]): ModuleId | null => {
@@ -137,5 +163,10 @@ export function rollModuleDraft(options: DraftRollOptions): DraftRollResult {
     if (selected) choices.push(selected);
   }
 
-  return { choices, previousChoices: new Set(choices) };
+  const selected = new Set(choices);
+  return {
+    choices,
+    choiceWeights: weights.filter((candidate) => selected.has(candidate.moduleId)),
+    previousChoices: new Set(choices),
+  };
 }

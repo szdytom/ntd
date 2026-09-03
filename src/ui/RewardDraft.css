@@ -153,6 +153,21 @@
   font-size: 13px;
   line-height: 1.45;
 }
+.reward-panel.advanced .reward-card { grid-template-rows: 42px minmax(128px, 1fr) auto 24px 62px 48px; }
+.reward-card-debug {
+  display: block;
+  min-width: 0;
+  padding: 5px 9px;
+  overflow: hidden;
+  border-bottom: 2px solid #252134;
+  color: #96919d;
+  background: #f6f5f8;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .reward-readouts {
   display: grid;
   min-width: 0;
@@ -224,7 +239,19 @@
   font-size: 14px;
 }
 .reward-foot > span { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.reward-foot > span > span { flex: none; white-space: nowrap; }
 .reward-foot .ui-tag { flex: none; }
+.reward-advanced-inline {
+  min-width: 0;
+  overflow: hidden;
+  color: #aaa6af;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .reward-abandon {
   min-height: 32px;
   padding: 5px 12px;
@@ -248,6 +275,7 @@
     grid-template-rows: 38px minmax(120px, 1fr) auto 54px 46px;
     padding-top: 6px;
   }
+  .reward-panel.advanced .reward-card { grid-template-rows: 38px minmax(120px, 1fr) auto 24px 54px 46px; }
   .reward-card-primary { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 12px; }
   .reward-icon { width: 96px; height: 96px; }
 }
@@ -272,6 +300,7 @@
     min-height: 282px;
     grid-template-rows: 34px minmax(96px, 1fr) auto 50px 44px;
   }
+  .reward-panel.advanced .reward-card { grid-template-rows: 34px minmax(96px, 1fr) auto 24px 50px 44px; }
   .reward-card-head { padding: 0 12px; }
   .reward-rarity,
   .reward-kind { font-size: 11px; }
