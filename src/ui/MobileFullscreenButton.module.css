@@ -1,4 +1,4 @@
-.mobile-fullscreen-trigger {
+.trigger {
   display: grid;
   width: 40px;
   height: 40px;
@@ -10,16 +10,16 @@
   cursor: pointer;
 }
 
-.mobile-fullscreen-trigger:hover,
-.mobile-fullscreen-trigger:focus-visible {
+.trigger:hover,
+.trigger:focus-visible {
   color: #fff;
   background: var(--purple, #6558e8);
 }
 
-.mobile-fullscreen-trigger:active { transform: translateY(1px); }
-.mobile-fullscreen-trigger svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: square; stroke-width: 2.4; }
+.trigger:active { transform: translateY(1px); }
+.trigger svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: square; stroke-width: 2.4; }
 
-.mobile-fullscreen-error {
+.error {
   position: fixed;
   z-index: 2100;
   right: 14px;

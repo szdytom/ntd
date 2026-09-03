@@ -9,8 +9,12 @@ describe('UI component boundaries', () => {
   it.each(componentFiles)('%s owns a same-named stylesheet', (file) => {
     const componentName = basename(file, '.tsx');
     const source = readFileSync(join(uiDirectory, file), 'utf8');
-    expect(existsSync(join(uiDirectory, `${componentName}.css`))).toBe(true);
-    expect(source).toContain(`import './${componentName}.css'`);
+    const globalStylesheet = existsSync(join(uiDirectory, `${componentName}.css`));
+    const moduleStylesheet = existsSync(join(uiDirectory, `${componentName}.module.css`));
+    expect(Number(globalStylesheet) + Number(moduleStylesheet)).toBe(1);
+    expect(source).toContain(moduleStylesheet
+      ? `import styles from './${componentName}.module.css'`
+      : `import './${componentName}.css'`);
   });
 
   it.each(componentFiles)('%s declares no more than one component', (file) => {

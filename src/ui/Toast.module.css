@@ -18,7 +18,7 @@
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-.toast.visible {
+.toast[data-visible='true'] {
   opacity: 1;
   transform: translate(-50%, 0);
 }

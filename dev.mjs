@@ -14,7 +14,7 @@ const context = await esbuild.context({
   outdir: 'dist',
   entryNames: 'app',
   assetNames: 'assets/[name]-[hash]',
-  loader: { '.css': 'css', '.glsl': 'text' },
+  loader: { '.module.css': 'local-css', '.css': 'css', '.glsl': 'text' },
   define: {
     __PRISM_BASTION_COMMIT_DATE__: JSON.stringify(buildInfo.commitDate),
     __PRISM_BASTION_COMMIT__: JSON.stringify(buildInfo.commit),

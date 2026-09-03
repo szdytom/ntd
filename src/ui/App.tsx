@@ -13,7 +13,7 @@ import { TutorialOffer } from './TutorialOffer';
 import { defenseArchiveRepository } from '../defense-archive';
 import { getAutoPauseEnabled, useAutoPauseEnabled } from './preferences';
 import { ThoughtIndex } from './ThoughtIndex';
-import './App.css';
+import styles from './App.module.css';
 
 export const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';
 
@@ -116,7 +116,7 @@ export function App() {
     start(tutorialSelection());
   };
   return <>
-    <div className={thoughtOpen ? 'app-content-covered' : ''} inert={Boolean(thoughtOpen)} aria-hidden={thoughtOpen ? true : undefined}>
+    <div className={thoughtOpen ? styles.contentCovered : undefined} inert={Boolean(thoughtOpen)} aria-hidden={thoughtOpen ? true : undefined}>
     {defenseArchiveOpen
       ? <DefenseArchive repository={defenseArchiveRepository} onBack={() => setDefenseArchiveOpen(false)} />
       : archiveType

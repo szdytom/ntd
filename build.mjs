@@ -14,7 +14,7 @@ await Promise.all([
     outdir: 'dist',
     entryNames: 'app',
     assetNames: 'assets/[name]-[hash]',
-    loader: { '.css': 'css', '.glsl': 'text' },
+    loader: { '.module.css': 'local-css', '.css': 'css', '.glsl': 'text' },
     target: ['es2022'],
     legalComments: 'none',
     metafile: true,

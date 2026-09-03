@@ -48,6 +48,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | [Add a signal](guides/adding-a-signal.md) | Define and register a signal vertical slice |
 | [Localization](guides/localization.md) | Add or change user-facing text |
 | [UI style](guides/ui-style.md) | Extend the bright geometric, Mondrian-inspired interface |
+| [Create stylesheets](guides/creating-stylesheets.md) | Add local component styles and migrate global CSS safely |
 | [Rendering performance](guides/rendering-performance.md) | Avoid hot-path regressions and verify visual optimization |
 
 Historical implementation plans and the numerical balance baseline are intentionally not part of the new documentation set. Current behavior is documented from the source and tests instead.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import './MobileFullscreenButton.css';
+import styles from './MobileFullscreenButton.module.css';
 
 interface LockableScreenOrientation extends ScreenOrientation {
   lock?: (orientation: 'landscape') => Promise<void>;
@@ -55,7 +55,7 @@ export function MobileFullscreenButton() {
   return <>
     <button
       type="button"
-      className="mobile-fullscreen-trigger"
+      className={styles.trigger}
       aria-label={t('levelSelect.enterFullscreen')}
       title={t('levelSelect.enterFullscreen')}
       onClick={() => { void enterFullscreen(); }}
@@ -64,6 +64,6 @@ export function MobileFullscreenButton() {
         <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
       </svg>
     </button>
-    {error ? <div className="mobile-fullscreen-error" role="alert">{error}</div> : null}
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
   </>;
 }

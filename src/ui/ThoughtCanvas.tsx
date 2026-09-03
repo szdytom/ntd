@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GameRenderer } from '../game/renderer';
 import type { ThoughtSceneDirector } from '../thoughts';
-import './ThoughtCanvas.css';
+import styles from './ThoughtCanvas.module.css';
 
 const THOUGHT_RENDERER_OPTIONS = {
   showDecorations: false,
@@ -51,6 +51,6 @@ export function ThoughtCanvas({ director }: { director: ThoughtSceneDirector }) 
     };
   }, [director, i18n.resolvedLanguage]);
 
-  if (error) return <div className="thought-canvas-error" role="alert">{t('canvas.error', { error })}</div>;
-  return <canvas ref={canvasRef} className="thought-canvas" role="img" aria-label={t('thoughtIndex.canvasAria')} />;
+  if (error) return <div className={styles.error} role="alert">{t('canvas.error', { error })}</div>;
+  return <canvas ref={canvasRef} className={styles.canvas} role="img" aria-label={t('thoughtIndex.canvasAria')} />;
 }

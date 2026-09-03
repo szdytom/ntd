@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameEngine } from '../game/engine';
 import { GameRenderer } from '../game/renderer';
-import './GameCanvas.css';
+import styles from './GameCanvas.module.css';
 
 export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; suspended?: boolean }) {
   const { t, i18n } = useTranslation();
@@ -48,7 +48,7 @@ export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; 
   }, [engine, i18n.resolvedLanguage, suspended]);
 
   if (rendererError) {
-    return <div className="renderer-error" role="alert">{t('canvas.error', { error: rendererError })}</div>;
+    return <div className={styles.error} role="alert">{t('canvas.error', { error: rendererError })}</div>;
   }
   return <canvas ref={canvasRef} id="game-canvas" role="img" aria-label={t('canvas.aria')} />;
 }

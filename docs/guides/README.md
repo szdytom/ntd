@@ -12,6 +12,7 @@ Each guide assumes the existing architecture and gives the shortest safe path fo
 - [Add a signal](adding-a-signal.md): add one declarative definition, register it, localize it, and place it in a level.
 - [Localization](localization.md): change user-facing copy or add a locale while preserving the resource contract.
 - [UI style](ui-style.md): divide screens into meaningful rectangles and preserve the bright geometric visual language.
+- [Create stylesheets](creating-stylesheets.md): add or migrate component CSS without leaking class names across UI boundaries.
 - [Rendering performance](rendering-performance.md): review hot paths and validate optimization work.
 
 For explanations of why the runtime behaves as it does, use the [internals index](../internals/README.md).
