@@ -1,7 +1,7 @@
 import type { ModuleDefinition } from '../../modules/types';
 import type { ModuleId, SignalId } from '../../game/types';
 import type { ScenarioSignalPosition } from '../../game/combat-runtime';
-import { straightRangePassScene } from '../scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import type { ThoughtDefinition } from '../types';
 import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
@@ -133,7 +133,7 @@ export const buildStatusModifierThought = (options: StatusModifierOptions): Thou
         id: 'finish',
         captionKey: copy.sectionArea,
         flow: 'observe',
-        cues: finishRun('finish', -Math.PI / 2),
+        cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
       }),
     ],
   });

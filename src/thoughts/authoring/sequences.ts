@@ -114,17 +114,37 @@ export const resetTo = (
 
 /**
  * Let the final scene resolve and ease the tower back to its resting angle.
- * Casting stops first so no new shots can spawn effects right before the
- * entry freezes, then the simulation runs a short settling window so the last
- * particles and recoil dissipate before the signals fade and the tower rests.
+ * The tower resumes firing, then the director waits for every signal to die
+ * or walk past the authored cleanup node (leaving the tower's range), removes
+ * them, waits for the tower energy to refill, and finally eases the tower to
+ * its resting angle. No lingering signal or fresh shot is frozen on the last
+ * frame, and signals are not faded away before they resolve.
  */
-export const finishRun = (prefix: string, rotation: number): readonly ThoughtCue[] => [
-  timedCue(`${prefix}-restore`, 0.8, {
-    actions: [{ type: 'set-tower-casting', enabled: false }],
+export const finishRun = (
+  prefix: string,
+  rotation: number,
+  cleanupNode: string,
+): readonly ThoughtCue[] => [
+  timedCue(`${prefix}-restore`, 1.35, {
+    actions: [{ type: 'set-tower-casting', enabled: true }],
     transition: { simulationRate: 1 },
     ease: 'smooth',
   }),
-  timedCue(`${prefix}-settle`, 1.6),
-  timedCue(`${prefix}-fade`, 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
-  timedCue(`${prefix}-rest`, 0.5, { transition: { towerRotation: rotation }, ease: 'smooth' }),
+  waitCue(`${prefix}-clear`, {
+    waitForSignalsPastNode: cleanupNode,
+    timeout: 20,
+    timelineWait: true,
+  }),
+  timedCue(`${prefix}-delete`, 0.2, {
+    actions: [
+      { type: 'set-tower-casting', enabled: false },
+      { type: 'delete-signals' },
+    ],
+  }),
+  waitCue(`${prefix}-energy`, {
+    waitForTowerEnergy: true,
+    timeout: 20,
+    timelineWait: true,
+  }),
+  timedCue(`${prefix}-settle`, 0.5, { transition: { towerRotation: rotation }, ease: 'smooth' }),
 ];

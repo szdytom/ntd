@@ -9,7 +9,7 @@ import {
   timedCue,
   waitCue,
 } from '../thoughts/authoring';
-import { straightRangePassScene } from '../thoughts/scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { voidBeamModule } from './void-beam';
 
 const copy = {
@@ -64,7 +64,7 @@ export const voidBeamThought = defineModuleThought(voidBeamModule, {
     }),
     defineBeat({
       id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2),
+      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });

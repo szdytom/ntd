@@ -14,6 +14,7 @@ export const resonantTrailThought = buildTrailWakeThought({
   copy,
   seed: 113,
   carrier: 'void-beam',
+  signalHealthScale: 2,
   wake: { type: 'signal-damaged', occurrence: 2, captureAs: 'pulse' },
   wakeTarget: { signalRef: 'target' },
   wakeRef: 'target',

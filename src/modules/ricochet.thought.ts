@@ -8,7 +8,7 @@ import {
   showPause,
   timedCue,
 } from '../thoughts/authoring';
-import { straightRangePassScene } from '../thoughts/scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { ricochetModule } from './ricochet';
 
 const copy = {
@@ -64,7 +64,7 @@ export const ricochetThought = defineModuleThought(ricochetModule, {
     }),
     defineBeat({
       id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2),
+      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });

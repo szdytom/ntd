@@ -1,6 +1,6 @@
 import type { ModuleDefinition } from '../../modules/types';
 import type { ModuleId } from '../../game/types';
-import { straightRangePassScene } from '../scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import type { ThoughtDefinition, ThoughtEventMatcher, ThoughtOverlayTarget } from '../types';
 import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
@@ -24,6 +24,8 @@ interface TrailWakeOptions {
   readonly wake: ThoughtEventMatcher;
   readonly wakeTarget: ThoughtOverlayTarget;
   readonly wakeRef: string;
+  readonly signalHealthScale?: number;
+  readonly signalSpeedScale?: number;
 }
 
 /**
@@ -32,13 +34,16 @@ interface TrailWakeOptions {
  * that walks over it receives the authored effect.
  */
 export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinition => {
-  const { module, copy, seed, carrier, wake, wakeTarget, wakeRef } = options;
+  const {
+    module, copy, seed, carrier, wake, wakeTarget, wakeRef,
+    signalHealthScale = 1.2, signalSpeedScale = 0.5,
+  } = options;
 
   return defineModuleThought(module, {
     titleKey: copy.title,
     summaryKey: copy.summary,
     seed,
-    scene: straightRangePassScene({ towerSlots: 2, signalHealthScale: 3, signalSpeedScale: 0.5 }),
+    scene: straightRangePassScene({ towerSlots: 2, signalHealthScale, signalSpeedScale }),
     initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
     beats: [
       defineBeat({
@@ -82,7 +87,7 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
       }),
       defineBeat({
         id: 'finish', captionKey: copy.section, flow: 'observe',
-        cues: finishRun('finish', -Math.PI / 2),
+        cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
       }),
     ],
   });

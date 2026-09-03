@@ -14,6 +14,7 @@ export const proximityMineThought = buildStaticPayloadThought({
   copy,
   seed: 127,
   carrier: 'pulse',
+  signalHealthScale: 2,
   effect: { type: 'signal-damaged', occurrence: 2 },
   effectTarget: { signalRef: 'target' },
   aliveRef: 'target',

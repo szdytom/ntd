@@ -9,7 +9,7 @@ import {
   showPause,
   timedCue,
 } from '../thoughts/authoring';
-import { straightRangePassScene } from '../thoughts/scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { condenseCoreModule } from './condense-core';
 
 const copy = {
@@ -84,7 +84,7 @@ export const condenseCoreThought = defineModuleThought(condenseCoreModule, {
     }),
     defineBeat({
       id: 'finish', captionKey: copy.sectionConcentrate, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2),
+      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });

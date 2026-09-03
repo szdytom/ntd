@@ -8,7 +8,7 @@ import {
   showPause,
   timedCue,
 } from '../thoughts/authoring';
-import { straightFiringLaneScene } from '../thoughts/scenes';
+import { STRAIGHT_LANE_CLEANUP, straightFiringLaneScene } from '../thoughts/scenes';
 import { needleModule } from './needle';
 
 const copy = {
@@ -29,7 +29,7 @@ export const needleThought = defineModuleThought(needleModule, {
   titleKey: copy.title,
   summaryKey: copy.summary,
   seed: 71,
-  scene: straightFiringLaneScene({ towerSlots: 3, signalHealthScale: 2.5, signalSpeedScale: 0.3 }),
+  scene: straightFiringLaneScene({ towerSlots: 3, signalHealthScale: 2, signalSpeedScale: 0.9 }),
   initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
   beats: [
     defineBeat({
@@ -62,7 +62,7 @@ export const needleThought = defineModuleThought(needleModule, {
     }),
     defineBeat({
       id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', 0),
+      cues: finishRun('finish', 0, STRAIGHT_LANE_CLEANUP),
     }),
   ],
 });

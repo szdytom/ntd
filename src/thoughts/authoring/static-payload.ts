@@ -1,6 +1,6 @@
 import type { ModuleDefinition } from '../../modules/types';
 import type { ModuleId } from '../../game/types';
-import { straightRangePassScene } from '../scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../scenes';
 import type { ThoughtDefinition, ThoughtEventMatcher, ThoughtOverlayTarget } from '../types';
 import { defineBeat } from './beats';
 import { defineModuleThought } from './define';
@@ -26,6 +26,8 @@ interface StaticPayloadOptions {
   readonly aliveRef?: string;
   readonly observe?: number;
   readonly effectTimeout?: number;
+  readonly signalHealthScale?: number;
+  readonly signalSpeedScale?: number;
 }
 
 /**
@@ -34,13 +36,16 @@ interface StaticPayloadOptions {
  * authored effect on the signals walking through it.
  */
 export const buildStaticPayloadThought = (options: StaticPayloadOptions): ThoughtDefinition => {
-  const { module, copy, seed, carrier, effect, effectTarget, aliveRef = 'target', observe, effectTimeout } = options;
+  const {
+    module, copy, seed, carrier, effect, effectTarget, aliveRef = 'target', observe,
+    effectTimeout, signalHealthScale = 1.2, signalSpeedScale = 0.5,
+  } = options;
 
   return defineModuleThought(module, {
     titleKey: copy.title,
     summaryKey: copy.summary,
     seed,
-    scene: straightRangePassScene({ towerSlots: 3, signalHealthScale: 4, signalSpeedScale: 0.5 }),
+    scene: straightRangePassScene({ towerSlots: 3, signalHealthScale, signalSpeedScale }),
     initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
     beats: [
       defineBeat({
@@ -88,7 +93,7 @@ export const buildStaticPayloadThought = (options: StaticPayloadOptions): Though
       }),
       defineBeat({
         id: 'finish', captionKey: copy.section, flow: 'observe',
-        cues: finishRun('finish', -Math.PI / 2),
+        cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
       }),
     ],
   });

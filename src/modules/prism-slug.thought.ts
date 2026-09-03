@@ -8,7 +8,7 @@ import {
   showPause,
   timedCue,
 } from '../thoughts/authoring';
-import { straightRangePassScene } from '../thoughts/scenes';
+import { STRAIGHT_RANGE_CLEANUP, straightRangePassScene } from '../thoughts/scenes';
 import { prismSlugModule } from './prism-slug';
 
 const copy = {
@@ -56,7 +56,7 @@ export const prismSlugThought = defineModuleThought(prismSlugModule, {
     }),
     defineBeat({
       id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2),
+      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });
