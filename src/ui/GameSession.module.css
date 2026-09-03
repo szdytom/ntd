@@ -30,7 +30,12 @@
   margin: 0;
 }
 
-.battlefield { width: 100%; height: 100%; border: 0; border-radius: 0; }
+.battlefield {
+  --battlefield-frame-border: 0;
+  --battlefield-frame-radius: 0;
+  width: 100%;
+  height: 100%;
+}
 
 @media (max-width: 620px) {
   .appShell { padding: 0 6px 7px; }

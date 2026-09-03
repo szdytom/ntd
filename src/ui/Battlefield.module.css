@@ -5,8 +5,8 @@
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
-  border: 2px solid var(--battle-ink);
-  border-radius: 16px;
+  border: var(--battlefield-frame-border, 2px solid var(--battle-ink));
+  border-radius: var(--battlefield-frame-radius, 16px);
   background: #fff;
 }
 
@@ -86,7 +86,7 @@
 .footer .difficultyChip { min-height: 26px; margin-right: 6px; font-size: 13px; }
 
 @media (max-width: 620px) {
-  .root { border-radius: 11px; }
+  .root { border-radius: var(--battlefield-frame-radius, 11px); }
   .header { min-height: 62px; padding: 6px 9px 6px 12px; }
   .header > div:first-child { min-width: 70px; }
   .header h1 { font-size: 17px; }

@@ -95,6 +95,9 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   await page.getByRole('button', { name: /Start deployment/ }).click();
   const canvas = page.getByRole('img', { name: 'Tower-defense battlefield' });
   await expect(canvas).toBeVisible();
+  const battlefield = page.locator('section').filter({ has: canvas });
+  await expect(battlefield).toHaveCSS('border-top-width', '0px');
+  await expect(battlefield).toHaveCSS('border-radius', '0px');
   const size = await canvas.boundingBox();
   expect(size?.width ?? 0).toBeGreaterThan(500);
   expect(size?.height ?? 0).toBeGreaterThan(300);
