@@ -72,7 +72,7 @@ Use `LOADOUT_ADDITION_CADENCE` for every non-final cue in a run of successive ad
 
 Keep steady geometry in the base CSS state. The resting cell width and inter-cell margin must not depend on an animation's forwards fill; the addition keyframe should end at exactly those base values so removing `.adding` cannot collapse a gap or move neighboring cells.
 
-Prefer whole-cell accent fills with light icons and text for active emphasis. Ensure all cell borders are present and no extra outline conflicts with the global visual language.
+Prefer border and inset edge accents for active emphasis while preserving the cell, icon, and label colors. Keep the border width and every other box-model value unchanged so highlighting cannot move cells or alter their spacing.
 
 Small loadout chips below towers must keep a fixed visual distance from the tower and respond to transcript expansion or viewport changes. They should not overlap the tower.
 

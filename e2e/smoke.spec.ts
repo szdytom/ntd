@@ -151,6 +151,55 @@ test('thought index plays real scenes and returns to deployment', async ({ page 
     return element.getBoundingClientRect().left - previous.right;
   }));
   expect(Math.max(...moduleGaps) - Math.min(...moduleGaps)).toBeLessThan(0.5);
+  const highlightedModule = revealedModules.nth(2).locator('.thought-loadout-module');
+  const restingHighlightGeometry = await revealedModules.evaluateAll((elements) => ({
+    gaps: elements.slice(1).map((element, index) => {
+      const previous = elements[index]!.getBoundingClientRect();
+      return element.getBoundingClientRect().left - previous.right;
+    }),
+    widths: elements.map((element) => element.getBoundingClientRect().width),
+  }));
+  const restingHighlightStyle = await highlightedModule.evaluate((element) => {
+    const icon = element.querySelector('span');
+    const style = getComputedStyle(element);
+    const iconStyle = icon ? getComputedStyle(icon) : null;
+    return {
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+      iconBackgroundColor: iconStyle?.backgroundColor,
+      iconColor: iconStyle?.color,
+    };
+  });
+  await index.locator('.thought-progress > button').nth(11).click();
+  await index.locator('.thought-scene-overlay[data-cue="point-static-modifier"]').waitFor();
+  await highlightedModule.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
+  const activeHighlightGeometry = await revealedModules.evaluateAll((elements) => ({
+    gaps: elements.slice(1).map((element, index) => {
+      const previous = elements[index]!.getBoundingClientRect();
+      return element.getBoundingClientRect().left - previous.right;
+    }),
+    widths: elements.map((element) => element.getBoundingClientRect().width),
+  }));
+  const activeHighlightStyle = await highlightedModule.evaluate((element) => {
+    const icon = element.querySelector('span');
+    const style = getComputedStyle(element);
+    const iconStyle = icon ? getComputedStyle(icon) : null;
+    return {
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+      boxShadow: style.boxShadow,
+      iconBackgroundColor: iconStyle?.backgroundColor,
+      iconColor: iconStyle?.color,
+    };
+  });
+  expect(activeHighlightGeometry).toEqual(restingHighlightGeometry);
+  expect(activeHighlightStyle.backgroundColor).toBe(restingHighlightStyle.backgroundColor);
+  expect(activeHighlightStyle.iconBackgroundColor).toBe(restingHighlightStyle.iconBackgroundColor);
+  expect(activeHighlightStyle.iconColor).toBe(restingHighlightStyle.iconColor);
+  expect(activeHighlightStyle.borderColor).not.toBe(restingHighlightStyle.borderColor);
+  expect(activeHighlightStyle.boxShadow).not.toBe('none');
   await index.locator('.thought-transcript summary').click();
   await expect(index.locator('.thought-transcript li').first()).toBeVisible();
   await index.getByRole('button', { name: 'Return to deployment' }).click();

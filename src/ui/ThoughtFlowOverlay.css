@@ -125,11 +125,12 @@
   border: 2px solid #5c5768;
   color: #fff;
   background: #312d3e;
-  transition: border-color .18s ease, background-color .18s ease;
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
 
 .thought-loadout-module.active {
-  background: var(--chip-color);
+  border-color: color-mix(in srgb, var(--chip-color) 65%, #fff);
+  box-shadow: inset 0 0 0 2px var(--chip-color);
 }
 
 .thought-loadout-module > span {
@@ -138,13 +139,6 @@
   place-items: center;
   color: var(--chip-color);
   background: var(--chip-tint);
-  transition: color .18s ease, background-color .18s ease;
-}
-
-.thought-loadout-module.active > span {
-  --module-icon-surface: var(--chip-color);
-  color: #fff;
-  background: transparent;
 }
 
 .thought-loadout-module-reveal.replacing {
