@@ -149,11 +149,11 @@
   grid-area: 1 / 1;
 }
 
-.thought-loadout-module.outgoing {
+.thought-loadout-module--outgoing {
   animation: thought-loadout-module-out .42s cubic-bezier(.55, .04, .88, .4) both;
 }
 
-.thought-loadout-module.incoming {
+.thought-loadout-module--incoming {
   animation: thought-loadout-module-in .46s .3s cubic-bezier(.12, .78, .22, 1) both;
 }
 
@@ -341,13 +341,13 @@
   .thought-placement-burst { display: none; }
   .thought-loadout-dialog,
   .thought-loadout-module-reveal,
-  .thought-loadout-module.outgoing,
-  .thought-loadout-module.incoming,
+  .thought-loadout-module--outgoing,
+  .thought-loadout-module--incoming,
   .thought-compact-loadout,
   .thought-overlay-line .thought-line-reveal,
   .thought-overlay-line .thought-line-target,
   .thought-scene-overlay .thought-scene-callout { animation: none; opacity: 1; }
   .thought-loadout-module-reveal { width: var(--loadout-module-width); margin-left: var(--module-gap); }
-  .thought-loadout-module.outgoing { display: none; }
+  .thought-loadout-module--outgoing { display: none; }
   .thought-overlay-line .thought-line-reveal { stroke-dashoffset: 0; }
 }

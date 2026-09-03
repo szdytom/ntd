@@ -131,6 +131,10 @@ test('thought index plays real scenes and returns to deployment', async ({ page 
   await expect(index.getByRole('button', { name: 'Pause' })).toBeVisible();
   await index.locator('button[data-thought-id="frost"]').click();
   await expect(index.locator('.thought-stage')).toHaveAttribute('data-thought-id', 'frost');
+  await index.locator('.thought-progress > button').nth(7).click();
+  await index.getByRole('button', { name: 'Play' }).click();
+  await index.locator('.thought-scene-overlay[data-cue="replace-area-carrier"]').waitFor();
+  await expect(index.locator('.thought-loadout-module--incoming')).toHaveCSS('display', 'grid');
   await index.locator('.thought-transcript summary').click();
   await expect(index.locator('.thought-transcript li').first()).toBeVisible();
   await index.getByRole('button', { name: 'Return to deployment' }).click();

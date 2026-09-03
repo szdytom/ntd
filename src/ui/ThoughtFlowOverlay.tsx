@@ -415,14 +415,14 @@ export function ThoughtFlowOverlay({ director, snapshot }: {
             key={`loadout-slot-${index}`}
           >
             {previousModule && PreviousIcon ? <div
-              className="thought-loadout-module outgoing"
+              className="thought-loadout-module thought-loadout-module--outgoing"
               style={{ '--chip-color': moduleUiColor(previousModule), '--chip-tint': previousModule.meta.tint } as CSSProperties}
               aria-hidden="true"
             >
               <span className="thought-loadout-module-icon"><PreviousIcon /></span><strong>{moduleShortName(t, previousModule.id)}</strong>
             </div> : null}
             <div
-              className={`thought-loadout-module${activeClass}${replacement ? ' incoming' : ''}`}
+              className={`thought-loadout-module${activeClass}${replacement ? ' thought-loadout-module--incoming' : ''}`}
               style={{ '--chip-color': moduleUiColor(module), '--chip-tint': module.meta.tint } as CSSProperties}
             >
               <span className="thought-loadout-module-icon"><Icon /></span><strong>{moduleShortName(t, module.id)}</strong>
