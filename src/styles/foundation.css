@@ -31,9 +31,9 @@ body {
   background: #efedf3;
 }
 
-html:has(.app-shell),
-body:has(.app-shell),
-#app:has(.app-shell) {
+html:has([data-app-shell]),
+body:has([data-app-shell]),
+#app:has([data-app-shell]) {
   height: 100dvh;
   overflow: hidden;
 }

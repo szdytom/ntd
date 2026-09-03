@@ -50,5 +50,5 @@ export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; 
   if (rendererError) {
     return <div className={styles.error} role="alert">{t('canvas.error', { error: rendererError })}</div>;
   }
-  return <canvas ref={canvasRef} id="game-canvas" role="img" aria-label={t('canvas.aria')} />;
+  return <canvas ref={canvasRef} className={styles.canvas} id="game-canvas" role="img" aria-label={t('canvas.aria')} />;
 }

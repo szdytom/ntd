@@ -207,9 +207,9 @@ test('the multi-entrance sector renders its route tree and all battlefield entra
   await page.getByRole('button', { name: /Start deployment/ }).click();
 
   await expect(page.getByRole('heading', { name: 'Triune Delta D-6', level: 1 })).toBeVisible();
-  await expect(page.locator('.spawn-label')).toHaveCount(triuneLevel.graph.entrances.length);
+  await expect(page.locator('[data-battlefield-spawn]')).toHaveCount(triuneLevel.graph.entrances.length);
   for (const [type, count] of configuredSignalCounts(triuneLevel, 0)) {
-    const preview = page.locator(`.signal-preview-button:has([data-signal-type="${type}"])`);
+    const preview = page.locator(`[data-signal-preview] button:has([data-signal-type="${type}"])`);
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(`×${count}`);
   }
@@ -371,7 +371,7 @@ test('creative economy and signal controls are independent from the workshop', a
   await signalButton.click();
   const signalConsole = page.getByRole('dialog', { name: 'Creative Signal Console' });
   await expect(signalConsole).toBeVisible();
-  await page.locator('.battle-footer-state').click();
+  await page.locator('[data-battlefield-state]').click();
   await expect(signalConsole).toHaveCount(0);
 
   await signalButton.click();
@@ -446,7 +446,7 @@ test('level carousel keeps three cards visible and launches the beginner map', a
   await page.getByRole('button', { name: '2×' }).click();
   await clickBattlefieldAt(page, towerPad(tutorialLevel, 1));
   await expect(workshop.locator('.tower-id')).toHaveText('Node 02');
-  await expect(page.locator('.live-dot')).not.toHaveClass(/combat/);
+  await expect(page.locator('[data-battlefield-live]')).not.toHaveAttribute('data-combat', 'true');
   await page.getByRole('button', { name: 'Close workshop' }).click();
   await expect(tutorial.getByRole('heading', { name: 'Reopen the tutorial tower' })).toBeVisible({ timeout: 45_000 });
   await clickBattlefieldAt(page, towerPad(tutorialLevel, 1));

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import './GameSession.css';
+import styles from './GameSession.module.css';
 import type { GameEngine } from '../game/engine';
 import type { SignalId } from '../game/types';
 import { GameHeader } from './GameHeader';
@@ -53,11 +53,12 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
     const timeout = window.setTimeout(() => setDefenseArchiveToast(null), 2_700);
     return () => window.clearTimeout(timeout);
   }, [defenseArchiveToast]);
-  return <div className="app-shell">
-    <div className="game-console">
+  return <div className={styles.appShell} data-app-shell>
+    <div className={styles.gameConsole}>
       <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} />
-      <div className="workspace">
+      <div className={styles.workspace}>
         <Battlefield
+          className={styles.battlefield!}
           engine={engine}
           view={view}
           suspended={suspended}

@@ -84,6 +84,6 @@ describe('signal wave preview', () => {
     />);
 
     expect(screen.getByText('No signals')).toBeTruthy();
-    expect(container.querySelector('.signal-preview')).toBeNull();
+    expect(container.querySelector('[data-signal-preview]')).toBeNull();
   });
 });

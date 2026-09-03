@@ -1,4 +1,4 @@
-.signal-preview {
+.root {
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
@@ -6,7 +6,7 @@
   gap: 6px;
 }
 
-.signal-preview-button {
+.button {
   padding: 0;
   border: 0;
   background: transparent;
@@ -14,15 +14,15 @@
   transition: filter 140ms ease;
 }
 
-.signal-preview-button:hover { filter: brightness(1.08); }
+.button:hover { filter: brightness(1.08); }
 
-.signal-preview-button:focus-visible {
+.button:focus-visible {
   outline: 3px solid var(--purple);
   outline-offset: 2px;
   box-shadow: none;
 }
 
-.signal-preview .signal-preview-tag {
+.tag {
   display: flex;
   min-height: 30px;
   align-items: center;
@@ -31,10 +31,14 @@
   text-shadow: 0 1px 1px rgba(37, 33, 52, .36);
 }
 
-.signal-preview .signal-icon { width: 15px; height: 15px; }
+.icon { width: 15px; height: 15px; }
 
-.signal-preview b {
+.root b {
   color: inherit;
   font-family: var(--font-mono);
   font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .tag { min-height: 26px; flex: 0 0 auto; }
 }

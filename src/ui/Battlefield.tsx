@@ -9,9 +9,10 @@ import { GameCanvas } from './GameCanvas';
 import { SignalPreview } from './SignalPreview';
 import { CreativeLab } from './CreativeLab';
 import { Tag } from './Tag';
-import './Battlefield.css';
+import styles from './Battlefield.module.css';
 
-export function Battlefield({ engine, view, suspended = false, onOpenArchive, workshop, children }: {
+export function Battlefield({ className, engine, view, suspended = false, onOpenArchive, workshop, children }: {
+  className?: string;
   engine: GameEngine;
   view: GameViewSnapshot;
   suspended?: boolean;
@@ -58,25 +59,25 @@ export function Battlefield({ engine, view, suspended = false, onOpenArchive, wo
   const spawns = engine.level.graph.entrances.map((entrance) => engine.routeFor(entrance).pointAtDistance(44).position);
   const core = engine.getCorePosition();
   return (
-    <section className="battle-card" data-phase={snapshot.status} data-mode={snapshot.mode} aria-label={t('battlefield.aria')}>
-      <div className="battle-stage">
-        <div className="battle-head">
+    <section className={[styles.root, className].filter(Boolean).join(' ')} data-phase={snapshot.status} data-mode={snapshot.mode} aria-label={t('battlefield.aria')}>
+      <div className={styles.stage}>
+        <div className={styles.header}>
           <div>
             <h1>
               {levelName(t, engine.level.id)}{' '}
-              <Tag className="battle-sector-tag" tone="purple" borderless monospace>{engine.level.sector.replace('SECTOR ', '')}</Tag>
-              <span className="battle-run-indicator">· {runIndicator}</span>
+              <Tag className={styles.sectorTag} tone="purple" borderless monospace>{engine.level.sector.replace('SECTOR ', '')}</Tag>
+              <span className={styles.runIndicator}>· {runIndicator}</span>
             </h1>
           </div>
-          <div className="incoming">
-            <div className="incoming-title">
+          <div className={styles.incoming}>
+            <div className={styles.incomingTitle}>
               <small>{t(terminal
                 ? 'battlefield.noSignals'
                 : waveInProgress ? 'battlefield.currentWave' : 'battlefield.nextWave')}</small>
               {engine.rules.scenarioControls === 'creative' ? (
                 <button
                   ref={creativeToggleRef}
-                  className="creative-signal-toggle"
+                  className={styles.creativeSignalToggle}
                   aria-haspopup="dialog"
                   aria-expanded={creativePanelOpen}
                   aria-controls="creative-signal-panel"
@@ -86,6 +87,7 @@ export function Battlefield({ engine, view, suspended = false, onOpenArchive, wo
             </div>
             {terminal ? null : (
               <SignalPreview
+                className={styles.signalPreview!}
                 engine={engine}
                 wave={previewWave}
                 {...(waveInProgress ? { liveCounts: snapshot.waveSignalCounts } : {})}
@@ -96,7 +98,7 @@ export function Battlefield({ engine, view, suspended = false, onOpenArchive, wo
         </div>
 
         {engine.rules.scenarioControls === 'creative' && creativePanelOpen ? (
-          <div ref={creativePanelRef} id="creative-signal-panel" className="creative-signal-panel">
+          <div ref={creativePanelRef} id="creative-signal-panel" className={styles.creativeSignalPanel}>
             <CreativeLab engine={engine} setup={view.creativeSetup} onClose={() => {
               setCreativePanelOpen(false);
               creativeToggleRef.current?.focus();
@@ -104,17 +106,17 @@ export function Battlefield({ engine, view, suspended = false, onOpenArchive, wo
           </div>
         ) : null}
 
-        <div className="canvas-wrap">
+        <div className={styles.canvasWrap}>
           <GameCanvas engine={engine} suspended={suspended} />
           {spawns.map((spawn, index) => (
-            <div className="spawn-label" key={engine.level.graph.entrances[index]} style={{ top: `${spawn.y / WORLD.height * 100}%` }}>
+            <div className={styles.spawnLabel} data-battlefield-spawn key={engine.level.graph.entrances[index]} style={{ top: `${spawn.y / WORLD.height * 100}%` }}>
               <i /><span>{t('battlefield.spawn')}</span>
             </div>
           ))}
-          <div className="core-label" style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>{t('battlefield.core')}</span><i /></div>
+          <div className={styles.coreLabel} style={{ top: `${core.y / WORLD.height * 100}%`, bottom: 'auto' }}><span>{t('battlefield.core')}</span><i /></div>
           {!terminal ? null : (
-            <div className="status-overlay" data-tone={snapshot.status}>
-              <div className="status-shape">✦</div>
+            <div className={styles.statusOverlay} data-tone={snapshot.status}>
+              <div className={styles.statusShape}>✦</div>
               <h2>{snapshot.status === 'won' ? t('battlefield.won') : t('battlefield.lost')}</h2>
               <p>{snapshot.status === 'won'
                 ? t('battlefield.wonDetail', { score: snapshot.score, core: snapshot.core, maxCore: snapshot.maxCore })
@@ -128,15 +130,15 @@ export function Battlefield({ engine, view, suspended = false, onOpenArchive, wo
         {workshop}
       </div>
 
-      <footer className="battle-footer">
-        <div className="battle-footer-state">
-          <i className={`live-dot ${snapshot.status === 'wave' && !snapshot.paused ? 'combat' : ''}`} />
+      <footer className={styles.footer}>
+        <div className={styles.footerState} data-battlefield-state>
+          <i className={styles.liveDot} data-battlefield-live data-combat={snapshot.status === 'wave' && !snapshot.paused || undefined} />
           <span>{phase}</span>
         </div>
-        <div className="score-line">
-          <Tag className="mode-chip" tone="yellow" borderless>{t(`modes.${snapshot.mode}`)}</Tag>
+        <div className={styles.scoreLine}>
+          <Tag className={styles.modeChip} tone="yellow" borderless>{t(`modes.${snapshot.mode}`)}</Tag>
           {engine.difficulty.id === 'normal' ? null : (
-            <Tag className="difficulty-chip" tone="purple" borderless>{difficultyName(t, engine.difficulty.id)}</Tag>
+            <Tag className={styles.difficultyChip} tone="purple" borderless>{difficultyName(t, engine.difficulty.id)}</Tag>
           )}
           {t('battlefield.score')} <strong>{String(snapshot.score).padStart(5, '0')}</strong>
         </div>

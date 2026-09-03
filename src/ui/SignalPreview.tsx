@@ -7,9 +7,10 @@ import { signalName } from '../i18n/presentation';
 import { SIGNAL_IDS, signalRegistry } from '../signals';
 import { SignalIcon } from './SignalIcon';
 import { Tag } from './Tag';
-import './SignalPreview.css';
+import styles from './SignalPreview.module.css';
 
-export function SignalPreview({ engine, wave, liveCounts, onOpenArchive }: {
+export function SignalPreview({ className, engine, wave, liveCounts, onOpenArchive }: {
+  className?: string;
   engine: GameEngine;
   wave: number;
   liveCounts?: GameSnapshot['waveSignalCounts'];
@@ -28,18 +29,18 @@ export function SignalPreview({ engine, wave, liveCounts, onOpenArchive }: {
       if (count !== undefined && !counts.has(type)) counts.set(type, count);
     }
   }
-  return <div className="signal-preview">{[...counts.entries()].map(([type, count]) => {
+  return <div className={[styles.root, className].filter(Boolean).join(' ')} data-signal-preview>{[...counts.entries()].map(([type, count]) => {
     const signal = signalRegistry.require(type);
     const name = signalName(t, type);
     return <button
-      className="signal-preview-button"
+      className={styles.button}
       key={type}
       type="button"
       onClick={() => onOpenArchive(type)}
       aria-label={t('battlefield.openSignalArchive', { signal: name })}
     >
-      <Tag className="signal-preview-tag" tone="accent" contrast="light" style={{ '--tag-accent': signal.visual.color } as CSSProperties} title={`${name} × ${count}`}>
-        <SignalIcon type={type} monochrome />
+      <Tag className={styles.tag} tone="accent" contrast="light" style={{ '--tag-accent': signal.visual.color } as CSSProperties} title={`${name} × ${count}`}>
+        <SignalIcon type={type} monochrome className={styles.icon!} />
         <b>×{count}</b>
       </Tag>
     </button>;
