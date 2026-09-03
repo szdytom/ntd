@@ -327,7 +327,7 @@ export const cinderTrailThought = defineModuleThought(cinderTrailModule, {
           waitForTowerEnergy: true, timeout: 20, timelineWait: true,
         }),
         timedCue('settle-cinder-comparison', 0.5, {
-          transition: { towerRotations: [0, 0] }, ease: 'smooth',
+          transition: { towerRotations: [0, 0], towerEnergyRatio: 1 }, ease: 'smooth',
         }),
       ],
     }),

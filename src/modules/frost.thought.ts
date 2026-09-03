@@ -138,7 +138,7 @@ export const frostThought = defineModuleThought(frostModule, {
           timelineWait: true,
         }),
         timedCue('settle-projectile-clear', 0.5, {
-          transition: { towerRotation: -Math.PI / 2 },
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 },
           ease: 'smooth',
         }),
       ],
@@ -199,7 +199,7 @@ export const frostThought = defineModuleThought(frostModule, {
           timelineWait: true,
         }),
         timedCue('settle-area-clear', 0.5, {
-          transition: { towerRotation: -Math.PI / 2 },
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 },
           ease: 'smooth',
         }),
       ],
@@ -359,7 +359,7 @@ export const frostThought = defineModuleThought(frostModule, {
           timelineWait: true,
         }),
         timedCue('settle-static-clear', 1.5, {
-          transition: { towerRotation: -Math.PI / 2 },
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 },
           ease: 'smooth',
         }),
       ],

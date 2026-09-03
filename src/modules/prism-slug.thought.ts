@@ -96,7 +96,9 @@ export const prismSlugThought = defineModuleThought(prismSlugModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-slug-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-slug-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-slug-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
     defineBeat({
@@ -158,7 +160,9 @@ export const prismSlugThought = defineModuleThought(prismSlugModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-carrier-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-carrier-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-carrier-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
   ],

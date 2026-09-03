@@ -199,7 +199,7 @@ export const buildDeferredTriggerThought = (options: DeferredTriggerOptions): Th
             waitForTowerEnergy: true, timeout: 20, timelineWait: true,
           }),
           timedCue('finish-shield-settle', 0.5, {
-            transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
+            transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
           }),
         ],
       }),

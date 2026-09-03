@@ -22,9 +22,9 @@ export const openRun = (prefix: string): readonly ThoughtCue[] => [
   timedCue(`${prefix}-compact`, 0.35, { loadoutMode: 'compact' }),
 ];
 
-/** Ease every visible tower to the engine's reset orientation before rebuilding combat state. */
+/** Ease every visible tower to its reset orientation and full displayed energy before rebuilding combat state. */
 export const settleTowerForReset = (id: string): ThoughtCue => timedCue(id, 0.5, {
-  transition: { towerRotation: DEFAULT_TOWER_ROTATION },
+  transition: { towerRotation: DEFAULT_TOWER_ROTATION, towerEnergyRatio: 1 },
   ease: 'smooth',
 });
 
@@ -173,5 +173,7 @@ export const finishRun = (
     timeout: 20,
     timelineWait: true,
   }),
-  timedCue(`${prefix}-settle`, 0.5, { transition: { towerRotation: rotation }, ease: 'smooth' }),
+  timedCue(`${prefix}-settle`, 0.5, {
+    transition: { towerRotation: rotation, towerEnergyRatio: 1 }, ease: 'smooth',
+  }),
 ];

@@ -35,6 +35,14 @@ const angleDistance = (left: number, right: number): number => (
   Math.abs(((left - right + Math.PI * 3) % (Math.PI * 2)) - Math.PI)
 );
 
+const presentedTowerEnergyRatio = (director: ThoughtSceneDirector, towerIndex = 0): number => {
+  const presentation = director.getRenderPresentation();
+  const tower = director.runtime.engine.towers[towerIndex];
+  return presentation.towerEnergyRatios?.[towerIndex]
+    ?? presentation.towerEnergyRatio
+    ?? (tower ? tower.energy / tower.maxEnergy : 0);
+};
+
 describe('thought registry', () => {
   it('maps every registered subject and diagnostic back to its thought', () => {
     const definitions = thoughtRegistry.list();
@@ -403,6 +411,78 @@ describe('thought scenes', () => {
     expect(overdriven).not.toBeNull();
     expect(overdriven?.hp).toBeLessThan(baseline?.hp ?? 0);
     director.dispose();
+  });
+
+  it('keeps tower energy continuous when a transition resets the runtime', () => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require('nova'));
+    let boundary: { before: number; after: number } | undefined;
+
+    for (let step = 0; step < maximumDirectorSteps(director); step += 1) {
+      const snapshot = director.getSnapshot();
+      if (snapshot.status === 'completed' || snapshot.status === 'error') break;
+      const ratioBeforeReset = presentedTowerEnergyRatio(director);
+
+      director.update(FIXED_SIMULATION_STEP);
+      if (director.getSnapshot().cueId !== 'modifier-configure') continue;
+
+      boundary = {
+        before: ratioBeforeReset,
+        after: presentedTowerEnergyRatio(director),
+      };
+      break;
+    }
+
+    director.dispose();
+    expect(boundary).toBeDefined();
+    expect(boundary?.after).toBeCloseTo(boundary?.before ?? 0);
+    expect(boundary?.after).toBeCloseTo(1);
+  });
+
+  it('visually refills tower energy while settling toward a runtime reset', () => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require('nova'));
+    runUntilCue(director, 'modifier-settle-rotation');
+    expect(director.getSnapshot().cueId).toBe('modifier-settle-rotation');
+
+    const start = presentedTowerEnergyRatio(director);
+    const duration = director.definition.beats
+      .flatMap((beat) => beat.cues ?? [])
+      .find((cue) => cue.id === 'modifier-settle-rotation')?.duration;
+    if (duration === undefined) throw new Error('Expected a timed reset settle');
+
+    for (let elapsed = 0; elapsed < duration / 2; elapsed += FIXED_SIMULATION_STEP) {
+      director.update(FIXED_SIMULATION_STEP);
+    }
+    const midpoint = presentedTowerEnergyRatio(director);
+
+    director.dispose();
+    expect(start).toBeLessThan(1);
+    expect(midpoint).toBeGreaterThan(start);
+    expect(midpoint).toBeLessThan(1);
+  });
+
+  it('preserves independent energy interpolation for multi-tower reset transitions', () => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require('cinder-trail'));
+    runUntilCue(director, 'settle-first-comparison-rotation');
+    expect(director.getSnapshot().cueId).toBe('settle-first-comparison-rotation');
+
+    const start = director.runtime.engine.towers.map((tower, towerIndex) => {
+      const actual = tower.energy / tower.maxEnergy;
+      expect(presentedTowerEnergyRatio(director, towerIndex)).toBeCloseTo(actual);
+      return actual;
+    });
+    expect(start).toHaveLength(2);
+
+    for (let elapsed = 0; elapsed < 0.25; elapsed += FIXED_SIMULATION_STEP) {
+      director.update(FIXED_SIMULATION_STEP);
+    }
+    const midpoint = start.map((_, towerIndex) => presentedTowerEnergyRatio(director, towerIndex));
+
+    director.dispose();
+    expect(start.some((ratio) => ratio < 1)).toBe(true);
+    midpoint.forEach((ratio, towerIndex) => {
+      expect(ratio).toBeGreaterThan(start[towerIndex] ?? 0);
+      expect(ratio).toBeLessThan(1);
+    });
   });
 
   it('eases the tower toward an authored orientation after a semantic wait', () => {

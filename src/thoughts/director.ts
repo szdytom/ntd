@@ -51,6 +51,12 @@ const withoutTowerRotation = (scene: ThoughtSceneValues): ThoughtSceneValues => 
   delete values.towerRotations;
   return values;
 };
+const withoutTowerEnergy = (scene: ThoughtSceneValues): ThoughtSceneValues => {
+  const values = { ...scene };
+  delete values.towerEnergyRatio;
+  delete values.towerEnergyRatios;
+  return values;
+};
 const ease = (value: number, mode: ThoughtEase): number => {
   const progress = clampUnit(value);
   if (mode === 'linear') return progress;
@@ -104,18 +110,28 @@ const interpolateScene = (
     to.towerRotation ?? 0,
     true,
   );
+  const towerEnergyRatios = interpolateValues(
+    from.towerEnergyRatios,
+    to.towerEnergyRatios,
+    from.towerEnergyRatio ?? 1,
+    to.towerEnergyRatio ?? 1,
+  );
   return {
     pathProgress: from.pathProgress + (to.pathProgress - from.pathProgress) * progress,
     towerPadOpacity: from.towerPadOpacity + (to.towerPadOpacity - from.towerPadOpacity) * progress,
     towerOpacity: from.towerOpacity + (to.towerOpacity - from.towerOpacity) * progress,
     signalOpacity: from.signalOpacity + (to.signalOpacity - from.signalOpacity) * progress,
     simulationRate: from.simulationRate + (to.simulationRate - from.simulationRate) * progress,
+    ...(to.towerEnergyRatio === undefined || from.towerEnergyRatio === undefined
+      ? {}
+      : { towerEnergyRatio: from.towerEnergyRatio + (to.towerEnergyRatio - from.towerEnergyRatio) * progress }),
     ...(to.towerRotation === undefined || from.towerRotation === undefined
       ? {}
       : { towerRotation: from.towerRotation + rotationDifference * progress }),
     ...(towerPadOpacities ? { towerPadOpacities } : {}),
     ...(towerOpacities ? { towerOpacities } : {}),
     ...(towerRotations ? { towerRotations } : {}),
+    ...(towerEnergyRatios ? { towerEnergyRatios } : {}),
   };
 };
 
@@ -426,7 +442,26 @@ export class ThoughtSceneDirector {
     this.eventMatchCount = 0;
     const cue = this.currentCue();
     const previousLoadouts = this.runtime.engine.towers.map((tower) => [...tower.slots]);
-    this.cueStartScene = cue.transition?.towerRotation === undefined && cue.transition?.towerRotations === undefined
+    const transitionsTowerEnergy = cue.transition?.towerEnergyRatio !== undefined
+      || cue.transition?.towerEnergyRatios !== undefined;
+    const towerEnergyRatios = transitionsTowerEnergy
+      ? this.runtime.engine.towers.map((tower, towerIndex) => (
+        this.sceneValues.towerEnergyRatios?.[towerIndex]
+        ?? this.sceneValues.towerEnergyRatio
+        ?? tower.energy / tower.maxEnergy
+      ))
+      : undefined;
+    const targetTowerEnergyRatios = transitionsTowerEnergy
+      ? this.runtime.engine.towers.map((_, towerIndex) => (
+        cue.transition?.towerEnergyRatios?.[towerIndex]
+        ?? cue.transition?.towerEnergyRatio
+        ?? towerEnergyRatios?.[towerIndex]
+        ?? 1
+      ))
+      : undefined;
+    this.cueStartScene = cue.transition?.towerRotation === undefined
+      && cue.transition?.towerRotations === undefined
+      && !transitionsTowerEnergy
       ? this.sceneValues
       : {
         ...this.sceneValues,
@@ -439,8 +474,13 @@ export class ThoughtSceneDirector {
           towerRotations: this.sceneValues.towerRotations
             ?? this.runtime.engine.towers.map((tower) => tower.rotation),
         }),
+        ...(towerEnergyRatios ? { towerEnergyRatios } : {}),
       };
-    this.cueTargetScene = { ...this.sceneValues, ...cue.transition };
+    this.cueTargetScene = {
+      ...this.sceneValues,
+      ...cue.transition,
+      ...(targetTowerEnergyRatios ? { towerEnergyRatios: targetTowerEnergyRatios } : {}),
+    };
     if (cue.loadoutMode) this.loadoutMode = cue.loadoutMode;
     if (cue.loadoutVisibleSlots !== undefined) {
       this.loadoutVisibleSlots = Math.max(0, Math.floor(cue.loadoutVisibleSlots));
@@ -503,6 +543,11 @@ export class ThoughtSceneDirector {
           this.cueStartScene = withoutTowerRotation(this.cueStartScene);
           this.cueTargetScene = withoutTowerRotation(this.cueTargetScene);
         }
+        if (this.sceneValues.towerEnergyRatio !== undefined || this.sceneValues.towerEnergyRatios !== undefined) {
+          this.sceneValues = withoutTowerEnergy(this.sceneValues);
+          this.cueStartScene = withoutTowerEnergy(this.cueStartScene);
+          this.cueTargetScene = withoutTowerEnergy(this.cueTargetScene);
+        }
       } else if (action.type === 'setup-towers') {
         this.events.length = 0;
         this.eventBindings.clear();
@@ -512,6 +557,11 @@ export class ThoughtSceneDirector {
           this.sceneValues = withoutTowerRotation(this.sceneValues);
           this.cueStartScene = withoutTowerRotation(this.cueStartScene);
           this.cueTargetScene = withoutTowerRotation(this.cueTargetScene);
+        }
+        if (this.sceneValues.towerEnergyRatio !== undefined || this.sceneValues.towerEnergyRatios !== undefined) {
+          this.sceneValues = withoutTowerEnergy(this.sceneValues);
+          this.cueStartScene = withoutTowerEnergy(this.cueStartScene);
+          this.cueTargetScene = withoutTowerEnergy(this.cueTargetScene);
         }
       } else if (action.type === 'spawn-signal') {
         const signal = this.runtime.spawnSignal(action.signal, action.position);

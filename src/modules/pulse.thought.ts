@@ -98,7 +98,9 @@ export const pulseThought = defineModuleThought(pulseModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-pulse-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-pulse-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-pulse-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
     defineBeat({
@@ -160,7 +162,9 @@ export const pulseThought = defineModuleThought(pulseModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-carrier-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-carrier-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-carrier-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
   ],

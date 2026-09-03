@@ -320,7 +320,7 @@ export const buildTrailWakeThought = (options: TrailWakeOptions): ThoughtDefinit
           }),
           waitCue('wait-wake-comparison-energy', { waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
           timedCue('settle-wake-comparison', 0.5, {
-            transition: { towerRotations: [0, 0] }, ease: 'smooth',
+            transition: { towerRotations: [0, 0], towerEnergyRatio: 1 }, ease: 'smooth',
           }),
         ],
       }),

@@ -67,7 +67,9 @@ export interface GameRenderPresentation {
   readonly towerPadOpacity?: number;
   readonly towerOpacity: number;
   readonly signalOpacity: number;
+  readonly towerEnergyRatio?: number;
   readonly towerRotation?: number;
+  readonly towerEnergyRatios?: readonly number[];
   readonly towerPadOpacities?: readonly number[];
   readonly towerOpacities?: readonly number[];
   readonly towerRotations?: readonly number[];
@@ -260,8 +262,10 @@ export class GameRenderer {
     this.drawTowers(
       presentation?.towerRotation,
       presentation?.towerOpacity,
+      presentation?.towerEnergyRatio,
       presentation?.towerRotations,
       presentation?.towerOpacities,
+      presentation?.towerEnergyRatios,
     );
     this.engine.effects.render(ctx, 'under-projectile', bloomCtx);
     this.drawProjectiles();
@@ -1262,20 +1266,26 @@ export class GameRenderer {
   private drawTowers(
     rotationOverride?: number,
     opacityOverride?: number,
+    energyRatioOverride?: number,
     rotationOverrides?: readonly number[],
     opacityOverrides?: readonly number[],
+    energyRatioOverrides?: readonly number[],
   ): void {
     for (const tower of this.engine.towers) {
       const opacity = opacityOverrides?.[tower.padIndex] ?? opacityOverride ?? 1;
       if (opacity <= 0) continue;
       this.ctx.save();
       this.ctx.globalAlpha *= opacity;
-      this.drawTower(tower, rotationOverrides?.[tower.padIndex] ?? rotationOverride);
+      this.drawTower(
+        tower,
+        rotationOverrides?.[tower.padIndex] ?? rotationOverride,
+        energyRatioOverrides?.[tower.padIndex] ?? energyRatioOverride,
+      );
       this.ctx.restore();
     }
   }
 
-  private drawTower(tower: Tower, rotationOverride?: number): void {
+  private drawTower(tower: Tower, rotationOverride?: number, energyRatioOverride?: number): void {
     const ctx = this.ctx;
     const color = this.options.towerColor ?? this.engine.getTowerColor(tower);
     const selected = this.options.showSelection !== false && tower.id === this.engine.selectedTowerId;
@@ -1296,7 +1306,7 @@ export class GameRenderer {
     const options = this.towerVisualOptions;
     options.color = color;
     options.selected = selected;
-    options.energyRatio = tower.energy / tower.maxEnergy;
+    options.energyRatio = energyRatioOverride ?? tower.energy / tower.maxEnergy;
     options.level = tower.level;
     options.rotation = rotationOverride ?? tower.rotation;
     options.flash = tower.flash;

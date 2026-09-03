@@ -140,7 +140,7 @@ export const overdriveThought = defineModuleThought(overdriveModule, {
         }),
         waitCue('wait-comparison-energy', { waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
         timedCue('settle-comparison-towers', 0.5, {
-          transition: { towerRotations: [0, 0] }, ease: 'smooth',
+          transition: { towerRotations: [0, 0], towerEnergyRatio: 1 }, ease: 'smooth',
         }),
       ],
     }),

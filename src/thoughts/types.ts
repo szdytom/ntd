@@ -39,7 +39,9 @@ export interface ThoughtSceneValues {
   readonly towerOpacity: number;
   readonly signalOpacity: number;
   readonly simulationRate: number;
+  readonly towerEnergyRatio?: number;
   readonly towerRotation?: number;
+  readonly towerEnergyRatios?: readonly number[];
   readonly towerPadOpacities?: readonly number[];
   readonly towerOpacities?: readonly number[];
   readonly towerRotations?: readonly number[];

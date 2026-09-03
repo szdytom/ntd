@@ -83,7 +83,9 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-forked-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-forked-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-forked-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
     defineBeat({
@@ -144,7 +146,9 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-count-focus-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
-        timedCue('settle-count-focus-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-count-focus-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
     defineBeat({
@@ -195,7 +199,7 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
         waitCue('wait-chain-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
         timedCue('dismiss-chain-compact', 0.35, {
           loadoutMode: 'compact-leaving',
-          transition: { towerRotation: -Math.PI / 2 },
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 },
           ease: 'smooth',
         }),
         timedCue('configure-chain-focus', 0.2, {
@@ -254,7 +258,9 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           transition: { simulationRate: 1 }, ease: 'smooth',
         }),
         waitCue('wait-chain-focus-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 30, timelineWait: true }),
-        timedCue('settle-chain-focus-clear', 0.5, { transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth' }),
+        timedCue('settle-chain-focus-clear', 0.5, {
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
+        }),
       ],
     }),
     defineBeat({
@@ -292,7 +298,7 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
         }),
         timedCue('settle-solar-defeat', 0.5, {
           actions: [{ type: 'set-tower-casting', enabled: false }],
-          transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
         }),
         timedCue('configure-anvil-comparison', 0.2, {
           actions: [{ type: 'setup', slots: ['focus-core', 'arcbolt'] }],
@@ -350,7 +356,7 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           waitForTowerEnergy: true, timeout: 20, timelineWait: true,
         }),
         timedCue('settle-target-comparison', 0.5, {
-          transition: { towerRotation: -Math.PI / 2 }, ease: 'smooth',
+          transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',
         }),
       ],
     }),
