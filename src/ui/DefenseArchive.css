@@ -19,26 +19,39 @@
   background: var(--archive-paper);
 }
 
-.defense-archive-head {
-  display: grid;
-  min-height: 92px;
-  grid-template-columns: 74px minmax(0, 1fr) 72px;
-  align-items: stretch;
+.defense-archive-mark {
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  border-bottom: 2px solid var(--archive-ink);
+  background: #f0edff;
 }
 
-.defense-archive-head > .settings-panel {
-  grid-column: 3;
-  grid-row: 1;
-  display: grid;
-  align-self: stretch;
-  place-items: center;
-  margin: 0;
-  border-left: 2px solid var(--archive-ink);
-  background: #fff;
+.defense-archive-mark::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--archive-ink);
+  background: var(--archive-purple);
+  content: '';
+  transform: translate(-50%, -50%) rotate(45deg);
 }
-.defense-archive-head > .settings-panel .settings-trigger { border-radius: 0; }
+
+.defense-archive-mark i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 9px;
+  border: 2px solid var(--archive-ink);
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+
+.defense-archive-mark i:first-child { transform: translate(-64%, -135%); }
+.defense-archive-mark i:last-child { transform: translate(-36%, 35%); }
 
 .defense-archive-tabs {
   display: grid;
@@ -300,8 +313,6 @@
 
 @media (min-width: 761px) and (max-height: 760px) {
   .defense-archive-shell { padding: 12px 0; }
-  .defense-archive-head { min-height: 78px; }
-  .defense-archive-head .archive-title h1 { font-size: clamp(34px, 3.6vw, 46px); }
   .defense-archive-tabs button { min-height: 50px; }
   .defense-archive-footer { min-height: 40px; }
 }
@@ -309,10 +320,6 @@
 @media (max-width: 760px) {
   .defense-archive-shell { width: calc(100% - 20px); height: auto; min-height: 100dvh; padding: 10px 0; }
   .defense-archive-frame { min-height: calc(100vh - 20px); border-radius: 12px; }
-  .defense-archive-head { grid-template-columns: 58px minmax(0, 1fr) 58px; min-height: 78px; }
-  .defense-archive-head .archive-title { padding: 12px 14px; }
-  .defense-archive-head .archive-title h1 { font-size: clamp(29px, 9vw, 36px); }
-  .defense-archive-head > .settings-panel { grid-column: 3; border-left: 2px solid var(--archive-ink); }
   .defense-archive-tabs button { min-height: 52px; padding: 5px; font-size: 12px; line-height: 1.15; }
   .defense-archive-tabs button::before { display: none; }
   .defense-archive-tabs b { display: none; }

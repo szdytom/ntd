@@ -3,26 +3,13 @@
   min-height: 100dvh;
 }
 
-.signal-archive-head {
-  display: grid;
-  grid-template-columns: 74px minmax(0, 1fr) 72px 106px;
-  min-height: 92px;
-  align-items: stretch;
-  overflow: hidden;
-  border: 2px solid var(--archive-ink);
-  border-radius: 18px 18px 0 0;
-  background: var(--archive-paper);
-}
-
 .signal-archive-seal {
   --seal-center-size: 12px;
   --seal-middle-size: 28px;
   --seal-outer-size: 44px;
-  grid-column: 4;
-  grid-row: 1;
   position: relative;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   color: #fff;
   background: var(--signal-accent);
 }
@@ -30,19 +17,40 @@
 .signal-archive-seal::before,
 .signal-archive-seal::after,
 .signal-archive-seal i {
-  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   width: var(--seal-outer-size);
   height: var(--seal-outer-size);
   border: 2px solid var(--archive-ink);
-  background: rgba(255,255,255,.18);
+  background: rgb(255 255 255 / 18%);
+  content: '';
   transform: translate(-50%, -50%) rotate(45deg);
 }
-.signal-archive-seal::after { width: var(--seal-middle-size); height: var(--seal-middle-size); background: transparent; transform: translate(-50%, -50%) rotate(22.5deg); }
-.signal-archive-seal i { width: var(--seal-center-size); height: var(--seal-center-size); border: 0; background: var(--archive-ink); }
-.signal-archive-seal b { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; }
+
+.signal-archive-seal::after {
+  width: var(--seal-middle-size);
+  height: var(--seal-middle-size);
+  background: transparent;
+  transform: translate(-50%, -50%) rotate(22.5deg);
+}
+
+.signal-archive-seal i {
+  width: var(--seal-center-size);
+  height: var(--seal-center-size);
+  border: 0;
+  background: var(--archive-ink);
+}
+
+.signal-archive-seal b {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
 
 .signal-archive-console {
   display: grid;
@@ -253,9 +261,6 @@
 
 @media (max-width: 760px) {
   .signal-archive-shell { width: calc(100% - 14px); padding: 7px 0 78px; }
-  .signal-archive-head { grid-template-columns: 56px minmax(0, 1fr) 58px 78px; min-height: 78px; border-radius: 12px 12px 0 0; }
-  .signal-archive-head .archive-title { padding: 0 15px; }
-  .signal-archive-head h1 { font-size: 29px; }
   .signal-archive-seal { --seal-center-size: 10px; --seal-middle-size: 24px; --seal-outer-size: 38px; }
   .signal-archive-console { grid-template-columns: 1fr; overflow: visible; border-radius: 0 0 12px 12px; }
   .signal-archive-index { overflow: hidden; border-right: 0; border-bottom: 2px solid var(--archive-ink); }
@@ -270,8 +275,6 @@
 }
 
 @media (max-width: 480px) {
-  .signal-archive-head { grid-template-columns: 50px minmax(0,1fr) 52px 64px; }
-  .signal-archive-head h1 { font-size: 25px; }
   .signal-archive-seal { --seal-center-size: 9px; --seal-middle-size: 21px; --seal-outer-size: 34px; }
   .signal-archive-data { padding: 20px 13px; }
   .signal-archive-data > header { display: block; }

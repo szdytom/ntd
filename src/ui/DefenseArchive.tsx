@@ -11,7 +11,6 @@ import {
 } from '../defense-archive';
 import { difficultyName, levelName, moduleName } from '../i18n/presentation';
 import { createModuleRegistry } from '../modules';
-import { SettingsPanel } from './SettingsPanel';
 import { SectorArchive } from './SectorArchive';
 import { SignalLedger, signalIconType, signalLabel } from './SignalLedger';
 import { SignalIcon } from './SignalIcon';
@@ -42,22 +41,6 @@ const ArchiveModule = ({ moduleId, count }: { moduleId: ModuleId; count?: number
     <em>{moduleName(t, moduleId)}</em>
     {count === undefined ? null : <b>×{count}</b>}
   </span>;
-};
-
-const DefenseArchiveHeader = ({ repository, onBack, onDefenseArchiveCleared }: {
-  repository: DefenseArchiveRepository;
-  onBack: () => void;
-  onDefenseArchiveCleared: () => void;
-}) => {
-  const { t } = useTranslation();
-  return <ArchiveHeader
-    className="defense-archive-head"
-    title={t('defenseArchive.title')}
-    backLabel={t('defenseArchive.back')}
-    onBack={onBack}
-  >
-    <SettingsPanel defenseArchiveRepository={repository} onDefenseArchiveCleared={onDefenseArchiveCleared} />
-  </ArchiveHeader>;
 };
 
 const Overview = ({ records }: { records: DefenseRecord[] }) => {
@@ -188,7 +171,19 @@ export function DefenseArchive({ repository, onBack }: { repository: DefenseArch
   };
   return <main className="archive-shell defense-archive-shell">
     <div className="defense-archive-frame">
-      <DefenseArchiveHeader repository={repository} onBack={onBack} onDefenseArchiveCleared={load} />
+      <ArchiveHeader
+        className="defense-archive-head"
+        title={t('defenseArchive.title')}
+        backLabel={t('defenseArchive.back')}
+        onBack={onBack}
+        decoration={<div className="defense-archive-mark" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>}
+        contained
+        settings={{ defenseArchiveRepository: repository, onDefenseArchiveCleared: load }}
+      />
       <nav className="defense-archive-tabs" role="tablist" aria-label={t('defenseArchive.sections')}>{ARCHIVE_TABS.map((item, index) => <button
         key={item}
         id={`defense-archive-tab-${item}`}

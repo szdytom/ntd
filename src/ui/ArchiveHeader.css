@@ -6,6 +6,32 @@
   padding: 24px 0;
 }
 
+.archive-header {
+  --archive-header-back-width: 74px;
+  --archive-header-settings-width: 72px;
+  --archive-header-seal-width: 106px;
+  --archive-header-height: 92px;
+  display: grid;
+  min-width: 0;
+  min-height: var(--archive-header-height);
+  grid-template-columns:
+    var(--archive-header-back-width)
+    minmax(0, 1fr)
+    var(--archive-header-settings-width)
+    var(--archive-header-seal-width);
+  align-items: stretch;
+  overflow: hidden;
+  border: 2px solid var(--archive-ink, #252134);
+  border-radius: 18px 18px 0 0;
+  background: var(--archive-paper, #fff);
+}
+
+.archive-header-contained {
+  border: 0;
+  border-bottom: 2px solid var(--archive-ink, #252134);
+  border-radius: 0;
+}
+
 .archive-back {
   grid-column: 1;
   grid-row: 1;
@@ -15,10 +41,10 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-right: 2px solid var(--archive-ink);
+  border-right: 2px solid var(--archive-ink, #252134);
   border-radius: 0;
-  color: var(--archive-ink);
-  background: var(--archive-yellow);
+  color: var(--archive-ink, #252134);
+  background: var(--archive-yellow, #ffd447);
   cursor: pointer;
 }
 
@@ -34,15 +60,54 @@
   align-items: center;
   gap: 20px;
   padding: 0 26px;
-  border-right: 2px solid var(--archive-ink);
+  border-right: 2px solid var(--archive-ink, #252134);
 }
 
 .archive-title h1 {
   margin: 0;
-  color: var(--archive-ink);
+  color: var(--archive-ink, #252134);
   font-size: clamp(34px, 4vw, 52px);
   line-height: .95;
   letter-spacing: -.055em;
+}
+
+.archive-header > .settings-panel {
+  grid-column: 3;
+  grid-row: 1;
+  border-right: 2px solid var(--archive-ink, #252134);
+  background: var(--archive-paper, #fff);
+}
+
+.archive-header > .settings-panel .settings-trigger { border-radius: 0; }
+
+.archive-decoration {
+  grid-column: 4;
+  grid-row: 1;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .archive-header {
+    --archive-header-back-width: 56px;
+    --archive-header-settings-width: 58px;
+    --archive-header-seal-width: 78px;
+    --archive-header-height: 78px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .archive-header-contained { border-radius: 0; }
+  .archive-title { padding: 0 15px; }
+  .archive-title h1 { font-size: 29px; }
+}
+
+@media (max-width: 480px) {
+  .archive-header {
+    --archive-header-back-width: 50px;
+    --archive-header-settings-width: 52px;
+    --archive-header-seal-width: 64px;
+  }
+
+  .archive-title h1 { font-size: 25px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -220,6 +220,7 @@ describe('defense archive interface', () => {
     render(<DefenseArchive repository={repository as never} onBack={() => undefined} />);
 
     expect(await screen.findByText('Completed defenses')).toBeTruthy();
+    expect(document.querySelector('.defense-archive-head .defense-archive-mark')?.textContent).toBe('');
     expect(document.querySelector('.signal-ledger-grid .signal-icon')).toBeTruthy();
     await user.click(screen.getByRole('tab', { name: 'Defense sectors' }));
     expect(screen.getByRole('heading', { name: 'White Prism' })).toBeTruthy();

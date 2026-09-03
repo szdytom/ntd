@@ -7,7 +7,6 @@ import { signalName, levelName } from '../i18n/presentation';
 import { DEFAULT_SIGNAL_ID, getSignalCapability, SIGNAL_IDS, signalRegistry } from '../signals';
 import { ArchiveHeader } from './ArchiveHeader';
 import { SignalSpecimen } from './SignalSpecimen';
-import { SettingsPanel } from './SettingsPanel';
 import { Tag } from './Tag';
 import './SignalArchive.css';
 
@@ -89,10 +88,11 @@ export function SignalArchive({ onBack, initialType = DEFAULT_SIGNAL_ID, backToB
       title={t('signalArchive.title')}
       backLabel={t(backToBattlefield ? 'signalArchive.backToBattlefield' : 'signalArchive.back')}
       onBack={onBack}
-    >
-      <SettingsPanel />
-      <div className="signal-archive-seal" aria-hidden="true"><i /><b>{String(selectedIndex + 1).padStart(2, '0')}</b><span /></div>
-    </ArchiveHeader>
+      decoration={<div className="signal-archive-seal" aria-hidden="true">
+        <i />
+        <b>{String(selectedIndex + 1).padStart(2, '0')}</b>
+      </div>}
+    />
 
     <section className="signal-archive-console">
       <nav className="signal-archive-index" aria-label={t('signalArchive.indexAria')}>

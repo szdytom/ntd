@@ -35,6 +35,7 @@ describe('thought index entry points', () => {
     const user = userEvent.setup();
     render(<ThoughtIndex onBack={vi.fn()} />);
 
+    expect(document.querySelector('.thought-index-header .thought-index-seal')?.textContent).toBe('');
     const searchBox = screen.getByPlaceholderText('Module name, short name, or summary');
     await user.type(searchBox, 'Pulse Round');
 

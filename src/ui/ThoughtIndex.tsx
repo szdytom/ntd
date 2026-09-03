@@ -4,7 +4,6 @@ import { thoughtRegistry, ThoughtSceneDirector } from '../thoughts';
 import { matchesThoughtSearch } from '../thoughts/search';
 import type { ThoughtChapter } from '../thoughts/types';
 import { ArchiveHeader } from './ArchiveHeader';
-import { SettingsPanel } from './SettingsPanel';
 import { ThoughtCanvas } from './ThoughtCanvas';
 import { ThoughtFlowOverlay } from './ThoughtFlowOverlay';
 import { moduleUiColor } from './modulePresentation';
@@ -109,10 +108,13 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
         title={t('thoughtIndex.title')}
         backLabel={backToBattlefield ? t('thoughtIndex.backBattlefield') : t('thoughtIndex.backMenu')}
         onBack={onBack}
-      >
-        <div className="thought-index-seal" aria-hidden="true"><i /><i /><i /></div>
-        <SettingsPanel />
-      </ArchiveHeader>
+        decoration={<div className="thought-index-seal" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>}
+        contained
+      />
 
       <aside className="thought-index-rail" aria-label={t('thoughtIndex.indexAria')}>
         <label className="thought-search">
