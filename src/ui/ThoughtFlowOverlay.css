@@ -175,7 +175,7 @@
 .thought-compact-loadout.leaving { animation: thought-compact-leave .3s ease-in both; }
 
 .thought-compact-loadout > span {
-  --module-icon-surface: transparent;
+  --module-icon-surface: var(--chip-color);
   display: grid;
   width: 25px;
   height: 25px;
