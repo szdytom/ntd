@@ -21,7 +21,8 @@ const copy = {
 
 const targets = [
   { signal: 'kite' as const, position: { type: 'tower-range-entry' as const, leadDistance: 52 }, captureAs: 'first' },
-  { signal: 'kite' as const, position: { type: 'tower-range-entry' as const, leadDistance: 26 }, captureAs: 'second' },
+  { signal: 'kite' as const, position: { type: 'tower-range-entry' as const, leadDistance: 34 }, captureAs: 'second' },
+  { signal: 'kite' as const, position: { type: 'tower-range-entry' as const, leadDistance: 16 }, captureAs: 'third' },
 ];
 
 export const ricochetThought = defineModuleThought(ricochetModule, {
@@ -55,12 +56,12 @@ export const ricochetThought = defineModuleThought(ricochetModule, {
       cues: fireCapturedRun('fire', {
         carrier: 'pulse',
         inputs: targets,
-        capture: { type: 'projectile-hit', moduleId: 'pulse', occurrence: 2 },
+        capture: { type: 'projectile-hit', moduleId: 'pulse', occurrence: 3 },
       }),
     }),
     defineBeat({
       id: 'show', captionKey: copy.beatRedirect, flow: 'impact',
-      cues: [showPause({ id: 'point-redirect', captionKey: copy.beatRedirect, target: { signalRef: 'second' }, requireAlive: 'second' })],
+      cues: [showPause({ id: 'point-redirect', captionKey: copy.beatRedirect, target: { signalRef: 'first' }, requireAlive: 'first' })],
     }),
     defineBeat({
       id: 'finish', captionKey: copy.section, flow: 'observe',

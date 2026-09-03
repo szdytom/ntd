@@ -5,6 +5,7 @@ import {
   finishRun,
   fireCapturedRun,
   introduceScene,
+  resetTo,
   showPause,
   timedCue,
 } from '../thoughts/authoring';
@@ -15,8 +16,11 @@ const copy = {
   title: 'thoughts.colossus.title',
   summary: 'thoughts.colossus.summary',
   section: 'thoughts.colossus.sections.enlarge',
+  sectionCondense: 'thoughts.colossus.sections.condense',
   beatEnlarge: 'thoughts.colossus.beats.enlarge',
   beatBlast: 'thoughts.colossus.beats.blast',
+  beatCondense: 'thoughts.colossus.beats.condense',
+  beatCondensedHit: 'thoughts.colossus.beats.condensedHit',
 } as const;
 
 const targets = [
@@ -28,12 +32,12 @@ export const colossusThought = defineModuleThought(colossusModule, {
   titleKey: copy.title,
   summaryKey: copy.summary,
   seed: 101,
-  scene: straightRangePassScene({ towerSlots: 2, signalHealthScale: 3, signalSpeedScale: 0.85 }),
+  scene: straightRangePassScene({ towerSlots: 3, signalHealthScale: 3, signalSpeedScale: 0.85 }),
   initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
   beats: [
     defineBeat({
       id: 'construct', captionKey: copy.section, flow: 'compile',
-      cues: introduceScene({ slots: ['colossus', 'pulse'] }),
+      cues: introduceScene({ slots: ['colossus', 'nova'] }),
     }),
     defineBeat({
       id: 'show', captionKey: copy.section, flow: 'compile',
@@ -53,9 +57,9 @@ export const colossusThought = defineModuleThought(colossusModule, {
     defineBeat({
       id: 'fire', captionKey: copy.beatBlast, flow: 'impact',
       cues: fireCapturedRun('fire', {
-        carrier: 'pulse',
+        carrier: 'nova',
         inputs: targets,
-        capture: { type: 'projectile-hit', moduleId: 'pulse' },
+        capture: { type: 'projectile-hit', moduleId: 'nova' },
       }),
     }),
     defineBeat({
@@ -63,8 +67,36 @@ export const colossusThought = defineModuleThought(colossusModule, {
       cues: [showPause({ id: 'point-blast', captionKey: copy.beatBlast, target: { signalRef: 'direct' }, requireAlive: 'direct' })],
     }),
     defineBeat({
-      id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
+      id: 'construct-condense', captionKey: copy.sectionCondense, flow: 'compile',
+      cues: resetTo('condense', ['condense-core', 'colossus', 'nova'], copy.sectionCondense, 1),
+    }),
+    defineBeat({
+      id: 'show-condense', captionKey: copy.beatCondense, flow: 'focus',
+      cues: [
+        timedCue('show-condensed-colossus', 2.45, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 3,
+        }),
+        explainLoadoutSlot('point-condensed-colossus', 4.2, copy.beatCondense, 1),
+      ],
+    }),
+    defineBeat({
+      id: 'fire-condensed-colossus', captionKey: copy.beatCondensedHit, flow: 'impact',
+      cues: fireCapturedRun('condensed-colossus', {
+        carrier: 'nova',
+        inputs: [
+          { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 60 }, captureAs: 'condenseNeighbor' },
+          { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 42 } },
+        ],
+        capture: { type: 'projectile-hit', moduleId: 'nova' },
+      }),
+    }),
+    defineBeat({
+      id: 'show-condensed-colossus', captionKey: copy.beatCondensedHit, flow: 'impact',
+      cues: [showPause({ id: 'point-condense-neighbor', captionKey: copy.beatCondensedHit, target: { signalRef: 'condenseNeighbor' }, requireAlive: 'condenseNeighbor' })],
+    }),
+    defineBeat({
+      id: 'finish-condense', captionKey: copy.sectionCondense, flow: 'observe',
+      cues: finishRun('finish-condense', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });

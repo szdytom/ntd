@@ -1,16 +1,17 @@
-import { buildTriggerThought } from '../thoughts/authoring';
+import { buildExpirationTriggerThought } from '../thoughts/authoring';
 import { expirationTriggerModule } from './expiration-trigger';
 
-const copy = {
-  title: 'thoughts.expirationTrigger.title',
-  summary: 'thoughts.expirationTrigger.summary',
-  section: 'thoughts.expirationTrigger.sections.end',
-  beatTrigger: 'thoughts.expirationTrigger.beats.trigger',
-  beatRelease: 'thoughts.expirationTrigger.beats.release',
-} as const;
-
-export const expirationTriggerThought = buildTriggerThought({
+export const expirationTriggerThought = buildExpirationTriggerThought({
   module: expirationTriggerModule,
-  copy,
   seed: 163,
+  copy: {
+    title: 'thoughts.expirationTrigger.title',
+    summary: 'thoughts.expirationTrigger.summary',
+    sectionExpire: 'thoughts.expirationTrigger.sections.end',
+    sectionShield: 'thoughts.expirationTrigger.sections.shield',
+    beatTrigger: 'thoughts.expirationTrigger.beats.trigger',
+    beatPayload: 'thoughts.expirationTrigger.beats.payload',
+    beatFinalHit: 'thoughts.expirationTrigger.beats.finalHit',
+    beatShield: 'thoughts.expirationTrigger.beats.shield',
+  },
 });

@@ -164,6 +164,25 @@ describe('target effect propagation', () => {
     expect(signals.every(isSlowed)).toBe(true);
   });
 
+  it.each([
+    ['ember-coating', 'toxic-cloud'],
+    ['toxin', 'ember-field'],
+    ['searing-sigil', 'toxic-cloud'],
+    ['starfire-matrix', 'toxic-cloud'],
+  ] as const)('applies %s to every signal in a %s range', (statusModule, staticModule) => {
+    const { engine, signals } = prepareEngine([220, 220]);
+    const carrier = engine.modules.compile([
+      'impact-trigger', 'pulse', statusModule, staticModule,
+    ]).shots[0];
+    const payload = carrier?.payload[0];
+    if (!payload?.static) throw new Error(`Expected a ${statusModule} static payload`);
+    deployAt(engine, payload, 220);
+
+    advanceUntil(engine, () => signals.every((signal) => hasStatus(signal, statusModule)), 0.6);
+
+    expect(signals.every((signal) => hasStatus(signal, statusModule))).toBe(true);
+  });
+
   it('applies Frost to both signals attacked by Tesla Sentry', () => {
     const { engine, signals } = prepareEngine([220, 220]);
     const carrier = engine.modules.compile(['impact-trigger', 'pulse', 'frost', 'tesla-node']).shots[0];

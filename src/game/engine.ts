@@ -1916,7 +1916,8 @@ export class GameEngine {
     }
     const triggerType = projectile.shot.trigger?.type;
     if (
-      (triggerType === 'timer' || triggerType === 'terrain' || (triggerType === 'impact' && damageDealt > 0)) &&
+      (triggerType === 'timer' || triggerType === 'terrain' || triggerType === 'impact') &&
+      damageDealt > 0 &&
       !projectile.triggered
     ) {
       projectile.triggered = true;

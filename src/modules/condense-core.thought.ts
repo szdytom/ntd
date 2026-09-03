@@ -5,7 +5,6 @@ import {
   finishRun,
   fireCapturedRun,
   introduceScene,
-  resetTo,
   showPause,
   timedCue,
 } from '../thoughts/authoring';
@@ -60,11 +59,27 @@ export const condenseCoreThought = defineModuleThought(condenseCoreModule, {
     }),
     defineBeat({
       id: 'configure-condense', captionKey: copy.sectionConcentrate, flow: 'compile',
-      cues: resetTo('condense', ['condense-core', 'nova'], copy.sectionConcentrate, 1),
-    }),
-    defineBeat({
-      id: 'show-condense', captionKey: copy.sectionConcentrate, flow: 'compile',
-      cues: [timedCue('show-carrier', 2.45, { overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2 })],
+      cues: [
+        timedCue('restore-blast-time', 1.35, {
+          actions: [{ type: 'set-tower-casting', enabled: true }],
+          transition: { simulationRate: 1 }, ease: 'smooth',
+        }),
+        timedCue('fade-blast-targets', 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
+        timedCue('dismiss-blast-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        timedCue('configure-condense-loadout', 0.2, {
+          actions: [{ type: 'setup', slots: ['condense-core', 'nova'] }],
+          loadoutMode: 'hidden',
+        }),
+        timedCue('show-nova-before-condense', 1.15, {
+          sectionTitleKey: copy.sectionConcentrate,
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutMode: 'dialog', loadoutVisibleRange: { start: 1, count: 1 },
+        }),
+        timedCue('insert-condense-core', 2.5, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutVisibleRange: { start: 0, count: 2 },
+        }),
+      ],
     }),
     defineBeat({
       id: 'explain-condense', captionKey: copy.beatConcentrate, flow: 'compile',

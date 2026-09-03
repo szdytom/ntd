@@ -1,16 +1,19 @@
-import { buildTriggerThought } from '../thoughts/authoring';
+import { buildDeferredTriggerThought } from '../thoughts/authoring';
 import { timerTriggerModule } from './timer-trigger';
 
-const copy = {
-  title: 'thoughts.timerTrigger.title',
-  summary: 'thoughts.timerTrigger.summary',
-  section: 'thoughts.timerTrigger.sections.timer',
-  beatTrigger: 'thoughts.timerTrigger.beats.trigger',
-  beatRelease: 'thoughts.timerTrigger.beats.release',
-} as const;
-
-export const timerTriggerThought = buildTriggerThought({
+export const timerTriggerThought = buildDeferredTriggerThought({
   module: timerTriggerModule,
-  copy,
   seed: 157,
+  copy: {
+    title: 'thoughts.timerTrigger.title',
+    summary: 'thoughts.timerTrigger.summary',
+    sectionPrimary: 'thoughts.timerTrigger.sections.timer',
+    sectionCollision: 'thoughts.timerTrigger.sections.collision',
+    sectionShield: 'thoughts.timerTrigger.sections.shield',
+    beatTrigger: 'thoughts.timerTrigger.beats.trigger',
+    beatPayload: 'thoughts.timerTrigger.beats.payload',
+    beatPrimary: 'thoughts.timerTrigger.beats.release',
+    beatCollision: 'thoughts.timerTrigger.beats.collision',
+    beatShield: 'thoughts.timerTrigger.beats.shield',
+  },
 });

@@ -6,9 +6,13 @@ const copy = {
   summary: 'thoughts.searingSigil.summary',
   sectionDirect: 'thoughts.searingSigil.sections.direct',
   sectionArea: 'thoughts.searingSigil.sections.area',
+  sectionStatic: 'thoughts.searingSigil.sections.static',
   beatCoat: 'thoughts.searingSigil.beats.coat',
   beatTick: 'thoughts.searingSigil.beats.tick',
   beatAreaAll: 'thoughts.searingSigil.beats.areaAll',
+  beatStaticModifier: 'thoughts.searingSigil.beats.staticModifier',
+  beatStaticAffects: 'thoughts.searingSigil.beats.staticAffects',
+  beatStaticLater: 'thoughts.searingSigil.beats.staticLater',
 } as const;
 
 export const searingSigilThought = buildStatusModifierThought({

@@ -65,6 +65,128 @@ describe('thought registry', () => {
     }
   });
 
+  it('preserves the revised projectile teaching contracts', () => {
+    const prismSlug = thoughtRegistry.require('prism-slug');
+    expect(prismSlug.relatedModuleIds).toContain('frost');
+    expect(prismSlug.beats.flatMap((beat) => beat.cues ?? []).some((cue) => (
+      cue.waitFor?.type === 'signal-slowed' && cue.waitFor.moduleId === 'frost'
+    ))).toBe(true);
+
+    for (const id of ['nova', 'geode-bloom'] as const) {
+      const definition = thoughtRegistry.require(id);
+      const cues = definition.beats.flatMap((beat) => beat.cues ?? []);
+      const launchIndex = cues.findIndex((cue) => (
+        cue.waitFor?.type === 'projectile-spawned' && cue.waitFor.moduleId === id
+      ));
+      const flightIndex = cues.findIndex((cue) => (
+        cue.overlay?.type === 'caption'
+        && typeof cue.overlay.target === 'object'
+        && 'projectileRef' in cue.overlay.target
+      ));
+      expect(launchIndex).toBeGreaterThanOrEqual(0);
+      expect(flightIndex).toBeGreaterThan(launchIndex);
+      expect(definition.relatedModuleIds).toEqual(expect.arrayContaining(['frost', 'condense-core']));
+    }
+
+    const arcbolt = thoughtRegistry.require('arcbolt');
+    expect(arcbolt.relatedModuleIds).toEqual(expect.arrayContaining(['frost', 'focus-core']));
+    expect(arcbolt.beats.flatMap((beat) => beat.cues ?? []).some((cue) => (
+      cue.waitFor?.type === 'secondary-hit' && (cue.waitFor.occurrence ?? 1) > 1
+    ))).toBe(true);
+    expect(arcbolt.beats.flatMap((beat) => beat.cues ?? []).some((cue) => (
+      cue.waitFor?.type === 'signal-slowed' && (cue.waitFor.occurrence ?? 1) > 1
+    ))).toBe(true);
+
+    for (const id of ['needle', 'razor'] as const) {
+      const definition = thoughtRegistry.require(id);
+      expect(definition.scene?.id).toContain('straight-firing-lane');
+      expect(definition.relatedModuleIds).toEqual(expect.arrayContaining(['seeker', 'cinder-trail', 'focus-core']));
+    }
+
+    const voidBeam = thoughtRegistry.require('void-beam');
+    expect(voidBeam.scene?.id).toContain('straight-firing-lane');
+    expect(voidBeam.relatedModuleIds).toContain('cinder-trail');
+
+    for (const id of ['ember-coating', 'toxin', 'searing-sigil', 'starfire-matrix'] as const) {
+      const definition = thoughtRegistry.require(id);
+      const staticCarrier = id === 'toxin' ? 'ember-field' : 'toxic-cloud';
+      expect(definition.relatedModuleIds).toEqual(expect.arrayContaining([staticCarrier, 'impact-trigger']));
+      if (id === 'toxin') expect(definition.relatedModuleIds).not.toContain('toxic-cloud');
+      expect(definition.beats.flatMap((beat) => beat.cues ?? []).some((cue) => (
+        cue.waitForSignalStates?.some((state) => state.statusId === id)
+      ))).toBe(true);
+    }
+
+    for (const id of ['double-fork', 'fork'] as const) {
+      expect(thoughtRegistry.require(id).relatedModuleIds).toContain('focus-core');
+    }
+
+    expect(thoughtRegistry.require('overdrive').scene?.id).toContain('parallel-comparison');
+    expect(thoughtRegistry.require('ricochet').beats.flatMap((beat) => beat.cues ?? [])
+      .flatMap((cue) => cue.actions ?? [])
+      .filter((action) => action.type === 'spawn-signal')).toHaveLength(3);
+    const colossus = thoughtRegistry.require('colossus');
+    expect(colossus.relatedModuleIds).toEqual(expect.arrayContaining(['nova', 'condense-core']));
+    expect(colossus.relatedModuleIds).not.toContain('pulse');
+
+    const condenseCues = thoughtRegistry.require('condense-core').beats.flatMap((beat) => beat.cues ?? []);
+    const novaFirst = condenseCues.findIndex((cue) => cue.loadoutVisibleRange?.start === 1);
+    const condenseAdded = condenseCues.findIndex((cue) => (
+      cue.loadoutVisibleRange?.start === 0 && cue.loadoutVisibleRange.count === 2
+    ));
+    expect(novaFirst).toBeGreaterThanOrEqual(0);
+    expect(condenseAdded).toBeGreaterThan(novaFirst);
+  });
+
+  it('preserves the repeat, trigger, seeker, and trail teaching contracts', () => {
+    for (const [id, casts] of [['echo', 2], ['barrage', 4]] as const) {
+      const definition = thoughtRegistry.require(id);
+      const cues = definition.beats.flatMap((beat) => beat.cues ?? []);
+      expect(definition.relatedModuleIds).toContain('focus-core');
+      expect(cues.some((cue) => (
+        cue.waitFor?.type === 'projectile-spawned'
+        && cue.waitFor.moduleId === id
+        && cue.waitFor.occurrence === casts * casts
+      ))).toBe(true);
+      expect(cues.flatMap((cue) => cue.actions ?? []).some((action) => (
+        action.type === 'setup'
+        && action.slots.filter((moduleId) => moduleId === id).length === 2
+      ))).toBe(true);
+    }
+
+    const seeker = thoughtRegistry.require('seeker');
+    expect(seeker.relatedModuleIds).toEqual(expect.arrayContaining(['pulse', 'fork']));
+    expect(seeker.beats.flatMap((beat) => beat.cues ?? []).some((cue) => (
+      cue.waitFor?.type === 'projectile-hit'
+      && cue.waitFor.moduleId === 'seeker'
+      && cue.waitFor.occurrence === 3
+    ))).toBe(true);
+
+    for (const id of ['timer-trigger', 'terrain-trigger'] as const) {
+      const definition = thoughtRegistry.require(id);
+      expect(definition.relatedModuleIds).toEqual(expect.arrayContaining(['void-beam', 'pulse', 'toxic-cloud']));
+      const cues = definition.beats.flatMap((beat) => beat.cues ?? []);
+      expect(cues.some((cue) => (
+        cue.waitFor?.type === 'projectile-absorbed' && cue.waitFor.moduleId === id
+      ))).toBe(true);
+      expect(cues.flatMap((cue) => cue.actions ?? []).some((action) => (
+        action.type === 'spawn-signal' && action.signal === 'crown'
+      ))).toBe(true);
+    }
+
+    const expiration = thoughtRegistry.require('expiration-trigger');
+    expect(expiration.relatedModuleIds).toEqual(expect.arrayContaining(['needle', 'pulse', 'toxic-cloud']));
+    expect(expiration.beats.flatMap((beat) => beat.cues ?? [])
+      .flatMap((cue) => cue.actions ?? [])
+      .some((action) => action.type === 'spawn-signal' && action.signal === 'crown')).toBe(true);
+
+    for (const id of ['starfire-trail', 'rift-trail', 'resonant-trail'] as const) {
+      const definition = thoughtRegistry.require(id);
+      expect(definition.scene?.id).toContain('parallel-comparison');
+      expect(definition.relatedModuleIds).toEqual(expect.arrayContaining(['pulse', 'void-beam', 'nova', 'razor']));
+    }
+  });
+
   it('derives authored timeline widths from timed cues', () => {
     const authored = thoughtRegistry.list().filter((definition) => definition.beats.every((beat) => beat.cues));
     expect(authored.length).toBeGreaterThan(0);
@@ -166,6 +288,18 @@ describe('thought scenes', () => {
     expect(director.getSnapshot().cueId).toBe(cue.id);
     expect(signal?.dead).toBe(false);
     expect(signal?.slowTime).toBeGreaterThan(0);
+    director.dispose();
+  });
+
+  it('shows the Overdriven comparison target losing more health', () => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require('overdrive'));
+    runUntilCue(director, 'point-overdrive-damage');
+    const baseline = director.getBoundSignal('baselineTarget');
+    const overdriven = director.getBoundSignal('overdriveTarget');
+    expect(director.getSnapshot().cueId).toBe('point-overdrive-damage');
+    expect(baseline).not.toBeNull();
+    expect(overdriven).not.toBeNull();
+    expect(overdriven?.hp).toBeLessThan(baseline?.hp ?? 0);
     director.dispose();
   });
 

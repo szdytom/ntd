@@ -69,6 +69,7 @@ export interface ThoughtSignalStateRequirement {
   readonly signalRef: string;
   readonly alive?: boolean;
   readonly slowed?: boolean;
+  readonly statusId?: string;
 }
 
 export interface ThoughtProjectileStateRequirement {

@@ -45,7 +45,7 @@ export const createDamageStatusModifier = (options: DamageStatusModifierOptions)
   effects: options.effects,
   compile: (context) => context.modifyNext({ damageMultiplier: options.stats.damageMultiplier }),
   targetEffect: {
-    channels: ['damage', 'secondary-hit'],
+    channels: ['damage', 'static', 'secondary-hit'],
     apply: ({ effects, position, signal, projectile, targetEffectChannel, combat }) => {
       if (targetEffectChannel === 'secondary-hit') {
         effects.spawnMany(options.hitEffectIds, { position, color: options.color });

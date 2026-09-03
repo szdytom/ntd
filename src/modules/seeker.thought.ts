@@ -14,52 +14,141 @@ import { seekerModule } from './seeker';
 const copy = {
   title: 'thoughts.seeker.title',
   summary: 'thoughts.seeker.summary',
-  section: 'thoughts.seeker.sections.hone',
-  beatHone: 'thoughts.seeker.beats.hone',
-  beatTrack: 'thoughts.seeker.beats.track',
+  sections: {
+    prediction: 'thoughts.seeker.sections.prediction',
+    fork: 'thoughts.seeker.sections.fork',
+  },
+  beats: {
+    hone: 'thoughts.seeker.beats.hone',
+    prediction: 'thoughts.seeker.beats.prediction',
+    split: 'thoughts.seeker.beats.split',
+    gather: 'thoughts.seeker.beats.gather',
+    focused: 'thoughts.seeker.beats.focused',
+  },
 } as const;
 
 export const seekerThought = defineModuleThought(seekerModule, {
   titleKey: copy.title,
   summaryKey: copy.summary,
   seed: 181,
-  scene: straightRangePassScene({ towerSlots: 2, signalHealthScale: 4, signalSpeedScale: 0.85 }),
+  scene: straightRangePassScene({ towerSlots: 3, signalHealthScale: 10, signalSpeedScale: 0.8 }),
   initialScene: { pathProgress: 0, towerPadOpacity: 0, towerOpacity: 0, signalOpacity: 0, simulationRate: 1 },
   beats: [
     defineBeat({
-      id: 'construct', captionKey: copy.section, flow: 'compile',
+      id: 'construct-prediction', captionKey: copy.sections.prediction, flow: 'compile',
       cues: introduceScene({ slots: ['seeker', 'pulse'] }),
     }),
     defineBeat({
-      id: 'show', captionKey: copy.section, flow: 'compile',
+      id: 'show-prediction-loadout', captionKey: copy.sections.prediction, flow: 'compile',
       cues: [
-        timedCue('show-mod', 0.75, {
-          sectionTitleKey: copy.section,
+        timedCue('show-seeker', 0.75, {
+          sectionTitleKey: copy.sections.prediction,
           overlay: { type: 'loadout', target: 'tower', placement: 'right' },
           loadoutMode: 'dialog', loadoutVisibleSlots: 1,
         }),
-        timedCue('show-carrier', 0.6, { overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2 }),
+        timedCue('show-pulse', 2.45, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2,
+        }),
       ],
     }),
     defineBeat({
-      id: 'explain', captionKey: copy.beatHone, flow: 'compile',
-      cues: [explainLoadoutSlot('point-mod', 4.2, copy.beatHone, 0)],
+      id: 'explain-seeker', captionKey: copy.beats.hone, flow: 'compile',
+      cues: [explainLoadoutSlot('point-seeker', 4.2, copy.beats.hone, 0)],
     }),
     defineBeat({
-      id: 'fire', captionKey: copy.beatTrack, flow: 'impact',
-      cues: fireCapturedRun('fire', {
+      id: 'fire-predicted-pulse', captionKey: copy.beats.prediction, flow: 'impact',
+      cues: fireCapturedRun('predicted-pulse', {
         carrier: 'pulse',
-        inputs: [{ signal: 'kite', position: { type: 'tower-range-entry', leadDistance: 44 }, captureAs: 'target' }],
-        capture: { type: 'projectile-hit', moduleId: 'pulse' },
+        inputs: [{ signal: 'kite', position: { type: 'tower-range-entry', leadDistance: 56 }, captureAs: 'predictedTarget' }],
+        capture: { type: 'projectile-hit', moduleId: 'seeker' },
       }),
     }),
     defineBeat({
-      id: 'show', captionKey: copy.beatTrack, flow: 'impact',
-      cues: [showPause({ id: 'point-track', captionKey: copy.beatTrack, target: { signalRef: 'target' }, requireAlive: 'target' })],
+      id: 'show-prediction-boundary', captionKey: copy.beats.prediction, flow: 'observe',
+      cues: [showPause({
+        id: 'point-prediction-boundary', captionKey: copy.beats.prediction,
+        target: { signalRef: 'predictedTarget' }, requireAlive: 'predictedTarget',
+      })],
     }),
     defineBeat({
-      id: 'finish', captionKey: copy.section, flow: 'observe',
-      cues: finishRun('finish', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
+      id: 'construct-fork-baseline', captionKey: copy.sections.fork, flow: 'compile',
+      cues: [
+        timedCue('restore-prediction-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
+        timedCue('fade-prediction-target', 0.45, {
+          actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('dismiss-prediction-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        timedCue('configure-fork-baseline', 0.2, {
+          actions: [{ type: 'setup', slots: ['fork', 'pulse'] }], loadoutMode: 'hidden',
+        }),
+        timedCue('show-fork-baseline', 3.2, {
+          sectionTitleKey: copy.sections.fork,
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutMode: 'dialog', loadoutVisibleSlots: 2,
+        }),
+      ],
+    }),
+    defineBeat({
+      id: 'fire-fork-baseline', captionKey: copy.beats.split, flow: 'cast',
+      cues: fireCapturedRun('fork-baseline', {
+        carrier: 'pulse',
+        inputs: [{ signal: 'kite', position: { type: 'tower-range-entry', leadDistance: 92 }, captureAs: 'forkTarget' }],
+        capture: { type: 'projectile-spawned', moduleId: 'fork', captureAs: 'forkProjectiles' },
+        settleDuration: 0.12,
+      }),
+    }),
+    defineBeat({
+      id: 'show-fork-spread', captionKey: copy.beats.split, flow: 'cast',
+      cues: [showPause({
+        id: 'point-fork-spread', captionKey: copy.beats.split,
+        target: { projectileGroupRef: 'forkProjectiles' },
+      })],
+    }),
+    defineBeat({
+      id: 'construct-guided-fork', captionKey: copy.sections.fork, flow: 'compile',
+      cues: [
+        timedCue('restore-fork-time', 0.8, { transition: { simulationRate: 1 }, ease: 'smooth' }),
+        timedCue('fade-fork-target', 0.45, {
+          actions: [{ type: 'delete-signals' }], transition: { signalOpacity: 0 }, ease: 'ease-out',
+        }),
+        timedCue('dismiss-fork-compact', 0.35, { loadoutMode: 'compact-leaving' }),
+        timedCue('configure-guided-fork', 0.2, {
+          actions: [{ type: 'setup', slots: ['seeker', 'fork', 'pulse'] }], loadoutMode: 'hidden',
+        }),
+        timedCue('show-fork-before-seeker', 1, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutMode: 'dialog', loadoutVisibleRange: { start: 1, count: 2 },
+        }),
+        timedCue('insert-seeker', 2.4, {
+          overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+          loadoutVisibleRange: { start: 0, count: 3 },
+        }),
+      ],
+    }),
+    defineBeat({
+      id: 'explain-guided-fork', captionKey: copy.beats.gather, flow: 'compile',
+      cues: [explainLoadoutSlot('point-guided-fork', 4.2, copy.beats.gather, 0)],
+    }),
+    defineBeat({
+      id: 'fire-guided-fork', captionKey: copy.beats.focused, flow: 'impact',
+      cues: fireCapturedRun('guided-fork', {
+        carrier: 'pulse',
+        inputs: [{ signal: 'kite', position: { type: 'tower-range-entry', leadDistance: 92 }, captureAs: 'guidedForkTarget' }],
+        capture: { type: 'projectile-hit', moduleId: 'seeker', occurrence: 3 },
+        captureTimeout: 12,
+        settleDuration: 0.05,
+      }),
+    }),
+    defineBeat({
+      id: 'show-guided-focus', captionKey: copy.beats.focused, flow: 'impact',
+      cues: [showPause({
+        id: 'point-guided-focus', captionKey: copy.beats.focused,
+        target: { signalRef: 'guidedForkTarget' }, requireAlive: 'guidedForkTarget',
+      })],
+    }),
+    defineBeat({
+      id: 'finish-guided-fork', captionKey: copy.sections.fork, flow: 'observe',
+      cues: finishRun('finish-guided-fork', -Math.PI / 2, STRAIGHT_RANGE_CLEANUP),
     }),
   ],
 });

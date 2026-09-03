@@ -6,9 +6,13 @@ const copy = {
   summary: 'thoughts.emberCoating.summary',
   sectionDirect: 'thoughts.emberCoating.sections.direct',
   sectionArea: 'thoughts.emberCoating.sections.area',
+  sectionStatic: 'thoughts.emberCoating.sections.static',
   beatCoat: 'thoughts.emberCoating.beats.coat',
   beatTick: 'thoughts.emberCoating.beats.tick',
   beatAreaAll: 'thoughts.emberCoating.beats.areaAll',
+  beatStaticModifier: 'thoughts.emberCoating.beats.staticModifier',
+  beatStaticAffects: 'thoughts.emberCoating.beats.staticAffects',
+  beatStaticLater: 'thoughts.emberCoating.beats.staticLater',
 } as const;
 
 export const emberCoatingThought = buildStatusModifierThought({

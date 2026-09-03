@@ -31,6 +31,9 @@ const modulesUsedBy = (beats: readonly ThoughtBeat[]): readonly ModuleId[] => {
     ];
     for (const action of actions) {
       if (action.type === 'setup') action.slots.forEach((moduleId) => moduleIds.add(moduleId));
+      if (action.type === 'setup-towers') {
+        action.loadouts.forEach((loadout) => loadout.slots.forEach((moduleId) => moduleIds.add(moduleId)));
+      }
       if (action.type === 'compile' || action.type === 'set-tower-casting' || action.type === 'spawn-signal') continue;
     }
   }

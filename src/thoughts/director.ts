@@ -594,6 +594,9 @@ export class ThoughtSceneDirector {
     if (requirement.alive !== undefined && requirement.alive !== !signal.dead) return false;
     const slowed = signal.slowFactor > 0 && signal.slowTime > 0;
     if (requirement.slowed !== undefined && requirement.slowed !== slowed) return false;
+    if (requirement.statusId !== undefined && !signal.statuses.some((status) => (
+      status.id === requirement.statusId && status.remaining > 0
+    ))) return false;
     return true;
   }
 

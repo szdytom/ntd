@@ -102,6 +102,31 @@ describe('expiration and terrain trigger modules', () => {
     expect(staticPayloads(impactEngine)).toHaveLength(0);
   });
 
+  it.each(['timer-trigger', 'terrain-trigger'] as const)(
+    'does not release %s on a fully absorbed collision',
+    (triggerId) => {
+      const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 72 });
+      engine.spawnCreativeSignal('crown');
+      const crown = engine.signals[0];
+      if (!crown) throw new Error('Expected a Prism Crown');
+      placeSignal(engine, crown, 180);
+      const shot = engine.modules.compile([triggerId, 'pulse', 'proximity-mine']).shots[0];
+      if (!shot) throw new Error(`Expected a ${triggerId} carrier`);
+      const projectile = addProjectile(
+        engine,
+        shot,
+        { x: crown.position.x - 90, y: crown.position.y },
+        { x: shot.speed, y: 0 },
+      );
+
+      updateUntil(engine, () => projectile.life <= 0);
+
+      expect(crown.hp).toBe(crown.maxHp);
+      expect(projectile.triggered).toBe(false);
+      expect(staticPayloads(engine)).toHaveLength(0);
+    },
+  );
+
   it('releases at lifetime expiration but not when flying out of bounds', () => {
     const lifetimeEngine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 73 });
     const lifetimeShot = lifetimeEngine.modules.compile(['expiration-trigger', 'pulse', 'proximity-mine']).shots[0];

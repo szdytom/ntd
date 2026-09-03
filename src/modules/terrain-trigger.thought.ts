@@ -1,16 +1,19 @@
-import { buildTriggerThought } from '../thoughts/authoring';
+import { buildDeferredTriggerThought } from '../thoughts/authoring';
 import { terrainTriggerModule } from './terrain-trigger';
 
-const copy = {
-  title: 'thoughts.terrainTrigger.title',
-  summary: 'thoughts.terrainTrigger.summary',
-  section: 'thoughts.terrainTrigger.sections.terrain',
-  beatTrigger: 'thoughts.terrainTrigger.beats.trigger',
-  beatRelease: 'thoughts.terrainTrigger.beats.release',
-} as const;
-
-export const terrainTriggerThought = buildTriggerThought({
+export const terrainTriggerThought = buildDeferredTriggerThought({
   module: terrainTriggerModule,
-  copy,
   seed: 167,
+  copy: {
+    title: 'thoughts.terrainTrigger.title',
+    summary: 'thoughts.terrainTrigger.summary',
+    sectionPrimary: 'thoughts.terrainTrigger.sections.terrain',
+    sectionCollision: 'thoughts.terrainTrigger.sections.collision',
+    sectionShield: 'thoughts.terrainTrigger.sections.shield',
+    beatTrigger: 'thoughts.terrainTrigger.beats.trigger',
+    beatPayload: 'thoughts.terrainTrigger.beats.payload',
+    beatPrimary: 'thoughts.terrainTrigger.beats.release',
+    beatCollision: 'thoughts.terrainTrigger.beats.collision',
+    beatShield: 'thoughts.terrainTrigger.beats.shield',
+  },
 });
