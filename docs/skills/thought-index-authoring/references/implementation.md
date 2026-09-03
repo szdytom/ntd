@@ -51,7 +51,7 @@ Avoid fixed-time guesses for kills, hits, energy refill, or travel through range
 
 For loadout dialogue bubbles:
 
-- show the first module immediately, then animate each added module when teaching composition;
+- on the entry's first loadout presentation, show the first module with the dialog, then animate each later module when teaching composition;
 - when a new loadout differs by one insertion, removal, or replacement, preserve the previous presentation and animate that edit;
 - when it differs substantially, open the dialog while immediately adding the first module, then add the rest one at a time in program order; do not hold on an empty dialog;
 - show an existing loadout immediately when the story starts from a known configuration;
@@ -60,6 +60,17 @@ For loadout dialogue bubbles:
 - keep module cell widths and gaps invariant during highlight changes;
 - keep labels inside their available width in longer locales;
 - support configured bubble sides and diagonals without changing the focal anchor.
+
+Author those transitions with the presentation semantics the director expects:
+
+- For the first presentation, open `dialog` with the first visible module and leave `animateLoadoutChanges` unset. The module is present as the dialog appears.
+- For later additions while the dialog remains open, increase `loadoutVisibleSlots` or expand `loadoutVisibleRange`; the director identifies newly visible modules and animates only those cells.
+- For a substantial rebuild, configure the new loadout while hidden, then open `dialog` with its first module visible and `animateLoadoutChanges: true`. The dialog and first insertion begin together, without an empty-dialog cue.
+- For a one-slot replacement, reopen the previous complete loadout, then apply the new setup in the next cue with `animateLoadoutChanges: true`.
+
+Use `LOADOUT_ADDITION_CADENCE` for every non-final cue in a run of successive additions. A final addition cue may be longer to hold the completed program, but its start must remain on the same cadence as the preceding additions.
+
+Keep steady geometry in the base CSS state. The resting cell width and inter-cell margin must not depend on an animation's forwards fill; the addition keyframe should end at exactly those base values so removing `.adding` cannot collapse a gap or move neighboring cells.
 
 Prefer whole-cell accent fills with light icons and text for active emphasis. Ensure all cell borders are present and no extra outline conflicts with the global visual language.
 
@@ -140,6 +151,7 @@ Run focused checks first, then the project-wide checks appropriate to the change
 
 ```sh
 npm test -- thoughts.test.ts thought-index.test.tsx
+npm run thoughts:report
 npm run typecheck
 npm run check:locales
 npm run lint
@@ -154,6 +166,7 @@ Also inspect the entry interactively:
 - expand the full transcript;
 - resize the viewport;
 - switch between English and a longer locale;
-- watch highlights, replacements, leaders, bubble edges, and cleanup frame by frame near transitions.
+- watch highlights, replacements, leaders, bubble edges, and cleanup frame by frame near transitions;
+- after each addition animation and after `.adding` is removed, confirm every settled cell gap remains equal and the earlier cells do not jump.
 
 Visual correctness is part of the feature. Passing structural tests does not prove that attention, spacing, or rhythm works.

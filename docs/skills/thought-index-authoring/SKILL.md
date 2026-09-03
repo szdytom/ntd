@@ -87,6 +87,8 @@ Use animation time for authored transitions and semantic state for combat outcom
 - Use runtime waits for entering range, a confirmed hit, an effect being applied, a signal dying or crossing a point, tower energy refilling, and particles settling.
 - Show indefinite waits as square progress markers. Pause progress at an active wait, rotate its marker, and fill it with the accent color after resolution.
 
+Space successive module additions by a shared onset cadence. If the completed loadout needs a longer reading hold, put that extra time after the final addition rather than varying the pauses between intermediate modules.
+
 Allocate reading time from the localized rendered text, not from a hard-coded assumption about sentence length. Do not give title changes an isolated empty beat when they can accompany the scene transition.
 
 Let causal moments breathe. A useful default is: event, brief observation window, caption or comparison, then resolution. Use the existing entries' timing only as a starting point; shorten dead travel and lengthen moments where the player must compare or revise a model.
@@ -116,6 +118,7 @@ Spawn combat subjects near the meaningful interaction rather than making the vie
 ### Rhythm
 
 - Are waits tied to meaningful state rather than guessed timestamps?
+- Do successive module additions start at an even cadence and settle without changing existing gaps?
 - Is there any travel, title-only time, duplicated explanation, or abrupt ending to remove?
 - Do transitions preserve continuity and leave enough time to see their result?
 
@@ -126,10 +129,11 @@ Revise the storyboard if any gate fails. Do not compensate for weak visual proof
 When implementing, follow [implementation.md](references/implementation.md). At minimum:
 
 1. Run the focused Thought Index tests.
-2. Run type checking and locale validation.
-3. Visually replay at normal speed, every progress marker, and at least one expanded-transcript layout.
-4. Check English and a longer locale for clipping, reflow, target drift, and loadout movement.
-5. Confirm replay and scrubbing restore deterministic scene state.
+2. Run `npm run thoughts:report` and review its advisory continuity findings.
+3. Run type checking and locale validation.
+4. Visually replay at normal speed, every progress marker, and at least one expanded-transcript layout.
+5. Check English and a longer locale for clipping, reflow, target drift, and loadout movement.
+6. Confirm replay and scrubbing restore deterministic scene state.
 
 Tests should verify structure, semantic behavior, and invariants. Do not assert exact localized sentences or independently tunable choreography values.
 
