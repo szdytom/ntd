@@ -112,13 +112,19 @@ export const resetTo = (
   }),
 ];
 
-/** Let the final scene resolve and ease the tower back to its resting angle. */
+/**
+ * Let the final scene resolve and ease the tower back to its resting angle.
+ * Casting stops first so no new shots can spawn effects right before the
+ * entry freezes, then the simulation runs a short settling window so the last
+ * particles and recoil dissipate before the signals fade and the tower rests.
+ */
 export const finishRun = (prefix: string, rotation: number): readonly ThoughtCue[] => [
-  timedCue(`${prefix}-restore`, 1.35, {
-    actions: [{ type: 'set-tower-casting', enabled: true }],
+  timedCue(`${prefix}-restore`, 0.8, {
+    actions: [{ type: 'set-tower-casting', enabled: false }],
     transition: { simulationRate: 1 },
     ease: 'smooth',
   }),
+  timedCue(`${prefix}-settle`, 1.6),
   timedCue(`${prefix}-fade`, 0.5, { transition: { signalOpacity: 0 }, ease: 'ease-out' }),
   timedCue(`${prefix}-rest`, 0.5, { transition: { towerRotation: rotation }, ease: 'smooth' }),
 ];
