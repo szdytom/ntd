@@ -8,7 +8,7 @@ const DoubleForkIcon = createModuleIcon(<>
 </>);
 
 const color = '#20a486';
-const stats = { count: 2, spreadDegrees: 8 } as const;
+const stats = { count: 2, spreadDegrees: 15 } as const;
 
 const effects: readonly EffectDefinition[] = [{
   id: 'module:double-fork:split',
