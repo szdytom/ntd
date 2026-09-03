@@ -1,0 +1,18 @@
+.energy-bolt {
+  display: inline-block;
+  width: .72em;
+  height: 1em;
+  flex: 0 0 auto;
+  color: #f5b700;
+  line-height: 1;
+  vertical-align: -.12em;
+}
+
+.energy-bolt::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  clip-path: polygon(56% 0, 12% 55%, 43% 55%, 31% 100%, 88% 39%, 56% 39%);
+}

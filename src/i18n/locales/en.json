@@ -447,7 +447,7 @@
 	"tower.maxed": "Maxed",
 	"program.empty": "Empty program",
 	"program.payload": "Payload",
-	"program.summary": "{{casts}} casts · {{energy}}⚡/cycle · {{projectiles}} projectiles{{triggers}}{{wrap}}",
+	"program.summary": "{{casts}} casts · {{energy}}<energyIcon/>/cycle · {{projectiles}} projectiles{{triggers}}{{wrap}}",
 	"program.triggerPart": " · {{count}} triggers",
 	"program.wrapPart": " · ↻ wrap",
 	"program.capacity": "This cycle needs {{required}} energy, above this tower's {{capacity}} capacity",

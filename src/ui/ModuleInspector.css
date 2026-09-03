@@ -92,8 +92,8 @@
 
 .inspector-cost strong {
   display: flex;
-  align-items: baseline;
-  gap: 2px;
+  align-items: center;
+  gap: 3px;
   margin-top: 3px;
   color: var(--module-color);
   font-family: var(--font-mono);
@@ -101,10 +101,7 @@
   line-height: 1;
 }
 
-.inspector-cost strong span {
-  font-family: var(--font-sans);
-  font-size: 10px;
-}
+.inspector-cost .energy-bolt { color: #eeb000; font-size: 11px; }
 
 .inspector-description,
 .inspector-detail {

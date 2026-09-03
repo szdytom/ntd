@@ -1,8 +1,9 @@
 import type { GameEngine } from '../game/engine';
 import type { TowerProgram } from '../game/types';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { moduleShortName } from '../i18n/presentation';
 import { TriggerNode } from './TriggerNode';
+import { EnergyBolt } from './EnergyBolt';
 import { thoughtRegistry } from '../thoughts';
 import './ProgramReadout.css';
 
@@ -20,13 +21,17 @@ export function ProgramReadout({ program, engine, maxEnergy, onOpenThought }: { 
     : capacityWarning;
   const diagnosticThought = diagnostic ? thoughtRegistry.forDiagnostic(diagnostic.code) : undefined;
   const hasTrigger = program.shots.some((shot) => shot.trigger);
-  const summary = program.shots.length === 0 ? t('program.empty') : t('program.summary', {
-    casts: program.shots.length,
-    energy: program.energyCost,
-    projectiles: program.projectileCount,
-    triggers: program.triggerCount > 0 ? t('program.triggerPart', { count: program.triggerCount }) : '',
-    wrap: program.wraps > 0 ? t('program.wrapPart') : '',
-  });
+  const summary = program.shots.length === 0 ? t('program.empty') : <Trans
+    i18nKey="program.summary"
+    values={{
+      casts: program.shots.length,
+      energy: program.energyCost,
+      projectiles: program.projectileCount,
+      triggers: program.triggerCount > 0 ? t('program.triggerPart', { count: program.triggerCount }) : '',
+      wrap: program.wraps > 0 ? t('program.wrapPart') : '',
+    }}
+    components={{ energyIcon: <EnergyBolt /> }}
+  />;
   return (
     <div className="program-output" data-tutorial-program>
       <div className={`program-readout ${warning ? 'warning' : ''}`}>

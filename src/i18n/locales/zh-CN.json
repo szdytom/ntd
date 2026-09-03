@@ -447,7 +447,7 @@
 	"tower.maxed": "已满级",
 	"program.empty": "空程序",
 	"program.payload": "触发载荷",
-	"program.summary": "{{casts}} 段施法 · {{energy}}⚡/轮 · {{projectiles}} 弹体{{triggers}}{{wrap}}",
+	"program.summary": "{{casts}} 段施法 · {{energy}}<energyIcon/>/轮 · {{projectiles}} 弹体{{triggers}}{{wrap}}",
 	"program.triggerPart": " · {{count}} 触发",
 	"program.wrapPart": " · ↻ 回绕",
 	"program.capacity": "本轮需要 {{required}} 能量，超过该塔 {{capacity}} 的能量上限",

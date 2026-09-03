@@ -6,6 +6,7 @@ import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } f
 import { moduleVariableStyle } from './modulePresentation';
 import { Tag } from './Tag';
 import { thoughtRegistry } from '../thoughts';
+import { EnergyBolt } from './EnergyBolt';
 import './RewardDraft.css';
 
 export function RewardDraft({ engine, snapshot, inventory, advancedVisible = false, onOpenThought }: {
@@ -47,12 +48,21 @@ export function RewardDraft({ engine, snapshot, inventory, advancedVisible = fal
           ? t('reward.initialDescription', { count: draft.totalRounds })
           : t('reward.waveDescription')}</p>
       </div>
+      {advancedVisible ? <div className="reward-debug-summary" aria-label="F3 draft diagnostics">
+        {draft.choices.map((moduleId, index) => {
+          const definition = engine.modules.require(moduleId);
+          const weight = diagnostics.choiceWeights.find((candidate) => candidate.moduleId === moduleId);
+          return weight ? <span key={moduleId} style={moduleVariableStyle(definition)} title={moduleName(t, definition.id)}>
+            <b>{String(index + 1).padStart(2, '0')}</b>
+            <code>b={compactWeight(weight.base)} r={compactWeight(weight.recent)} o={compactWeight(weight.ownership)} t={compactWeight(weight.trailCompatibility)} p={compactWeight(weight.projectileCompatibility)} d={compactWeight(weight.dependencyCompatibility)} w={compactWeight(weight.weight)}</code>
+          </span> : null;
+        })}
+      </div> : null}
       <div className="reward-progress">{Array.from({ length: draft.totalRounds }, (_, index) => <i key={index} className={index < draft.round ? 'active' : ''} />)}<span>{draft.round} / {draft.totalRounds}</span></div>
     </header>
     <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);
         const thought = thoughtRegistry.forModule(moduleId);
-        const weight = diagnostics.choiceWeights.find((candidate) => candidate.moduleId === moduleId);
         const Icon = definition.icon;
         return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)}>
           <header className="reward-card-head">
@@ -67,11 +77,8 @@ export function RewardDraft({ engine, snapshot, inventory, advancedVisible = fal
             </div>
           </div>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>
-          {advancedVisible && weight ? <code className="reward-card-debug">
-            b={compactWeight(weight.base)} r={compactWeight(weight.recent)} o={compactWeight(weight.ownership)} t={compactWeight(weight.trailCompatibility)} p={compactWeight(weight.projectileCompatibility)} d={compactWeight(weight.dependencyCompatibility)} w={compactWeight(weight.weight)}
-          </code> : null}
           <div className="reward-readouts">
-            <span><small>{t('reward.energy')}</small><strong>{definition.meta.energy}<i>⚡</i></strong></span>
+            <span><small>{t('reward.energy')}</small><strong>{definition.meta.energy}<EnergyBolt /></strong></span>
             <span><small>{t('reward.inventory')}</small><strong>{inventory[moduleId]?.total ?? 0}</strong></span>
           </div>
           <div className="reward-card-actions">

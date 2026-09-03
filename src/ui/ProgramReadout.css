@@ -28,6 +28,12 @@
   font-size: 15px;
 }
 
+.program-readout strong .energy-bolt {
+  margin: 0 1px;
+  color: #eeb000;
+  font-size: .84em;
+}
+
 .program-readout small {
   color: #9d99a7;
   font-size: 15px;

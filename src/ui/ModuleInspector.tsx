@@ -2,6 +2,7 @@ import { MODULE_RARITIES, type ModuleDefinition } from '../modules';
 import { useTranslation } from 'react-i18next';
 import { kindLabel, moduleDescription, moduleDetail, moduleName, rarityLabel } from '../i18n/presentation';
 import { moduleVariableStyle } from './modulePresentation';
+import { EnergyBolt } from './EnergyBolt';
 import './ModuleInspector.css';
 
 export function ModuleInspector({ definition, onOpenThought }: { definition: ModuleDefinition; onOpenThought?: () => void }) {
@@ -17,7 +18,7 @@ export function ModuleInspector({ definition, onOpenThought }: { definition: Mod
         </div>
         <h3>{moduleName(t, definition.id)}</h3>
       </div>
-      <div className="inspector-cost"><small>{t('inspector.energy')}</small><strong>{definition.meta.energy}<span aria-hidden="true">⚡</span></strong></div>
+      <div className="inspector-cost"><small>{t('inspector.energy')}</small><strong>{definition.meta.energy}<EnergyBolt /></strong></div>
     </div>
     <p className="inspector-description">{moduleDescription(t, definition)}</p>
     <p className="inspector-detail">{moduleDetail(t, definition)}</p>

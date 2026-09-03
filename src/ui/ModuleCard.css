@@ -103,6 +103,14 @@
   font-size: 15px;
 }
 
+.module-text .module-energy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.module-energy .energy-bolt { color: #eeb000; font-size: 12px; }
+
 .module-card.exhausted {
   border-style: dashed;
   border-color: #d8d4dd;
