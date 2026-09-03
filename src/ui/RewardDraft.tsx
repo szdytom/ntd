@@ -42,27 +42,32 @@ export function RewardDraft({ engine, snapshot, inventory, advancedVisible = fal
   return <section className={`reward-panel${advancedVisible ? ' advanced' : ''}`} ref={panelRef} role="region" aria-label={isInitialDraft ? t('reward.initialAria') : t('reward.waveAria')}>
     <header className="reward-head">
       <div className="reward-heading">
-        <Tag className="reward-kicker" tone="yellow">{isInitialDraft ? t('reward.initialKicker') : t('reward.cleared', { wave: String(snapshot.wave).padStart(2, '0') })}</Tag>
         <h2>{isInitialDraft ? t('reward.initialTitle') : t('reward.waveTitle')}</h2>
-        <p>{isInitialDraft
-          ? t('reward.initialDescription', { count: draft.totalRounds })
-          : t('reward.waveDescription')}</p>
+        <div className="reward-heading-meta">
+          {draft.boosted ? <Tag tone="yellow">{t('reward.boosted')}</Tag> : null}
+          <p>{isInitialDraft
+            ? t('reward.foot', { count: draft.totalRounds - draft.round + 1 })
+            : t('reward.waveDescription')}</p>
+        </div>
       </div>
       {advancedVisible ? <div className="reward-debug-summary" aria-label="F3 draft diagnostics">
-        {draft.choices.map((moduleId, index) => {
-          const definition = engine.modules.require(moduleId);
-          const weight = diagnostics.choiceWeights.find((candidate) => candidate.moduleId === moduleId);
-          return weight ? <span key={moduleId} style={moduleVariableStyle(definition)} title={moduleName(t, definition.id)}>
-            <b>{String(index + 1).padStart(2, '0')}</b>
-            <code>b={compactWeight(weight.base)} r={compactWeight(weight.recent)} o={compactWeight(weight.ownership)} t={compactWeight(weight.trailCompatibility)} p={compactWeight(weight.projectileCompatibility)} d={compactWeight(weight.dependencyCompatibility)} w={compactWeight(weight.weight)}</code>
-          </span> : null;
-        })}
+        <code className="reward-advanced-inline">s={quality(diagnostics.inventoryAverage)} a={quality(diagnostics.qualityAnchor)} b={quality(diagnostics.computedBaseline)} u=+{quality(diagnostics.appliedBoost)} q={quality(diagnostics.computedQuality)} ({diagnostics.retryCount}/{diagnostics.maxRetry} {diagnostics.highestOfferedQuality}:{diagnostics.abandonedHighestQuality ?? '-'}:{diagnostics.projectileDeficit}:{diagnostics.guaranteedPoolSize})</code>
       </div> : null}
-      <div className="reward-progress">{Array.from({ length: draft.totalRounds }, (_, index) => <i key={index} className={index < draft.round ? 'active' : ''} />)}<span>{draft.round} / {draft.totalRounds}</span></div>
+      <div className="reward-head-actions">
+        <div className="reward-progress">{Array.from({ length: draft.totalRounds }, (_, index) => <i key={index} className={index < draft.round ? 'active' : ''} />)}<span>{draft.round} / {draft.totalRounds}</span></div>
+        <button
+          className="reward-abandon"
+          disabled={!draft.canAbandon}
+          aria-label={`${t('reward.abandon', { count: draft.abandonsRemaining })}${draft.canAbandon ? '' : `. ${abandonUnavailable}`}`}
+          title={abandonTitle}
+          onClick={() => engine.abandonDraft()}
+        >{t('reward.abandon', { count: draft.abandonsRemaining })}</button>
+      </div>
     </header>
     <div className="reward-grid">{draft.choices.map((moduleId) => {
         const definition = engine.modules.require(moduleId);
         const thought = thoughtRegistry.forModule(moduleId);
+        const weight = diagnostics.choiceWeights.find((candidate) => candidate.moduleId === moduleId);
         const Icon = definition.icon;
         return <article key={moduleId} className={`reward-card rarity-${definition.meta.rarity}`} style={moduleVariableStyle(definition)}>
           <header className="reward-card-head">
@@ -75,6 +80,9 @@ export function RewardDraft({ engine, snapshot, inventory, advancedVisible = fal
               <strong>{moduleName(t, definition.id)}</strong>
               <small>{moduleDescription(t, definition)}</small>
             </div>
+            {advancedVisible && weight ? <code className="reward-card-debug">
+              b={compactWeight(weight.base)} r={compactWeight(weight.recent)} o={compactWeight(weight.ownership)} t={compactWeight(weight.trailCompatibility)} p={compactWeight(weight.projectileCompatibility)} d={compactWeight(weight.dependencyCompatibility)} w={compactWeight(weight.weight)}
+            </code> : null}
           </div>
           <span className="reward-detail">{moduleDetail(t, definition)}</span>
           <div className="reward-readouts">
@@ -87,15 +95,5 @@ export function RewardDraft({ engine, snapshot, inventory, advancedVisible = fal
           </div>
         </article>;
       })}</div>
-    <footer className="reward-foot">
-      <span>{draft.boosted ? <Tag tone="yellow">{t('reward.boosted', { boost: diagnostics.appliedBoost })}</Tag> : null}<span>{t('reward.foot', { count: draft.totalRounds - draft.round + 1 })}</span>{advancedVisible ? <code className="reward-advanced-inline">s={quality(diagnostics.inventoryAverage)} a={quality(diagnostics.qualityAnchor)} b={quality(diagnostics.computedBaseline)} u=+{quality(diagnostics.appliedBoost)} q={quality(diagnostics.computedQuality)} ({diagnostics.retryCount}/{diagnostics.maxRetry} {diagnostics.highestOfferedQuality}:{diagnostics.abandonedHighestQuality ?? '-'}:{diagnostics.projectileDeficit}:{diagnostics.guaranteedPoolSize})</code> : null}</span>
-      <button
-        className="reward-abandon"
-        disabled={!draft.canAbandon}
-        aria-label={`${t('reward.abandon', { count: draft.abandonsRemaining })}${draft.canAbandon ? '' : `. ${abandonUnavailable}`}`}
-        title={abandonTitle}
-        onClick={() => engine.abandonDraft()}
-      >{t('reward.abandon', { count: draft.abandonsRemaining })}</button>
-    </footer>
   </section>;
 }

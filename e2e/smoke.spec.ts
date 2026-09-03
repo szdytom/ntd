@@ -107,7 +107,7 @@ test('setup and battlefield work in a real browser', async ({ page }) => {
   const abandon = draft.getByRole('button', { name: /Abandon all/ });
   await expect(abandon).toHaveText(`Abandon all · ${defaultLevel.moduleDraft.abandonLimit} left`);
   await abandon.click();
-  await expect(draft.getByText('QUALITY SIGNAL +1')).toBeVisible();
+  await expect(draft.getByText('QUALITY BASELINE RAISED')).toBeVisible();
   await expect(abandon).toBeDisabled();
   for (let round = 1; round < defaultLevel.moduleDraft.initialPicks; round += 1) {
     await draft.locator('.reward-choose').first().click();
