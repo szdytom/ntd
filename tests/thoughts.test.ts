@@ -4,6 +4,7 @@ import { CombatRuntime } from '../src/game/combat-runtime';
 import type { CombatEvent } from '../src/game/combat-events';
 import { FIXED_SIMULATION_STEP } from '../src/game/engine';
 import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
+import type { ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '../src/thoughts/types';
 
 const maximumDirectorSteps = (director: ThoughtSceneDirector): number => {
   const seconds = director.definition.beats.reduce((total, beat) => {
@@ -63,6 +64,45 @@ describe('thought registry', () => {
         }
       }
     }
+  });
+
+  it('keeps visible loadout dialogs anchored across incremental reveals', () => {
+    const violations: string[] = [];
+
+    for (const definition of thoughtRegistry.list()) {
+      let mode: ThoughtLoadoutMode = 'hidden';
+      let placements = new Map<number, ThoughtLoadoutPlacement>([[0, 'right']]);
+
+      for (const beat of definition.beats) {
+        for (const cue of beat.cues ?? []) {
+          const nextMode = cue.loadoutMode ?? mode;
+          const nextPlacements = cue.overlay?.type === 'loadout'
+            ? new Map<number, ThoughtLoadoutPlacement>([[
+              cue.overlay.target === 'tower' ? 0 : cue.overlay.target.towerIndex,
+              cue.overlay.placement ?? 'right',
+            ]])
+            : cue.overlay?.type === 'loadouts'
+              ? new Map(cue.overlay.targets.map((target) => [target.towerIndex, target.placement]))
+              : placements;
+
+          if (mode === 'dialog' && nextMode === 'dialog') {
+            for (const [towerIndex, placement] of nextPlacements) {
+              const previousPlacement = placements.get(towerIndex);
+              if (previousPlacement && previousPlacement !== placement) {
+                violations.push(
+                  `${definition.id}/${beat.id}/${cue.id}: tower ${towerIndex} moved ${previousPlacement} -> ${placement}`,
+                );
+              }
+            }
+          }
+
+          mode = nextMode;
+          placements = nextPlacements;
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 
   it('preserves the revised projectile teaching contracts', () => {

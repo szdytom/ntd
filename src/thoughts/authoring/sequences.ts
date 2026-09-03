@@ -1,6 +1,12 @@
 import type { ModuleId, SignalId } from '../../game/types';
 import type { ScenarioSignalPosition } from '../../game/combat-runtime';
-import type { ThoughtAction, ThoughtCue, ThoughtEventMatcher, ThoughtOverlayTarget } from '../types';
+import type {
+  ThoughtAction,
+  ThoughtCue,
+  ThoughtEventMatcher,
+  ThoughtLoadoutPlacement,
+  ThoughtOverlayTarget,
+} from '../types';
 import { timedCue, waitCue } from './cues';
 
 export interface SignalSpawn {
@@ -91,6 +97,7 @@ export const resetTo = (
   nextSlots: readonly ModuleId[],
   sectionTitleKey: string,
   revealSlots: number,
+  placement: ThoughtLoadoutPlacement = 'right',
 ): readonly ThoughtCue[] => [
   timedCue(`${prefix}-restore`, 1.35, {
     actions: [{ type: 'set-tower-casting', enabled: true }],
@@ -106,7 +113,7 @@ export const resetTo = (
   }),
   timedCue(`${prefix}-title`, 0.75, {
     sectionTitleKey,
-    overlay: { type: 'loadout', target: 'tower', placement: 'right' },
+    overlay: { type: 'loadout', target: 'tower', placement },
     loadoutMode: 'dialog',
     loadoutVisibleSlots: revealSlots,
   }),

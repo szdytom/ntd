@@ -89,11 +89,11 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'show-line', captionKey: copy.beatLine, flow: 'impact',
-        cues: [showPause({ id: 'point-line', captionKey: copy.beatLine, target: { signalRef: 'lineFirst' }, requireAlive: 'lineFirst' })],
+        cues: [showPause({ id: 'point-line', captionKey: copy.beatLine, target: { signalRef: 'lineLast' }, requireAlive: 'lineLast' })],
       }),
       defineBeat({
         id: 'construct-guide', captionKey: copy.sectionGuide, flow: 'compile',
-        cues: resetTo('guide', ['seeker', module.id], copy.sectionGuide, 1),
+        cues: resetTo('guide', ['seeker', module.id], copy.sectionGuide, 1, 'top-right'),
       }),
       defineBeat({
         id: 'show-guide-loadout', captionKey: copy.beatGuide, flow: 'compile',
@@ -114,11 +114,11 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'show-guided-line', captionKey: copy.beatGuidedHits, flow: 'impact',
-        cues: [showPause({ id: 'point-guided-line', captionKey: copy.beatGuidedHits, target: { signalRef: 'guidedLast' }, requireAlive: 'guidedLast' })],
+        cues: [showPause({ id: 'point-guided-line', captionKey: copy.beatGuidedHits, target: { signalRef: 'guidedFirst' }, requireAlive: 'guidedFirst' })],
       }),
       defineBeat({
         id: 'construct-trail', captionKey: copy.sectionTrail, flow: 'compile',
-        cues: resetTo('trail', ['cinder-trail', module.id], copy.sectionTrail, 1),
+        cues: resetTo('trail', ['cinder-trail', module.id], copy.sectionTrail, 1, 'top-right'),
       }),
       defineBeat({
         id: 'show-trail-loadout', captionKey: copy.beatTrail, flow: 'trail',
@@ -144,7 +144,7 @@ export const buildPiercingProjectileThought = (
       }),
       defineBeat({
         id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'compile',
-        cues: resetTo('focus', ['focus-core', module.id], copy.sectionFocus, 1),
+        cues: resetTo('focus', ['focus-core', module.id], copy.sectionFocus, 1, 'top-right'),
       }),
       defineBeat({
         id: 'show-focus-loadout', captionKey: copy.beatFocus, flow: 'focus',
