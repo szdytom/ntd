@@ -710,7 +710,7 @@
 	"thoughtIndex.backMenu": "返回部署界面",
 	"thoughtIndex.indexAria": "模块思绪",
 	"thoughtIndex.searchLabel": "查找模块",
-	"thoughtIndex.searchPlaceholder": "模块名称",
+	"thoughtIndex.searchPlaceholder": "模块名称、短名或简介",
 	"thoughtIndex.noResults": "没有符合搜索条件的模块记录。",
 	"thoughtIndex.canvasAria": "实时战斗演示",
 	"thoughtIndex.beat": "第 {{current}} / {{total}} 节",

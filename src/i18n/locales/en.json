@@ -710,7 +710,7 @@
 	"thoughtIndex.backMenu": "Return to deployment",
 	"thoughtIndex.indexAria": "Module thoughts",
 	"thoughtIndex.searchLabel": "Find a module",
-	"thoughtIndex.searchPlaceholder": "Module name",
+	"thoughtIndex.searchPlaceholder": "Module name, short name, or summary",
 	"thoughtIndex.noResults": "No recorded module matches this search.",
 	"thoughtIndex.canvasAria": "Live combat demonstration",
 	"thoughtIndex.beat": "Beat {{current}} of {{total}}",

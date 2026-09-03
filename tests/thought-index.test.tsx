@@ -3,13 +3,15 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
+import i18n from '../src/i18n';
+import zhCN from '../src/i18n/locales/zh-CN.json';
 import { GameEngine } from '../src/game/engine';
 import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
 import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
 import { RewardDraft } from '../src/ui/RewardDraft';
 import { Workshop } from '../src/ui/Workshop';
 import { ProgramReadout } from '../src/ui/ProgramReadout';
+import { ThoughtIndex } from '../src/ui/ThoughtIndex';
 
 beforeEach(() => {
   const values = new Map<string, string>([[TUTORIAL_OFFER_STORAGE_KEY, '1']]);
@@ -22,12 +24,45 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   vi.unstubAllGlobals();
+  await i18n.changeLanguage('en');
 });
 
 describe('thought index entry points', () => {
+  it('searches only record names and summaries', async () => {
+    const user = userEvent.setup();
+    render(<ThoughtIndex onBack={vi.fn()} />);
+
+    const searchBox = screen.getByPlaceholderText('Module name, short name, or summary');
+    await user.type(searchBox, 'Pulse Round');
+
+    expect(document.querySelectorAll('.thought-records [data-thought-id]')).toHaveLength(1);
+    expect(document.querySelector('.thought-records [data-thought-id="pulse"]')).not.toBeNull();
+
+    await user.clear(searchBox);
+    await user.type(searchBox, 'Frost');
+    const shortNameMatch = document.querySelector('.thought-records [data-thought-id="frost"]');
+    expect(shortNameMatch).not.toBeNull();
+    expect(shortNameMatch?.textContent).not.toContain('Frost');
+  });
+
+  it('searches Chinese record names and summaries by pinyin', async () => {
+    await i18n.changeLanguage('zh-CN');
+    const user = userEvent.setup();
+    render(<ThoughtIndex onBack={vi.fn()} />);
+    const searchBox = screen.getByPlaceholderText(zhCN['thoughtIndex.searchPlaceholder']);
+
+    await user.type(searchBox, 'lntj');
+    expect(document.querySelectorAll('.thought-records [data-thought-id]')).toHaveLength(1);
+    expect(document.querySelector('.thought-records [data-thought-id="frost"]')).not.toBeNull();
+
+    await user.clear(searchBox);
+    await user.type(searchBox, 'mingzhongdian');
+    expect(document.querySelector('.thought-records [data-thought-id="pulse"]')).not.toBeNull();
+  });
+
   it('opens from deployment and returns to the mounted selection screen', async () => {
     const user = userEvent.setup();
     render(<App />);

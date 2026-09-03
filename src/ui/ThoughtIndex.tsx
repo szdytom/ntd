@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { moduleName } from '../i18n/presentation';
 import { thoughtRegistry, ThoughtSceneDirector } from '../thoughts';
+import { matchesThoughtSearch } from '../thoughts/search';
 import type { ThoughtChapter } from '../thoughts/types';
 import { ArchiveHeader } from './ArchiveHeader';
 import { SettingsPanel } from './SettingsPanel';
@@ -17,7 +17,7 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
   onBack: () => void;
   backToBattlefield?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const definitions = thoughtRegistry.list();
   const [selectedId, setSelectedId] = useState(initialThoughtId ?? definitions[0]?.id ?? '');
   const [query, setQuery] = useState('');
@@ -93,16 +93,8 @@ export function ThoughtIndex({ initialThoughtId, onBack, backToBattlefield = fal
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [director, onBack]);
 
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const visible = definitions.filter((candidate) => {
-    if (!normalizedQuery) return true;
-    const searchText = [
-      t(candidate.titleKey),
-      t(candidate.summaryKey),
-      ...candidate.relatedModuleIds.map((moduleId) => moduleName(t, moduleId)),
-    ].join(' ').toLocaleLowerCase();
-    return searchText.includes(normalizedQuery);
-  });
+  const languageTag = i18n.resolvedLanguage ?? i18n.language;
+  const visible = definitions.filter((candidate) => matchesThoughtSearch(candidate, query, languageTag, t));
 
   return <main
     ref={shellRef}
