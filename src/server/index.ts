@@ -6,12 +6,21 @@ import { COOP_PROTOCOL_VERSION } from '../coop/types';
 import type { CoopPlayerId, CoopServerMessage } from '../coop/types';
 import { parseCoopClientMessage } from '../coop/protocol';
 import { CoopRoom } from './coop-room';
+import { CombatVerifierPool } from './combat-verifier';
 import { coopDevError, coopDevLog, coopDevWarn } from './dev-log';
+import { createWebSocketOriginPolicy } from './origin-policy';
 
 const host = process.env.COOP_HOST ?? '0.0.0.0';
 const port = Number.parseInt(process.env.COOP_SERVER_PORT ?? '4174', 10);
+const combatWorkerCount = Number.parseInt(process.env.COOP_COMBAT_WORKERS ?? '1', 10);
+const combatQueueLimit = Number.parseInt(process.env.COOP_COMBAT_QUEUE_LIMIT ?? '128', 10);
+const combatVerifier = new CombatVerifierPool(combatWorkerCount, combatQueueLimit);
 const rooms = new Map<string, CoopRoom>();
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const originPolicy = createWebSocketOriginPolicy({
+  allowedOrigins: process.env.COOP_ALLOWED_ORIGINS,
+  allowAny: process.env.COOP_ALLOW_ANY_ORIGIN === '1',
+});
 let nextConnectionId = 1;
 
 interface ConnectionSession {
@@ -41,7 +50,15 @@ const httpServer = createServer((request, response) => {
   response.end();
 });
 
-const webSocketServer = new WebSocketServer({ server: httpServer, maxPayload: 64 * 1024 });
+const webSocketServer = new WebSocketServer({
+  server: httpServer,
+  maxPayload: 64 * 1024,
+  verifyClient: ({ origin }: { origin: string }) => {
+    const allowed = originPolicy.allows(origin);
+    if (!allowed) coopDevWarn('connection.rejected', { reason: 'origin-not-allowed', origin: origin || null });
+    return allowed;
+  },
+});
 webSocketServer.on('connection', (socket) => {
   const connectionId = nextConnectionId;
   nextConnectionId += 1;
@@ -122,6 +139,7 @@ webSocketServer.on('connection', (socket) => {
         difficultyId: message.difficultyId,
         seed,
         onClosed: (closed) => rooms.delete(closed.code),
+        verifyCombat: combatVerifier.verify,
       });
       rooms.set(code, room);
       session = { room, playerId: 'p1' };
@@ -209,6 +227,8 @@ webSocketServer.on('connection', (socket) => {
 
 httpServer.on('error', (error) => {
   coopDevError('server.http-error', { host, port, error: error.message });
+  process.exitCode = 1;
+  void combatVerifier.close();
 });
 
 webSocketServer.on('error', (error) => {
@@ -216,6 +236,13 @@ webSocketServer.on('error', (error) => {
 });
 
 httpServer.listen(port, host, () => {
-  process.stdout.write(`Prism Bastion co-op server listening on ws://${host}:${port}\n`);
-  coopDevLog('server.listening', { host, port });
+  const address = httpServer.address();
+  const listeningPort = address && typeof address === 'object' ? address.port : port;
+  process.stdout.write(`Prism Bastion co-op server listening on ws://${host}:${listeningPort}\n`);
+  coopDevLog('server.listening', {
+    host,
+    port: listeningPort,
+    combatWorkerCount,
+    combatQueueLimit,
+  });
 });

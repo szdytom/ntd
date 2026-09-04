@@ -1,30 +1,33 @@
 import { COOP_PROTOCOL_VERSION } from './types';
 import { parseCoopServerMessage } from './protocol';
+import { currentCoopServerUrl, isValidStoredServerUrl } from './server-config';
 import type { CoopClientMessage, CoopPlayerId, CoopServerMessage } from './types';
 
-const SESSION_KEY = 'prism-bastion-coop-session-v1';
+const SESSION_KEY = 'prism-bastion-coop-session-v2';
+const LEGACY_SESSION_KEY = 'prism-bastion-coop-session-v1';
 
 interface StoredSession {
   code: string;
   token: string;
   playerId: CoopPlayerId;
+  serverUrl: string;
 }
 
 const readStoredSession = (): StoredSession | null => {
   try {
+    sessionStorage.removeItem(LEGACY_SESSION_KEY);
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as StoredSession;
+    const value = JSON.parse(raw) as Partial<StoredSession>;
+    if (
+      typeof value.code !== 'string' || typeof value.token !== 'string'
+      || (value.playerId !== 'p1' && value.playerId !== 'p2')
+      || !isValidStoredServerUrl(value.serverUrl)
+    ) return null;
+    return value as StoredSession;
   } catch {
     return null;
   }
-};
-
-const serverUrl = (): string => {
-  const override = new URLSearchParams(location.search).get('server');
-  if (override) return override;
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${location.hostname}:4174`;
 };
 
 type Listener = (message: CoopServerMessage) => void;
@@ -64,7 +67,8 @@ export class CoopClient {
     this.pendingInitial = initial ?? null;
     this.manuallyClosed = false;
     this.statusListener?.('connecting');
-    const socket = new WebSocket(serverUrl());
+    const targetServerUrl = initial ? currentCoopServerUrl() : this.session?.serverUrl ?? currentCoopServerUrl();
+    const socket = new WebSocket(targetServerUrl);
     this.socket = socket;
     socket.addEventListener('open', () => {
       this.statusListener?.('connected');
@@ -88,7 +92,12 @@ export class CoopClient {
       const message = parseCoopServerMessage(raw);
       if (!message) return;
       if (message.type === 'session') {
-        this.session = { code: message.room.code, token: message.token, playerId: message.playerId };
+        this.session = {
+          code: message.room.code,
+          token: message.token,
+          playerId: message.playerId,
+          serverUrl: targetServerUrl,
+        };
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(this.session));
       }
       if (message.type === 'rejected' && (message.reason === 'room-not-found' || message.reason === 'resume-unavailable')) {
@@ -143,5 +152,6 @@ export class CoopClient {
   clearSession(): void {
     this.session = null;
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(LEGACY_SESSION_KEY);
   }
 }

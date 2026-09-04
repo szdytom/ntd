@@ -20,6 +20,11 @@ import type {
 } from '../coop/types';
 import { COOP_PLAYER_IDS } from '../coop/types';
 import { coopDevLog, coopDevWarn } from './dev-log';
+import type {
+  CombatVerificationOutcome,
+  CombatVerificationRequest,
+  VerifyCombat,
+} from './combat-simulation';
 
 const RECONNECT_GRACE_MS = 60_000;
 
@@ -32,6 +37,7 @@ interface RoomPlayer {
   ready: boolean;
   eliminated: boolean;
   combatSubmitted: boolean;
+  combatVerifying: boolean;
   towerSeed: number;
   plan: CoopPlayerSnapshot['plan'];
   draftOffer: CoopDraftOffer | null;
@@ -73,6 +79,7 @@ export class CoopRoom {
   private readonly combatResults: Partial<Record<CoopPlayerId, CoopCombatResult>> = {};
   private closed = false;
   private readonly onClosed: (room: CoopRoom) => void;
+  private readonly verifyCombat: VerifyCombat;
 
   constructor(options: {
     code: string;
@@ -82,12 +89,14 @@ export class CoopRoom {
     difficultyId: CoopRoomSnapshot['difficultyId'];
     seed: number;
     onClosed: (room: CoopRoom) => void;
+    verifyCombat: VerifyCombat;
   }) {
     this.code = options.code;
     this.levelId = options.levelId;
     this.difficultyId = options.difficultyId;
     this.roomSeed = options.seed >>> 0;
     this.onClosed = options.onClosed;
+    this.verifyCombat = options.verifyCombat;
     this.players.p1 = this.createPlayer('p1', options.hostName, options.hostSocket);
   }
 
@@ -102,6 +111,7 @@ export class CoopRoom {
       ready: false,
       eliminated: false,
       combatSubmitted: false,
+      combatVerifying: false,
       towerSeed,
       plan: createInitialCoopPlan(this.levelId, this.difficultyId, towerSeed),
       draftOffer: null,
@@ -343,6 +353,15 @@ export class CoopRoom {
       });
       return;
     }
+    if (player.combatVerifying) {
+      this.warn('combat.duplicate-result-pending', {
+        playerId: player.id,
+        traceId,
+        resultPhaseId: result.phaseId,
+        resultPlanHash: result.planHash,
+      });
+      return;
+    }
     const expectedActor = this.phase === 'reinforcement' ? this.reinforcement?.defenderId : player.id;
     const expectedPlanHash = hashCoopPlan(player.plan);
     if (expectedActor !== player.id || result.planHash !== expectedPlanHash) {
@@ -369,6 +388,57 @@ export class CoopRoom {
         leakCount: result.leaks.length,
         leaks: result.leaks.slice(0, 12),
         leaksTruncated: result.leaks.length > 12,
+      });
+      this.endRoom('desync');
+      return;
+    }
+    const verification: CombatVerificationRequest = {
+      levelId: this.levelId,
+      difficultyId: this.difficultyId,
+      phaseId: this.phaseId,
+      kind: this.phase,
+      wave: this.wave,
+      planHash: expectedPlanHash,
+      plan: structuredClone(player.plan),
+      signals: this.phase === 'reinforcement' && this.reinforcement
+        ? structuredClone(this.reinforcement.signals)
+        : [],
+    };
+    player.combatVerifying = true;
+    this.log('combat.verification-started', { playerId: player.id, traceId });
+    try {
+      this.verifyCombat(verification, result, (outcome) => {
+        this.finishCombatVerification(player, result, traceId, verification.phaseId, outcome);
+      });
+    } catch (error) {
+      this.finishCombatVerification(player, result, traceId, verification.phaseId, {
+        ok: false,
+        reason: 'verification-error',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  private finishCombatVerification(
+    player: RoomPlayer,
+    result: CoopCombatResult,
+    traceId: string,
+    phaseId: number,
+    outcome: CombatVerificationOutcome,
+  ): void {
+    if (this.closed || !player.combatVerifying) return;
+    player.combatVerifying = false;
+    if (this.phaseId !== phaseId || player.combatSubmitted) return;
+    if (!outcome.ok) {
+      this.warn(outcome.reason === 'result-mismatch' ? 'desync.combat-result-mismatch' : 'combat.verification-failed', {
+        playerId: player.id,
+        traceId,
+        reason: outcome.reason,
+        claimedShards: result.shardsEarned,
+        claimedLeakCount: result.leaks.length,
+        expectedShards: outcome.reason === 'result-mismatch' ? outcome.expected.shardsEarned : null,
+        expectedLeakCount: outcome.reason === 'result-mismatch' ? outcome.expected.leaks.length : null,
+        error: outcome.reason === 'result-mismatch' ? null : outcome.error,
       });
       this.endRoom('desync');
       return;
@@ -457,6 +527,7 @@ export class CoopRoom {
     for (const player of this.listPlayers()) {
       player.ready = false;
       player.combatSubmitted = false;
+      player.combatVerifying = false;
     }
     this.log('phase.local-defense-started', { actors: this.activePlayers().map((player) => player.id) });
     this.bumpAndBroadcast();
@@ -470,6 +541,7 @@ export class CoopRoom {
     this.phaseId += 1;
     this.reinforcement = { defenderId: defender.id, ownerId: owner.id, signals: structuredClone(signals) };
     defender.combatSubmitted = false;
+    defender.combatVerifying = false;
     delete this.combatResults[defender.id];
     this.log('phase.reinforcement-started', {
       defenderId: defender.id,

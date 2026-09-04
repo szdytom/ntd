@@ -1,6 +1,6 @@
 import type { DifficultyId, ModuleId, SignalId, TargetingMode } from '../game/types';
 
-export const COOP_PROTOCOL_VERSION = 2;
+export const COOP_PROTOCOL_VERSION = 3;
 export const COOP_PLAYER_IDS = ['p1', 'p2'] as const;
 export type CoopPlayerId = (typeof COOP_PLAYER_IDS)[number];
 

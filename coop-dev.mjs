@@ -21,6 +21,8 @@ const context = await esbuild.context({
   define: {
     __PRISM_BASTION_COMMIT_DATE__: JSON.stringify(buildInfo.commitDate),
     __PRISM_BASTION_COMMIT__: JSON.stringify(buildInfo.commit),
+    __PRISM_BASTION_COOP_SERVERS__: '{}',
+    __PRISM_BASTION_COOP_ALLOW_SERVER_OVERRIDE__: 'true',
   },
 });
 
@@ -29,7 +31,11 @@ const clientPort = Number.parseInt(process.env.COOP_CLIENT_PORT ?? '4173', 10);
 const served = await context.serve({ servedir: 'dist-coop', host: '0.0.0.0', port: clientPort });
 const server = spawn(process.execPath, ['--import', 'tsx', 'src/server/index.ts'], {
   stdio: 'inherit',
-  env: { ...process.env, COOP_DEV_LOG: process.env.COOP_DEV_LOG ?? '1' },
+  env: {
+    ...process.env,
+    COOP_ALLOW_ANY_ORIGIN: process.env.COOP_ALLOW_ANY_ORIGIN ?? '1',
+    COOP_DEV_LOG: process.env.COOP_DEV_LOG ?? '1',
+  },
 });
 
 const close = async () => {

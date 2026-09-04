@@ -4,6 +4,7 @@ import { CoopRoom } from '../src/server/coop-room';
 import { hashCoopPlan } from '../src/coop/planning';
 import type { CoopPlayerId, CoopServerMessage } from '../src/coop/types';
 import { peerDefenseToFollow } from '../src/coop/viewing';
+import type { VerifyCombat } from '../src/server/combat-simulation';
 
 class FakeSocket {
   readyState = 1;
@@ -18,7 +19,9 @@ class FakeSocket {
 
 const asSocket = (socket: FakeSocket): WebSocket => socket as unknown as WebSocket;
 
-const createRoom = () => {
+const approveCombat: VerifyCombat = (_request, _claimed, complete) => complete({ ok: true });
+
+const createRoom = (verifyCombat: VerifyCombat = approveCombat) => {
   const first = new FakeSocket();
   const second = new FakeSocket();
   const closed = vi.fn();
@@ -30,6 +33,7 @@ const createRoom = () => {
     difficultyId: 'normal',
     seed: 42,
     onClosed: closed,
+    verifyCombat,
   });
   room.join('Beta', asSocket(second));
   return { room, first, second, closed };
@@ -173,6 +177,45 @@ describe('co-op room state machine', () => {
     expect(room.players.p1?.plan.shards).toBe(shardsAfterFirstResult);
     expect(first.sent.at(-1)?.type).toBe('room');
     expect(second.sent.at(-1)?.type).toBe('room');
+  });
+
+  it('ends the room without applying a combat result rejected by the authority', () => {
+    const verifyCombat: VerifyCombat = (request, _claimed, complete) => complete({
+      ok: false,
+      reason: 'result-mismatch',
+      expected: {
+        phaseId: request.phaseId,
+        planHash: request.planHash,
+        shardsEarned: 0,
+        leaks: [],
+      },
+    });
+    const { room, closed } = createRoom(verifyCombat);
+    beginFirstWave(room);
+    const shardsBefore = room.players.p1!.plan.shards;
+
+    handle(room, 'p1', combatResult(room, 'p1', [], 1_000_000));
+
+    expect(closed).toHaveBeenCalledOnce();
+    expect(room.result).toBe('desync');
+    expect(room.players.p1?.plan.shards).toBe(shardsBefore);
+  });
+
+  it('submits only one authority check while a result is pending', () => {
+    let finish: Parameters<VerifyCombat>[2] | null = null;
+    const verifyCombat = vi.fn<VerifyCombat>((_request, _claimed, complete) => { finish = complete; });
+    const { room } = createRoom(verifyCombat);
+    beginFirstWave(room);
+    const result = combatResult(room, 'p1', []);
+
+    handle(room, 'p1', result);
+    handle(room, 'p1', result);
+
+    expect(verifyCombat).toHaveBeenCalledOnce();
+    expect(room.players.p1?.combatSubmitted).toBe(false);
+    expect(finish).not.toBeNull();
+    (finish as unknown as (outcome: { ok: true }) => void)({ ok: true });
+    expect(room.players.p1?.combatSubmitted).toBe(true);
   });
 
   it('ignores messages from a connection replaced by session recovery', () => {

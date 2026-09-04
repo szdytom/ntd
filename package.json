@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node build.mjs",
     "build:coop": "node coop-build.mjs",
+    "start:coop": "node dist-coop/server.mjs",
     "balance:report": "node --import tsx scripts/balance-report.ts",
     "check:cjk": "node scripts/check-cjk.mjs",
     "check:locales": "node scripts/check-locales.mjs",
@@ -13,14 +14,16 @@
     "dev:coop": "node coop-dev.mjs",
     "format:locales": "node scripts/format-locales.mjs",
     "lint": "eslint .",
+    "perf:coop-report": "node --expose-gc --import tsx scripts/coop-capacity-report.ts",
     "perf:report": "node --import tsx scripts/performance-report.ts",
     "thoughts:report": "node --import tsx scripts/thought-choreography-report.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:coop": "playwright test --config playwright.coop.config.ts",
+    "test:server:coop": "node scripts/coop-server-smoke.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "check": "npm run check:cjk && npm run check:locales && npm run lint && npm run typecheck && npm run test && npm run build && npm run build:coop"
+    "check": "npm run check:cjk && npm run check:locales && npm run lint && npm run typecheck && npm run test && npm run build && npm run build:coop && npm run test:server:coop"
   },
   "dependencies": {
     "i18next": "^26.4.0",
