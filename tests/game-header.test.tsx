@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../src/i18n';
 import { GameEngine } from '../src/game/engine';
 import { GameHeader } from '../src/ui/GameHeader';
@@ -22,5 +22,26 @@ describe('game header', () => {
     expect(settings.getAttribute('disabled')).toBeNull();
     await user.click(settings);
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeTruthy();
+  });
+
+  it('turns the co-op launch action into an enabled cancel-ready action', async () => {
+    const user = userEvent.setup();
+    const engine = new GameEngine({ mode: 'coop', seed: 11 });
+    const onLaunch = vi.fn();
+
+    render(<GameHeader
+      engine={engine}
+      snapshot={engine.getSnapshot()}
+      onExit={() => undefined}
+      onLaunch={onLaunch}
+      launchReady
+    />);
+
+    const cancel = screen.getByRole('button', { name: 'Cancel ready' });
+    expect(cancel.getAttribute('disabled')).toBeNull();
+    expect(cancel.getAttribute('data-ready')).toBe('true');
+    expect(cancel.textContent).toContain('Cancel ready');
+    await user.click(cancel);
+    expect(onLaunch).toHaveBeenCalledOnce();
   });
 });

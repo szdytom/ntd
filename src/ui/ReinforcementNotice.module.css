@@ -1,0 +1,81 @@
+.root {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: hidden;
+  background: rgba(37, 33, 52, .58);
+  pointer-events: none;
+  animation: veil 2.8s ease both;
+}
+
+.frame {
+  position: relative;
+  display: grid;
+  width: min(680px, 100%);
+  justify-items: center;
+  padding: 34px 42px 38px;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  text-align: center;
+  animation: intercept 2.8s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.frame > p {
+  margin: 0 0 9px;
+  font: 900 13px/1 var(--font-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.frame h2 {
+  margin: 0;
+  font-size: clamp(48px, 9vw, 92px);
+  letter-spacing: -.075em;
+  line-height: .9;
+}
+
+.frame > strong { margin-top: 24px; font-size: 14px; letter-spacing: .04em; }
+.signals { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 12px; }
+.signals > span {
+  display: grid;
+  min-height: 40px;
+  grid-template-columns: 24px minmax(0, auto) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 2px solid var(--ink);
+  color: #fff;
+  background: var(--notice-signal);
+  text-shadow: 0 1px 1px rgba(37, 33, 52, .4);
+}
+.signals :global(.signal-icon) { width: 22px; height: 22px; }
+.signals b { font-size: 14px; }
+.signals em { font: normal 900 14px/1 var(--font-mono); }
+
+@keyframes veil {
+  0%, 100% { opacity: 0; }
+  9%, 82% { opacity: 1; }
+}
+
+@keyframes intercept {
+  0% { opacity: 0; transform: translateY(28px) scale(.94); }
+  12%, 82% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-16px) scale(1.02); }
+}
+
+@media (max-width: 620px) {
+  .frame { padding: 31px 16px 28px; }
+  .frame h2 { font-size: clamp(42px, 16vw, 68px); }
+  .signals > span { grid-template-columns: 21px auto; }
+  .signals :global(.signal-icon) { width: 19px; height: 19px; }
+  .signals b { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .frame { animation: none; }
+}

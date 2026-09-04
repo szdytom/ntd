@@ -5,6 +5,7 @@
 Each guide assumes the existing architecture and gives the shortest safe path for one kind of change.
 
 - [Development workflow](development-workflow.md): install, run, validate, and hand off a change.
+- [Co-op development server](co-op-development.md): run and share the two-player LAN development build.
 - [Testing boundaries](testing-boundaries.md): choose assertions that protect mechanics without freezing authored balance data.
 - [Add a module](adding-a-module.md): define compiler behavior, runtime hooks, presentation, registration, and tests.
 - [Add an effect](adding-an-effect.md): define effect geometry, register it, spawn it, and verify both render paths.

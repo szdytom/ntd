@@ -4,23 +4,32 @@ import styles from './GameSession.module.css';
 import type { GameEngine } from '../game/engine';
 import type { SignalId } from '../game/types';
 import { GameHeader } from './GameHeader';
-import { Battlefield } from './Battlefield';
+import { Battlefield, type BattlefieldUtilityPanel } from './Battlefield';
 import { useGameState } from './useGameState';
 import { Workshop } from './Workshop';
 import { Toast } from './Toast';
 import { RewardDraft } from './RewardDraft';
 import { TutorialGuide } from './TutorialGuide';
+import { TowerLoadoutOverlay } from './TowerLoadoutOverlay';
 import type { DefenseArchiveRepository } from '../defense-archive';
 import type { ToastState } from './useGameState';
 
-export function GameSession({ engine, defenseArchive, suspended = false, onExit, onOpenArchive, onOpenThought, onTutorialResolved }: {
+export function GameSession({ engine, backgroundEngine, defenseArchive, notificationToast, suspended = false, onExit, onOpenArchive, onOpenThought, onTutorialResolved, onLaunch, launchDisabled, launchReady = false, workshopEnabled = true, showTowerLoadouts = false, battlefieldUtility }: {
   engine: GameEngine;
+  backgroundEngine?: GameEngine | undefined;
   defenseArchive: DefenseArchiveRepository;
+  notificationToast?: ToastState | null | undefined;
   suspended?: boolean;
   onExit: () => void;
   onOpenArchive: (type: SignalId) => void;
   onOpenThought?: (thoughtId: string) => void;
   onTutorialResolved: () => void;
+  onLaunch?: () => void;
+  launchDisabled?: boolean;
+  launchReady?: boolean;
+  workshopEnabled?: boolean;
+  showTowerLoadouts?: boolean;
+  battlefieldUtility?: BattlefieldUtilityPanel;
 }) {
   const { t } = useTranslation();
   const { view, toast } = useGameState(engine);
@@ -28,7 +37,7 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
   const [workshopToast, setWorkshopToast] = useState<ToastState | null>(null);
   const [advancedDraftVisible, setAdvancedDraftVisible] = useState(false);
   const { game: snapshot, selectedTower: tower } = view;
-  const workshopOpen = Boolean(tower && !snapshot.draft);
+  const workshopOpen = Boolean(workshopEnabled && tower && !snapshot.draft);
   useLayoutEffect(() => {
     engine.setAutoPauseCondition('workshop', workshopOpen);
     return () => engine.setAutoPauseCondition('workshop', false);
@@ -71,15 +80,17 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
   }, []);
   return <div className={styles.appShell} data-app-shell>
     <div className={styles.gameConsole}>
-      <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} />
+      <GameHeader engine={engine} snapshot={snapshot} onExit={onExit} launchReady={launchReady} {...(onLaunch ? { onLaunch } : {})} {...(launchDisabled !== undefined ? { launchDisabled } : {})} />
       <div className={styles.workspace}>
         <Battlefield
           className={styles.battlefield!}
           engine={engine}
+          backgroundEngine={backgroundEngine}
           view={view}
           suspended={suspended}
           onOpenArchive={onOpenArchive}
-          workshop={tower && !snapshot.draft ? <Workshop
+          {...(battlefieldUtility ? { utilityPanel: battlefieldUtility } : {})}
+          workshop={workshopEnabled && tower && !snapshot.draft ? <Workshop
             engine={engine}
             tower={tower}
             view={view}
@@ -87,6 +98,7 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
             {...(onOpenThought ? { onOpenThought } : {})}
           /> : null}
         >
+          {showTowerLoadouts ? <TowerLoadoutOverlay engine={engine} towers={view.towers} /> : null}
           <RewardDraft
             engine={engine}
             snapshot={snapshot}
@@ -97,7 +109,7 @@ export function GameSession({ engine, defenseArchive, suspended = false, onExit,
         </Battlefield>
       </div>
     </div>
-    <Toast toast={defenseArchiveToast ?? workshopToast ?? toast} />
+    <Toast toast={notificationToast ?? defenseArchiveToast ?? workshopToast ?? toast} />
     <TutorialGuide engine={engine} view={view} onResolved={onTutorialResolved} />
   </div>;
 }

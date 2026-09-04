@@ -1,0 +1,64 @@
+.stageShell { min-height: 100vh; display: grid; place-items: center; padding: 24px; color: var(--ink); background: #efedf3; }
+.stageConsole { position: relative; display: grid; width: min(1220px, 100%); min-height: min(720px, calc(100vh - 48px)); grid-template-rows: auto minmax(410px, 1fr) auto auto; overflow: hidden; border: 2px solid var(--ink); border-radius: 18px; background: #fff; }
+.eyebrow,
+.endpointLabel { margin: 0; font-family: var(--font-mono); font-size: 13px; font-weight: 850; letter-spacing: .12em; line-height: 1.3; text-transform: uppercase; }
+.eyebrow { color: #5145d4; }
+.screenSettings { display: grid; min-width: 62px; min-height: 62px; border-left: 2px solid var(--ink); background: #fff; }
+.screenSettings :global(.settings-panel) { width: 100%; height: 100%; }
+.screenSettings :global(.settings-trigger) { width: 100%; height: 100%; border: 0; border-radius: 0; }
+.error { grid-column: 1 / -1; margin: 0; padding: 10px 18px; border-top: 2px solid var(--ink); color: var(--ink); background: #ffe5e9; font-size: 13px; font-weight: 850; }
+
+.roomMasthead { display: grid; min-height: 142px; grid-template-columns: 290px minmax(0, 1fr) 68px 154px; border-bottom: 2px solid var(--ink); }
+.roomBadge { display: grid; align-content: center; padding: 18px 28px; border-right: 2px solid var(--ink); background: var(--yellow); }
+.roomBadge p { margin: 0 0 8px; font: 850 13px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.code { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.roomBadge h1 { margin: 0; font-size: clamp(35px, 4vw, 52px); letter-spacing: .13em; line-height: 1; }
+.stageHeading { display: grid; align-content: center; padding: 18px 30px; }
+.stageHeading h2 { margin: 8px 0 4px; font-size: clamp(24px, 3vw, 36px); letter-spacing: -.045em; }
+.stageHeading > span { color: #625d70; font-size: 14px; }
+.leaveButton { border: 0; border-left: 2px solid var(--ink); border-radius: 0; color: var(--ink); background: #fff; font-size: 14px; font-weight: 900; cursor: pointer; }
+.leaveButton:hover { background: #ffe5e9; }
+.roomMasthead > .screenSettings { min-height: 100%; }
+
+.endpointDeck { display: grid; min-height: 410px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.endpoint { display: flex; min-width: 0; padding: 34px; flex-direction: column; }
+.endpoint + .endpoint { border-left: 2px solid var(--ink); }
+.localEndpoint { background: #eeecff; }
+.peerEndpoint { background: #e9fbf5; }
+.emptyEndpoint { color: #77717f; background: #f8f7fa; }
+.endpointLabel { color: #625d70; }
+.endpoint h3 { margin: 22px 0 0; overflow-wrap: anywhere; font-size: clamp(36px, 5vw, 64px); letter-spacing: -.06em; line-height: 1; }
+.endpointState { display: grid; grid-template-columns: 1fr 1fr; margin-top: auto; border: 2px solid var(--ink); background: #fff; }
+.endpointState span,
+.endpointState b { display: grid; min-height: 56px; place-items: center; padding: 8px 12px; font-size: 14px; text-align: center; }
+.endpointState b { border-left: 2px solid var(--ink); }
+.endpointState b[data-ready='true'] { background: var(--mint); }
+
+.readyDock { display: grid; min-height: 104px; align-items: stretch; grid-template-columns: minmax(0, 1fr) 240px; border-top: 2px solid var(--ink); }
+.readyDock > div { display: grid; align-content: center; gap: 4px; padding: 18px 30px; }
+.readyDock strong { font-size: 17px; }
+.readyDock span { color: #625d70; font-size: 14px; }
+.readyDock button { min-height: 100%; padding: 9px 16px; border: 2px solid var(--ink); border-width: 0 0 0 2px; border-radius: 0; color: #fff; background: var(--purple); font-size: 14px; font-weight: 900; cursor: pointer; }
+.readyDock button:hover:not(:disabled) { background: #5145d4; }
+.readyDock button:disabled { border-style: dashed; color: #77717f; background: #efedf3; cursor: not-allowed; }
+
+@media (max-width: 900px) {
+  .stageShell { place-items: start center; padding: 12px; }
+  .roomMasthead { grid-template-columns: minmax(210px, .7fr) minmax(0, 1.3fr) 64px; }
+  .leaveButton { grid-column: 1 / -1; min-height: 50px; border-top: 2px solid var(--ink); border-left: 0; }
+}
+
+@media (max-width: 620px) {
+  .stageShell { padding: 0; }
+  .stageConsole { border-width: 0; border-radius: 0; }
+  .roomMasthead { grid-template-columns: minmax(0, 1fr) 58px; }
+  .roomBadge { grid-column: 1 / -1; border-right: 0; border-bottom: 2px solid var(--ink); }
+  .stageHeading { grid-column: 1; grid-row: 2; padding: 18px 20px; }
+  .roomMasthead > .screenSettings { grid-column: 2; grid-row: 2; }
+  .endpointDeck { grid-template-columns: 1fr; }
+  .endpoint { min-height: 250px; padding: 24px 20px; }
+  .endpoint + .endpoint { border-top: 2px solid var(--ink); border-left: 0; }
+  .endpoint h3 { font-size: 42px; }
+  .readyDock { grid-template-columns: 1fr; }
+  .readyDock button { min-height: 58px; border-width: 2px 0 0; }
+}

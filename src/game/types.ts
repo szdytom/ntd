@@ -7,7 +7,7 @@ export interface Point {
 }
 
 export type ModuleId = string;
-export type GameMode = 'standard' | 'creative';
+export type GameMode = 'standard' | 'creative' | 'coop';
 export type DifficultyId = 'relaxed' | 'easy' | 'normal' | 'hard' | 'extreme';
 
 export const TARGETING_MODES = [
@@ -432,4 +432,11 @@ export type GameEvent =
   | { type: 'state'; snapshot: GameSnapshot }
   | { type: 'toast'; message: string; tone?: 'info' | 'good' | 'warn' }
   | { type: 'defense-archive-fact'; fact: DefenseArchiveFact }
-  | { type: 'defense-completed'; report: DefenseCompletedReport };
+  | { type: 'defense-completed'; report: DefenseCompletedReport }
+  | {
+    type: 'coop-phase-completed';
+    phaseId: number;
+    planHash: string;
+    shardsEarned: number;
+    leaks: Array<{ ordinal: number; type: SignalId; entrance: string }>;
+  };

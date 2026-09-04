@@ -52,7 +52,14 @@ const CREATIVE_RULES: SessionRules = Object.freeze({
   archive: 'none',
 });
 
+const COOP_RULES: SessionRules = Object.freeze({
+  ...STANDARD_RULES,
+  rewards: 'none',
+  archive: 'none',
+});
+
 export function getSessionRules(mode: GameMode, tutorial: boolean): SessionRules {
   if (mode === 'creative') return CREATIVE_RULES;
+  if (mode === 'coop') return COOP_RULES;
   return tutorial ? TUTORIAL_RULES : STANDARD_RULES;
 }

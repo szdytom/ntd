@@ -4,7 +4,11 @@ import type { GameEngine } from '../game/engine';
 import { GameRenderer } from '../game/renderer';
 import styles from './GameCanvas.module.css';
 
-export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; suspended?: boolean }) {
+export function GameCanvas({ engine, backgroundEngine, suspended = false }: {
+  engine: GameEngine;
+  backgroundEngine?: GameEngine | undefined;
+  suspended?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rendererError, setRendererError] = useState<string | null>(null);
@@ -33,6 +37,7 @@ export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; 
       const delta = (now - previous) / 1000;
       previous = now;
       engine.update(delta);
+      backgroundEngine?.update(delta);
       renderer.render();
       frameId = requestAnimationFrame(frame);
     };
@@ -45,7 +50,7 @@ export function GameCanvas({ engine, suspended = false }: { engine: GameEngine; 
       canvas.removeEventListener('click', click);
       renderer.dispose();
     };
-  }, [engine, i18n.resolvedLanguage, suspended]);
+  }, [backgroundEngine, engine, i18n.resolvedLanguage, suspended]);
 
   if (rendererError) {
     return <div className={styles.error} role="alert">{t('canvas.error', { error: rendererError })}</div>;

@@ -11,31 +11,46 @@ import { CreativeLab } from './CreativeLab';
 import { Tag } from './Tag';
 import styles from './Battlefield.module.css';
 
-export function Battlefield({ className, engine, view, suspended = false, onOpenArchive, workshop, children }: {
+export interface BattlefieldUtilityPanel {
+  id: string;
+  label: string;
+  render: (onClose: () => void) => ReactNode;
+}
+
+export function Battlefield({ className, engine, backgroundEngine, view, suspended = false, onOpenArchive, utilityPanel, workshop, children }: {
   className?: string;
   engine: GameEngine;
+  backgroundEngine?: GameEngine | undefined;
   view: GameViewSnapshot;
   suspended?: boolean;
   onOpenArchive: (type: SignalId) => void;
+  utilityPanel?: BattlefieldUtilityPanel;
   workshop?: ReactNode;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [creativePanelOpen, setCreativePanelOpen] = useState(false);
+  const [utilityPanelOpen, setUtilityPanelOpen] = useState(false);
   const creativeToggleRef = useRef<HTMLButtonElement>(null);
   const creativePanelRef = useRef<HTMLDivElement>(null);
+  const utilityToggleRef = useRef<HTMLButtonElement>(null);
+  const utilityPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!creativePanelOpen) return;
+    if (!creativePanelOpen && !utilityPanelOpen) return;
     const closeOnOutsidePointer = (event: PointerEvent): void => {
       const target = event.target;
       if (!(target instanceof Node)) return;
-      if (creativePanelRef.current?.contains(target) || creativeToggleRef.current?.contains(target)) return;
+      if (creativePanelRef.current?.contains(target)
+        || creativeToggleRef.current?.contains(target)
+        || utilityPanelRef.current?.contains(target)
+        || utilityToggleRef.current?.contains(target)) return;
       setCreativePanelOpen(false);
+      setUtilityPanelOpen(false);
     };
     document.addEventListener('pointerdown', closeOnOutsidePointer, true);
     return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
-  }, [creativePanelOpen]);
+  }, [creativePanelOpen, utilityPanelOpen]);
   const { game: snapshot } = view;
   const phase = snapshot.status === 'won'
     ? t('battlefield.won')
@@ -81,9 +96,23 @@ export function Battlefield({ className, engine, view, suspended = false, onOpen
                   aria-haspopup="dialog"
                   aria-expanded={creativePanelOpen}
                   aria-controls="creative-signal-panel"
-                  onClick={() => setCreativePanelOpen((open) => !open)}
+                  onClick={() => {
+                    setUtilityPanelOpen(false);
+                    setCreativePanelOpen((open) => !open);
+                  }}
                 >{t('battlefield.signalConsole')}</button>
               ) : null}
+              {utilityPanel ? <button
+                ref={utilityToggleRef}
+                className={`${styles.creativeSignalToggle} ${styles.utilityToggle}`}
+                aria-haspopup="dialog"
+                aria-expanded={utilityPanelOpen}
+                aria-controls={utilityPanel.id}
+                onClick={() => {
+                  setCreativePanelOpen(false);
+                  setUtilityPanelOpen((open) => !open);
+                }}
+              >{utilityPanel.label}</button> : null}
             </div>
             {terminal ? null : (
               <SignalPreview
@@ -105,9 +134,15 @@ export function Battlefield({ className, engine, view, suspended = false, onOpen
             }} />
           </div>
         ) : null}
+        {utilityPanel && utilityPanelOpen ? <div ref={utilityPanelRef} id={utilityPanel.id} className={styles.creativeSignalPanel}>
+          {utilityPanel.render(() => {
+            setUtilityPanelOpen(false);
+            utilityToggleRef.current?.focus();
+          })}
+        </div> : null}
 
         <div className={styles.canvasWrap}>
-          <GameCanvas engine={engine} suspended={suspended} />
+          <GameCanvas engine={engine} backgroundEngine={backgroundEngine} suspended={suspended} />
           {spawns.map((spawn, index) => (
             <div className={styles.spawnLabel} data-battlefield-spawn key={engine.level.graph.entrances[index]} style={{ top: `${spawn.y / WORLD.height * 100}%` }}>
               <i /><span>{t('battlefield.spawn')}</span>

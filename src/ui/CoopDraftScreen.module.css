@@ -1,0 +1,90 @@
+.stageShell { min-height: 100vh; display: grid; place-items: center; padding: 24px; color: var(--ink); background: #efedf3; }
+.stageConsole { position: relative; display: grid; width: min(1220px, 100%); min-height: min(720px, calc(100vh - 48px)); grid-template-rows: auto minmax(410px, 1fr) auto auto; overflow: hidden; border: 2px solid var(--ink); border-radius: 18px; background: #fff; }
+.eyebrow,
+.offerRole { margin: 0; font-family: var(--font-mono); font-size: 13px; font-weight: 850; letter-spacing: .12em; line-height: 1.3; text-transform: uppercase; }
+.eyebrow { color: #5145d4; }
+.screenSettings { display: grid; min-width: 62px; min-height: 62px; border-left: 2px solid var(--ink); background: #fff; }
+.screenSettings :global(.settings-panel) { width: 100%; height: 100%; }
+.screenSettings :global(.settings-trigger) { width: 100%; height: 100%; border: 0; border-radius: 0; }
+
+.draftConsole { display: grid; width: min(1500px, 100%); min-height: min(760px, calc(100vh - 32px)); grid-template-rows: auto minmax(0, 1fr); }
+.draftMasthead { display: grid; min-height: 100px; align-items: center; grid-template-columns: minmax(310px, 1fr) auto; border-bottom: 2px solid var(--ink); }
+.draftMasthead > div:first-child { padding: 18px 24px; }
+.draftMasthead h1 { margin: 5px 0 0; font-size: clamp(26px, 3vw, 38px); letter-spacing: -.045em; }
+.draftHeadActions { align-self: stretch; display: grid; min-width: 560px; grid-template-columns: 210px minmax(230px, 1fr) 64px; border-left: 2px solid var(--ink); }
+.coopProgress { align-self: center; width: auto; min-width: 0; margin: 0 16px; }
+.coopProgress :global(i) { min-width: 0; }
+.draftHeadActions > .abandonButton { min-height: 100%; border-width: 0 0 0 2px; }
+.draftHeadActions > .abandonButton[data-selected='true'] { background: var(--yellow); box-shadow: inset 0 -7px 0 var(--ink); }
+.draftWorkspace { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+
+.localOffer { position: relative; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); padding-top: 18px; background: #fff; }
+.localOffer > h2 { margin: 0 260px 0 18px; font-size: 23px; letter-spacing: -.03em; }
+.choiceGrid { display: grid; min-width: 0; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 15px; padding: 10px; border-top: 2px solid var(--ink); background: #efedf3; }
+.abandonButton { min-height: 42px; padding: 8px 12px; border: 2px solid var(--ink); border-radius: 0; color: var(--ink); background: #fff4c2; font-size: 14px; font-weight: 850; cursor: pointer; }
+.abandonButton:hover:not(:disabled) { background: var(--yellow); }
+.abandonButton:disabled { border-style: dashed; color: #77717f; background: #efedf3; cursor: not-allowed; }
+.lockedNotice { position: absolute; top: 20px; right: 18px; max-width: 235px; margin: 0; color: #625d70; font-size: 14px; font-weight: 750; text-align: right; }
+
+.peerOffer { position: relative; z-index: 3; display: grid; min-width: 0; min-height: 112px; grid-template-columns: minmax(170px, .7fr) minmax(400px, 1.6fr) minmax(170px, .7fr); border-bottom: 2px solid var(--ink); background: #e9fbf5; }
+.peerIdentity { display: grid; min-width: 0; align-content: center; padding: 15px 20px; }
+.peerIdentity h2 { margin: 5px 0 0; overflow: hidden; font-size: 25px; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.peerIdentity .offerRole { color: #087b60; }
+.peerChoices { display: grid; min-width: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); border-inline: 2px solid var(--ink); }
+.peerChoices details { position: relative; display: grid; min-width: 0; }
+.peerChoices details + details { border-left: 1px solid var(--ink); }
+.peerChoices summary { --module-icon-surface: var(--module-tint); display: grid; min-width: 0; min-height: 110px; place-items: center; grid-template-columns: 48px minmax(0, 1fr); gap: 8px; padding: 9px 10px; color: var(--module-color); background: var(--module-tint); cursor: pointer; list-style: none; }
+.peerChoices summary::-webkit-details-marker { display: none; }
+.peerChoices summary:hover,
+.peerChoices summary:focus-visible,
+.peerChoices details[open] summary { box-shadow: inset 0 -6px 0 var(--module-color); }
+.peerChoices summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+.peerChoices summary :global(.module-icon) { width: 42px; height: 42px; }
+.peerChoices summary span { max-width: 100%; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 850; line-height: 1.25; text-overflow: ellipsis; }
+.peerChoices details[data-dimmed='true'] { filter: saturate(.2); opacity: .35; }
+.peerChoices details[data-selected='true'] summary { box-shadow: inset 0 -7px 0 var(--module-color); }
+.peerPopover { position: absolute; z-index: 8; top: calc(100% - 2px); left: 0; display: none; width: 300px; padding: 14px; border: 2px solid var(--ink); color: var(--ink); background: #fff; }
+.peerChoices details:nth-child(n + 3) .peerPopover { right: 0; left: auto; }
+.peerChoices details:hover .peerPopover,
+.peerChoices details:focus-within .peerPopover,
+.peerChoices details[open] .peerPopover { display: block; }
+.peerPopover strong { display: block; font-size: 17px; }
+.peerPopover small { display: block; margin-top: 4px; color: var(--module-color); font-size: 13px; font-weight: 850; }
+.peerPopover p { margin: 10px 0; font-size: 14px; line-height: 1.4; }
+.peerPopover > span { display: block; padding: 8px; background: var(--module-tint); font-size: 13px; line-height: 1.4; }
+.peerStatus { display: grid; min-width: 0; align-content: center; padding: 12px 16px; background: #fff; font: 800 13px/1.35 var(--font-mono); text-align: center; }
+.peerStatus[data-locked='true'] { background: var(--mint); }
+
+@media (max-width: 1120px) {
+  .choiceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .stageShell { place-items: start center; padding: 12px; }
+  .draftConsole { height: auto; min-height: 0; }
+  .draftMasthead { grid-template-columns: 1fr; }
+  .draftHeadActions { min-width: 0; min-height: 78px; border-top: 2px solid var(--ink); border-left: 0; }
+  .peerPopover { right: auto; left: 0; }
+  .peerChoices details:nth-child(n + 3) .peerPopover { right: 0; left: auto; }
+}
+
+@media (max-width: 620px) {
+  .stageShell { padding: 0; }
+  .stageConsole { border-width: 0; border-radius: 0; }
+  .draftMasthead { grid-template-columns: 1fr; }
+  .draftHeadActions { grid-template-columns: minmax(0, 1fr) 54px; }
+  .draftHeadActions > .abandonButton { grid-column: 1 / -1; grid-row: 2; min-height: 48px; border-width: 2px 0 0; }
+  .draftHeadActions > .screenSettings { grid-column: 2; grid-row: 1; }
+  .coopProgress { grid-column: 1; grid-row: 1; }
+  .localOffer { grid-template-rows: auto auto minmax(0, 1fr); }
+  .localOffer > h2 { margin-right: 18px; }
+  .lockedNotice { position: static; grid-row: 2; max-width: none; margin: 8px 18px 0; text-align: left; }
+  .choiceGrid { grid-row: 3; grid-template-columns: 1fr; }
+  .peerOffer { grid-template-columns: minmax(0, 1fr) 138px; }
+  .peerIdentity { grid-column: 1; grid-row: 1; }
+  .peerStatus { grid-column: 2; grid-row: 1; }
+  .peerChoices { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 0; border-top: 2px solid var(--ink); }
+  .peerChoices summary { min-height: 82px; grid-template-columns: 1fr; padding: 7px; }
+  .peerChoices summary span { display: none; }
+  .peerPopover { position: fixed; inset: auto 10px 10px; width: auto; }
+}

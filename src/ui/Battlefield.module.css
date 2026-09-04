@@ -45,8 +45,11 @@
 .incomingTitle > small { color: #756f7e; font-size: 14px; font-weight: 800; white-space: nowrap; }
 .creativeSignalToggle { padding: 5px 9px; border: 2px solid var(--battle-ink); color: var(--battle-ink); background: #a8ead7; cursor: pointer; font-size: 13px; font-weight: 800; }
 .creativeSignalToggle[aria-expanded='true'] { color: #fff; background: #0ba881; }
+.utilityToggle { background: #eeecff; }
+.utilityToggle[aria-expanded='true'] { background: var(--purple); }
 .creativeSignalPanel { position: absolute; z-index: 24; top: 68px; right: 14px; width: min(720px, calc(100% - 28px)); padding-top: 8px; }
 .creativeSignalPanel > * { margin: 0; border: 2px solid var(--battle-ink); box-shadow: 8px 8px 0 rgba(37,33,52,.18); }
+.root[data-mode='coop'] .creativeSignalPanel > * { box-shadow: none; }
 
 .canvasWrap { position: relative; min-height: 0; flex: 1; overflow: hidden; background: #fbfbfe; }
 
@@ -95,7 +98,10 @@
   .incoming { gap: 4px; overflow: hidden; }
   .incomingTitle { gap: 4px; }
   .root[data-mode='creative'] .incomingTitle > small { display: none; }
+  .root[data-mode='coop'] .incomingTitle > small,
+  .root[data-mode='coop'] .runIndicator { display: none; }
   .creativeSignalToggle { padding: 4px 6px; font-size: 11px; white-space: nowrap; }
+  .utilityToggle { font-size: 12px; }
   .signalPreview { max-width: min(240px, 52vw); min-width: 0; justify-content: flex-end; }
   .creativeSignalPanel { top: 61px; right: 7px; width: calc(100% - 14px); }
   .spawnLabel,

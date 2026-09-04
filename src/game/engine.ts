@@ -44,6 +44,7 @@ import { SignalSpatialIndex } from './spatial-index';
 import { selectTowerTarget } from './targeting';
 import { createSeededRandom, rollTowerStats } from './tower-generation';
 import { TARGETING_MODES } from './types';
+import type { CoopLeakedSignal, CoopPlayerPlan, CoopPlanningCommand } from '../coop/types';
 
 export interface TowerAttackProgressRange {
   readonly minimum: number;
@@ -245,6 +246,12 @@ export class GameEngine {
   private defenseCompleted = false;
   private readonly defenseArchiveFacts = new Set<DefenseArchiveFact>();
   private readonly waveOutcomes = new Map<number, Partial<Record<SignalVariantId, SignalOutcomeTally>>>();
+  private coopCommandSink: ((command: CoopPlanningCommand) => void) | null = null;
+  private coopPlanningEnabled = true;
+  private coopPhaseId = 0;
+  private coopPlanHash = '';
+  private coopStartingShards = 0;
+  private coopLeaks: CoopLeakedSignal[] = [];
   private readonly combatApi: ModuleCombatApi = {
     // Unsorted, non-allocating: consumers must not retain the returned array.
     nearbyEnemies: (position, radius, excludeIds = NO_EXCLUDED_ENEMY_IDS) => (
@@ -378,6 +385,103 @@ export class GameEngine {
   };
 
   getViewSnapshot = (): GameViewSnapshot => this.viewSnapshot;
+
+  setCoopCommandSink(sink: ((command: CoopPlanningCommand) => void) | null): void {
+    this.coopCommandSink = sink;
+  }
+
+  setCoopPlanningEnabled(enabled: boolean): void {
+    this.coopPlanningEnabled = enabled;
+  }
+
+  synchronizeCoopShards(shards: number): void {
+    if (this.mode !== 'coop' || this.status === 'wave' || !Number.isFinite(shards)) return;
+    this.shards = Math.max(0, Math.round(shards));
+    this.emitState();
+  }
+
+  applyCoopPlan(plan: CoopPlayerPlan): void {
+    if (this.mode !== 'coop' || this.status === 'wave') return;
+    const selectedId = this.selectedTowerId;
+    this.clearCombatEntities();
+    this.moduleInventory.clear();
+    for (const [moduleId, count] of Object.entries(plan.inventory)) {
+      if (Number.isInteger(count) && count > 0 && this.modules.get(moduleId)) this.moduleInventory.set(moduleId, count);
+    }
+    this.towers.length = 0;
+    for (const tower of plan.towers) {
+      const position = this.level.towerPads[tower.padIndex];
+      if (!position) continue;
+      this.towers.push({
+        id: tower.id,
+        padIndex: tower.padIndex,
+        position: { ...position },
+        rotation: DEFAULT_TOWER_ROTATION,
+        energy: tower.maxEnergy,
+        maxEnergy: tower.maxEnergy,
+        energyRegen: tower.energyRegen,
+        cooldown: tower.cooldown,
+        cooldownLeft: 0,
+        range: tower.range,
+        targeting: tower.targeting,
+        level: tower.level,
+        slots: [...tower.slots],
+        flash: 0,
+        targetId: null,
+      });
+    }
+    this.nextId = Math.max(1, ...this.towers.map((tower) => tower.id + 1));
+    this.core = plan.core;
+    this.shards = plan.shards;
+    this.selectedTowerId = this.towers.some((tower) => tower.id === selectedId) ? selectedId : null;
+    this.status = 'planning';
+    this.markConfigurationChanged();
+    this.emitState();
+  }
+
+  startCoopCombat(options: {
+    phaseId: number;
+    planHash: string;
+    wave: number;
+    kind: 'local-defense' | 'reinforcement';
+    signals?: readonly CoopLeakedSignal[];
+  }): void {
+    if (this.mode !== 'coop' || this.status === 'wave') return;
+    if (options.kind === 'local-defense') this.clearCombatEntities();
+    this.coopPlanningEnabled = false;
+    this.coopPhaseId = options.phaseId;
+    this.coopPlanHash = options.planHash;
+    this.coopStartingShards = this.shards;
+    this.coopLeaks = [];
+    this.wave = options.wave;
+    this.status = 'wave';
+    this.waveClearDelayLeft = null;
+    this.spawnLanes = this.level.graph.entrances.map((entrance) => ({ entrance, queue: [], timer: 0.25 }));
+    const lanesByEntrance = new Map(this.spawnLanes.map((lane) => [lane.entrance, lane]));
+    if (options.kind === 'reinforcement') {
+      for (const signal of options.signals ?? []) {
+        const entrance = this.level.graph.entrances.includes(signal.entrance) ? signal.entrance : this.level.graph.entrances[0];
+        if (entrance) lanesByEntrance.get(entrance)?.queue.push(signal.type);
+      }
+    } else {
+      for (const entry of this.getWaveBlueprint(this.wave - 1)) {
+        for (const entrance of resolveSpawnEntrances(entry, this.level.graph)) {
+          lanesByEntrance.get(entrance)?.queue.push(entry.type);
+        }
+      }
+    }
+    this.emitState();
+  }
+
+  fastForwardCoopCombat(maxTicks = 120 * 900): boolean {
+    if (this.mode !== 'coop') return false;
+    let ticks = 0;
+    while (this.status === 'wave' && ticks < maxTicks) {
+      this.stepSimulation(FIXED_SIMULATION_STEP);
+      ticks += 1;
+    }
+    return this.status !== 'wave';
+  }
 
   getSplitRifts(): readonly SplitRift[] {
     return this.pendingSignalSplits;
@@ -781,6 +885,11 @@ export class GameEngine {
   setTargeting(mode: TargetingMode): void {
     const tower = this.getSelectedTower();
     if (!tower) return;
+    if (this.mode === 'coop') {
+      if (this.status !== 'planning' || !this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'set-targeting', towerId: tower.id, targeting: mode });
+      return;
+    }
     const changed = tower.targeting !== mode;
     tower.targeting = mode;
     if (changed && mode !== 'core-nearest') this.emitDefenseArchiveFact('targeting-mode-configured');
@@ -795,6 +904,11 @@ export class GameEngine {
   upgradeSelectedTower(): void {
     const tower = this.getSelectedTower();
     if (!tower || this.status === 'wave') return;
+    if (this.mode === 'coop') {
+      if (!this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'upgrade-tower', towerId: tower.id });
+      return;
+    }
     if (tower.level >= MAX_TOWER_LEVEL) {
       this.emit({ type: 'toast', message: i18n.t('toast.maxLevel'), tone: 'info' });
       return;
@@ -956,6 +1070,11 @@ export class GameEngine {
       return;
     }
     if (this.towers.some((tower) => tower.padIndex === padIndex)) return;
+    if (this.mode === 'coop') {
+      if (this.status !== 'planning' || !this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'place-tower', padIndex });
+      return;
+    }
     if (this.shards < ECONOMY_BALANCE.towerCost) {
       this.emit({ type: 'toast', message: i18n.t('toast.buildNeeds', { cost: ECONOMY_BALANCE.towerCost }), tone: 'warn' });
       return;
@@ -979,6 +1098,11 @@ export class GameEngine {
   installModule(slotIndex: number, moduleId: ModuleId | null): void {
     const tower = this.getSelectedTower();
     if (!tower || !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= tower.slots.length) return;
+    if (this.mode === 'coop') {
+      if (this.status !== 'planning' || !this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'install-module', towerId: tower.id, slotIndex, moduleId });
+      return;
+    }
     if (moduleId && !this.modules.get(moduleId)) {
       this.emit({ type: 'toast', message: i18n.t('toast.unknownModule', { module: moduleId }), tone: 'warn' });
       return;
@@ -1011,6 +1135,11 @@ export class GameEngine {
       || to >= tower.slots.length
       || from === to
     ) return;
+    if (this.mode === 'coop') {
+      if (this.status !== 'planning' || !this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'swap-modules', towerId: tower.id, from, to });
+      return;
+    }
     const fromModule = tower.slots[from] ?? null;
     const toModule = tower.slots[to] ?? null;
     tower.slots[from] = toModule;
@@ -1024,6 +1153,11 @@ export class GameEngine {
   clearLoadout(): void {
     const tower = this.getSelectedTower();
     if (!tower) return;
+    if (this.mode === 'coop') {
+      if (this.status !== 'planning' || !this.coopPlanningEnabled) return;
+      this.coopCommandSink?.({ type: 'clear-loadout', towerId: tower.id });
+      return;
+    }
     tower.slots.fill(null);
     this.markConfigurationChanged();
     this.emitState();
@@ -1056,6 +1190,7 @@ export class GameEngine {
   }
 
   startWave(): void {
+    if (this.mode === 'coop') return;
     if (this.status !== 'planning') return;
     if (this.wave >= this.maxWaves) return;
     this.wave += 1;
@@ -1077,11 +1212,13 @@ export class GameEngine {
   }
 
   togglePause(): void {
+    if (this.mode === 'coop') return;
     this.manuallyPaused = !this.manuallyPaused;
     this.emitState();
   }
 
   get paused(): boolean {
+    if (this.mode === 'coop') return false;
     return this.manuallyPaused || (this.autoPauseEnabled && this.autoPauseConditions.size > 0);
   }
 
@@ -1100,9 +1237,29 @@ export class GameEngine {
   }
 
   setSpeed(speed: number): void {
+    if (this.mode === 'coop') return;
     if (speed !== 1 && speed !== 2) return;
     this.speed = speed;
     this.emitState();
+  }
+
+  private clearCombatEntities(): void {
+    this.signals.length = 0;
+    this.signalIndex.clear();
+    this.projectiles.length = 0;
+    this.spaceRifts.length = 0;
+    this.spaceRiftByKey.clear();
+    this.spaceRiftCoverage.clear();
+    this.spaceRiftCrossings.clear();
+    this.spaceRiftCoverageSignals.clear();
+    this.spaceRiftEnemies.clear();
+    this.effects.clear();
+    this.floatingTexts.length = 0;
+    this.scheduledCasts.length = 0;
+    this.pendingSignalSplits.length = 0;
+    this.spawnLanes.length = 0;
+    this.waveClearDelayLeft = null;
+    this.simulationAccumulator = 0;
   }
 
   reset(): void {
@@ -1150,6 +1307,7 @@ export class GameEngine {
   update(realDelta: number): void {
     const frameDelta = Math.min(Math.max(0, realDelta), MAX_FRAME_DELTA);
     this.visualElapsed += frameDelta;
+    if (this.mode === 'coop' && this.status !== 'wave') return;
     if (this.paused || this.status === 'won' || this.status === 'lost') return;
     this.simulationAccumulator += frameDelta * this.speed;
     let steps = 0;
@@ -1307,6 +1465,15 @@ export class GameEngine {
         const outcome = this.outcomeFor(this.wave, this.signalVariant(signal));
         outcome.leaked += 1;
         outcome.coreDamage += damage;
+        if (this.mode === 'coop') {
+          this.coopLeaks.push({
+            ordinal: this.coopLeaks.length,
+            type: signal.type,
+            entrance: signal.routeId,
+          });
+          this.signalIndex.update(signal);
+          continue;
+        }
         this.core = Math.max(0, this.core - damage);
         this.effects.spawn('game:core-hit', {
           position: this.getCorePosition(),
@@ -2638,6 +2805,19 @@ export class GameEngine {
     this.waveClearDelayLeft = Math.max(0, this.waveClearDelayLeft - delta);
     if (this.waveClearDelayLeft > SIMULATION_TIME_EPSILON) return;
     this.waveClearDelayLeft = null;
+
+    if (this.mode === 'coop') {
+      this.status = 'planning';
+      this.emit({
+        type: 'coop-phase-completed',
+        phaseId: this.coopPhaseId,
+        planHash: this.coopPlanHash,
+        shardsEarned: Math.max(0, Math.round(this.shards - this.coopStartingShards)),
+        leaks: this.coopLeaks.map((leak) => ({ ...leak })),
+      });
+      this.emitState();
+      return;
+    }
 
     const bonus = Math.round(
       (ECONOMY_BALANCE.waveBonusBase + this.wave * ECONOMY_BALANCE.waveBonusPerWave) * this.difficulty.economy,

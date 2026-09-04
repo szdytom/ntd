@@ -106,6 +106,8 @@
   transition: transform .14s ease, box-shadow .14s ease;
 }
 .launch-button:hover:not(:disabled) { background: #5547d2; transform: none; box-shadow: none; }
+.launch-button[data-ready='true'] { background: #ff637a; }
+.launch-button[data-ready='true']:hover:not(:disabled) { background: #e04f67; }
 .launch-button:disabled { color: #77717f; background: #e7e4ea; box-shadow: none; cursor: default; }
 .launch-icon { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border: 2px solid currentColor; font-size: 11px; }
 .launch-copy { display: flex; min-width: 0; align-items: baseline; gap: 5px; white-space: nowrap; }

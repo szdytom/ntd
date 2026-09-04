@@ -8,22 +8,32 @@ export function GameHeader({
   engine,
   snapshot,
   onExit,
+  onLaunch,
+  launchDisabled,
+  launchReady = false,
 }: {
   engine: GameEngine;
   snapshot: GameSnapshot;
   onExit: () => void;
+  onLaunch?: () => void;
+  launchDisabled?: boolean;
+  launchReady?: boolean;
 }) {
   const { t } = useTranslation();
   const drafting = Boolean(snapshot.draft);
   const waveDisabled = snapshot.status !== 'planning' || drafting;
-  const launchLabel = snapshot.status === 'wave'
-    ? t('header.signals', { count: snapshot.signalsAlive + snapshot.waveQueue })
-    : snapshot.status === 'reward'
-      ? t('header.awaitingDraft')
-      : t('header.launch');
-  const launchWave = snapshot.wave >= snapshot.maxWaves
-    ? t('header.complete')
-    : t('header.waveNumber', { wave: String(snapshot.wave + 1).padStart(2, '0') });
+  const launchLabel = launchReady
+    ? t('coop.ready')
+    : snapshot.status === 'wave'
+      ? t('header.signals', { count: snapshot.signalsAlive + snapshot.waveQueue })
+      : snapshot.status === 'reward'
+        ? t('header.awaitingDraft')
+        : t('header.launch');
+  const launchWave = launchReady
+    ? t('coop.cancelReady')
+    : snapshot.wave >= snapshot.maxWaves
+      ? t('header.complete')
+      : t('header.waveNumber', { wave: String(snapshot.wave + 1).padStart(2, '0') });
 
   return (
     <header className="topbar">
@@ -49,22 +59,23 @@ export function GameHeader({
 
       <div className="top-actions">
         <SettingsPanel />
-        <div className="speed-switch" role="group" aria-label={t('header.speed')}>
+        {engine.mode === 'coop' ? null : <div className="speed-switch" role="group" aria-label={t('header.speed')}>
           {[1, 2].map((speed) => (
             <button key={speed} disabled={drafting} className={snapshot.speed === speed ? 'active' : ''} onClick={() => engine.setSpeed(speed)}>{speed}×</button>
           ))}
-        </div>
-        <button disabled={drafting} className={`icon-button pause-button ${snapshot.manuallyPaused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.manuallyPaused ? t('header.resume') : t('header.pause')}>
+        </div>}
+        {engine.mode === 'coop' ? null : <button disabled={drafting} className={`icon-button pause-button ${snapshot.manuallyPaused ? 'active' : ''}`} onClick={() => engine.togglePause()} aria-label={snapshot.manuallyPaused ? t('header.resume') : t('header.pause')}>
           <span className="pause-glyph">{snapshot.manuallyPaused ? '▶' : 'Ⅱ'}</span>
-        </button>
+        </button>}
         <button
           className="launch-button"
           data-tutorial-launch
-          onClick={() => engine.startWave()}
-          disabled={waveDisabled}
-          aria-label={`${launchLabel} · ${launchWave}`}
+          data-ready={launchReady || undefined}
+          onClick={onLaunch ?? (() => engine.startWave())}
+          disabled={launchDisabled ?? waveDisabled}
+          aria-label={launchReady ? t('coop.cancelReady') : `${launchLabel} · ${launchWave}`}
         >
-          <span className="launch-icon">▶</span>
+          <span className="launch-icon">{launchReady ? '×' : '▶'}</span>
           <span className="launch-copy"><small>{launchLabel}</small><strong>{launchWave}</strong></span>
         </button>
       </div>
