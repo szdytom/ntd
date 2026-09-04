@@ -20,12 +20,14 @@
 .leaveButton:hover { background: #ffe5e9; }
 .roomMasthead > .screenSettings { min-height: 100%; }
 
-.endpointDeck { display: grid; min-height: 410px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.endpointDeck { position: relative; display: grid; min-height: 410px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .endpoint { display: flex; min-width: 0; padding: 34px; flex-direction: column; }
+.endpoint > * { position: relative; z-index: 3; }
 .endpoint + .endpoint { border-left: 2px solid var(--ink); }
 .localEndpoint { background: #eeecff; }
 .peerEndpoint { background: #e9fbf5; }
 .emptyEndpoint { color: #77717f; background: #f8f7fa; }
+.lobbyLink { position: absolute; z-index: 2; inset: 0; }
 .endpointLabel { color: #625d70; }
 .endpoint h3 { margin: 22px 0 0; overflow-wrap: anywhere; font-size: clamp(36px, 5vw, 64px); letter-spacing: -.06em; line-height: 1; }
 .endpointState { display: grid; grid-template-columns: 1fr 1fr; margin-top: auto; border: 2px solid var(--ink); background: #fff; }
@@ -57,7 +59,7 @@
   .roomMasthead > .screenSettings { grid-column: 2; grid-row: 2; }
   .endpointDeck { grid-template-columns: 1fr; }
   .endpoint { min-height: 250px; padding: 24px 20px; }
-  .endpoint + .endpoint { border-top: 2px solid var(--ink); border-left: 0; }
+  .endpoint + .endpoint { padding-top: 52px; border-top: 2px solid var(--ink); border-left: 0; }
   .endpoint h3 { font-size: 42px; }
   .readyDock { grid-template-columns: 1fr; }
   .readyDock button { min-height: 58px; border-width: 2px 0 0; }

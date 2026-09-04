@@ -23,6 +23,7 @@
   display: flex;
   min-width: 0;
   padding: 42px 38px 32px;
+  overflow: hidden;
   border-right: 2px solid var(--ink);
   background: #fff4c2;
   flex-direction: column;
@@ -59,13 +60,15 @@
 
 .voiceNote {
   max-width: 300px;
-  margin: auto 0 0;
+  margin: 0;
   padding-top: 20px;
   border-top: 2px solid var(--ink);
   font-size: 14px;
   font-weight: 750;
   line-height: 1.5;
 }
+
+.entryMark { width: calc(100% + 76px); margin: auto -38px 34px; flex: none; }
 
 .entryOperations {
   display: grid;
@@ -185,6 +188,7 @@
 @media (max-width: 1120px) {
   .entryConsole { grid-template-columns: minmax(300px, .62fr) minmax(540px, 1.38fr); }
   .entryIdentity { padding-inline: 28px; }
+  .entryMark { width: calc(100% + 56px); margin-inline: -28px; }
 }
 
 @media (max-width: 900px) {
@@ -198,10 +202,10 @@
 @media (max-width: 620px) {
   .entryShell { padding: 0; }
   .entryConsole { border-width: 0; border-radius: 0; }
-  .entryIdentity { min-height: 350px; padding: 28px 22px; }
+  .entryIdentity { min-height: 440px; padding: 28px 22px; }
   .entryIdentity h1 { max-width: calc(100% - 64px); font-size: 44px; }
   .intro { margin-top: 18px; font-size: 14px; }
-  .voiceNote { margin-top: 36px; }
+  .entryMark { width: calc(100% + 44px); margin: 28px -22px 24px; }
   .entryOperations { grid-template-columns: 1fr; }
   .nameField,
   .createPanel,

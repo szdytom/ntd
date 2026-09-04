@@ -5,11 +5,14 @@
 .screenSettings :global(.settings-panel) { width: 100%; height: 100%; }
 .screenSettings :global(.settings-trigger) { width: 100%; height: 100%; border: 0; border-radius: 0; }
 .resultSettings { position: absolute; z-index: 2; top: 0; right: 0; width: 64px; height: 64px; border-bottom: 2px solid var(--ink); }
-.resultCopy { display: grid; align-content: center; padding: 44px; }
+.resultCopy { position: relative; display: grid; align-items: center; padding: 44px 390px 44px 44px; overflow: hidden; }
 .victory .resultCopy { background: #e9fbf5; }
 .defeat .resultCopy { background: #ffe5e9; }
-.resultCopy h1 { margin: 12px 0 24px; font-size: clamp(44px, 7vw, 82px); letter-spacing: -.065em; line-height: .95; }
-.resultCopy > span { font-size: 14px; }
+.resultText { position: relative; z-index: 3; min-width: 0; }
+.resultText h1 { margin: 12px 0 24px; font-size: clamp(44px, 7vw, 82px); letter-spacing: -.065em; line-height: .95; }
+.resultText > span { font-size: 14px; }
+.resultLink { position: absolute; z-index: 1; inset: 0; }
+.defeat .resultLink { --coop-link-left: var(--coral); --coop-link-right: var(--yellow); --coop-link-right-surface: var(--coral); }
 .code { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .resultConsole > button { min-height: 48px; padding: 9px 16px; border: 2px solid var(--ink); border-width: 2px 0 0; border-radius: 0; color: #fff; background: var(--ink); font-size: 14px; font-weight: 900; cursor: pointer; }
 .resultConsole > button:hover { background: var(--purple); }
@@ -21,6 +24,7 @@
 @media (max-width: 620px) {
   .stageShell { padding: 0; }
   .resultConsole { grid-template-rows: minmax(360px, 1fr) 70px; border-width: 0; border-radius: 0; }
-  .resultCopy { padding: 30px 22px; }
-  .resultCopy h1 { font-size: 46px; }
+  .resultCopy { align-content: center; padding: 30px 22px 190px; }
+  .resultText h1 { font-size: 46px; }
+  .resultLink { inset: auto 0 0; height: 180px; }
 }

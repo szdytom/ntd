@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { LEVELS, TUTORIAL_LEVEL_ID } from '../game/config';
 import { DIFFICULTIES } from '../game/difficulty';
 import type { DifficultyId } from '../game/types';
+import { CoopLinkMark } from './CoopLinkMark';
 import { SettingsPanel } from './SettingsPanel';
 import type { CoopConnectionStatus } from './useCoopRuntime';
 import styles from './CoopEntryScreen.module.css';
@@ -30,6 +31,7 @@ export function CoopEntryScreen({ connection, error, onCreateRoom, onJoinRoom }:
         <p className={styles.eyebrow}>{t('coop.eyebrow')}</p>
         <h1>{t('coop.title')}</h1>
         <p className={styles.intro}>{t('coop.intro')}</p>
+        <CoopLinkMark className={styles.entryMark} />
         <p className={styles.voiceNote}>{t('coop.voiceNote')}</p>
       </header>
       <div className={styles.entryOperations}>

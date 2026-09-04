@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { CoopPlayerId, CoopPlayerSnapshot, CoopRoomSnapshot } from '../coop/types';
+import { CoopLinkMark } from './CoopLinkMark';
 import { SettingsPanel } from './SettingsPanel';
 import styles from './CoopLobbyScreen.module.css';
 
@@ -25,6 +26,7 @@ export function CoopLobbyScreen({ room, playerId, self, peer, error, onLeave, on
       <button className={styles.leaveButton} onClick={onLeave}>{t('coop.leave')}</button>
     </header>
     <div className={styles.endpointDeck}>
+      <CoopLinkMark className={styles.lobbyLink} active={Boolean(peer)} variant="lobby" />
       {lobbyPlayers.map((player) => player ? <section className={`${styles.endpoint} ${player.id === playerId ? styles.localEndpoint : styles.peerEndpoint}`} key={player.id}>
         <p className={styles.endpointLabel}>{player.id === playerId ? t('coop.you') : t('coop.friend')}</p>
         <h3>{player.name}</h3>
