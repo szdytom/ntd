@@ -726,6 +726,9 @@ export class ThoughtSceneDirector {
   private matchesProjectileState(requirement: NonNullable<ThoughtCue['waitForProjectileStates']>[number]): boolean {
     const projectile = this.getBoundProjectile(requirement.projectileRef);
     if (requirement.alive !== undefined && requirement.alive !== Boolean(projectile && projectile.life > 0)) return false;
+    if (requirement.minimumTriggerCount !== undefined) {
+      if (!projectile || projectile.triggerCount < requirement.minimumTriggerCount) return false;
+    }
     if (requirement.minimumTravelDistance !== undefined) {
       if (!projectile) return false;
       const event = this.eventBindings.get(requirement.projectileRef);

@@ -25,7 +25,7 @@ export function ThoughtCanvas({ director }: { director: ThoughtSceneDirector }) 
       renderer = new GameRenderer(canvas, director.runtime.world, {
         ...THOUGHT_RENDERER_OPTIONS,
         camera: director.definition.scene?.camera ?? { center: { x: 465, y: 530 }, height: 240 },
-        towerColor: director.definition.accent,
+        towerColor: director.definition.towerColor,
         getPresentation: director.getRenderPresentation,
         showPathMarkers: false,
         showFloatingText: false,

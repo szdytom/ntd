@@ -3,6 +3,7 @@ import en from '../src/i18n/locales/en.json';
 import { CombatRuntime } from '../src/game/combat-runtime';
 import type { CombatEvent } from '../src/game/combat-events';
 import { DEFAULT_TOWER_ROTATION, FIXED_SIMULATION_STEP } from '../src/game/engine';
+import { createModuleRegistry } from '../src/modules';
 import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
 import type { ThoughtCue, ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '../src/thoughts/types';
 
@@ -44,6 +45,14 @@ const presentedTowerEnergyRatio = (director: ThoughtSceneDirector, towerIndex = 
 };
 
 describe('thought registry', () => {
+  it('uses each subject module display color for its towers', () => {
+    const modules = createModuleRegistry();
+
+    for (const definition of thoughtRegistry.list()) {
+      expect(definition.towerColor).toBe(modules.require(definition.subject.moduleId).meta.displayColor);
+    }
+  });
+
   it('maps every registered subject and diagnostic back to its thought', () => {
     const definitions = thoughtRegistry.list();
     expect(definitions.length).toBeGreaterThan(0);
@@ -263,10 +272,43 @@ describe('thought registry', () => {
     }
 
     for (const id of ['double-fork', 'fork'] as const) {
-      expect(thoughtRegistry.require(id).relatedModuleIds).toContain('focus-core');
+      expect(thoughtRegistry.require(id).relatedModuleIds).toEqual(expect.arrayContaining([
+        'seeker',
+        'focus-core',
+      ]));
     }
 
     expect(thoughtRegistry.require('overdrive').scene?.id).toContain('parallel-comparison');
+    const economizer = thoughtRegistry.require('economizer');
+    const economizerCues = economizer.beats.flatMap((beat) => beat.cues ?? []);
+    expect(economizer.scene?.id).toContain('straight-range-pass');
+    expect(economizer.relatedModuleIds).toContain('prism-slug');
+    expect(economizer.relatedModuleIds).not.toContain('pulse');
+    expect(economizerCues.flatMap((cue) => cue.actions ?? []).some((action) => (
+      action.type === 'setup' && action.slots.length === 1 && action.slots[0] === 'prism-slug'
+    ))).toBe(true);
+    expect(economizerCues.flatMap((cue) => cue.actions ?? []).some((action) => (
+      action.type === 'setup' && action.slots.includes('economizer') && action.slots.includes('prism-slug')
+    ))).toBe(true);
+    expect(economizerCues.some((cue) => cue.waitFor?.type === 'tower-energy-changed')).toBe(true);
+    const reclaim = thoughtRegistry.require('reclaim-circuit');
+    const reclaimCues = reclaim.beats.flatMap((beat) => beat.cues ?? []);
+    const reclaimSignals = reclaimCues.flatMap((cue) => cue.actions ?? [])
+      .filter((action) => action.type === 'spawn-signal');
+    expect(reclaim.relatedModuleIds).toContain('nova');
+    expect(reclaim.relatedModuleIds).toContain('colossus');
+    expect(reclaim.relatedModuleIds).not.toContain('pulse');
+    expect(reclaimSignals.filter((action) => action.signal === 'block')).toHaveLength(4);
+    expect(reclaimSignals.filter((action) => action.signal === 'crown')).toHaveLength(1);
+    expect(reclaimCues.filter((cue) => (
+      cue.waitFor?.type === 'tower-energy-changed' && cue.waitFor.occurrence === 5
+    ))).toHaveLength(1);
+    expect(reclaimCues.some((cue) => (
+      cue.waitFor?.type === 'projectile-absorbed' && cue.waitFor.moduleId === 'nova'
+    ))).toBe(true);
+    expect(reclaimCues.find((cue) => cue.id === 'resume-durable-cluster')?.actions).toContainEqual({
+      type: 'set-tower-casting', enabled: true,
+    });
     expect(thoughtRegistry.require('ricochet').beats.flatMap((beat) => beat.cues ?? [])
       .flatMap((cue) => cue.actions ?? [])
       .filter((action) => action.type === 'spawn-signal')).toHaveLength(3);
@@ -436,6 +478,43 @@ describe('thought scenes', () => {
     director.dispose();
   });
 
+  it.each([
+    ['double-fork', 2],
+    ['fork', 3],
+  ] as const)('shows %s spreading, converging with guidance, then focusing to one projectile', (id, count) => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require(id));
+
+    runUntilCue(director, 'point-split-projectiles');
+    const splitProjectiles = director.getBoundProjectileGroup('splitProjectiles');
+    const splitAngles = new Set(splitProjectiles.map((projectile) => (
+      Math.atan2(projectile.velocity.y, projectile.velocity.x)
+    )));
+    expect(director.getSnapshot().cueId).toBe('point-split-projectiles');
+    expect(splitProjectiles).toHaveLength(count);
+    expect(splitAngles.size).toBe(count);
+
+    const guidedHits: Extract<CombatEvent, { type: 'projectile-hit' }>[] = [];
+    const unsubscribe = director.runtime.subscribe((event) => {
+      if (event.type === 'projectile-hit' && event.shot.modules.includes('seeker')) {
+        guidedHits.push(event);
+      }
+    });
+    runUntilCue(director, 'point-guided-target');
+    const guidedTarget = director.getBoundSignal('guidedTarget');
+    expect(director.getSnapshot().cueId).toBe('point-guided-target');
+    expect(guidedTarget).not.toBeNull();
+    expect(guidedHits).toHaveLength(count);
+    expect(new Set(guidedHits.map((event) => event.signalId))).toEqual(new Set([guidedTarget?.id]));
+
+    runUntilCue(director, 'point-focused-projectile');
+    const focusedProjectile = director.getBoundProjectile('focusedProjectile');
+    expect(director.getSnapshot().cueId).toBe('point-focused-projectile');
+    expect(focusedProjectile?.shot.count).toBe(1);
+    expect(focusedProjectile?.modules).toContain('focus-core');
+    unsubscribe();
+    director.dispose();
+  });
+
   it('shows the Overdriven comparison target losing more health', () => {
     const director = new ThoughtSceneDirector(thoughtRegistry.require('overdrive'));
     runUntilCue(director, 'point-overdrive-damage');
@@ -445,6 +524,44 @@ describe('thought scenes', () => {
     expect(baseline).not.toBeNull();
     expect(overdriven).not.toBeNull();
     expect(overdriven?.hp).toBeLessThan(baseline?.hp ?? 0);
+    director.dispose();
+  });
+
+  it('shows the Economizer tradeoff through consecutive single-tower casts', () => {
+    const baselineDirector = new ThoughtSceneDirector(thoughtRegistry.require('economizer'));
+    runUntilCue(baselineDirector, 'point-baseline');
+    const baseline = baselineDirector.getBoundSignal('baselineTarget');
+    expect(baselineDirector.getSnapshot().cueId).toBe('point-baseline');
+    expect(baseline).not.toBeNull();
+    const baselineHealth = baseline?.hp;
+    baselineDirector.dispose();
+
+    const economizedDirector = new ThoughtSceneDirector(thoughtRegistry.require('economizer'));
+    runUntilCue(economizedDirector, 'point-economized-damage');
+    const economized = economizedDirector.getBoundSignal('economizedTarget');
+    expect(economizedDirector.getSnapshot().cueId).toBe('point-economized-damage');
+    expect(economized).not.toBeNull();
+    expect(economized?.hp).toBeGreaterThan(baselineHealth ?? Number.POSITIVE_INFINITY);
+    economizedDirector.dispose();
+  });
+
+  it('shows Reclaim Circuit refunding a cluster hit before a shield blocks the return', () => {
+    const director = new ThoughtSceneDirector(thoughtRegistry.require('reclaim-circuit'));
+    runUntilCue(director, 'point-cluster-refund');
+    expect(director.getSnapshot().cueId).toBe('point-cluster-refund');
+    expect(presentedTowerEnergyRatio(director)).toBeGreaterThan(0.75);
+
+    let repeatedLaunches = 0;
+    const unsubscribe = director.runtime.subscribe((event) => {
+      if (event.type === 'projectile-spawned' && event.shot.modules.includes('nova')) repeatedLaunches += 1;
+    });
+    runUntilCue(director, 'configure-shield-test');
+    expect(repeatedLaunches).toBeGreaterThan(0);
+
+    runUntilCue(director, 'point-shield-no-return');
+    expect(director.getSnapshot().cueId).toBe('point-shield-no-return');
+    expect(director.getBoundSignal('shieldTarget')?.dead).toBe(false);
+    unsubscribe();
     director.dispose();
   });
 

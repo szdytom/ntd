@@ -6,15 +6,24 @@ import { timedCue, waitCue } from './cues';
 import { defineModuleThought } from './define';
 import { explainLoadoutSlot, introduceScene } from './recipes';
 import type { SignalSpawn } from './sequences';
-import { finishRun, fireCapturedRun, settleTowerForReset, showPause } from './sequences';
+import {
+  finishRun,
+  fireCapturedRun,
+  resetWithLoadoutReplacement,
+  settleTowerForReset,
+  showPause,
+} from './sequences';
 
 export interface SplitProjectileCopy {
   readonly title: string;
   readonly summary: string;
   readonly sectionSplit: string;
+  readonly sectionGuidance: string;
   readonly sectionFocus: string;
   readonly beatSplit: string;
   readonly beatLand: string;
+  readonly beatGuidance: string;
+  readonly beatGuidedHit: string;
   readonly beatFocus: string;
   readonly beatFocusedHit: string;
 }
@@ -27,18 +36,24 @@ interface SplitProjectileThoughtOptions {
 }
 
 const splitTargets = (count: 2 | 3): readonly SignalSpawn[] => [
-  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 90 }, captureAs: 'splitFirst' },
-  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 60 }, captureAs: 'splitSecond' },
-  ...(count === 3 ? [{ signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 30 }, captureAs: 'splitThird' }] : []),
-];
-
-const focusedTargets = (count: 2 | 3): readonly SignalSpawn[] => [
-  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 90 }, captureAs: 'focusedNeighbor' },
+  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 90 } },
   { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 60 } },
   ...(count === 3 ? [{ signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 30 } }] : []),
 ];
 
-/** Teaches projectile multiplication, then the Focus Core conversion boundary. */
+const focusedTargets = (count: 2 | 3): readonly SignalSpawn[] => [
+  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 90 } },
+  { signal: 'spark', position: { type: 'tower-range-entry', leadDistance: 60 } },
+  ...(count === 3 ? [{ signal: 'spark' as const, position: { type: 'tower-range-entry' as const, leadDistance: 30 } }] : []),
+];
+
+const guidedTarget: SignalSpawn = {
+  signal: 'kite',
+  position: { type: 'tower-range-entry', leadDistance: 92 },
+  captureAs: 'guidedTarget',
+};
+
+/** Teaches projectile multiplication, guidance, then the Focus Core conversion boundary. */
 export const buildSplitProjectileThought = (
   options: SplitProjectileThoughtOptions,
 ): ThoughtDefinition => {
@@ -77,15 +92,20 @@ export const buildSplitProjectileThought = (
         cues: fireCapturedRun('split', {
           carrier: 'pulse',
           inputs: splitTargets(count),
-          capture: { type: 'projectile-hit', moduleId: 'pulse', occurrence: count },
+          capture: { type: 'projectile-spawned', moduleId: module.id, captureAs: 'splitProjectiles' },
+          settleDuration: 0.12,
         }),
       }),
       defineBeat({
-        id: 'show-split-hits', captionKey: copy.beatLand, flow: 'impact',
-        cues: [showPause({ id: 'point-split-hits', captionKey: copy.beatLand, target: { signalRef: 'splitFirst' }, requireAlive: 'splitFirst' })],
+        id: 'show-split-projectiles', captionKey: copy.beatLand, flow: 'impact',
+        cues: [showPause({
+          id: 'point-split-projectiles',
+          captionKey: copy.beatLand,
+          target: { projectileGroupRef: 'splitProjectiles' },
+        })],
       }),
       defineBeat({
-        id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'focus',
+        id: 'construct-guidance', captionKey: copy.sectionGuidance, flow: 'compile',
         cues: [
           timedCue('restore-split-time', 1.35, {
             actions: [{ type: 'set-tower-casting', enabled: true }],
@@ -102,20 +122,51 @@ export const buildSplitProjectileThought = (
             actions: [{ type: 'delete-signals' }], loadoutMode: 'compact-leaving',
           }),
           settleTowerForReset('settle-split-rotation'),
-          timedCue('configure-focus', 0.2, {
-            actions: [{ type: 'setup', slots: ['focus-core', module.id, 'pulse'] }],
+          timedCue('configure-guidance', 0.2, {
+            actions: [{ type: 'setup', slots: ['seeker', module.id, 'pulse'] }],
             loadoutMode: 'hidden',
           }),
-          timedCue('show-split-before-focus', 1.15, {
-            sectionTitleKey: copy.sectionFocus,
+          timedCue('show-split-before-guidance', 1.15, {
+            sectionTitleKey: copy.sectionGuidance,
             overlay: { type: 'loadout', target: 'tower', placement: 'right' },
             loadoutMode: 'dialog', loadoutVisibleRange: { start: 1, count: 2 },
           }),
-          timedCue('insert-focus-core', 2.5, {
+          timedCue('insert-seeker', 2.5, {
             overlay: { type: 'loadout', target: 'tower', placement: 'right' },
             loadoutVisibleRange: { start: 0, count: 3 },
           }),
         ],
+      }),
+      defineBeat({
+        id: 'explain-guidance', captionKey: copy.beatGuidance, flow: 'compile',
+        cues: [explainLoadoutSlot('point-guided-split', 4.2, copy.beatGuidance, 0)],
+      }),
+      defineBeat({
+        id: 'fire-guided-shot', captionKey: copy.beatGuidedHit, flow: 'impact',
+        cues: fireCapturedRun('guided-shot', {
+          carrier: 'pulse',
+          inputs: [guidedTarget],
+          capture: { type: 'projectile-hit', moduleId: 'seeker', occurrence: count },
+          captureTimeout: 12,
+          settleDuration: 0.05,
+        }),
+      }),
+      defineBeat({
+        id: 'show-guided-hit', captionKey: copy.beatGuidedHit, flow: 'impact',
+        cues: [showPause({
+          id: 'point-guided-target',
+          captionKey: copy.beatGuidedHit,
+          target: { signalRef: 'guidedTarget' },
+          requireAlive: 'guidedTarget',
+        })],
+      }),
+      defineBeat({
+        id: 'construct-focus', captionKey: copy.sectionFocus, flow: 'focus',
+        cues: resetWithLoadoutReplacement(
+          'focus',
+          ['focus-core', module.id, 'pulse'],
+          copy.sectionFocus,
+        ),
       }),
       defineBeat({
         id: 'explain-focus', captionKey: copy.beatFocus, flow: 'focus',
@@ -126,12 +177,17 @@ export const buildSplitProjectileThought = (
         cues: fireCapturedRun('focused-shot', {
           carrier: 'pulse',
           inputs: focusedTargets(count),
-          capture: { type: 'projectile-hit', moduleId: 'pulse' },
+          capture: { type: 'projectile-spawned', moduleId: 'focus-core', captureAs: 'focusedProjectile' },
+          settleDuration: 0.12,
         }),
       }),
       defineBeat({
-        id: 'show-focused-hit', captionKey: copy.beatFocusedHit, flow: 'focus',
-        cues: [showPause({ id: 'point-focused-neighbor', captionKey: copy.beatFocusedHit, target: { signalRef: 'focusedNeighbor' }, requireAlive: 'focusedNeighbor' })],
+        id: 'show-focused-projectile', captionKey: copy.beatFocusedHit, flow: 'focus',
+        cues: [showPause({
+          id: 'point-focused-projectile',
+          captionKey: copy.beatFocusedHit,
+          target: { projectileRef: 'focusedProjectile' },
+        })],
       }),
       defineBeat({
         id: 'finish-focus', captionKey: copy.sectionFocus, flow: 'observe',

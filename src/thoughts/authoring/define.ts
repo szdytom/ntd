@@ -61,6 +61,7 @@ export const defineModuleThought = (
     titleKey: options.titleKey,
     summaryKey: options.summaryKey,
     accent,
+    towerColor: module.meta.displayColor,
     relatedModuleIds: [...relatedModuleIds],
     seed: options.seed,
     beats: options.beats,

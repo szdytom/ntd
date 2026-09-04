@@ -83,6 +83,7 @@ export interface ThoughtProjectileStateRequirement {
   readonly projectileRef: string;
   readonly alive?: boolean;
   readonly minimumTravelDistance?: number;
+  readonly minimumTriggerCount?: number;
 }
 
 export interface ThoughtCue {
@@ -134,6 +135,7 @@ export interface ThoughtDefinition {
   readonly titleKey: string;
   readonly summaryKey: string;
   readonly accent: string;
+  readonly towerColor: string;
   readonly relatedModuleIds: readonly ModuleId[];
   readonly relatedDiagnostics?: readonly ProgramDiagnosticCode[];
   readonly seed: number;
