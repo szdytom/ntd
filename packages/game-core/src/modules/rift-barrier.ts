@@ -24,8 +24,7 @@ export const riftBarrierModule: ModuleDefinition = {
         text: { detail: {
                 damage: stats.damagePerSecond,
                 radius: stats.radius,
-                duration: stats.duration,
-                retention: RIFT_SPACE_RETENTION,
+                duration: stats.duration + RIFT_SPACE_RETENTION,
                 width: RIFT_SPACE_CONTACT.width
             } }
     },

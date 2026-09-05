@@ -7,7 +7,7 @@ export const terrainTriggerModule: ModuleDefinition = {
     tags: ['trigger'],
     meta: {
         color, energy: 9, rarity: 'uncommon',
-        text: { detail: { ticks: stats.crossingTicks, payloads: stats.payloadCount } }
+        text: { detail: { payloads: stats.payloadCount } }
     },
     compile: (context) => context.wrapNext({
         type: 'terrain',

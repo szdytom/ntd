@@ -12,7 +12,6 @@ export const novaThought = buildAreaProjectileThought({
     sectionCondense: 'thoughts.nova.sections.condense',
     beatFlight: 'thoughts.nova.beats.flight',
     beatBlast: 'thoughts.nova.beats.blast',
-    beatModifier: 'thoughts.nova.beats.modifier',
     beatModifiedAll: 'thoughts.nova.beats.modifiedAll',
     beatCondense: 'thoughts.nova.beats.condense',
     beatCondensedHit: 'thoughts.nova.beats.condensedHit',

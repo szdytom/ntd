@@ -7,7 +7,10 @@ export const barrageModule: ModuleDefinition = {
     tags: ['repeat'],
     meta: {
         color, energy: 46, rarity: 'legendary',
-        text: { detail: { casts: stats.repeats, interval: stats.repeatDelay } }
+        text: {
+            description: { casts: stats.repeats },
+            detail: { casts: stats.repeats, interval: stats.repeatDelay }
+        }
     },
     compile: (context) => context.modifyNext(stats),
     onCast: ({ visuals: engine, position, rotation }) => engine.spawn('module:barrage:tick', { position, rotation, color })

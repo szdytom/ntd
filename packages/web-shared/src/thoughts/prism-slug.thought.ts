@@ -20,7 +20,6 @@ const copy = {
     flight: 'thoughts.prismSlug.beats.flight',
     damage: 'thoughts.prismSlug.beats.damage',
     waiting: 'thoughts.prismSlug.beats.waiting',
-    delivered: 'thoughts.prismSlug.beats.delivered',
   },
 } as const;
 
@@ -125,7 +124,7 @@ export const prismSlugThought = defineModuleThought(prismSlugModule, {
       cues: [explainLoadoutSlot('point-waiting-modifier', 4.2, copy.beats.waiting, 0)],
     }),
     defineBeat({
-      id: 'fire-modified-slug', captionKey: copy.beats.delivered, flow: 'impact',
+      id: 'fire-modified-slug', captionKey: copy.sections.carry, flow: 'impact',
       cues: [
         timedCue('dismiss-carrier-loadout', 0.45, { loadoutMode: 'dialog-leaving' }),
         timedCue('compact-carrier-loadout', 0.35, { loadoutMode: 'compact' }),
@@ -141,24 +140,12 @@ export const prismSlugThought = defineModuleThought(prismSlugModule, {
           waitFor: { type: 'signal-slowed', moduleId: 'frost', captureAs: 'carrierHit' },
           timeout: 12, timelineWait: true,
         }),
-        timedCue('settle-carrier-hit', 0.5, { actions: [{ type: 'set-tower-casting', enabled: false }] }),
+        timedCue('settle-carrier-hit', 0.5),
       ],
-    }),
-    defineBeat({
-      id: 'show-delivered-modifier', captionKey: copy.beats.delivered, flow: 'impact',
-      cues: [timedCue('point-delivered-modifier', 4.2, {
-        transitionDuration: 1.1, transition: { simulationRate: 0 }, ease: 'smooth',
-        overlay: { type: 'caption', textKey: copy.beats.delivered, target: { signalRef: 'carrierHit' } },
-        requireSignalState: { signalRef: 'carrierHit', alive: true, slowed: true },
-      })],
     }),
     defineBeat({
       id: 'finish-carrier', captionKey: copy.sections.carry, flow: 'observe',
       cues: [
-        timedCue('restore-carrier-time', 1.35, {
-          actions: [{ type: 'set-tower-casting', enabled: true }],
-          transition: { simulationRate: 1 }, ease: 'smooth',
-        }),
         waitCue('wait-carrier-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
         timedCue('settle-carrier-clear', 0.5, {
           transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',

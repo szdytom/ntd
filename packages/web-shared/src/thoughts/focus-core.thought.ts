@@ -19,7 +19,6 @@ const copy = {
     targets: 'thoughts.focusCore.sections.targets',
   },
   beats: {
-    forked: 'thoughts.focusCore.beats.forked',
     consumeCount: 'thoughts.focusCore.beats.consumeCount',
     countResult: 'thoughts.focusCore.beats.countResult',
     consumeChain: 'thoughts.focusCore.beats.consumeChain',
@@ -55,7 +54,7 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
       ],
     }),
     defineBeat({
-      id: 'fire-forked-pulse', captionKey: copy.beats.forked, flow: 'cast',
+      id: 'fire-forked-pulse', captionKey: copy.sections.count, flow: 'cast',
       cues: [
         timedCue('dismiss-fork-loadout', 0.45, { loadoutMode: 'dialog-leaving' }),
         timedCue('compact-fork-loadout', 0.35, { loadoutMode: 'compact' }),
@@ -71,23 +70,11 @@ export const focusCoreThought = defineModuleThought(focusCoreModule, {
           waitFor: { type: 'projectile-spawned', moduleId: 'double-fork', captureAs: 'forkedProjectiles' },
           timeout: 12, timelineWait: true,
         }),
-        timedCue('settle-forked-projectiles', 0.12, { actions: [{ type: 'set-tower-casting', enabled: false }] }),
       ],
-    }),
-    defineBeat({
-      id: 'show-forked-projectiles', captionKey: copy.beats.forked, flow: 'cast',
-      cues: [timedCue('point-forked-projectiles', 4.2, {
-        transitionDuration: 0.18, transition: { simulationRate: 0 }, ease: 'smooth',
-        overlay: { type: 'caption', textKey: copy.beats.forked, target: { projectileGroupRef: 'forkedProjectiles' } },
-      })],
     }),
     defineBeat({
       id: 'finish-forked-projectiles', captionKey: copy.sections.count, flow: 'observe',
       cues: [
-        timedCue('restore-forked-time', 1.35, {
-          actions: [{ type: 'set-tower-casting', enabled: true }],
-          transition: { simulationRate: 1 }, ease: 'smooth',
-        }),
         waitCue('wait-forked-clear', { waitForClear: true, waitForTowerEnergy: true, timeout: 20, timelineWait: true }),
         timedCue('settle-forked-clear', 0.5, {
           transition: { towerRotation: -Math.PI / 2, towerEnergyRatio: 1 }, ease: 'smooth',

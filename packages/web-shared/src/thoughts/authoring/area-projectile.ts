@@ -15,7 +15,6 @@ export interface AreaProjectileCopy {
   readonly sectionCondense: string;
   readonly beatFlight: string;
   readonly beatBlast: string;
-  readonly beatModifier: string;
   readonly beatModifiedAll: string;
   readonly beatCondense: string;
   readonly beatCondensedHit: string;
@@ -118,12 +117,11 @@ export const buildAreaProjectileThought = (
         cues: resetTo('modifier', ['frost', module.id], copy.sectionModifier, 1, 'right', { start: 1, count: 1 }),
       }),
       defineBeat({
-        id: 'show-modifier-loadout', captionKey: copy.beatModifier, flow: 'compile',
+        id: 'show-modifier-loadout', captionKey: copy.sectionModifier, flow: 'compile',
         cues: [
           timedCue('show-modified-carrier', 2.45, {
             overlay: { type: 'loadout', target: 'tower', placement: 'right' }, loadoutVisibleSlots: 2,
           }),
-          explainLoadoutSlot('point-area-modifier', 4.2, copy.beatModifier, 0),
         ],
       }),
       defineBeat({
