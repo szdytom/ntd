@@ -3,8 +3,8 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LEVELS } from '../src/game/config';
-import type { DefenseCompletedReport, DifficultyId, SignalId } from '../src/game/types';
+import { LEVELS } from '@prism-bastion/game-core/game/config';
+import type { DefenseCompletedReport, DifficultyId, SignalId } from '@prism-bastion/game-core/game/types';
 import {
   ACHIEVEMENTS,
   DefenseArchiveRepository,
@@ -15,16 +15,16 @@ import {
   type IArchiveStorageWriter,
   type DefenseRecord,
   type DefenseArchiveSnapshot,
-} from '../src/defense-archive';
-import { applyDefense, applyDefenseArchiveFact } from '../src/defense-archive/achievements';
+} from '@prism-bastion/web-single/defense-archive';
+import { applyDefense, applyDefenseArchiveFact } from '@prism-bastion/web-single/defense-archive/achievements';
 import {
   DEFENSE_ARCHIVE_SCHEMA_VERSION,
   createAchievementState,
   type PersistedAchievementStateV1,
   type PersistedDefenseRecordV1,
-} from '../src/defense-archive/types';
-import { DefenseArchive } from '../src/ui/DefenseArchive';
-import { SettingsPanel } from '../src/ui/SettingsPanel';
+} from '@prism-bastion/web-single/defense-archive/types';
+import { DefenseArchive } from '@prism-bastion/web-single/DefenseArchive';
+import { SettingsPanel } from '@prism-bastion/web-shared/ui/SettingsPanel';
 
 afterEach(cleanup);
 

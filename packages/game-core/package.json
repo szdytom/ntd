@@ -1,0 +1,15 @@
+{
+  "name": "@prism-bastion/game-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./game/*": "./src/game/*.ts",
+    "./modules": "./src/modules/index.ts",
+    "./modules/*": "./src/modules/*.ts",
+    "./signals": "./src/signals/index.ts",
+    "./signals/*": "./src/signals/*.ts"
+  },
+  "scripts": { "typecheck": "tsc -p tsconfig.json" }
+}

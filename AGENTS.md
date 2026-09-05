@@ -6,28 +6,28 @@ Prism Bastion is a geometric tower-defense game built around modular programming
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start esbuild watch mode and the local development server |
-| `npm run build` | Produce minified static assets |
-| `npm run lint` | Run ESLint |
-| `npm run typecheck` | Run strict TypeScript checking |
-| `npm test` | Run Vitest unit and component tests |
-| `npm run test:e2e` | Run Playwright browser smoke tests |
-| `npm run check` | Run lint, type checking, tests, and a production build |
-| `npm run format:locales` | Complete and format locale files using the English key order |
-| `npm run balance:report` | Generate a balance report from current configuration |
-| `npm run perf:report` | Run the spatial-index performance report |
+| `pnpm dev` | Start esbuild watch mode and the local development server |
+| `pnpm build` | Produce minified static assets |
+| `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Run strict TypeScript checking |
+| `pnpm test` | Run Vitest unit and component tests |
+| `pnpm test:e2e` | Run Playwright browser smoke tests |
+| `pnpm check` | Run lint, type checking, tests, and production builds |
+| `pnpm format:locales` | Complete and format locale files using the English key order |
+| `pnpm balance:report` | Generate a balance report from current configuration |
+| `pnpm perf:report` | Run the spatial-index performance report |
 
 ### Architecture
 
 ```text
-src/
-├── signals/    Signal definitions, registry, capabilities, visuals, and compendium protocols
-├── game/       Combat engine, paths, collision, targeting, levels, and balance
-├── modules/    Module definitions, registry, rarity, and sequence compiler
-├── effects/    Effect lifecycle, Canvas painters, and effect factories
-├── i18n/       Shared i18next instance, presentation helpers, and locale resources
-├── ui/         React components with one colocated stylesheet per component
-└── styles/     Global foundations and responsive rules
+packages/
+├── game-core/  Deterministic combat, signals, and module runtime
+├── coop/       Co-op protocol, planning, and authoritative simulation
+└── web-shared/ Browser rendering, shared UI, effects, and i18n
+apps/
+├── web-single/ Single-player application and persistence
+├── web-coop/   Full site and lazy-loaded co-op feature
+└── coop-server/ Node WebSocket server and worker
 ```
 
 The combat engine runs at a fixed 120 Hz and publishes immutable snapshots to React. Modules interact through a restricted combat API for target queries, damage, status effects, and retargeting, keeping them independent from waves, economy, and UI code.
@@ -49,7 +49,7 @@ Project skills:
 
 All user-facing text is resolved through the shared i18next instance, including React components, tutorial copy, engine toasts, and Canvas labels. English is the fallback language; the initial locale follows a saved preference or the browser language.
 
-Translation resources live in `src/i18n/locales/` as flat JSON objects. Every English key maps directly to a string; other locales map each key to a translated string or `null`, which falls back to English. Add new keys to `en.json`, then run `npm run format:locales` to complete every locale and apply the English key order with canonical formatting. Do not embed user-facing copy in components or game logic. `npm run check:locales` verifies that the resources remain flat, aligned, formatted, and self-described. Outside documentation and locale files, source and test files intentionally contain no CJK characters.
+Translation resources live in `packages/web-shared/src/i18n/locales/` as flat JSON objects. Every English key maps directly to a string; other locales map each key to a translated string or `null`, which falls back to English. Add new keys to `en.json`, then run `pnpm format:locales` to complete every locale and apply the English key order with canonical formatting. Do not embed user-facing copy in components or game logic. `pnpm check:locales` verifies that the resources remain flat, aligned, formatted, and self-described. Outside documentation and locale files, source and test files intentionally contain no CJK characters.
 
 ## Commit messages
 

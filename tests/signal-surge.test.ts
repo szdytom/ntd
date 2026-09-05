@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getSignalCapability, signalRegistry } from '../src/signals';
+import { getSignalCapability, signalRegistry } from '@prism-bastion/game-core/signals';
 import {
   sinePulseMean,
   signalMovementSpeedMultiplier,
   pulseRestSpeedMultiplier,
-} from '../src/signals/capabilities/movement';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import { findPathInterception } from '../src/game/interception';
+} from '@prism-bastion/game-core/signals/capabilities/movement';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import { findPathInterception } from '@prism-bastion/game-core/game/interception';
 
 describe('Surge wave movement', () => {
   it('uses a smooth sine pulse while preserving its configured average speed', () => {

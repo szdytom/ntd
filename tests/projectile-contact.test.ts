@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GAME_EFFECT_IDS } from '../src/effects/game-effects';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import { distance } from '../src/game/math';
-import type { Signal } from '../src/game/types';
+import { GAME_EFFECT_IDS } from '@prism-bastion/web-shared/effects/game-effects';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import { distance } from '@prism-bastion/game-core/game/math';
+import type { Signal } from '@prism-bastion/game-core/game/types';
 import { addTestProjectile as addProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
@@ -21,7 +21,7 @@ describe('piercing projectile contacts', () => {
     const collisionRadius = signal.radius + shot.size;
     const start = { x: signal.position.x - collisionRadius - 1, y: signal.position.y };
     const projectile = addProjectile(engine, shot, start, { x: shot.speed, y: 0 }, signal.id);
-    const spawnEffect = vi.spyOn(engine.effects, 'spawn');
+    const spawnEffect = vi.spyOn(engine.visuals, 'spawn');
     const initialHp = signal.hp;
 
     engine.update(FIXED_SIMULATION_STEP);

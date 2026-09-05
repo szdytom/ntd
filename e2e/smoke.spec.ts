@@ -5,9 +5,9 @@ import {
   resolveSpawnEntrances,
   TUTORIAL_LEVEL_ID,
   type LevelDefinition,
-} from '../src/game/config';
-import type { SignalId, Point } from '../src/game/types';
-import { getSignalCapability, SIGNAL_IDS, signalRegistry } from '../src/signals';
+} from '../packages/game-core/src/game/config';
+import type { SignalId, Point } from '../packages/game-core/src/game/types';
+import { getSignalCapability, SIGNAL_IDS, signalRegistry } from '../packages/game-core/src/signals';
 
 const WORLD = { width: 1160, height: 650 } as const;
 const TUTORIAL_OFFER_STORAGE_KEY = 'prism-bastion-tutorial-offer-resolved';

@@ -2,19 +2,19 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import '../src/i18n';
-import { WORLD } from '../src/game/config';
-import { GameEngine } from '../src/game/engine';
+import '@prism-bastion/web-shared/i18n';
+import { CoopGameController } from '@prism-bastion/coop/controller';
+import { WORLD } from '@prism-bastion/game-core/game/config';
 import {
   TowerLoadoutOverlay,
   worldPointToBattlefieldOverlay,
-} from '../src/ui/TowerLoadoutOverlay';
+} from '../apps/web-coop/src/TowerLoadoutOverlay';
 
 afterEach(() => cleanup());
 
 describe('tower loadout overlay', () => {
   it('keeps installed modules in slot order and omits empty slots', () => {
-    const engine = new GameEngine({ mode: 'coop', seed: 7 });
+    const engine = new CoopGameController({ levelId: 'starter-elbow', difficultyId: 'normal', seed: 7 }).engine;
     const tower = engine.towers[0];
     if (!tower) throw new Error('Expected a starting tower');
     tower.slots = ['frost', null, 'pulse', null];

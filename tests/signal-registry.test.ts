@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, TUTORIAL_LEVEL_ID } from '../src/game/config';
-import en from '../src/i18n/locales/en.json';
-import zhCN from '../src/i18n/locales/zh-CN.json';
-import { SIGNAL_DEFINITIONS, SIGNAL_IDS, signalRegistry } from '../src/signals';
+import { LEVELS, TUTORIAL_LEVEL_ID } from '@prism-bastion/game-core/game/config';
+import en from '@prism-bastion/web-shared/i18n/locales/en.json';
+import zhCN from '@prism-bastion/web-shared/i18n/locales/zh-CN.json';
+import { SIGNAL_DEFINITIONS, SIGNAL_IDS, signalRegistry } from '@prism-bastion/game-core/signals';
 
 describe('signal registry', () => {
   it('is the complete ordered source for IDs, variants, and localized archive text', () => {

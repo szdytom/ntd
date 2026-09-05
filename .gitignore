@@ -1,6 +1,7 @@
 node_modules/
-dist/
-dist-coop/
+**/dist/
+**/dist-types/
+**/*.tsbuildinfo
 test-results/
 playwright-report/
 *.log

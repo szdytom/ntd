@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GameEngine } from '../src/game/engine';
-import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Signal, Projectile, ShotBlueprint } from '@prism-bastion/game-core/game/types';
 import {
   addTestProjectile as addProjectile,
   advanceEngineFor as advanceFor,
@@ -62,7 +62,7 @@ describe('target effect propagation', () => {
     const shot = engine.modules.compile(['frost', 'toxin', 'nova']).shots[0];
     if (!shot) throw new Error('Expected a nova shot');
     const impactPosition = { ...direct.position };
-    const effects = vi.spyOn(engine.effects, 'spawnMany');
+    const effects = vi.spyOn(engine.visuals, 'spawnMany');
     fireAt(engine, shot, direct);
 
     advanceUntil(engine, () => isSlowed(splash));
@@ -87,7 +87,7 @@ describe('target effect propagation', () => {
     ]).shots[0];
     if (!shot) throw new Error('Expected a burning nova shot');
     const impactPosition = { ...direct.position };
-    const effects = vi.spyOn(engine.effects, 'spawnMany');
+    const effects = vi.spyOn(engine.visuals, 'spawnMany');
     fireAt(engine, shot, direct);
 
     advanceUntil(engine, () => hasStatus(splash, 'starfire-matrix'));
@@ -114,7 +114,7 @@ describe('target effect propagation', () => {
     if (!direct || !firstChain || !secondChain) throw new Error('Expected three signals');
     const shot = engine.modules.compile(['frost', 'toxin', 'arcbolt']).shots[0];
     if (!shot) throw new Error('Expected an Arcbolt shot');
-    const effects = vi.spyOn(engine.effects, 'spawnMany');
+    const effects = vi.spyOn(engine.visuals, 'spawnMany');
     fireAt(engine, shot, direct);
 
     advanceUntil(engine, () => isSlowed(secondChain));
@@ -202,7 +202,7 @@ describe('target effect propagation', () => {
     ]).shots[0];
     const frostPayload = frostCarrier?.payload[0];
     if (!frostPayload?.static) throw new Error('Expected a Frost cloud and signals');
-    const frostEffects = vi.spyOn(frostSetup.engine.effects, 'spawnMany');
+    const frostEffects = vi.spyOn(frostSetup.engine.visuals, 'spawnMany');
     const frostProjectile = deployAt(frostSetup.engine, frostPayload, 230);
 
     advanceFor(frostSetup.engine, 1.1);
@@ -224,7 +224,7 @@ describe('target effect propagation', () => {
     const toxinPayload = toxinCarrier?.payload[0];
     const toxinSignal = toxinSetup.signals[0];
     if (!toxinPayload?.static || !toxinSignal) throw new Error('Expected a Corrosive Tesla and signal');
-    const toxinEffects = vi.spyOn(toxinSetup.engine.effects, 'spawnMany');
+    const toxinEffects = vi.spyOn(toxinSetup.engine.visuals, 'spawnMany');
     const toxinProjectile = deployAt(toxinSetup.engine, toxinPayload, 220);
 
     advanceFor(toxinSetup.engine, 1.2);

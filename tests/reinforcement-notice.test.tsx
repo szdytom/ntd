@@ -2,8 +2,8 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import '../src/i18n';
-import { ReinforcementNotice } from '../src/ui/ReinforcementNotice';
+import '@prism-bastion/web-shared/i18n';
+import { ReinforcementNotice } from '../apps/web-coop/src/ReinforcementNotice';
 
 afterEach(() => cleanup());
 

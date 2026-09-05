@@ -1,7 +1,7 @@
-import { distance } from '../src/game/math';
-import { WORLD } from '../src/game/config';
-import { SignalSpatialIndex } from '../src/game/spatial-index';
-import type { Signal, Point } from '../src/game/types';
+import { distance } from '@prism-bastion/game-core/game/math';
+import { WORLD } from '@prism-bastion/game-core/game/config';
+import { SignalSpatialIndex } from '@prism-bastion/game-core/game/spatial-index';
+import type { Signal, Point } from '@prism-bastion/game-core/game/types';
 
 const SIGNAL_COUNT = 10_000;
 const QUERY_COUNT = 2_000;

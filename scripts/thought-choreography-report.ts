@@ -1,10 +1,10 @@
-import type { ModuleId } from '../src/game/types';
+import type { ModuleId } from '@prism-bastion/game-core/game/types';
 import type {
   ThoughtCue,
   ThoughtDefinition,
   ThoughtLoadoutMode,
   ThoughtLoadoutTarget,
-} from '../src/thoughts/types';
+} from '@prism-bastion/web-shared/thoughts/types';
 
 const storedValues = new Map<string, string>();
 Object.defineProperty(globalThis, 'localStorage', {
@@ -16,8 +16,8 @@ Object.defineProperty(globalThis, 'localStorage', {
   },
 });
 
-const { FIXED_SIMULATION_STEP } = await import('../src/game/engine');
-const { thoughtRegistry, ThoughtSceneDirector } = await import('../src/thoughts');
+const { FIXED_SIMULATION_STEP } = await import('@prism-bastion/game-core/game/engine');
+const { thoughtRegistry, ThoughtSceneDirector } = await import('@prism-bastion/web-shared/thoughts');
 
 type WarningKind = 'fade-targetable' | 'missing-resolution' | 'unfinished-ending' | 'loadout-continuity';
 

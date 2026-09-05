@@ -1,4 +1,4 @@
-import { calculateDraftBalanceRows, calculateWaveBalanceRows, sampleTowerStatAverages } from '../src/game/balance-analysis';
+import { calculateDraftBalanceRows, calculateWaveBalanceRows, sampleTowerStatAverages } from '@prism-bastion/game-core/game/balance-analysis';
 
 const tower = sampleTowerStatAverages();
 console.log('Tower averages (100,000 deterministic seeds)');

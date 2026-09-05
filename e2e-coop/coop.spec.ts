@@ -14,8 +14,8 @@ test('two friends join, draft simultaneously, and start local defense', async ({
   second.on('pageerror', (error) => pageErrors.push(error.message));
 
   await Promise.all([
-    first.goto('/?server=ws://127.0.0.1:4274'),
-    second.goto('/?server=ws://127.0.0.1:4274'),
+    first.goto('/?mode=coop&server=ws://127.0.0.1:4274'),
+    second.goto('/?mode=coop&server=ws://127.0.0.1:4274'),
   ]);
   await expect(first.getByRole('button', { name: 'Settings' })).toBeVisible();
   await first.getByLabel('Display name').fill('Alpha');
@@ -108,21 +108,36 @@ test('two friends join, draft simultaneously, and start local defense', async ({
 });
 
 test('the entry screen can return to the single-player build', async ({ page }) => {
-  await page.goto('/?server=ws://127.0.0.1:4274');
-  await page.getByRole('link', { name: 'Return to single player' }).click();
-  await expect(page).toHaveURL(/\/single-player\.html$/);
+  await page.goto('/coop.html?server=ws://127.0.0.1:4274');
+  await expect(page).toHaveURL(/mode=coop/);
+  await page.getByRole('button', { name: 'Return to single player' }).click();
+  await expect(page).toHaveURL(/\?server=ws%3A%2F%2F127\.0\.0\.1%3A4274$/);
   await expect(page.getByRole('heading', { name: 'Would you like a guided start?' })).toBeVisible();
 });
 
-test('leaving a room returns both friends to the entry screen', async ({ browser }) => {
+test('the full site defaults to single player and idle preload opens no socket', async ({ page }) => {
+  const sockets: string[] = [];
+  page.on('websocket', (socket) => sockets.push(socket.url()));
+  await page.addInitScript(() => localStorage.setItem('prism-bastion-tutorial-offer-resolved', '1'));
+  await page.goto('/?server=ws://127.0.0.1:4274');
+  await expect(page.getByRole('button', { name: 'Co-op' })).toBeVisible();
+  await page.waitForTimeout(1_700);
+  expect(sockets).toEqual([]);
+  await page.getByRole('button', { name: 'Co-op' }).click();
+  await expect(page).toHaveURL(/mode=coop/);
+  await expect(page.getByRole('heading', { name: 'Defend in parallel' })).toBeVisible();
+  expect(sockets).toEqual([]);
+});
+
+test('leaving a room returns the leaver to single player and the peer to the co-op entry', async ({ browser }) => {
   const firstContext = await browser.newContext();
   const secondContext = await browser.newContext();
   const first = await firstContext.newPage();
   const second = await secondContext.newPage();
 
   await Promise.all([
-    first.goto('/?server=ws://127.0.0.1:4274'),
-    second.goto('/?server=ws://127.0.0.1:4274'),
+    first.goto('/?mode=coop&server=ws://127.0.0.1:4274'),
+    second.goto('/?mode=coop&server=ws://127.0.0.1:4274'),
   ]);
   await first.getByLabel('Display name').fill('Alpha');
   await first.getByRole('button', { name: 'Create co-op room' }).click();
@@ -133,7 +148,8 @@ test('leaving a room returns both friends to the entry screen', async ({ browser
   await expect(first.getByText('Beta')).toBeVisible();
 
   await second.getByRole('button', { name: 'Leave room' }).click();
-  await expect(second.getByRole('heading', { name: 'Defend in parallel' })).toBeVisible();
+  await expect(second).not.toHaveURL(/mode=coop/);
+  await expect(second.getByRole('button', { name: 'Co-op' })).toBeVisible();
   await expect(first.getByRole('heading', { name: 'Defend in parallel' })).toBeVisible();
   await expect(first.getByRole('alert')).toContainText('room was closed');
 

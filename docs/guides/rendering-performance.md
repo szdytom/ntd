@@ -41,10 +41,10 @@ Every important shape and contrast cue must remain visible in Canvas fallback. B
 
 1. Record a repeatable dense scene and the device/browser used.
 2. Use the browser performance panel to separate JavaScript, Canvas, upload, shader, and layout costs.
-3. Run `npm run perf:report` for changes involving the signal spatial index.
+3. Run `pnpm perf:report` for changes involving the signal spatial index.
 4. Compare before and after at equal world state, viewport, device pixel ratio, and speed.
 5. Inspect output at normal speed, paused state, and speed-up.
 6. Check WebGL2 and Canvas fallback for missing layers, leaked state, and changed opacity.
-7. Run unit tests and `npm run check`; automated correctness does not replace visual review.
+7. Run unit tests and `pnpm check`; automated correctness does not replace visual review.
 
 Avoid optimization claims based only on asymptotic complexity, allocating a temporary structure to save one arithmetic operation, rebuilding the spatial index every step, or increasing internal render resolution without measuring the upload and fill-rate cost.

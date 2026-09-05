@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import { resolveDiamondRiftRadii } from '../src/game/rift-visuals';
-import type { Projectile, ShotBlueprint, Signal } from '../src/game/types';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import { resolveDiamondRiftRadii } from '@prism-bastion/web-shared/game/rift-visuals';
+import { modulePresentationRegistry } from '@prism-bastion/web-shared/module-presentations';
+import type { Projectile, ShotBlueprint, Signal } from '@prism-bastion/game-core/game/types';
 import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
@@ -46,7 +47,7 @@ describe('rift barrier', () => {
     expect(definition.kind).toBe('static');
     expect(definition.tags).toEqual(expect.arrayContaining(['static', 'area', 'rift-space']));
     expect(definition.meta.rarity).toBe('epic');
-    expect(definition.hideProjectile).toBe(true);
+    expect(modulePresentationRegistry.require('rift-barrier').hideProjectile).toBe(true);
     expect(barrier).toMatchObject({
       source: 'rift-barrier',
       damage: 45,

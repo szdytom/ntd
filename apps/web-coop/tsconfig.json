@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2022", "DOM", "DOM.Iterable"], "rootDir": "src", "outDir": "dist-types" },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [
+    { "path": "../../packages/game-core" }, { "path": "../../packages/coop" },
+    { "path": "../../packages/web-shared" }, { "path": "../web-single" }
+  ]
+}

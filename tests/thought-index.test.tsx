@@ -3,15 +3,15 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../src/i18n';
-import zhCN from '../src/i18n/locales/zh-CN.json';
-import { GameEngine } from '../src/game/engine';
-import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
-import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
-import { RewardDraft } from '../src/ui/RewardDraft';
-import { Workshop } from '../src/ui/Workshop';
-import { ProgramReadout } from '../src/ui/ProgramReadout';
-import { ThoughtIndex } from '../src/ui/ThoughtIndex';
+import i18n from '@prism-bastion/web-shared/i18n';
+import zhCN from '@prism-bastion/web-shared/i18n/locales/zh-CN.json';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { thoughtRegistry, ThoughtSceneDirector } from '@prism-bastion/web-shared/thoughts';
+import { App, TUTORIAL_OFFER_STORAGE_KEY } from '@prism-bastion/web-single/App';
+import { RewardDraft } from '@prism-bastion/web-single/RewardDraft';
+import { Workshop } from '@prism-bastion/web-shared/ui/Workshop';
+import { ProgramReadout } from '@prism-bastion/web-shared/ui/ProgramReadout';
+import { ThoughtIndex } from '@prism-bastion/web-shared/ui/ThoughtIndex';
 
 beforeEach(() => {
   const values = new Map<string, string>([[TUTORIAL_OFFER_STORAGE_KEY, '1']]);

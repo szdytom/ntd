@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, resolveSpawnEntrances, TUTORIAL_LEVEL_ID, WORLD } from '../src/game/config';
-import { signalRegistry } from '../src/signals';
+import { LEVELS, resolveSpawnEntrances, TUTORIAL_LEVEL_ID, WORLD } from '@prism-bastion/game-core/game/config';
+import { signalRegistry } from '@prism-bastion/game-core/signals';
 
 describe('level configuration', () => {
   it('keeps every level structurally playable', () => {

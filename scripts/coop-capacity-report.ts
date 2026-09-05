@@ -1,10 +1,10 @@
 import type WebSocket from 'ws';
-import { createInitialCoopPlan, hashCoopPlan } from '../src/coop/planning';
-import type { CoopPlayerPlan, CoopTowerPlan } from '../src/coop/types';
-import { LEVELS } from '../src/game/config';
-import { GameEngine } from '../src/game/engine';
-import type { ModuleId } from '../src/game/types';
-import { CoopRoom } from '../src/server/coop-room';
+import { createInitialCoopPlan, hashCoopPlan } from '@prism-bastion/coop/planning';
+import type { CoopPlayerPlan, CoopTowerPlan } from '@prism-bastion/coop/types';
+import { LEVELS } from '@prism-bastion/game-core/game/config';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { ModuleId } from '@prism-bastion/game-core/game/types';
+import { CoopRoom } from '../apps/coop-server/src/coop-room';
 
 const runCount = Number.parseInt(process.env.COOP_BENCH_RUNS ?? '12', 10);
 const warmupCount = Math.min(3, runCount);

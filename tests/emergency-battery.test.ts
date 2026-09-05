@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createModuleRegistry } from '../src/modules';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 
 describe('emergency battery module', () => {
   const registry = createModuleRegistry();

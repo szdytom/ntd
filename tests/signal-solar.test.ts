@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
 import {
   getSignalCapability,
   signalRegistry,
   updateSignalHealthRegeneration,
-} from '../src/signals';
-import { HEXAGRAM_SHAPE, regularPolygonPoints } from '../src/signals/visuals/geometry';
+} from '@prism-bastion/game-core/signals';
+import { HEXAGRAM_SHAPE, regularPolygonPoints } from '@prism-bastion/web-shared/signals/visuals/geometry';
 
 describe('Solar Sigil regeneration elite', () => {
   it('moves smoothly at Kite base speed with the requested combat profile', () => {

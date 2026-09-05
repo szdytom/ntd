@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EffectEngine } from '../src/effects/engine';
-import { statusOrbs } from '../src/effects/factories';
-import type { EffectFrame, EffectPainter } from '../src/effects/types';
+import { EffectEngine } from '@prism-bastion/web-shared/effects/engine';
+import { statusOrbs } from '@prism-bastion/web-shared/effects/factories';
+import type { EffectFrame, EffectPainter } from '@prism-bastion/web-shared/effects/types';
 
 describe('effect engine reuse', () => {
   it('preserves frame values when expired instances are recycled', () => {

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-export const defaultLocaleDirectory = resolve('src/i18n/locales');
+export const defaultLocaleDirectory = resolve('packages/web-shared/src/i18n/locales');
 
 const moduleTextKey = /^modules\.[^.]+\.(description|detail)$/;
 const placeholderPattern = /\{\{\s*([^},\s]+).*?\}\}/g;
@@ -127,7 +127,7 @@ export const validateLocales = (locales, {
     for (const locale of locales) {
       if (!isRecord(locale.entries)) continue;
       if (locale.source !== canonicalLocaleSource(locale.entries, referenceKeys)) {
-        errors.push(`${locale.displayPath}: run npm run format:locales`);
+        errors.push(`${locale.displayPath}: run pnpm format:locales`);
       }
     }
   }

@@ -4,14 +4,15 @@ import { getBuildInfo } from './scripts/build-info.mjs';
 
 const buildInfo = getBuildInfo();
 
-await mkdir('dist', { recursive: true });
-await copyFile('index.html', 'dist/index.html');
+const outputDirectory = 'apps/web-single/dist';
+await mkdir(outputDirectory, { recursive: true });
+await copyFile('index.html', `${outputDirectory}/index.html`);
 
 const context = await esbuild.context({
-  entryPoints: ['src/main.tsx'],
+  entryPoints: ['apps/web-single/src/main.tsx'],
   bundle: true,
   sourcemap: true,
-  outdir: 'dist',
+  outdir: outputDirectory,
   entryNames: 'app',
   assetNames: 'assets/[name]-[hash]',
   loader: { '.module.css': 'local-css', '.css': 'css', '.glsl': 'text' },
@@ -22,5 +23,5 @@ const context = await esbuild.context({
 });
 
 await context.watch();
-const { host, port } = await context.serve({ servedir: 'dist', port: 4173 });
+const { host, port } = await context.serve({ servedir: outputDirectory, port: 4173 });
 console.log(`Prism Bastion running at http://${host ?? 'localhost'}:${port}`);

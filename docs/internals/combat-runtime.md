@@ -32,7 +32,7 @@ Range, splash, trigger, and projectile-segment queries share this index. Hot cal
 
 ## Configured signal mechanics
 
-Each file under `src/signals/` composes typed capabilities. The engine dispatches by capability kind rather than signal ID:
+Each file under `packages/game-core/src/signals/` composes typed capabilities. The engine dispatches by capability kind rather than signal ID:
 
 - `pulse-movement` supplies a periodic speed multiplier while preserving the configured speed as its cycle average;
 - `shield` supplies absorption, regeneration, cooldown, polygon, and visual parameters;

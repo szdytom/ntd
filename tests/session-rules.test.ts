@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GameEngine } from '../src/game/engine';
-import { getSessionRules } from '../src/game/session-rules';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { getSessionRules } from '@prism-bastion/game-core/game/session-rules';
 
 describe('session rules', () => {
   it('describes standard sessions without changing their mode identity', () => {

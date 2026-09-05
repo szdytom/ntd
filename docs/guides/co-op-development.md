@@ -3,14 +3,14 @@
 The co-op MVP runs the browser client and an in-memory WebSocket coordinator:
 
 ```bash
-npm run dev:coop
+pnpm dev:coop
 ```
 
 Open `http://localhost:4173` on the host. A friend on the same network can open
 `http://HOST_LAN_IP:4173`, create or join a room, and use the six-character room
-code. The client derives `ws://HOST_LAN_IP:4174` automatically.
-The entry screen's single-player link opens the companion
-`single-player.html` build served from the same origin.
+code. The client derives `ws://HOST_LAN_IP:4174` automatically. The full site
+starts on the single-player home and enters co-op through `?mode=coop`; leaving
+co-op removes only `mode` and preserves the selected `server` value.
 
 The development command explicitly allows every WebSocket `Origin`, so LAN
 clients do not need an allowlist. A direct production server start fails closed
@@ -23,7 +23,7 @@ identities or require `crypto.randomUUID` on non-secure LAN HTTP origins.
 
 Use `COOP_CLIENT_PORT`, `COOP_SERVER_PORT`, and `COOP_HOST` to override the
 defaults. A development client can also select a server explicitly with
-`?server=ws://HOST:PORT`.
+`?mode=coop&server=ws://HOST:PORT`.
 
 Production co-op builds accept a JSON object in `COOP_PUBLIC_SERVERS`, for
 example `{"hk":"wss://hk.example.com/ws","us-west":"wss://us.example.com/ws"}`.
@@ -46,9 +46,9 @@ authoritatively in a worker thread and a mismatch ends the room as desynchronize
 Use `COOP_COMBAT_WORKERS` to size the worker pool (default `1`) and
 `COOP_COMBAT_QUEUE_LIMIT` to bound its pending work (default `128`).
 
-`npm run build` remains the standalone single-player GitHub Pages build.
-`npm run build:coop` validates and emits the separate co-op client and Node
-server artifacts in `dist-coop/`. Use `npm run build:coop-client` for a clean
-CDN-only directory and `npm run build:coop-server` for the self-contained Node
+`pnpm build` remains the standalone single-player GitHub Pages build.
+`pnpm build:coop` emits the full client and Node server artifacts in
+`apps/web-coop/dist/` and `apps/coop-server/dist/`. Use `pnpm build:coop-client` for a clean
+CDN-only directory and `pnpm build:coop-server` for the self-contained Node
 artifacts used by the OCI image. See [Co-op deployment](co-op-deployment.md)
 for the Buildah, Podman, Quadlet, and reverse-proxy workflow.

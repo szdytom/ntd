@@ -3,9 +3,10 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import { GameHeader } from '../src/ui/GameHeader';
+import '@prism-bastion/web-shared/i18n';
+import { CoopGameController } from '@prism-bastion/coop/controller';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { GameHeader } from '@prism-bastion/web-shared/ui/GameHeader';
 
 afterEach(cleanup);
 
@@ -26,7 +27,7 @@ describe('game header', () => {
 
   it('turns the co-op launch action into an enabled cancel-ready action', async () => {
     const user = userEvent.setup();
-    const engine = new GameEngine({ mode: 'coop', seed: 11 });
+    const engine = new CoopGameController({ levelId: 'starter-elbow', difficultyId: 'normal', seed: 11 }).engine;
     const onLaunch = vi.fn();
 
     render(<GameHeader
@@ -35,6 +36,8 @@ describe('game header', () => {
       onExit={() => undefined}
       onLaunch={onLaunch}
       launchReady
+      launchReadyLabel="Ready"
+      launchCancelLabel="Cancel ready"
     />);
 
     const cancel = screen.getByRole('button', { name: 'Cancel ready' });

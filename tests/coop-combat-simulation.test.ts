@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialCoopPlan, hashCoopPlan } from '../src/coop/planning';
-import type { CoopCombatResult, CoopLeakedSignal } from '../src/coop/types';
-import { GameEngine } from '../src/game/engine';
-import {
-  combatResultsMatch,
-  simulateAuthoritativeCombat,
-} from '../src/server/combat-simulation';
-import type { CombatVerificationRequest } from '../src/server/combat-simulation';
+import { createInitialCoopPlan, hashCoopPlan } from '@prism-bastion/coop/planning';
+import type { CoopCombatResult, CoopLeakedSignal } from '@prism-bastion/coop/types';
+import { CoopGameController } from '@prism-bastion/coop/controller';
+import { combatResultsMatch } from '@prism-bastion/coop/results';
+import { simulateAuthoritativeCombat } from '@prism-bastion/coop/simulation';
+import type { CombatVerificationRequest } from '@prism-bastion/coop/simulation';
 
 const noFireRequest = (): CombatVerificationRequest => {
   const plan = createInitialCoopPlan('triune-delta', 'extreme', 42);
@@ -48,25 +46,27 @@ describe('authoritative co-op combat simulation', () => {
   it('restores post-local tower state before validating reinforcement', () => {
     const plan = createInitialCoopPlan('starter-elbow', 'normal', 42);
     const localPlanHash = hashCoopPlan(plan);
-    const clientEngine = new GameEngine({ mode: 'coop', levelId: 'starter-elbow', difficultyId: 'normal', seed: 0 });
-    clientEngine.applyCoopPlan(plan);
+    const controller = new CoopGameController({ levelId: 'starter-elbow', difficultyId: 'normal', seed: 0 });
+    const clientEngine = controller.engine;
+    controller.applyPlan(plan);
     const results = new Map<number, CoopCombatResult>();
     clientEngine.subscribe((event) => {
-      if (event.type !== 'coop-phase-completed') return;
-      results.set(event.phaseId, {
-        phaseId: event.phaseId,
-        planHash: event.planHash,
-        shardsEarned: event.shardsEarned,
-        leaks: event.leaks.map((leak) => ({ ...leak })),
+      if (event.type !== 'combat-phase-completed') return;
+      const result = event.result;
+      results.set(result.phaseId, {
+        phaseId: result.phaseId,
+        planHash: result.planHash,
+        shardsEarned: result.shardsEarned,
+        leaks: result.leaks.map((leak) => ({ ...leak })),
       });
     });
-    clientEngine.startCoopCombat({
+    controller.startCombat({
       phaseId: 1,
       planHash: localPlanHash,
       wave: 1,
       kind: 'local-defense',
     });
-    expect(clientEngine.fastForwardCoopCombat()).toBe(true);
+    expect(controller.fastForward()).toBe(true);
     const localResult = results.get(1);
     expect(localResult).toBeDefined();
     if (!localResult) return;
@@ -75,14 +75,14 @@ describe('authoritative co-op combat simulation', () => {
     postLocalPlan.shards += localResult.shardsEarned;
     const reinforcementPlanHash = hashCoopPlan(postLocalPlan);
     const signals: CoopLeakedSignal[] = [{ ordinal: 0, type: 'spark', entrance: 'starter-elbow:0' }];
-    clientEngine.startCoopCombat({
+    controller.startCombat({
       phaseId: 2,
       planHash: reinforcementPlanHash,
       wave: 1,
       kind: 'reinforcement',
       signals,
     });
-    expect(clientEngine.fastForwardCoopCombat()).toBe(true);
+    expect(controller.fastForward()).toBe(true);
     const clientResult = results.get(2);
     expect(clientResult).toBeDefined();
     if (!clientResult) return;

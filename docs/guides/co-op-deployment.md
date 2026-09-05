@@ -9,10 +9,10 @@ The browser client is static and belongs on the CDN. Each regional node runs onl
 Build only the CDN files with the public node catalog embedded at compile time:
 
 ```bash
-COOP_PUBLIC_SERVERS='{"hk":"wss://hk.example.com","us-west":"wss://us.example.com"}' npm run build:coop-client
+COOP_PUBLIC_SERVERS='{"hk":"wss://hk.example.com","us-west":"wss://us.example.com"}' pnpm build:coop-client
 ```
 
-Upload the contents of `dist-coop/` to the CDN. The first entry is the default node; `?server=us-west` selects another configured node. Production clients reject arbitrary WebSocket URL overrides.
+Upload the contents of `apps/web-coop/dist/` to the CDN. The first entry is the default node; `?mode=coop&server=us-west` selects another configured node. Production clients reject arbitrary WebSocket URL overrides.
 
 Build the server image with Buildah. The build uses an exact lockfile install in a disposable Node stage, bundles every JavaScript dependency, and copies only two minified files into an Alpine runtime:
 
@@ -78,7 +78,7 @@ After TLS is active, verify both paths:
 curl --fail https://hk.example.com/healthz
 ```
 
-Then open the CDN page with `?server=hk`, create a room, and join it from a second browser. Configure connection and request-rate limits at the reverse proxy; the application additionally enforces payload, room, connection, and combat-verification queue bounds.
+Then open the CDN page with `?mode=coop&server=hk`, create a room, and join it from a second browser. Configure connection and request-rate limits at the reverse proxy; the application additionally enforces payload, room, connection, and combat-verification queue bounds.
 
 ## Runtime settings
 
@@ -93,6 +93,6 @@ Then open the CDN page with `?server=hk`, create a room, and join it from a seco
 | `COOP_MAX_CONNECTIONS` | `256` | Concurrent upgraded WebSocket connections |
 | `COOP_DEV_LOG` | `0` | Verbose structured diagnostics; fatal server errors are always logged |
 
-For the measured one-core / 2 GiB profile, keep one replay worker, plan around 48 active rooms, and retain 64 as the admission ceiling. Memory is not the expected bottleneck at this size; authoritative replay CPU is. Raise the room ceiling only after running `npm run perf:coop-report` on the target CPU and observing production latency.
+For the measured one-core / 2 GiB profile, keep one replay worker, plan around 48 active rooms, and retain 64 as the admission ceiling. Memory is not the expected bottleneck at this size; authoritative replay CPU is. Raise the room ceiling only after running `pnpm perf:coop-report` on the target CPU and observing production latency.
 
 Never set `COOP_ALLOW_ANY_ORIGIN=1` on a public node. Treat image replacement as a disruptive deployment until room persistence or draining is implemented; update one region at a time during a quiet window.

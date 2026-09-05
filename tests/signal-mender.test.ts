@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { ShotBlueprint, Signal } from '../src/game/types';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { ShotBlueprint, Signal } from '@prism-bastion/game-core/game/types';
 import {
   getSignalCapability,
   MENDER_OUT_OF_COMBAT_HEAL_DELAY,
   resetSignalFullHealTimer,
   signalRegistry,
   updateSignalFullHeal,
-} from '../src/signals';
+} from '@prism-bastion/game-core/signals';
 import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {

@@ -129,5 +129,5 @@ Do not migrate only one side of a deliberate cross-component styling relationshi
 - No other component or test references a generated class name.
 - State uses semantic attributes or imported class tokens.
 - Global selectors and `:global(...)` uses are intentional and documented.
-- `npm run check` passes.
-- `npm run test:e2e` passes when the migrated styles affect browser layout or animation.
+- `pnpm check` passes.
+- `pnpm test:e2e` passes when the migrated styles affect browser layout or animation.

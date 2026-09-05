@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { signalRegistry } from '../src/signals';
-import { FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, surgeBodyPoints } from '../src/signals/visuals/geometry';
+import { signalRegistry } from '@prism-bastion/game-core/signals';
+import { FRACTURE_SHAPE, fractureSpikeAngles, fractureSpikePoints, surgeBodyPoints } from '@prism-bastion/web-shared/signals/visuals/geometry';
 
 describe('fracture signal geometry', () => {
   it('uses a dedicated shape instead of the legacy star', () => {

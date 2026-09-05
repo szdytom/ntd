@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getSignalCapability, signalRegistry } from '../src/signals';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Signal } from '../src/game/types';
+import { getSignalCapability, signalRegistry } from '@prism-bastion/game-core/signals';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Signal } from '@prism-bastion/game-core/game/types';
 import { addTestProjectile, placeSignalOnPath as placeSignal } from './helpers/combat';
 
 function addLethalProjectile(engine: GameEngine, signal: Signal): void {

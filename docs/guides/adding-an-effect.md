@@ -34,7 +34,7 @@ Use `frame.fin`, `fout`, `slope`, `easeIn()`, and `easeOut()` for time. Use `fra
 ## Register the definition
 
 - For a module-owned effect, include it in that module's `effects` array. The module registry registers it with each new engine.
-- For shared game feedback, add it to `src/effects/game-effects.ts` and its ID to `GAME_EFFECT_IDS` when callers benefit from a typed constant.
+- For shared game feedback, add it to `packages/web-shared/src/effects/game-effects.ts` and its ID to `GAME_EFFECT_IDS` when callers benefit from a typed constant.
 
 Duplicate IDs fail immediately during engine construction.
 

@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type WebSocket from 'ws';
-import { CoopRoom } from '../src/server/coop-room';
-import { hashCoopPlan } from '../src/coop/planning';
-import type { CoopPlayerId, CoopServerMessage } from '../src/coop/types';
-import { peerDefenseToFollow } from '../src/coop/viewing';
-import type { VerifyCombat } from '../src/server/combat-simulation';
+import { CoopRoom } from '../apps/coop-server/src/coop-room';
+import { hashCoopPlan } from '@prism-bastion/coop/planning';
+import type { CoopPlayerId, CoopServerMessage } from '@prism-bastion/coop/types';
+import { peerDefenseToFollow } from '@prism-bastion/coop/viewing';
+import type { VerifyCombat } from '@prism-bastion/coop/simulation';
 
 class FakeSocket {
   readyState = 1;

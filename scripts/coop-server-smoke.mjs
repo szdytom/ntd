@@ -11,8 +11,8 @@ const smokeDirectory = await mkdtemp(join(tmpdir(), 'prism-bastion-coop-'));
 const serverPath = join(smokeDirectory, 'server.mjs');
 const workerPath = join(smokeDirectory, 'combat-worker.mjs');
 await Promise.all([
-  copyFile(new URL('../dist-coop/server.mjs', import.meta.url), serverPath),
-  copyFile(new URL('../dist-coop/combat-worker.mjs', import.meta.url), workerPath),
+  copyFile(new URL('../apps/coop-server/dist/server.mjs', import.meta.url), serverPath),
+  copyFile(new URL('../apps/coop-server/dist/combat-worker.mjs', import.meta.url), workerPath),
 ]);
 const combatWorker = new Worker(pathToFileURL(workerPath));
 const workerResponse = new Promise((resolve, reject) => {
@@ -120,3 +120,4 @@ try {
   server.kill('SIGTERM');
   await rm(smokeDirectory, { recursive: true, force: true });
 }
+if (output.includes('ExperimentalWarning')) throw new Error(`Production server emitted an ExperimentalWarning:\n${output}`);

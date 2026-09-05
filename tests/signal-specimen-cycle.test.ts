@@ -6,7 +6,7 @@ import {
   ARCHIVE_SHIELD_PROJECTILE_FLIGHT,
   ARCHIVE_SHIELD_RESTORE_DELAY,
   createArchiveShieldCycle,
-} from '../src/signals/archive/specimen-cycle';
+} from '@prism-bastion/web-shared/signals/archive/specimen-cycle';
 
 describe('compendium shield cycle', () => {
   it('launches every two seconds, breaks on the fourth hit, and restores four seconds later', () => {

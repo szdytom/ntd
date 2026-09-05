@@ -3,11 +3,11 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import i18n from '../src/i18n';
-import zhCN from '../src/i18n/locales/zh-CN.json';
-import { App, TUTORIAL_OFFER_STORAGE_KEY } from '../src/ui/App';
-import { LEVEL_SELECTION_STORAGE_KEY } from '../src/ui/LevelSelect';
-import { AUTO_PAUSE_STORAGE_KEY } from '../src/ui/preferences';
+import i18n from '@prism-bastion/web-shared/i18n';
+import zhCN from '@prism-bastion/web-shared/i18n/locales/zh-CN.json';
+import { App, TUTORIAL_OFFER_STORAGE_KEY } from '@prism-bastion/web-single/App';
+import { LEVEL_SELECTION_STORAGE_KEY } from '@prism-bastion/web-single/LevelSelect';
+import { AUTO_PAUSE_STORAGE_KEY } from '@prism-bastion/web-shared/ui/preferences';
 
 beforeEach(() => {
   try {

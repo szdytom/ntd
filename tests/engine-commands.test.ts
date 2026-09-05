@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '../src/game/engine';
-import type { CombatEvent } from '../src/game/combat-events';
-import { DRAFT_BALANCE } from '../src/modules';
+import { FIXED_SIMULATION_STEP, GameEngine, WAVE_CLEAR_DELAY } from '@prism-bastion/game-core/game/engine';
+import type { CombatEvent } from '@prism-bastion/game-core/game/combat-events';
+import { DRAFT_BALANCE } from '@prism-bastion/game-core/modules';
 
 describe('engine command and view boundary', () => {
   it('sorts the creative module library by kind and then ascending rarity', () => {

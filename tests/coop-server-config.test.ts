@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { resolveCoopServerUrl } from '../src/coop/server-config';
-import { createWebSocketOriginPolicy } from '../src/server/origin-policy';
+import { resolveCoopServerUrl } from '../apps/web-coop/src/server-config';
+import { createWebSocketOriginPolicy } from '../apps/coop-server/src/origin-policy';
 
 describe('co-op public server selection', () => {
   const location = { search: '', protocol: 'https:', hostname: 'cdn.example' };

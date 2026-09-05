@@ -4,7 +4,7 @@ Use this reference after the storyboard and visible copy are approved.
 
 ## Keep ownership cohesive
 
-- Define each entry beside its module in `src/modules/<module>.thought.ts`.
+- Define each entry in `packages/web-shared/src/thoughts/<module>.thought.ts`.
 - Export the module-owned definition and register it through the Thought Index definition collection.
 - Keep `ThoughtDefinition` as the primitive data contract.
 - Use authoring factories for repeated combinations of beats, cues, loadout presentation, and cleanup. Do not hide unique story logic behind a broad abstraction.
@@ -117,7 +117,7 @@ Replay, section navigation, and scrubbing must reconstruct the same deterministi
 
 ## Localize all visible copy
 
-Add flat keys to `src/i18n/locales/en.json`, then run `npm run format:locales`. Follow the entry's established key shape for:
+Add flat keys to `packages/web-shared/src/i18n/locales/en.json`, then run `pnpm format:locales`. Follow the entry's established key shape for:
 
 - summary;
 - section titles;
@@ -150,12 +150,12 @@ Do not assert:
 Run focused checks first, then the project-wide checks appropriate to the change:
 
 ```sh
-npm test -- thoughts.test.ts thought-index.test.tsx
-npm run thoughts:report
-npm run typecheck
-npm run check:locales
-npm run lint
-npm run build
+pnpm test -- thoughts.test.ts thought-index.test.tsx
+pnpm thoughts:report
+pnpm typecheck
+pnpm check:locales
+pnpm lint
+pnpm build
 ```
 
 Also inspect the entry interactively:

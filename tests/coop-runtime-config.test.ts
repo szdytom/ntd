@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readCoopServerConfig } from '../src/server/config';
+import { readCoopServerConfig } from '../apps/coop-server/src/config';
 
 describe('co-op server runtime configuration', () => {
   it('provides bounded production defaults', () => {

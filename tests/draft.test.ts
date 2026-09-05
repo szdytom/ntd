@@ -5,10 +5,10 @@ import {
   calculateQualityCenter,
   rollModuleDraft,
   type DraftRollOptions,
-} from '../src/game/draft';
-import { createSeededRandom } from '../src/game/tower-generation';
-import { DRAFT_BALANCE, createModuleRegistry } from '../src/modules';
-import type { ModuleId } from '../src/game/types';
+} from '@prism-bastion/game-core/game/draft';
+import { createSeededRandom } from '@prism-bastion/game-core/game/tower-generation';
+import { DRAFT_BALANCE, createModuleRegistry } from '@prism-bastion/game-core/modules';
+import type { ModuleId } from '@prism-bastion/game-core/game/types';
 
 describe('module draft system', () => {
   const definitions = createModuleRegistry().list();

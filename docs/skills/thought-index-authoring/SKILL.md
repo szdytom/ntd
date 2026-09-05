@@ -129,7 +129,7 @@ Revise the storyboard if any gate fails. Do not compensate for weak visual proof
 When implementing, follow [implementation.md](references/implementation.md). At minimum:
 
 1. Run the focused Thought Index tests.
-2. Run `npm run thoughts:report` and review its advisory continuity findings.
+2. Run `pnpm thoughts:report` and review its advisory continuity findings.
 3. Run type checking and locale validation.
 4. Visually replay at normal speed, every progress marker, and at least one expanded-transcript layout.
 5. Check English and a longer locale for clipping, reflow, target drift, and loadout movement.

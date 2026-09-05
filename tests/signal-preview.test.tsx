@@ -2,11 +2,11 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import type { GameSnapshot } from '../src/game/types';
-import { Battlefield } from '../src/ui/Battlefield';
-import { SignalPreview } from '../src/ui/SignalPreview';
+import '@prism-bastion/web-shared/i18n';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { GameSnapshot } from '@prism-bastion/game-core/game/types';
+import { Battlefield } from '@prism-bastion/web-shared/ui/Battlefield';
+import { SignalPreview } from '@prism-bastion/web-shared/ui/SignalPreview';
 
 afterEach(cleanup);
 

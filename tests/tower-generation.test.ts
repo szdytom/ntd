@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSeededRandom, rollTowerStats, TOWER_STAT_BUDGET } from '../src/game/tower-generation';
+import { createSeededRandom, rollTowerStats, TOWER_STAT_BUDGET } from '@prism-bastion/game-core/game/tower-generation';
 
 describe('tower generation', () => {
   it('is deterministic for a seed', () => {

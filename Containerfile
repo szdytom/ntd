@@ -3,12 +3,16 @@ ARG ALPINE_RUNTIME_IMAGE=docker.io/library/alpine:3.22
 
 FROM ${NODE_BUILD_IMAGE} AS build
 WORKDIR /build
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-COPY coop-build.mjs ./
-COPY scripts/build-info.mjs scripts/build-info.mjs
-COPY src src
-RUN npm run build:coop-server
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/game-core/package.json packages/game-core/package.json
+COPY packages/coop/package.json packages/coop/package.json
+COPY apps/coop-server/package.json apps/coop-server/package.json
+RUN pnpm --filter @prism-bastion/coop-server... install --frozen-lockfile
+COPY packages/game-core packages/game-core
+COPY packages/coop packages/coop
+COPY apps/coop-server apps/coop-server
+RUN pnpm build:coop-server
 
 FROM ${ALPINE_RUNTIME_IMAGE} AS runtime
 ARG BUILD_DATE=unknown
@@ -26,7 +30,7 @@ RUN apk add --no-cache nodejs \
     && adduser -S -D -H -G prism prism
 
 WORKDIR /app
-COPY --from=build --chown=prism:prism /build/dist-coop/server.mjs /build/dist-coop/combat-worker.mjs ./
+COPY --from=build --chown=prism:prism /build/apps/coop-server/dist/server.mjs /build/apps/coop-server/dist/combat-worker.mjs ./
 
 ENV NODE_ENV=production \
     COOP_HOST=0.0.0.0 \

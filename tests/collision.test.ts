@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { segmentCircleHitTime, segmentConvexExitTime, segmentRegularPolygonHitTime } from '../src/game/collision';
-import { isInsideRegularShield } from '../src/signals/capabilities/shield';
+import { segmentCircleHitTime, segmentConvexExitTime, segmentRegularPolygonHitTime } from '@prism-bastion/game-core/game/collision';
+import { isInsideRegularShield } from '@prism-bastion/game-core/signals/capabilities/shield';
 
 describe('swept collision', () => {
   it('detects a circle crossed entirely within one step', () => {

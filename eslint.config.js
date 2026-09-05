@@ -4,12 +4,12 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'dist-coop/**', 'node_modules/**'],
+    ignores: ['dist/**', '**/dist/**', '**/dist-types/**', '**/*.tsbuildinfo', 'node_modules/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['packages/web-shared/src/**/*.{ts,tsx}', 'apps/web-single/src/**/*.{ts,tsx}', 'apps/web-coop/src/**/*.{ts,tsx}'],
     languageOptions: {
       globals: globals.browser,
     },
@@ -20,13 +20,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/server/**/*.ts'],
+    files: ['apps/coop-server/src/**/*.ts', 'packages/coop/src/**/*.ts', 'packages/game-core/src/**/*.ts'],
     languageOptions: {
       globals: globals.node,
     },
   },
   {
-    files: ['src/signals/**/*.{ts,tsx}'],
+    files: ['packages/game-core/src/signals/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [{ name: 'react', message: 'Signal definitions and interpreters must remain framework-independent.' }],

@@ -3,12 +3,12 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import { App } from '../src/ui/App';
-import { GameSession } from '../src/ui/GameSession';
-import { SettingsPanel } from '../src/ui/SettingsPanel';
-import { AUTO_PAUSE_STORAGE_KEY } from '../src/ui/preferences';
+import '@prism-bastion/web-shared/i18n';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { App } from '@prism-bastion/web-single/App';
+import { GameSession } from '@prism-bastion/web-single/GameSession';
+import { SettingsPanel } from '@prism-bastion/web-shared/ui/SettingsPanel';
+import { AUTO_PAUSE_STORAGE_KEY } from '@prism-bastion/web-shared/ui/preferences';
 
 beforeEach(() => {
   const storedValues = new Map<string, string>();

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getLevel, LEVELS, resolveSpawnEntrances } from '../src/game/config';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import { createRouteMap, legacyPathToGraph, resolveRoute } from '../src/game/path';
-import { selectTowerTarget } from '../src/game/targeting';
-import { SIGNAL_IDS, signalRegistry } from '../src/signals';
+import { getLevel, LEVELS, resolveSpawnEntrances } from '@prism-bastion/game-core/game/config';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import { createRouteMap, legacyPathToGraph, resolveRoute } from '@prism-bastion/game-core/game/path';
+import { selectTowerTarget } from '@prism-bastion/game-core/game/targeting';
+import { SIGNAL_IDS, signalRegistry } from '@prism-bastion/game-core/signals';
 
 describe('route map model', () => {
   it('resolves each leaf through its unique parent chain to the root', () => {

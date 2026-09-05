@@ -1,18 +1,12 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noEmit": true,
-    "lib": ["ES2022", "DOM"],
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    { "path": "packages/game-core" },
+    { "path": "packages/coop" },
+    { "path": "packages/web-shared" },
+    { "path": "apps/web-single" },
+    { "path": "apps/web-coop" },
+    { "path": "apps/coop-server" }
+  ]
 }

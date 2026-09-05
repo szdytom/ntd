@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import en from '../src/i18n/locales/en.json';
-import { CombatRuntime } from '../src/game/combat-runtime';
-import type { CombatEvent } from '../src/game/combat-events';
-import { DEFAULT_TOWER_ROTATION, FIXED_SIMULATION_STEP } from '../src/game/engine';
-import { createModuleRegistry } from '../src/modules';
-import { thoughtRegistry, ThoughtSceneDirector } from '../src/thoughts';
-import type { ThoughtCue, ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '../src/thoughts/types';
+import en from '@prism-bastion/web-shared/i18n/locales/en.json';
+import { CombatRuntime } from '@prism-bastion/game-core/game/combat-runtime';
+import type { CombatEvent } from '@prism-bastion/game-core/game/combat-events';
+import { DEFAULT_TOWER_ROTATION, FIXED_SIMULATION_STEP } from '@prism-bastion/game-core/game/engine';
+import { modulePresentationRegistry } from '@prism-bastion/web-shared/module-presentations';
+import { thoughtRegistry, ThoughtSceneDirector } from '@prism-bastion/web-shared/thoughts';
+import type { ThoughtCue, ThoughtLoadoutMode, ThoughtLoadoutPlacement } from '@prism-bastion/web-shared/thoughts/types';
 
 const maximumDirectorSteps = (director: ThoughtSceneDirector): number => {
   const seconds = director.definition.beats.reduce((total, beat) => {
@@ -46,10 +46,10 @@ const presentedTowerEnergyRatio = (director: ThoughtSceneDirector, towerIndex = 
 
 describe('thought registry', () => {
   it('uses each subject module display color for its towers', () => {
-    const modules = createModuleRegistry();
-
     for (const definition of thoughtRegistry.list()) {
-      expect(definition.towerColor).toBe(modules.require(definition.subject.moduleId).meta.displayColor);
+      expect(definition.towerColor).toBe(
+        modulePresentationRegistry.require(definition.subject.moduleId).meta.displayColor,
+      );
     }
   });
 

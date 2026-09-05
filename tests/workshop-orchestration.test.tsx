@@ -3,11 +3,11 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import { encodeOrchestration } from '../src/game/orchestration-codec';
-import { GameSession } from '../src/ui/GameSession';
-import { Workshop } from '../src/ui/Workshop';
+import '@prism-bastion/web-shared/i18n';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { encodeOrchestration } from '@prism-bastion/game-core/game/orchestration-codec';
+import { GameSession } from '@prism-bastion/web-single/GameSession';
+import { Workshop } from '@prism-bastion/web-shared/ui/Workshop';
 
 const renderWorkshop = (mode: 'creative' | 'standard' = 'creative') => {
   const engine = new GameEngine({ mode, seed: 41 });

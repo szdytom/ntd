@@ -2,8 +2,8 @@
 
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ANVIL_SHAPE, FRACTURE_SHAPE } from '../src/signals/visuals/geometry';
-import { SignalIcon } from '../src/ui/SignalIcon';
+import { ANVIL_SHAPE, FRACTURE_SHAPE } from '@prism-bastion/web-shared/signals/visuals/geometry';
+import { SignalIcon } from '@prism-bastion/web-shared/ui/SignalIcon';
 
 afterEach(cleanup);
 

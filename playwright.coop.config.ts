@@ -20,7 +20,7 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'env COOP_CLIENT_PORT=4273 COOP_SERVER_PORT=4274 npm run dev:coop',
+    command: 'env COOP_CLIENT_PORT=4273 COOP_SERVER_PORT=4274 pnpm dev:coop',
     url: 'http://127.0.0.1:4273',
     reuseExistingServer: false,
     timeout: 30_000,

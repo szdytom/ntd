@@ -1,0 +1,15 @@
+.coop-home-entry {
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #8ee7ff) 68%, transparent);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #f4fbff);
+  background: color-mix(in srgb, var(--accent, #8ee7ff) 14%, transparent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.coop-home-entry:hover,
+.coop-home-entry:focus-visible {
+  background: color-mix(in srgb, var(--accent, #8ee7ff) 24%, transparent);
+}

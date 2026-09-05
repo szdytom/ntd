@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPathSampler } from '../src/game/path';
+import { createPathSampler } from '@prism-bastion/game-core/game/path';
 
 describe('path sampler', () => {
   it('interpolates across segments and clamps past the end', () => {

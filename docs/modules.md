@@ -2,7 +2,7 @@
 
 > Document type: **Overview** — use this catalog to learn the available concepts before reading module implementations.
 
-The registry contains 40 modules in five compiler categories. Names below match module IDs and source files; localized display text lives in `src/i18n/locales/`.
+The registry contains 40 modules in five compiler categories. Names below match module IDs and runtime source files; localized display text lives in `packages/web-shared/src/i18n/locales/`.
 
 ## Projectile modules
 

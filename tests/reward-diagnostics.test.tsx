@@ -2,9 +2,9 @@
 
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import { GameSession } from '../src/ui/GameSession';
+import '@prism-bastion/web-shared/i18n';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { GameSession } from '@prism-bastion/web-single/GameSession';
 
 afterEach(() => cleanup());
 

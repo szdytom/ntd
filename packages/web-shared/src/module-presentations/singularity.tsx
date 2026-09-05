@@ -1,0 +1,68 @@
+import { shockwave } from '../effects/factories';
+import type { EffectDefinition } from '../effects/types';
+import { drawGlow } from '../game/glow';
+import { createModuleIcon } from './icons';
+import type { ModulePresentation } from './types';
+const SingularityIcon = createModuleIcon(<>
+  <circle className="module-icon__fill" cx="16" cy="16" r="7"/>
+  <path className="module-icon__line" d="M5 19C2 9 12 3 20 6c8 3 10 13 3 19"/>
+  <path className="module-icon__thin" d="M27 13c3 9-7 16-15 12"/>
+  <circle className="module-icon__fill" cx="6" cy="20" r="2"/>
+</>);
+const color = '#4c2a85';
+const stats = { radius: 150 } as const;
+const SINGULARITY_DASH: number[] = [5, 7];
+const effects: readonly EffectDefinition[] = [
+    shockwave({ id: 'module:singularity:deploy', lifetime: 0.5, radius: 68, stroke: 3.2, sides: 10, layer: 'ground', bloom: 0.9 }),
+    {
+        id: 'module:singularity:pull',
+        lifetime: 0.46,
+        layer: 'ground',
+        bloom: 0.75,
+        render: (frame, painter) => {
+            for (let index = 0; index < 4; index += 1) {
+                const angle = frame.rotation + index * Math.PI / 2 + frame.fin * 2.2;
+                const radius = 58 * (1 - frame.fin * frame.fin * frame.fin) + 12;
+                painter.lineAngle(frame.x + Math.cos(angle) * radius, frame.y + Math.sin(angle) * radius, angle + Math.PI, 22 * frame.fout, 2.4 * frame.fout, index % 2 ? '#ffffff' : frame.color, frame.fout);
+            }
+            painter.ring(frame.x, frame.y, 10 + frame.slope * 14, 2.5 * frame.fout, frame.color, frame.fout);
+        },
+    },
+];
+export const singularityModule: ModulePresentation = {
+    id: 'singularity',
+    icon: SingularityIcon,
+    meta: {
+        color, displayColor: '#4c2a85', tint: '#eee8ff'
+    },
+    effects,
+    renderProjectile: ({ ctx, projectile }) => {
+        const armed = projectile.age >= (projectile.shot.static?.armTime ?? 0);
+        drawGlow(ctx, projectile.position.x, projectile.position.y, 13 + (armed ? 22 : 9), color, armed ? 1 : 0.85);
+        ctx.save();
+        ctx.translate(projectile.position.x, projectile.position.y);
+        ctx.rotate(projectile.age * 0.75);
+        ctx.fillStyle = '#160d2b';
+        ctx.beginPath();
+        ctx.arc(0, 0, 13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = armed ? '#cbb8ff' : color;
+        ctx.lineWidth = 2.3;
+        for (let radius = 18; radius <= 25; radius += 7) {
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0.18, Math.PI * 1.55);
+            ctx.stroke();
+            ctx.rotate(Math.PI);
+        }
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = armed ? 0.2 + Math.sin(projectile.age * 4) * 0.05 : 0.1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.3;
+        ctx.setLineDash(SINGULARITY_DASH);
+        ctx.beginPath();
+        ctx.arc(projectile.position.x, projectile.position.y, projectile.shot.static?.gravity?.radius ?? stats.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+};

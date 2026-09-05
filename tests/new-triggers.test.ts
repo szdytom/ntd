@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Signal, Point, Projectile, ShotBlueprint } from '../src/game/types';
-import { createModuleRegistry } from '../src/modules';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Signal, Point, Projectile, ShotBlueprint } from '@prism-bastion/game-core/game/types';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {

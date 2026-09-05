@@ -1,6 +1,6 @@
-import { FIXED_SIMULATION_STEP, type GameEngine } from '../../src/game/engine';
-import { createProjectileState } from '../../src/game/projectile';
-import type { Point, Projectile, ShotBlueprint, Signal } from '../../src/game/types';
+import { FIXED_SIMULATION_STEP, type GameEngine } from '@prism-bastion/game-core/game/engine';
+import { createProjectileState } from '@prism-bastion/game-core/game/projectile';
+import type { Point, Projectile, ShotBlueprint, Signal } from '@prism-bastion/game-core/game/types';
 
 export function addTestProjectile(
   engine: GameEngine,

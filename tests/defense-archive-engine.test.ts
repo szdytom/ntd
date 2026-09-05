@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GameEngine, FIXED_SIMULATION_STEP } from '../src/game/engine';
-import type { DefenseCompletedReport, GameEvent, DefenseArchiveFact } from '../src/game/types';
+import { GameEngine, FIXED_SIMULATION_STEP } from '@prism-bastion/game-core/game/engine';
+import type { DefenseCompletedReport, GameEvent, DefenseArchiveFact } from '@prism-bastion/game-core/game/types';
 
 describe('engine defense archive telemetry', () => {
   it('publishes semantic tutorial facts only after successful actions', () => {

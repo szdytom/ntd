@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { findPathInterception } from '../src/game/interception';
-import { distance } from '../src/game/math';
-import { createPathSampler } from '../src/game/path';
+import { findPathInterception } from '@prism-bastion/game-core/game/interception';
+import { distance } from '@prism-bastion/game-core/game/math';
+import { createPathSampler } from '@prism-bastion/game-core/game/path';
 
 describe('path interception', () => {
   it('leads a target moving away on a straight path', () => {

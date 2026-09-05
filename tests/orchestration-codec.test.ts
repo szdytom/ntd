@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createModuleRegistry } from '../src/modules';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 import {
   decodeOrchestration,
   encodeOrchestration,
   ORCHESTRATION_MODULE_IDS,
-} from '../src/game/orchestration-codec';
-import { TARGETING_MODES } from '../src/game/types';
+} from '@prism-bastion/game-core/game/orchestration-codec';
+import { TARGETING_MODES } from '@prism-bastion/game-core/game/types';
 
 const BASE62_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 

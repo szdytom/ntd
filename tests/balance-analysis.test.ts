@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calculateDraftBalanceRows, calculateWaveBalanceRows, sampleTowerStatAverages } from '../src/game/balance-analysis';
-import { LEVELS, resolveSpawnEntrances } from '../src/game/config';
+import { calculateDraftBalanceRows, calculateWaveBalanceRows, sampleTowerStatAverages } from '@prism-bastion/game-core/game/balance-analysis';
+import { LEVELS, resolveSpawnEntrances } from '@prism-bastion/game-core/game/config';
 
 describe('balance report aggregation', () => {
   it('samples tower generation deterministically without freezing target averages', () => {

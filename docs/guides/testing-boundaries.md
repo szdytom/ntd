@@ -69,7 +69,7 @@ Similarly, an exact content sequence is a contract only when the product explici
 
 ## Reports are evidence, not gates
 
-`npm run balance:report` and other analysis outputs help humans compare tuning. Test the report generator for determinism, finite results, complete configured coverage, and internally consistent totals. Do not turn today's report rows into snapshots or pass/fail thresholds unless the team has explicitly adopted a stable non-balance constraint.
+`pnpm balance:report` and other analysis outputs help humans compare tuning. Test the report generator for determinism, finite results, complete configured coverage, and internally consistent totals. Do not turn today's report rows into snapshots or pass/fail thresholds unless the team has explicitly adopted a stable non-balance constraint.
 
 If a tuning change produces surprising results, review the report as design evidence. Do not make the unit suite enforce the previous baseline.
 

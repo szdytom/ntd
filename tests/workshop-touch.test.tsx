@@ -2,9 +2,9 @@
 
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
-import { GameEngine } from '../src/game/engine';
-import { Workshop } from '../src/ui/Workshop';
+import '@prism-bastion/web-shared/i18n';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import { Workshop } from '@prism-bastion/web-shared/ui/Workshop';
 
 const touch = (identifier: number, clientX: number, clientY: number): Touch => ({
   identifier,

@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CalibrationSlider } from '../src/ui/CalibrationSlider';
+import { CalibrationSlider } from '@prism-bastion/web-shared/ui/CalibrationSlider';
 
 afterEach(cleanup);
 

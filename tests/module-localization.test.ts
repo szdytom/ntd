@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import i18n from '../src/i18n';
-import en from '../src/i18n/locales/en.json';
-import zhCN from '../src/i18n/locales/zh-CN.json';
-import { formatDisplayNumber, moduleDetail } from '../src/i18n/presentation';
-import { createModuleRegistry } from '../src/modules';
+import i18n from '@prism-bastion/web-shared/i18n';
+import en from '@prism-bastion/web-shared/i18n/locales/en.json';
+import zhCN from '@prism-bastion/web-shared/i18n/locales/zh-CN.json';
+import { formatDisplayNumber, moduleDetail } from '@prism-bastion/web-shared/i18n/presentation';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 
 const placeholderPattern = /\{\{\s*([^},\s]+).*?\}\}/g;
 

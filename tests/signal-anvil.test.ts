@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getSignalCapability, signalRegistry } from '../src/signals';
-import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '../src/signals/capabilities/damage-cap';
-import { signalVisualRotation } from '../src/signals/visuals/canvas';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
+import { getSignalCapability, signalRegistry } from '@prism-bastion/game-core/signals';
+import { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from '@prism-bastion/game-core/signals/capabilities/damage-cap';
+import { signalVisualRotation } from '@prism-bastion/web-shared/signals/visuals/canvas';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Signal, Projectile, ShotBlueprint } from '@prism-bastion/game-core/game/types';
 import { addTestProjectile, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {

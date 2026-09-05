@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { literalSearchStrategy } from '../src/search/literal-search-strategy';
-import { pinyinSearchStrategy } from '../src/search/pinyin-search-strategy';
-import { createSearchEngine, type SearchStrategy } from '../src/search/search-engine';
-import zhCN from '../src/i18n/locales/zh-CN.json';
+import { literalSearchStrategy } from '@prism-bastion/web-shared/search/literal-search-strategy';
+import { pinyinSearchStrategy } from '@prism-bastion/web-shared/search/pinyin-search-strategy';
+import { createSearchEngine, type SearchStrategy } from '@prism-bastion/web-shared/search/search-engine';
+import zhCN from '@prism-bastion/web-shared/i18n/locales/zh-CN.json';
 
 const search = createSearchEngine([
   literalSearchStrategy,

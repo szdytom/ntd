@@ -1,0 +1,48 @@
+import type { GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { TowerProgram } from '@prism-bastion/game-core/game/types';
+import { Trans, useTranslation } from 'react-i18next';
+import { moduleShortName } from '../i18n/presentation';
+import { TriggerNode } from './TriggerNode';
+import { EnergyBolt } from './EnergyBolt';
+import { thoughtRegistry } from '../thoughts';
+import './ProgramReadout.css';
+
+export function ProgramReadout({ program, engine, maxEnergy, onOpenThought }: { program: TowerProgram; engine: GameEngine; maxEnergy: number; onOpenThought?: (thoughtId: string) => void }) {
+  const { t } = useTranslation();
+  const capacityWarning = program.shots.length > 0 && program.energyCost > maxEnergy
+    ? t('program.capacity', { required: program.energyCost, capacity: maxEnergy }) : null;
+  const diagnostic = program.diagnostics.find((candidate) => candidate.severity === 'error')
+    ?? program.diagnostics[0];
+  const warning = diagnostic
+    ? t(`program.diagnostics.${diagnostic.code}`, {
+      module: diagnostic.moduleId ? moduleShortName(t, diagnostic.moduleId) : '',
+      related: diagnostic.relatedModuleId ? moduleShortName(t, diagnostic.relatedModuleId) : '',
+    })
+    : capacityWarning;
+  const diagnosticThought = diagnostic ? thoughtRegistry.forDiagnostic(diagnostic.code) : undefined;
+  const hasTrigger = program.shots.some((shot) => shot.trigger);
+  const summary = program.shots.length === 0 ? t('program.empty') : <Trans
+    i18nKey="program.summary"
+    values={{
+      casts: program.shots.length,
+      energy: program.energyCost,
+      projectiles: program.projectileCount,
+      triggers: program.triggerCount > 0 ? t('program.triggerPart', { count: program.triggerCount }) : '',
+      wrap: program.wraps > 0 ? t('program.wrapPart') : '',
+    }}
+    components={{ energyIcon: <EnergyBolt /> }}
+  />;
+  return (
+    <div className="program-output" data-tutorial-program>
+      <div className={`program-readout ${warning ? 'warning' : ''}`}>
+        <div><strong>{summary}</strong><small>{warning ?? (program.wraps > 0
+          ? t('program.wrapped') : hasTrigger
+            ? t('program.triggered') : t('program.valid'))}</small></div>
+        {diagnosticThought && onOpenThought ? <button className="program-thought-link" onClick={() => onOpenThought(diagnosticThought.id)}>{t('thoughtIndex.explainDiagnostic')}</button> : null}
+      </div>
+      {!hasTrigger ? null : <div className="trigger-trace"><small>{t('program.payload')}</small><div>
+        {program.shots.map((shot, index) => <TriggerNode key={`${shot.source}-${index}`} shot={shot} engine={engine} />)}
+      </div></div>}
+    </div>
+  );
+}

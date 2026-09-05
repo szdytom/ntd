@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { SignalSpatialIndex } from '../src/game/spatial-index';
-import { selectTowerTarget } from '../src/game/targeting';
-import type { Signal, Tower } from '../src/game/types';
+import { SignalSpatialIndex } from '@prism-bastion/game-core/game/spatial-index';
+import { selectTowerTarget } from '@prism-bastion/game-core/game/targeting';
+import type { Signal, Tower } from '@prism-bastion/game-core/game/types';
 
 const signal = (id: number, x: number, hp: number, progress: number): Signal => ({
   id,

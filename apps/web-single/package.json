@@ -1,0 +1,16 @@
+{
+  "name": "@prism-bastion/web-single",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./*": "./src/*" },
+  "dependencies": {
+    "@prism-bastion/game-core": "workspace:*",
+    "@prism-bastion/web-shared": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-i18next": "^17.0.12"
+  },
+  "devDependencies": { "esbuild": "^0.28.2" },
+  "scripts": { "build": "node build.mjs", "typecheck": "tsc -p tsconfig.json" }
+}

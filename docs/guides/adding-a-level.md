@@ -2,7 +2,7 @@
 
 > Document type: **Guide** — follow this page to add a map, routes, tower pads, and waves without tracing the engine.
 
-Levels are data entries in `src/game/config.ts`. The UI, engine, route renderer, wave preview, and Creative mode discover them through `LEVELS`.
+Levels are data entries in `packages/game-core/src/game/config.ts`. The UI, engine, route renderer, wave preview, and Creative mode discover them through `LEVELS`.
 
 ## 1. Choose route geometry
 
@@ -69,7 +69,7 @@ Add matching `levels.<id>.name` and `levels.<id>.description` keys to both local
 
 1. Update level-count assertions and add a focused case in `tests/level-config.test.ts`.
 2. Test root, entrance, confluence, pad, wave, and boss-placement invariants that are specific to the new map.
-3. Run `npm run check:locales` and the route/level tests.
+3. Run `pnpm check:locales` and the route/level tests.
 4. Play the map in Standard and Creative modes.
 5. Inspect route arrows, entrance markers, core placement, tower selection, and narrow-screen scaling.
 

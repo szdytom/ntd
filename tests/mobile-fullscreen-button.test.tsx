@@ -3,8 +3,8 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import '../src/i18n';
-import { MobileFullscreenButton } from '../src/ui/MobileFullscreenButton';
+import '@prism-bastion/web-shared/i18n';
+import { MobileFullscreenButton } from '@prism-bastion/web-shared/ui/MobileFullscreenButton';
 
 const fullscreenDescriptor = Object.getOwnPropertyDescriptor(document.documentElement, 'requestFullscreen');
 const orientationDescriptor = Object.getOwnPropertyDescriptor(globalThis.screen, 'orientation');

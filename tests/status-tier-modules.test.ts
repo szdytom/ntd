@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GameEngine } from '../src/game/engine';
-import type { Signal, Projectile, ShotBlueprint } from '../src/game/types';
-import { createModuleRegistry } from '../src/modules';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Signal, Projectile, ShotBlueprint } from '@prism-bastion/game-core/game/types';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 import { addTestProjectile as addProjectile, advanceEngineUntil as advanceUntil, placeSignalOnPath } from './helpers/combat';
 
 const placeSignal = (engine: GameEngine, signal: Signal, pathDistance: number): void => {
@@ -99,7 +99,7 @@ describe('tiered damage status modules', () => {
     if (!shot) throw new Error('Expected a compiled burning shot');
     fireAt(engine, shot, signal);
     advanceUntil(engine, () => signal.statuses.length === 3);
-    const spawnEffect = vi.spyOn(engine.effects, 'spawn');
+    const spawnEffect = vi.spyOn(engine.visuals, 'spawn');
 
     advanceUntil(engine, () => false, 0.5);
 

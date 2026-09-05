@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CoopClient } from '../src/coop/client';
+import { CoopClient } from '../apps/web-coop/src/client';
 
 const SESSION_KEY = 'prism-bastion-coop-session-v2';
 const LEGACY_SESSION_KEY = 'prism-bastion-coop-session-v1';

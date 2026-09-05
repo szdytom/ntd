@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ECONOMY_BALANCE } from '../src/game/balance';
-import { applyCoopPlanningCommand, createInitialCoopPlan, hashCoopPlan } from '../src/coop/planning';
+import { ECONOMY_BALANCE } from '@prism-bastion/game-core/game/balance';
+import { applyCoopPlanningCommand, createInitialCoopPlan, hashCoopPlan } from '@prism-bastion/coop/planning';
 
 describe('co-op planning model', () => {
   it('creates deterministic but seat-specific tower plans', () => {

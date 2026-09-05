@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2022"], "types": ["node"], "rootDir": "src", "outDir": "dist-types" },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../../packages/game-core" }, { "path": "../../packages/coop" }]
+}

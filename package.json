@@ -3,15 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
-    "build": "node build.mjs",
-    "build:coop": "node coop-build.mjs",
-    "build:coop-client": "node coop-build.mjs --client-only",
-    "build:coop-server": "node coop-build.mjs --server-only",
-    "start:coop": "node dist-coop/server.mjs",
+    "build": "pnpm --filter @prism-bastion/web-single build",
+    "build:coop": "pnpm build:coop-client && pnpm build:coop-server",
+    "build:coop-client": "pnpm --filter @prism-bastion/web-coop build",
+    "build:coop-server": "pnpm --filter @prism-bastion/coop-server build",
+    "start:coop": "node apps/coop-server/dist/server.mjs",
     "balance:report": "node --import tsx scripts/balance-report.ts",
     "check:cjk": "node scripts/check-cjk.mjs",
     "check:locales": "node scripts/check-locales.mjs",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
     "dev": "node dev.mjs",
     "dev:coop": "node coop-dev.mjs",
     "format:locales": "node scripts/format-locales.mjs",
@@ -24,17 +26,8 @@
     "test:e2e:coop": "playwright test --config playwright.coop.config.ts",
     "test:server:coop": "node scripts/coop-server-smoke.mjs",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "check": "npm run check:cjk && npm run check:locales && npm run lint && npm run typecheck && npm run test && npm run build && npm run build:coop && npm run test:server:coop"
-  },
-  "dependencies": {
-    "i18next": "^26.4.0",
-    "pinyin-pro": "^3.29.3",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-i18next": "^17.0.12",
-    "ws": "^8.21.3",
-    "zod": "^4.5.4"
+    "typecheck": "tsc -b --pretty false",
+    "check": "pnpm check:cjk && pnpm check:locales && pnpm check:boundaries && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build:coop && pnpm test:server:coop"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

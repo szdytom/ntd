@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getSignalCapability, signalRegistry } from '../src/signals';
-import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '../src/signals/capabilities/shield';
-import type { Signal } from '../src/game/types';
+import { getSignalCapability, signalRegistry } from '@prism-bastion/game-core/signals';
+import { absorbSignalShieldDamage, createSignalShield, isInsideRegularShield, updateSignalShield } from '@prism-bastion/game-core/signals/capabilities/shield';
+import type { Signal } from '@prism-bastion/game-core/game/types';
 
 const shieldConfig = getSignalCapability(signalRegistry.require('crown'), 'shield');
 if (!shieldConfig) throw new Error('Expected shield capability');

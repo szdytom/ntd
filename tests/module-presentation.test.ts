@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createModuleRegistry } from '../src/modules';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
+import { modulePresentationRegistry } from '@prism-bastion/web-shared/module-presentations';
 import {
   MINIMUM_MODULE_UI_CONTRAST,
   contrastAgainstWhite,
   moduleUiColor,
-} from '../src/ui/modulePresentation';
+} from '@prism-bastion/web-shared/ui/modulePresentation';
 
 describe('module UI colors', () => {
   it('gives every module theme at least 3:1 contrast against white', () => {
@@ -20,13 +21,16 @@ describe('module UI colors', () => {
     const modules = createModuleRegistry();
     expect(modules.require('timer-trigger').meta.color).toBe('#fee440');
     expect(modules.require('void-beam').meta.color).toBe('#98ffa9');
-    expect(modules.require('timer-trigger').meta.displayColor).toBe('#a7952a');
-    expect(modules.require('void-beam').meta.displayColor).toBe('#61a36c');
+    expect(modulePresentationRegistry.require('timer-trigger').meta.displayColor).toBe('#a7952a');
+    expect(modulePresentationRegistry.require('void-beam').meta.displayColor).toBe('#61a36c');
   });
 
   it('stores adjusted and original display colors explicitly', () => {
-    const modules = createModuleRegistry().list();
-    expect(modules.filter((module) => module.meta.displayColor === module.meta.color)).toHaveLength(23);
-    expect(modules.filter((module) => module.meta.displayColor !== module.meta.color)).toHaveLength(17);
+    const modules = createModuleRegistry().list().map((module) => ({
+      color: module.meta.color,
+      displayColor: modulePresentationRegistry.require(module.id).meta.displayColor,
+    }));
+    expect(modules.filter((module) => module.displayColor === module.color)).toHaveLength(23);
+    expect(modules.filter((module) => module.displayColor !== module.color)).toHaveLength(17);
   });
 });

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createCoopDraftRuntime, generateCoopDraftOffers, resolveCoopDraftDecision } from '../src/coop/draft';
-import { createInitialCoopPlan } from '../src/coop/planning';
-import { COOP_MODULE_POOL, createCoopPool } from '../src/coop/pool';
-import { ORCHESTRATION_MODULE_IDS } from '../src/game/orchestration-codec';
+import { createCoopDraftRuntime, generateCoopDraftOffers, resolveCoopDraftDecision } from '@prism-bastion/coop/draft';
+import { createInitialCoopPlan } from '@prism-bastion/coop/planning';
+import { COOP_MODULE_POOL, createCoopPool } from '@prism-bastion/coop/pool';
+import { ORCHESTRATION_MODULE_IDS } from '@prism-bastion/game-core/game/orchestration-codec';
 
 describe('co-op shared draft', () => {
   const plans = {

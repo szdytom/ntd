@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameEngine } from '../src/game/engine';
+import { GameEngine } from '@prism-bastion/game-core/game/engine';
 
 function engineWithSignal(): GameEngine {
   const engine = new GameEngine({ mode: 'creative', seed: 77 });

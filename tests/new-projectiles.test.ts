@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createModuleRegistry } from '../src/modules';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 
 describe('premium baseline projectiles', () => {
   const registry = createModuleRegistry();

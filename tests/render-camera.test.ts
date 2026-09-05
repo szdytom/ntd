@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveRenderBounds } from '../src/game/renderer';
+import { resolveRenderBounds } from '@prism-bastion/web-shared/game/renderer';
 
 describe('render camera', () => {
   it('keeps the default renderer on the full world', () => {

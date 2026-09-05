@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleRegistry, type ModuleDefinition } from '../src/modules';
+import { ModuleRegistry, type ModuleDefinition } from '@prism-bastion/game-core/modules';
 
 const TestIcon = () => null;
 

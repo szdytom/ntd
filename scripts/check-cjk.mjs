@@ -3,11 +3,11 @@ import { join, relative } from 'node:path';
 
 const allowed = (path) => (
   path.startsWith('docs/')
-  || path.startsWith('src/i18n/locales/')
+  || path.startsWith('packages/web-shared/src/i18n/locales/')
   || /^README(?:\.[^.]+)?\.md$/.test(path)
 );
 const cjk = /[\u3400-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]/u;
-const ignoredDirectories = new Set(['.git', 'dist', 'node_modules', 'test-results']);
+const ignoredDirectories = new Set(['.git', 'dist', 'dist-types', 'node_modules', 'test-results', 'playwright-report']);
 const collectFiles = (directory) => readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
   if (entry.isDirectory() && ignoredDirectories.has(entry.name)) return [];
   const absolutePath = join(directory, entry.name);

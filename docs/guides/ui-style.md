@@ -22,7 +22,7 @@ Avoid glass panels, blurred backdrops, soft gray card stacks, gradients used as 
 
 ## Project palette and line system
 
-The foundation tokens in [`foundation.css`](../../src/styles/foundation.css) establish the stable palette:
+The foundation tokens in [`foundation.css`](../../packages/web-shared/src/styles/foundation.css) establish the stable palette:
 
 | Role | Token | Value | Typical use |
 | --- | --- | --- | --- |
@@ -64,7 +64,7 @@ Prefer dividing one parent rectangle directly over nesting multiple bordered box
 
 ### Arc Workshop
 
-[`Workshop.tsx`](../../src/ui/Workshop.tsx) and [`Workshop.css`](../../src/ui/Workshop.css) organize one tower-programming task into a planar instrument:
+[`Workshop.tsx`](../../packages/web-shared/src/ui/Workshop.tsx) and [`Workshop.css`](../../packages/web-shared/src/ui/Workshop.css) organize one tower-programming task into a planar instrument:
 
 ```text
 ┌──────────────────────── yellow identity / close strip ───────────────────────┐
@@ -96,7 +96,7 @@ At `620px` and below, the Workshop becomes a vertical document: tower context, p
 
 ### Signal Compendium
 
-[`SignalArchive.tsx`](../../src/ui/SignalArchive.tsx) and [`SignalArchive.css`](../../src/ui/SignalArchive.css) use a different rectangular hierarchy because the task is inspection rather than construction:
+[`SignalArchive.tsx`](../../apps/web-single/src/SignalArchive.tsx) and [`SignalArchive.css`](../../apps/web-single/src/SignalArchive.css) use a different rectangular hierarchy because the task is inspection rather than construction:
 
 ```text
 ┌─ back ─┬──────────── title ────────────┬─ language ─┬─ signal seal ─┐

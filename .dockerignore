@@ -1,0 +1,9 @@
+.git
+.codex
+node_modules
+**/dist
+**/dist-types
+**/*.tsbuildinfo
+test-results
+playwright-report
+*.log

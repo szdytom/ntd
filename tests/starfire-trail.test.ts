@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FIXED_SIMULATION_STEP, GameEngine } from '../src/game/engine';
-import type { Projectile, ShotBlueprint, Signal } from '../src/game/types';
-import { createModuleRegistry } from '../src/modules';
+import { FIXED_SIMULATION_STEP, GameEngine } from '@prism-bastion/game-core/game/engine';
+import type { Projectile, ShotBlueprint, Signal } from '@prism-bastion/game-core/game/types';
+import { createModuleRegistry } from '@prism-bastion/game-core/modules';
 import { addTestProjectile, advanceEngineFor as advance } from './helpers/combat';
 
 const addProjectile = (
@@ -45,7 +45,7 @@ describe('Starfire Wake', () => {
     const engine = new GameEngine({ mode: 'creative', levelId: 'starter-elbow', seed: 157 });
     const shot = engine.modules.compile(['starfire-trail', 'void-beam']).shots[0];
     if (!shot) throw new Error('Expected a Starfire Wake void beam');
-    const spawnEffect = vi.spyOn(engine.effects, 'spawn');
+    const spawnEffect = vi.spyOn(engine.visuals, 'spawn');
     addProjectile(engine, shot, { x: 100, y: 100 }, { x: shot.speed, y: 0 });
 
     advance(engine, 0.3);

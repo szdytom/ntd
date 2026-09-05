@@ -7,11 +7,11 @@
 Use Node.js 22 or newer. Install the lockfile exactly, then start the development server:
 
 ```bash
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Open <http://localhost:4173>. The development process watches TypeScript, CSS, and GLSL imports and serves `dist/` with source maps.
+Open <http://localhost:4173>. The development process watches TypeScript, CSS, and GLSL imports and serves `apps/web-single/dist/` with source maps.
 
 ## Choose the smallest validation loop
 
@@ -19,31 +19,31 @@ Run the narrowest relevant check while editing, then run the full check before h
 
 | Command | Use |
 | --- | --- |
-| `npm run lint` | ESLint across the repository |
-| `npm run typecheck` | Strict TypeScript checking without output |
-| `npm test` | Vitest unit and component suite |
-| `npm run test:e2e` | Playwright browser smoke tests |
-| `npm run format:locales` | Complete and canonically format locale resources |
-| `npm run check:locales` | Flat, aligned, formatted locale resources and module placeholders |
-| `npm run check:cjk` | Source-language boundary outside docs and locales |
-| `npm run perf:report` | Spatial-index comparison workload |
-| `npm run build` | Minified static assets in `dist/` |
-| `npm run check` | CJK, locale, lint, type, unit/component, and production-build checks |
+| `pnpm lint` | ESLint across the repository |
+| `pnpm typecheck` | Strict TypeScript checking without output |
+| `pnpm test` | Vitest unit and component suite |
+| `pnpm test:e2e` | Playwright browser smoke tests |
+| `pnpm format:locales` | Complete and canonically format locale resources |
+| `pnpm check:locales` | Flat, aligned, formatted locale resources and module placeholders |
+| `pnpm check:cjk` | Source-language boundary outside docs and locales |
+| `pnpm perf:report` | Spatial-index comparison workload |
+| `pnpm build` | Minified single-player assets in `apps/web-single/dist/` |
+| `pnpm check` | CJK, locale, lint, type, unit/component, and production-build checks |
 
 For one Vitest file, pass it through the script:
 
 ```bash
-npm test -- tests/compiler.test.ts
+pnpm test -- tests/compiler.test.ts
 ```
 
 Tests protect software contracts, not the current balance baseline. Read [Testing boundaries](testing-boundaries.md) before asserting production damage, energy, signal stats, wave composition, map coordinates, or report totals.
 
 ## Match the repository boundaries
 
-- Put deterministic gameplay state and rules in `src/game/`.
-- Put module-specific icon geometry, compilation, hooks, effects, and projectile painting in one `src/modules/<id>.tsx` file.
-- Put reusable effect machinery in `src/effects/`.
-- Keep one exported React component per `src/ui/*.tsx` file and import its same-named stylesheet.
+- Put deterministic gameplay state and rules in `packages/game-core/src/game/`.
+- Split module runtime definitions under `packages/game-core/src/modules/` from browser presentation under `packages/web-shared/src/module-presentations/`.
+- Put reusable browser effect machinery in `packages/web-shared/src/effects/`.
+- Keep shared React components under `packages/web-shared/src/ui/`; single-only and co-op-only screens belong to their app workspace.
 - Resolve every user-facing string through i18next.
 - Add regression coverage beside the subsystem tests rather than relying only on a browser smoke test.
 
@@ -51,7 +51,7 @@ Tests protect software contracts, not the current balance baseline. Read [Testin
 
 1. Inspect `git diff` and make sure unrelated user changes are untouched.
 2. Run the focused tests that demonstrate the behavior.
-3. Run `npm run check`.
+3. Run `pnpm check`.
 4. For visual work, inspect both WebGL2 and Canvas fallback behavior at narrow and wide viewport sizes.
 5. State any check that could not run and why.
 
