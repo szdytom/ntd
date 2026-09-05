@@ -277,14 +277,14 @@ const inspectLoadoutContinuity = (definition: ThoughtDefinition): readonly Chore
   for (const beat of definition.beats) {
     const beatCues: readonly ThoughtCue[] = beat.cues ?? [{
       id: beat.id,
-      actions: beat.actions,
-      duration: beat.duration,
-      waitFor: beat.waitFor,
-      timeout: beat.timeout,
-      highlightSlots: beat.highlightSlots,
+      ...(beat.actions !== undefined ? { actions: beat.actions } : {}),
+      ...(beat.duration !== undefined ? { duration: beat.duration } : {}),
+      ...(beat.waitFor !== undefined ? { waitFor: beat.waitFor } : {}),
+      ...(beat.timeout !== undefined ? { timeout: beat.timeout } : {}),
+      ...(beat.highlightSlots !== undefined ? { highlightSlots: beat.highlightSlots } : {}),
     }];
     for (const cue of beatCues) {
-      const nextMode = cue.loadoutMode ?? mode;
+      const nextMode: ThoughtLoadoutMode = cue.loadoutMode ?? mode;
       if (mode === 'dialog' && nextMode !== 'dialog') finishSessions();
 
       if (cue.loadoutVisibleSlots !== undefined) {

@@ -7,6 +7,7 @@
     { "path": "packages/web-shared" },
     { "path": "apps/web-single" },
     { "path": "apps/web-coop" },
-    { "path": "apps/coop-server" }
+    { "path": "apps/coop-server" },
+    { "path": "scripts" }
   ]
 }

@@ -1,8 +1,8 @@
 import type WebSocket from 'ws';
+import { CoopGameController } from '@prism-bastion/coop/controller';
 import { createInitialCoopPlan, hashCoopPlan } from '@prism-bastion/coop/planning';
 import type { CoopPlayerPlan, CoopTowerPlan } from '@prism-bastion/coop/types';
 import { LEVELS } from '@prism-bastion/game-core/game/config';
-import { GameEngine } from '@prism-bastion/game-core/game/engine';
 import type { ModuleId } from '@prism-bastion/game-core/game/types';
 import { CoopRoom } from '../apps/coop-server/src/coop-room';
 
@@ -75,21 +75,21 @@ interface CombatMeasurement {
 const runCombat = (createPlan: PlanFactory): CombatMeasurement => {
   const plan = createPlan();
   const setupStarted = performance.now();
-  const engine = new GameEngine({ mode: 'coop', levelId: level.id, difficultyId: 'extreme', seed: 0 });
-  engine.applyCoopPlan(plan);
+  const controller = new CoopGameController({ levelId: level.id, difficultyId: 'extreme', seed: 0 });
+  controller.applyPlan(plan);
   const setupMs = performance.now() - setupStarted;
   let leaks = -1;
-  engine.subscribe((event) => {
-    if (event.type === 'coop-phase-completed') leaks = event.leaks.length;
+  controller.engine.subscribe((event) => {
+    if (event.type === 'combat-phase-completed') leaks = event.result.leaks.length;
   });
-  engine.startCoopCombat({
+  controller.startCombat({
     phaseId: 1,
     planHash: hashCoopPlan(plan),
     wave: level.waves.length,
     kind: 'local-defense',
   });
   const simulationStarted = performance.now();
-  const completed = engine.fastForwardCoopCombat();
+  const completed = controller.fastForward();
   const simulationMs = performance.now() - simulationStarted;
   if (!completed || leaks < 0) throw new Error('Benchmark combat did not complete');
   return { setupMs, simulationMs, leaks };
@@ -161,19 +161,20 @@ const roomMemory = retainedBytesPerItem(2_000, (index) => {
     difficultyId: 'extreme',
     seed: index,
     onClosed: () => {},
+    verifyCombat: () => { throw new Error('Idle room benchmark must not start combat'); },
   });
   room.join('Beta', new FakeSocket() as unknown as WebSocket);
   return room;
 });
 const engineMemory = retainedBytesPerItem(200, () => {
-  const engine = new GameEngine({ mode: 'coop', levelId: level.id, difficultyId: 'extreme', seed: 0 });
-  engine.applyCoopPlan(realisticPlan());
-  return engine;
+  const controller = new CoopGameController({ levelId: level.id, difficultyId: 'extreme', seed: 0 });
+  controller.applyPlan(realisticPlan());
+  return controller;
 });
 
 console.log([
   '\nRetained heap estimates (forced GC)',
   `  room state + two fake sockets: ${(roomMemory.bytes / 1024).toFixed(1)} KiB/room (${roomMemory.retained.length} sampled)`,
-  `  idle 4-tower GameEngine:       ${(engineMemory.bytes / 1024).toFixed(1)} KiB/engine (${engineMemory.retained.length} sampled)`,
+  `  idle 4-tower co-op controller: ${(engineMemory.bytes / 1024).toFixed(1)} KiB/controller (${engineMemory.retained.length} sampled)`,
   '  Excludes native WebSocket buffers, V8 headroom, process baseline, proxy, and container overhead.',
 ].join('\n'));
