@@ -1,4 +1,6 @@
 packages:
   - packages/*
   - apps/*
+allowBuilds:
+  esbuild: false
 minimumReleaseAge: 0
