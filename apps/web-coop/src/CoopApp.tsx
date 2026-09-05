@@ -39,6 +39,10 @@ export function CoopApp({ onExit }: { onExit: () => void }) {
   const leaveRoom = (): void => {
     setThoughtOpen(null);
     runtime.leaveRoom();
+  };
+
+  const exitCoop = (): void => {
+    leaveRoom();
     onExit();
   };
 
@@ -53,7 +57,7 @@ export function CoopApp({ onExit }: { onExit: () => void }) {
       error={runtime.error}
       onCreateRoom={runtime.createRoom}
       onJoinRoom={runtime.joinRoom}
-      onBack={leaveRoom}
+      onBack={exitCoop}
     />;
   }
 
