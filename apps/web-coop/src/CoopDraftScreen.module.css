@@ -18,13 +18,13 @@
 .draftHeadActions > .abandonButton[data-selected='true'] { background: var(--yellow); box-shadow: inset 0 -7px 0 var(--ink); }
 .draftWorkspace { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
 
-.localOffer { position: relative; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); padding-top: 18px; background: #fff; }
-.localOffer > h2 { margin: 0 260px 0 18px; font-size: 23px; letter-spacing: -.03em; }
-.choiceGrid { display: grid; min-width: 0; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 15px; padding: 10px; border-top: 2px solid var(--ink); background: #efedf3; }
+.localOffer { position: relative; display: grid; min-width: 0; min-height: 0; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); padding-top: 18px; background: #fff; }
+.localOffer > h2 { min-width: 0; margin: 0 18px; overflow: hidden; font-size: 23px; letter-spacing: -.03em; text-overflow: ellipsis; white-space: nowrap; }
+.choiceGrid { display: grid; min-width: 0; min-height: 0; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 15px; padding: 10px; border-top: 2px solid var(--ink); background: #efedf3; }
 .abandonButton { min-height: 42px; padding: 8px 12px; border: 2px solid var(--ink); border-radius: 0; color: var(--ink); background: #fff4c2; font-size: 14px; font-weight: 850; cursor: pointer; }
 .abandonButton:hover:not(:disabled) { background: var(--yellow); }
 .abandonButton:disabled { border-style: dashed; color: #77717f; background: #efedf3; cursor: not-allowed; }
-.lockedNotice { position: absolute; top: 20px; right: 18px; max-width: 235px; margin: 0; color: #625d70; font-size: 14px; font-weight: 750; text-align: right; }
+.lockedNotice { align-self: center; margin: 0 18px 0 0; color: #625d70; font-size: 14px; font-weight: 750; text-align: right; white-space: nowrap; }
 
 .peerOffer { position: relative; z-index: 3; display: grid; min-width: 0; min-height: 112px; grid-template-columns: minmax(170px, .7fr) minmax(400px, 1.6fr) minmax(170px, .7fr); border-bottom: 2px solid var(--ink); background: #e9fbf5; }
 .peerIdentity { display: grid; min-width: 0; align-content: center; padding: 15px 20px; }
@@ -76,9 +76,9 @@
   .draftHeadActions > .abandonButton { grid-column: 1 / -1; grid-row: 2; min-height: 48px; border-width: 2px 0 0; }
   .draftHeadActions > .screenSettings { grid-column: 2; grid-row: 1; }
   .coopProgress { grid-column: 1; grid-row: 1; }
-  .localOffer { grid-template-rows: auto auto minmax(0, 1fr); }
+  .localOffer { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr); }
   .localOffer > h2 { margin-right: 18px; }
-  .lockedNotice { position: static; grid-row: 2; max-width: none; margin: 8px 18px 0; text-align: left; }
+  .lockedNotice { grid-column: 1; grid-row: 2; margin: 8px 18px 0; text-align: left; white-space: normal; }
   .choiceGrid { grid-row: 3; grid-template-columns: 1fr; }
   .peerOffer { grid-template-columns: minmax(0, 1fr) 138px; }
   .peerIdentity { grid-column: 1; grid-row: 1; }

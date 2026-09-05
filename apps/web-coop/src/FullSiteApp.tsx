@@ -55,7 +55,16 @@ export function FullSiteApp() {
   }, [coopMode]);
 
   if (!coopMode) {
-    return <SinglePlayerApp homeActions={<button type="button" className="coop-home-entry" onClick={enterCoop}>{t('coop.entryAction')}</button>} />;
+    return <SinglePlayerApp homeActions={<button type="button" className="coop-home-entry" onClick={enterCoop}>
+      <svg className="coop-home-entry-mark" viewBox="0 0 44 30" aria-hidden="true">
+        <path className="coop-home-entry-link" d="M15 19h14" />
+        <path className="coop-home-entry-player coop-home-entry-player-left" d="m10 3 5 5-5 5-5-5z" />
+        <path className="coop-home-entry-player coop-home-entry-player-left" d="m3 27v-6l3-9h8l3 9v6z" />
+        <path className="coop-home-entry-player coop-home-entry-player-right" d="m34 3 5 5-5 5-5-5z" />
+        <path className="coop-home-entry-player coop-home-entry-player-right" d="m27 27v-6l3-9h8l3 9v6z" />
+      </svg>
+      <strong>{t('coop.entryAction')}</strong>
+    </button>} />;
   }
   if (Feature) return <Feature onExit={exitCoop} />;
   if (loadFailed) return <main><p role="alert">{t('coop.loadFailed')}</p><button onClick={() => {

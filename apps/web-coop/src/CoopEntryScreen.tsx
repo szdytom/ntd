@@ -27,7 +27,6 @@ export function CoopEntryScreen({ connection, error, onCreateRoom, onJoinRoom, o
 
   return <main className={styles.entryShell}>
     <section className={styles.entryConsole}>
-      <div className={`${styles.screenSettings} ${styles.entrySettings}`}><SettingsPanel /></div>
       <header className={styles.entryIdentity}>
         <p className={styles.eyebrow}>{t('coop.eyebrow')}</p>
         <h1>{t('coop.title')}</h1>
@@ -36,7 +35,11 @@ export function CoopEntryScreen({ connection, error, onCreateRoom, onJoinRoom, o
         <p className={styles.voiceNote}>{t('coop.voiceNote')}</p>
       </header>
       <div className={styles.entryOperations}>
-        <label className={styles.nameField}><span>{t('coop.name')}</span><input value={name} maxLength={20} onChange={(event) => setName(event.target.value)} /></label>
+        <div className={styles.entryTopbar}>
+          <label className={styles.nameField}><span>{t('coop.name')}</span><input value={name} maxLength={20} onChange={(event) => setName(event.target.value)} /></label>
+          <button className={styles.backButton} type="button" onClick={onBack}><span aria-hidden="true">←</span>{t('coop.singlePlayer')}</button>
+          <div className={styles.screenSettings}><SettingsPanel /></div>
+        </div>
         <section className={styles.createPanel}>
           <p className={styles.panelLabel}>{t('coop.host')}</p>
           <h2>{t('coop.create')}</h2>
@@ -56,7 +59,6 @@ export function CoopEntryScreen({ connection, error, onCreateRoom, onJoinRoom, o
         </section>
         <footer className={styles.entryFooter}>
           <p className={styles.status} data-state={connection}><span aria-hidden="true" />{t(`coop.connection.${connection}`)}</p>
-          <button type="button" onClick={onBack}>{t('coop.singlePlayer')}</button>
         </footer>
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
       </div>

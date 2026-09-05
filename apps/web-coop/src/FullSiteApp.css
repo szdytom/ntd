@@ -1,15 +1,50 @@
 .coop-home-entry {
-  min-height: 3rem;
-  padding: 0.75rem 1.25rem;
-  border: 1px solid color-mix(in srgb, var(--accent, #8ee7ff) 68%, transparent);
-  border-radius: 0.5rem;
-  color: var(--text-primary, #f4fbff);
-  background: color-mix(in srgb, var(--accent, #8ee7ff) 14%, transparent);
-  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 10px;
+  border: 2px solid var(--select-ink);
+  color: var(--select-ink);
+  background: #fff;
   cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background .16s ease, color .16s ease;
 }
 
 .coop-home-entry:hover,
 .coop-home-entry:focus-visible {
-  background: color-mix(in srgb, var(--accent, #8ee7ff) 24%, transparent);
+  color: var(--select-ink);
+  background: color-mix(in srgb, var(--purple) 8%, #fff);
+}
+
+.coop-home-entry-mark {
+  display: block;
+  width: 39px;
+  height: 27px;
+  flex: none;
+}
+
+.coop-home-entry-link {
+  fill: none;
+  stroke: var(--select-ink);
+  stroke-width: 2;
+}
+
+.coop-home-entry-player {
+  stroke: var(--select-ink);
+  stroke-linejoin: bevel;
+  stroke-width: 2;
+}
+
+.coop-home-entry-player-left { fill: var(--coral); }
+.coop-home-entry-player-right { fill: var(--mint); }
+
+.coop-home-entry > strong { font-size: 13px; white-space: nowrap; }
+
+@media (max-width: 980px) {
+  .coop-home-entry { width: 42px; padding: 0 6px; }
+  .coop-home-entry-mark { width: 28px; height: 21px; }
+  .coop-home-entry > strong { display: none; }
 }

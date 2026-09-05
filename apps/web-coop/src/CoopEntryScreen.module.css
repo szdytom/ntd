@@ -85,12 +85,36 @@
   font-weight: 800;
 }
 
-.nameField {
+.entryTopbar {
   grid-column: 1 / -1;
-  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 64px;
   border-bottom: 2px solid var(--ink);
   background: #fff;
 }
+
+.nameField { padding: 24px 28px; }
+
+.backButton {
+  display: flex;
+  min-width: 174px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 0;
+  border-left: 2px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  background: #fff;
+  cursor: pointer;
+  font: 850 13px/1.2 var(--font-sans);
+  white-space: nowrap;
+}
+
+.backButton > span { font-size: 20px; line-height: .8; transition: transform .16s ease; }
+.backButton:hover { background: #fff4c2; }
+.backButton:hover > span { transform: translateX(-3px); }
 
 .entryOperations input,
 .entryOperations select {
@@ -159,7 +183,6 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
   gap: 18px;
   grid-column: 1 / -1;
   padding: 16px 28px;
@@ -171,7 +194,7 @@
 .entryFooter a:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
 
 .status { display: flex; min-width: 0; align-items: center; gap: 9px; margin: 0; color: #625d70; font: 700 13px/1.4 var(--font-mono); }
-.status > span { width: 11px; height: 11px; flex: none; border: 2px solid var(--ink); background: #fff; }
+.status > span { width: 11px; height: 11px; flex: none; border: 2px solid var(--ink); background: #fff; transform: translateY(-2px); }
 .status[data-state='connected'] > span { background: var(--mint); }
 .status[data-state='connecting'] > span { background: var(--yellow); }
 .status[data-state='disconnected'] > span { background: var(--coral); }
@@ -181,9 +204,6 @@
 .screenSettings { display: grid; min-width: 62px; min-height: 62px; border-left: 2px solid var(--ink); background: #fff; }
 .screenSettings :global(.settings-panel) { width: 100%; height: 100%; }
 .screenSettings :global(.settings-trigger) { width: 100%; height: 100%; border: 0; border-radius: 0; }
-
-.entrySettings { position: absolute; z-index: 4; top: 0; right: 0; width: 64px; height: 74px; border-bottom: 2px solid var(--ink); }
-.entrySettings + .entryIdentity + .entryOperations .nameField { padding-right: 92px; }
 
 @media (max-width: 1120px) {
   .entryConsole { grid-template-columns: minmax(300px, .62fr) minmax(540px, 1.38fr); }
@@ -210,6 +230,9 @@
   .nameField,
   .createPanel,
   .joinPanel { padding: 20px; }
+  .entryTopbar { grid-template-columns: minmax(0, 1fr) 52px; }
+  .backButton { grid-column: 1 / -1; grid-row: 2; min-height: 48px; border-top: 2px solid var(--ink); border-left: 0; }
+  .screenSettings { min-width: 52px; min-height: 52px; }
   .createPanel { border-right: 0; border-bottom: 2px solid var(--ink); }
   .entryFooter { align-items: flex-start; padding: 14px 20px; flex-direction: column; }
 }
