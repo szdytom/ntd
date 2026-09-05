@@ -135,6 +135,13 @@
   outline-offset: 1px;
 }
 
+.entryOperations input[data-invalid='true'] {
+  border-color: #e04f67;
+  background: #fff0f2;
+  outline: 3px solid color-mix(in srgb, #e04f67 48%, transparent);
+  outline-offset: 1px;
+}
+
 .createPanel,
 .joinPanel {
   display: flex;

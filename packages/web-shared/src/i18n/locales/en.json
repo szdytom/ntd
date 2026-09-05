@@ -1121,6 +1121,7 @@
 	"coop.intro": "Create a two-player LAN room, share the code, and coordinate over voice.",
 	"coop.voiceNote": "Two independent fronts. One shared survival line.",
 	"coop.name": "Display name",
+	"coop.nameRequired": "Set a name before joining co-op",
 	"coop.host": "Host",
 	"coop.friend": "Friend",
 	"coop.create": "Create room",

@@ -1121,6 +1121,7 @@
 	"coop.intro": "创建双人局域网房间，分享邀请码，并通过语音协作。",
 	"coop.voiceNote": "两条独立战线，共用一条生存线。",
 	"coop.name": "显示名称",
+	"coop.nameRequired": "请先给自己取个名字吧",
 	"coop.host": "房主",
 	"coop.friend": "队友",
 	"coop.create": "创建房间",
