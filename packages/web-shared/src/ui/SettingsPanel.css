@@ -24,7 +24,6 @@
 .settings-trigger:disabled,
 .settings-trigger:disabled:hover { color: #8c8793; background: #e7e4ea; cursor: not-allowed; }
 .settings-trigger:active { transform: translateY(1px); }
-.settings-glyph { font-family: var(--font-sans); font-size: 21px; font-weight: 800; line-height: 1; }
 
 .settings-backdrop {
   position: fixed;
@@ -59,7 +58,7 @@
 
 .settings-dialog > header > div { display: flex; align-items: center; gap: 11px; }
 .settings-dialog h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
-.settings-dialog header .settings-glyph { display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid var(--ink, #252134); background: #fff; font-size: 18px; }
+.settings-dialog header .settings-glyph { width: 34px; height: 34px; border: 2px solid var(--ink, #252134); background: #fff; }
 .settings-close { display: grid; width: 42px; height: 42px; padding: 0; place-items: center; border: 2px solid var(--ink, #252134); color: var(--ink, #252134); background: #fff; cursor: pointer; font-size: 24px; }
 .settings-close:hover { color: #fff; background: #ff637a; }
 

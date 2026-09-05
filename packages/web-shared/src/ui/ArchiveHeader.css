@@ -75,10 +75,12 @@
   grid-column: 3;
   grid-row: 1;
   border-right: 2px solid var(--archive-ink, #252134);
-  background: var(--archive-paper, #fff);
+  background: var(--archive-yellow, #ffd447);
 }
 
-.archive-header > .settings-panel .settings-trigger { border-radius: 0; }
+.archive-header > .settings-panel .settings-trigger { border-radius: 0; background: var(--archive-yellow, #ffd447); }
+.archive-header > .settings-panel .settings-trigger:hover,
+.archive-header > .settings-panel .settings-trigger[aria-expanded='true'] { background: var(--purple, #6558e8); }
 
 .archive-decoration {
   grid-column: 4;

@@ -177,6 +177,7 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive, onOp
       <header className="level-select-head">
         <section className="level-select-intro">
           <h1>{t('levelSelect.gameTitle')}</h1>
+          <SettingsPanel />
         </section>
         <button className="begin-run" onClick={() => onStart({ levelId, mode, creative, difficultyId })}>
           <span>
@@ -247,7 +248,6 @@ export function LevelSelect({ onStart, onOpenArchive, onOpenDefenseArchive, onOp
               <strong>{t('signalArchive.entry')}</strong>
             </button>
             <MobileFullscreenButton />
-            <SettingsPanel />
           </div>
         </header>
         <div className="level-carousel">

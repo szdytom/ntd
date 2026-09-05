@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  background: color-mix(in srgb, var(--thought-accent) 16%, #fff);
+  background: var(--archive-yellow, #ffd447);
 }
 
 .thought-index-seal i {

@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   color: #fff;
-  background: var(--signal-accent);
+  background: var(--archive-yellow, #ffd447);
 }
 
 .signal-archive-seal::before,
