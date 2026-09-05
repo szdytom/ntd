@@ -11,6 +11,7 @@ export function combatResultsMatch(expected: CoopCombatResult, claimed: CoopComb
     const candidate = claimed.leaks[index];
     return candidate?.ordinal === leak.ordinal
       && candidate.type === leak.type
+      && candidate.variantId === leak.variantId
       && candidate.entrance === leak.entrance;
   });
 }

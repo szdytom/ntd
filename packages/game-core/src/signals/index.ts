@@ -1,6 +1,6 @@
 export { DEFAULT_SIGNAL_ID, SIGNAL_DEFINITIONS, SIGNAL_IDS, signalRegistry } from './registry';
 export type { SignalId, SignalVariantId } from './registry';
-export { getSignalCapability } from './types';
+export { getSignalCapability, getSignalVariantScales } from './types';
 export { limitSignalContinuousHealthDamage, limitSignalHealthDamage } from './capabilities/damage-cap';
 export { resetSignalFullHealTimer, updateSignalFullHeal } from './capabilities/full-heal-after-lull';
 export { updateSignalHealthRegeneration } from './capabilities/health-regeneration';
@@ -18,6 +18,7 @@ export type {
   SignalCapability,
   SignalDefinition,
   SignalStats,
+  SignalVariantScales,
   SignalVisualDefinition,
   SplitOnDeathCapability,
   TowerSuppressionCapability,

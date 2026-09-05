@@ -69,7 +69,10 @@ export function useCoopRuntime(): CoopRuntime {
   const [reinforcementNotice, setReinforcementNotice] = useState<CoopPhaseStart | null>(null);
 
   const sendCommand = (message: CoopClientMessage): void => {
-    if (!client.send(message)) setError(t('coop.error.disconnected'));
+    if (client.send(message)) return;
+    const disconnected = t('coop.error.disconnected');
+    setError(disconnected);
+    setNotificationToast({ message: disconnected, tone: 'warn', nonce: Date.now() });
   };
 
   const clearEngines = (): void => {
@@ -144,13 +147,9 @@ export function useCoopRuntime(): CoopRuntime {
     if (!currentRoom || !currentPlayerId) return;
     const self = currentRoom.players.find((player) => player.id === currentPlayerId);
     if (!self) return;
-    const actorLastLocalWave = lastLocalWavesRef.current[message.actorId] ?? 0;
-    const preserveWaveEnd = message.kind === 'reinforcement'
-      && actorLastLocalWave === message.wave
-      && Boolean(enginesRef.current[message.actorId]);
-    const nextEngine = installEngine(currentRoom, message.actorId, !preserveWaveEnd);
+    const nextEngine = installEngine(currentRoom, message.actorId);
     if (!nextEngine) return;
-    if (message.kind === 'reinforcement' && actorLastLocalWave !== message.wave) {
+    if (message.kind === 'reinforcement') {
       replayingPlayersRef.current.add(message.actorId);
       try {
         nextEngine.startCombatPhase({
@@ -180,6 +179,29 @@ export function useCoopRuntime(): CoopRuntime {
     } else if (self.eliminated) viewPlayer(message.actorId);
   };
 
+  const receiveRoom = (nextRoom: CoopRoomSnapshot): void => {
+    const previousRoom = roomRef.current;
+    roomRef.current = nextRoom;
+    setRoom(nextRoom);
+    setError(null);
+    const currentPlayerId = playerIdRef.current;
+    const currentPlayer = nextRoom.players.find((player) => player.id === currentPlayerId);
+    for (const [ownerId, ownerEngine] of Object.entries(enginesRef.current)) {
+      ownerEngine?.setPlanningEnabled(
+        ownerId === currentPlayerId
+        && nextRoom.phase === 'planning'
+        && !currentPlayer?.ready
+        && !currentPlayer?.eliminated,
+      );
+    }
+    if (currentPlayerId && ['lobby', 'draft', 'planning', 'ended'].includes(nextRoom.phase)) {
+      for (const player of nextRoom.players) installEngine(nextRoom, player.id);
+      if (nextRoom.phase === 'draft') viewPlayer(currentPlayerId);
+    }
+    const peerToFollow = peerDefenseToFollow(previousRoom, nextRoom, currentPlayerId ?? null);
+    if (peerToFollow) viewPlayer(peerToFollow);
+  };
+
   useEffect(() => client.subscribe((message: CoopServerMessage) => {
     if (message.type === 'session') {
       playerIdRef.current = message.playerId;
@@ -193,25 +215,7 @@ export function useCoopRuntime(): CoopRuntime {
       return;
     }
     if (message.type === 'room') {
-      const previousRoom = roomRef.current;
-      roomRef.current = message.room;
-      setRoom(message.room);
-      const currentPlayerId = playerIdRef.current;
-      const currentPlayer = message.room.players.find((player) => player.id === currentPlayerId);
-      for (const [ownerId, ownerEngine] of Object.entries(enginesRef.current)) {
-        ownerEngine?.setPlanningEnabled(
-          ownerId === currentPlayerId
-          && message.room.phase === 'planning'
-          && !currentPlayer?.ready
-          && !currentPlayer?.eliminated,
-        );
-      }
-      if (currentPlayerId && ['lobby', 'draft', 'planning', 'ended'].includes(message.room.phase)) {
-        for (const player of message.room.players) installEngine(message.room, player.id);
-        if (message.room.phase === 'draft') viewPlayer(currentPlayerId);
-      }
-      const peerToFollow = peerDefenseToFollow(previousRoom, message.room, currentPlayerId ?? null);
-      if (peerToFollow) viewPlayer(peerToFollow);
+      receiveRoom(message.room);
       return;
     }
     if (message.type === 'phase-start') {
@@ -234,11 +238,12 @@ export function useCoopRuntime(): CoopRuntime {
       return;
     }
     if (message.type === 'rejected') {
-      if (message.room) {
-        roomRef.current = message.room;
-        setRoom(message.room);
-      }
-      setError(t(`coop.error.${message.reason}`, { defaultValue: message.reason }));
+      if (message.room) receiveRoom(message.room);
+      setNotificationToast({
+        message: t(`coop.error.${message.reason}`, { defaultValue: t('coop.error.commandRejected') }),
+        tone: 'warn',
+        nonce: Date.now(),
+      });
       return;
     }
     setError(t(`coop.ended.${message.reason}`));

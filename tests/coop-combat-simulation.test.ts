@@ -74,7 +74,7 @@ describe('authoritative co-op combat simulation', () => {
     const postLocalPlan = structuredClone(plan);
     postLocalPlan.shards += localResult.shardsEarned;
     const reinforcementPlanHash = hashCoopPlan(postLocalPlan);
-    const signals: CoopLeakedSignal[] = [{ ordinal: 0, type: 'spark', entrance: 'starter-elbow:0' }];
+    const signals: CoopLeakedSignal[] = [{ ordinal: 0, type: 'spark', variantId: 'spark', entrance: 'starter-elbow:0' }];
     controller.startCombat({
       phaseId: 2,
       planHash: reinforcementPlanHash,
@@ -98,5 +98,36 @@ describe('authoritative co-op combat simulation', () => {
       signals,
     });
     expect(serverResult).toEqual(clientResult);
+  });
+
+  it('preserves a fracture fragment through a reinforcement phase', () => {
+    const plan = createInitialCoopPlan('starter-elbow', 'normal', 42);
+    plan.towers[0]?.slots.fill(null);
+    const controller = new CoopGameController({ levelId: 'starter-elbow', difficultyId: 'normal', seed: 0 });
+    controller.applyPlan(plan);
+    let result: CoopCombatResult | null = null;
+    controller.engine.subscribe((event) => {
+      if (event.type === 'combat-phase-completed') result = event.result;
+    });
+    controller.startCombat({
+      phaseId: 2,
+      planHash: hashCoopPlan(plan),
+      wave: 1,
+      kind: 'reinforcement',
+      signals: [{
+        ordinal: 0,
+        type: 'fracture',
+        variantId: 'fracture-fragment',
+        entrance: 'starter-elbow:0',
+      }],
+    });
+
+    expect(controller.fastForward()).toBe(true);
+    expect(result?.leaks).toEqual([{
+      ordinal: 0,
+      type: 'fracture',
+      variantId: 'fracture-fragment',
+      entrance: 'starter-elbow:0',
+    }]);
   });
 });

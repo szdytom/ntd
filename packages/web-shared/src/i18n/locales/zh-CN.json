@@ -1189,7 +1189,9 @@
 	"coop.connection.connecting": "连接中…",
 	"coop.connection.connected": "已连接合作服务器",
 	"coop.connection.disconnected": "连接中断，将在 60 秒内持续重试…",
+	"coop.error.commandRejected": "该操作已不可用。",
 	"coop.error.disconnected": "合作服务器尚未连接。",
+	"coop.error.insufficient-shards": "晶片不足，无法执行该操作。",
 	"coop.ended.disconnected": "一名玩家未能在 60 秒内重连。",
 	"coop.ended.desync": "客户端的确定性战斗状态不一致。",
 	"coop.ended.closed": "房间已关闭。"

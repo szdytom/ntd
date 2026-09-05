@@ -1189,7 +1189,9 @@
 	"coop.connection.connecting": "Connecting…",
 	"coop.connection.connected": "Connected to co-op server",
 	"coop.connection.disconnected": "Connection interrupted; retrying for 60 seconds…",
+	"coop.error.commandRejected": "That action is no longer available.",
 	"coop.error.disconnected": "The co-op server is not connected.",
+	"coop.error.insufficient-shards": "Not enough shards for that action.",
 	"coop.ended.disconnected": "A player did not reconnect within 60 seconds.",
 	"coop.ended.desync": "The clients disagreed about the deterministic combat state.",
 	"coop.ended.closed": "The room was closed."

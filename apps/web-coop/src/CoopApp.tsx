@@ -92,7 +92,6 @@ export function CoopApp({ onExit }: { onExit: () => void }) {
     engine={runtime.engine}
     backgroundEngine={backgroundEngine}
     availableEngines={runtime.engines}
-    error={runtime.error}
     notificationToast={runtime.notificationToast}
     reinforcementNotice={runtime.reinforcementNotice}
     onLeave={leaveRoom}

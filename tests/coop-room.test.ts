@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type WebSocket from 'ws';
 import { CoopRoom } from '../apps/coop-server/src/coop-room';
 import { hashCoopPlan } from '@prism-bastion/coop/planning';
-import type { CoopPlayerId, CoopServerMessage } from '@prism-bastion/coop/types';
+import type { CoopLeakedSignal, CoopPlayerId, CoopServerMessage } from '@prism-bastion/coop/types';
 import { peerDefenseToFollow } from '@prism-bastion/coop/viewing';
 import type { VerifyCombat } from '@prism-bastion/coop/simulation';
 
@@ -74,7 +74,7 @@ const beginFirstWave = (room: CoopRoom): void => {
 const combatResult = (
   room: CoopRoom,
   playerId: CoopPlayerId,
-  leaks: Array<{ ordinal: number; type: 'spark'; entrance: string }>,
+  leaks: CoopLeakedSignal[],
   shardsEarned = 0,
 ) => ({
   type: 'combat-result' as const,
@@ -94,7 +94,7 @@ describe('co-op room state machine', () => {
     const { room } = createRoom();
     beginFirstWave(room);
     const defenderShards = room.players.p2!.plan.shards;
-    handle(room, 'p1', combatResult(room, 'p1', [{ ordinal: 0, type: 'spark', entrance: 'white-prism:0' }]));
+    handle(room, 'p1', combatResult(room, 'p1', [{ ordinal: 0, type: 'spark', variantId: 'spark', entrance: 'white-prism:0' }]));
     expect(room.phase).toBe('local-defense');
     handle(room, 'p2', combatResult(room, 'p2', [], 7));
     expect(room.phase).toBe('reinforcement');
@@ -154,10 +154,10 @@ describe('co-op room state machine', () => {
         phaseId: room.phaseId,
         planHash: hashCoopPlan(room.players.p1!.plan),
         shardsEarned: 0,
-        leaks: [{ ordinal: 0, type: 'crown', entrance: 'white-prism:0' }],
+        leaks: [{ ordinal: 0, type: 'crown', variantId: 'crown', entrance: 'white-prism:0' }],
       },
     });
-    handle(room, 'p2', combatResult(room, 'p2', [{ ordinal: 0, type: 'spark', entrance: 'white-prism:0' }]));
+    handle(room, 'p2', combatResult(room, 'p2', [{ ordinal: 0, type: 'spark', variantId: 'spark', entrance: 'white-prism:0' }]));
     expect(room.players.p1?.eliminated).toBe(true);
     expect(room.players.p1?.plan.core).toBe(0);
     expect(room.players.p2?.eliminated).toBe(false);
@@ -179,7 +179,7 @@ describe('co-op room state machine', () => {
     expect(second.sent.at(-1)?.type).toBe('room');
   });
 
-  it('ends the room without applying a combat result rejected by the authority', () => {
+  it('reconciles a mismatched combat result to the authoritative outcome', () => {
     const verifyCombat: VerifyCombat = (request, _claimed, complete) => complete({
       ok: false,
       reason: 'result-mismatch',
@@ -194,11 +194,75 @@ describe('co-op room state machine', () => {
     beginFirstWave(room);
     const shardsBefore = room.players.p1!.plan.shards;
 
-    handle(room, 'p1', combatResult(room, 'p1', [], 1_000_000));
+    const claimed = combatResult(room, 'p1', [], 1_000_000);
+    claimed.result.planHash = 'deadbeef';
+    handle(room, 'p1', claimed);
 
-    expect(closed).toHaveBeenCalledOnce();
-    expect(room.result).toBe('desync');
+    expect(closed).not.toHaveBeenCalled();
+    expect(room.result).toBeNull();
     expect(room.players.p1?.plan.shards).toBe(shardsBefore);
+    expect(room.players.p1?.combatSubmitted).toBe(true);
+  });
+
+  it('routes fracture fragments without rejecting or restoring them as full cores', () => {
+    const { room, closed } = createRoom();
+    beginFirstWave(room);
+    room.wave = 5;
+    const fragments: CoopLeakedSignal[] = Array.from({ length: 3 }, (_, ordinal) => ({
+      ordinal,
+      type: 'fracture',
+      variantId: 'fracture-fragment',
+      entrance: 'white-prism:0',
+    }));
+
+    handle(room, 'p1', combatResult(room, 'p1', fragments));
+    handle(room, 'p2', combatResult(room, 'p2', []));
+
+    expect(room.phase).toBe('reinforcement');
+    expect(room.reinforcement?.signals).toEqual(fragments);
+    handle(room, 'p2', combatResult(room, 'p2', fragments));
+
+    expect(closed).not.toHaveBeenCalled();
+    expect(room.players.p1?.plan.core).toBe(14);
+    expect(room.result).toBe('victory');
+  });
+
+  it('applies the authoritative reinforcement result after reconciliation', () => {
+    const verifyCombat: VerifyCombat = (request, _claimed, complete) => {
+      if (request.kind === 'local-defense') return complete({ ok: true });
+      complete({
+        ok: false,
+        reason: 'result-mismatch',
+        expected: {
+          phaseId: request.phaseId,
+          planHash: request.planHash,
+          shardsEarned: 0,
+          leaks: [{
+            ordinal: 0,
+            type: 'fracture',
+            variantId: 'fracture-fragment',
+            entrance: 'white-prism:0',
+          }],
+        },
+      });
+    };
+    const { room, closed } = createRoom(verifyCombat);
+    beginFirstWave(room);
+    room.wave = 5;
+    const fragment: CoopLeakedSignal = {
+      ordinal: 0,
+      type: 'fracture',
+      variantId: 'fracture-fragment',
+      entrance: 'white-prism:0',
+    };
+
+    handle(room, 'p1', combatResult(room, 'p1', [fragment]));
+    handle(room, 'p2', combatResult(room, 'p2', []));
+    handle(room, 'p2', combatResult(room, 'p2', []));
+
+    expect(closed).not.toHaveBeenCalled();
+    expect(room.players.p1?.plan.core).toBe(18);
+    expect(room.result).toBe('victory');
   });
 
   it('submits only one authority check while a result is pending', () => {

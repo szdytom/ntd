@@ -147,3 +147,35 @@ export function getSignalCapability<Kind extends SignalCapabilityKind>(
 ): SignalCapabilityOf<Kind> | undefined {
   return definition.capabilities.find((capability): capability is SignalCapabilityOf<Kind> => capability.kind === kind);
 }
+
+export interface SignalVariantScales {
+  health: number;
+  speed: number;
+  reward: number;
+  coreDamage: number;
+  radius: number;
+}
+
+const BASE_VARIANT_SCALES: SignalVariantScales = Object.freeze({
+  health: 1,
+  speed: 1,
+  reward: 1,
+  coreDamage: 1,
+  radius: 1,
+});
+
+export function getSignalVariantScales(
+  definition: SignalDefinition,
+  variantId: string,
+): SignalVariantScales | undefined {
+  if (variantId === definition.id) return BASE_VARIANT_SCALES;
+  const split = getSignalCapability(definition, 'split-on-death');
+  if (split?.childVariantId !== variantId) return undefined;
+  return {
+    health: split.healthScale,
+    speed: split.speedScale,
+    reward: split.rewardScale,
+    coreDamage: split.coreDamageScale,
+    radius: split.radiusScale,
+  };
+}

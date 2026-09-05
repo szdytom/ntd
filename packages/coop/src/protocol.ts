@@ -29,6 +29,7 @@ const planningCommand = z.discriminatedUnion('type', [
 const leakedSignal = z.object({
   ordinal: z.number().int().nonnegative(),
   type: z.string().min(1).max(80),
+  variantId: z.string().min(1).max(80),
   entrance: z.string().min(1).max(120),
 });
 

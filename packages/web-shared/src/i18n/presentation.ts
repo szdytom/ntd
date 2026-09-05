@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { DifficultyId, SignalId, ModuleId } from '@prism-bastion/game-core/game/types';
+import type { DifficultyId, SignalId, SignalVariantId, ModuleId } from '@prism-bastion/game-core/game/types';
 import { signalRegistry } from '@prism-bastion/game-core/signals';
 import type { ModuleDefinition, ModuleKind, ModuleRarity, ModuleTextValues } from '@prism-bastion/game-core/modules/types';
 
@@ -28,6 +28,10 @@ export const moduleDetail = (t: TFunction, definition: ModuleDefinition): string
   t(`modules.${definition.id}.detail`, textOptions(definition.meta.text?.detail))
 );
 export const signalName = (t: TFunction, type: SignalId): string => t(signalRegistry.require(type).text.nameKey);
+export const signalVariantName = (t: TFunction, variantId: SignalVariantId): string => {
+  const variant = signalRegistry.variant(variantId);
+  return t(variant?.text.nameKey ?? signalRegistry.require(signalRegistry.signalIdForVariant(variantId)).text.nameKey);
+};
 export const levelName = (t: TFunction, id: string): string => t(`levels.${id}.name`);
 export const levelDescription = (t: TFunction, id: string): string => t(`levels.${id}.description`);
 export const difficultyName = (t: TFunction, id: DifficultyId): string => t(`difficulties.${id}.name`);

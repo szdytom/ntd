@@ -3,7 +3,7 @@ import type WebSocket from 'ws';
 import { ECONOMY_BALANCE } from '@prism-bastion/game-core/game/balance';
 import { getLevel, resolveSpawnEntrances } from '@prism-bastion/game-core/game/config';
 import { getDifficulty } from '@prism-bastion/game-core/game/difficulty';
-import { signalRegistry } from '@prism-bastion/game-core/signals';
+import { getSignalCapability, getSignalVariantScales, signalRegistry } from '@prism-bastion/game-core/signals';
 import { createCoopDraftRuntime, generateCoopDraftOffers, resolveCoopDraftDecision } from '@prism-bastion/coop/draft';
 import { applyCoopPlanningCommand, createInitialCoopPlan, hashCoopPlan } from '@prism-bastion/coop/planning';
 import { createCoopPool } from '@prism-bastion/coop/pool';
@@ -48,7 +48,7 @@ interface RoomPlayer {
 
 type LeakValidation = { ok: true } | {
   ok: false;
-  reason: 'invalid-ordinal' | 'unknown-signal' | 'unknown-entrance' | 'signal-not-in-phase';
+  reason: 'invalid-ordinal' | 'unknown-signal' | 'unknown-variant' | 'unknown-entrance' | 'signal-not-in-phase';
   leakIndex: number;
   leak: CoopLeakedSignal;
   available?: number;
@@ -364,21 +364,19 @@ export class CoopRoom {
     }
     const expectedActor = this.phase === 'reinforcement' ? this.reinforcement?.defenderId : player.id;
     const expectedPlanHash = hashCoopPlan(player.plan);
-    if (expectedActor !== player.id || result.planHash !== expectedPlanHash) {
-      this.warn('desync.combat-identity', {
+    if (expectedActor !== player.id) return this.reject(player, traceId, 'combat-result-unavailable');
+    if (result.planHash !== expectedPlanHash) {
+      this.warn('combat.claim-plan-mismatch', {
         playerId: player.id,
         traceId,
-        expectedActor,
         resultPhaseId: result.phaseId,
         expectedPlanHash,
         resultPlanHash: result.planHash,
       });
-      this.endRoom('desync');
-      return;
     }
     const leakValidation = this.validateLeaks(result.leaks);
     if (!leakValidation.ok) {
-      this.warn('desync.invalid-leaks', {
+      this.warn('combat.claim-invalid-leaks', {
         playerId: player.id,
         traceId,
         validationReason: leakValidation.reason,
@@ -389,8 +387,6 @@ export class CoopRoom {
         leaks: result.leaks.slice(0, 12),
         leaksTruncated: result.leaks.length > 12,
       });
-      this.endRoom('desync');
-      return;
     }
     const verification: CombatVerificationRequest = {
       levelId: this.levelId,
@@ -429,34 +425,46 @@ export class CoopRoom {
     if (this.closed || !player.combatVerifying) return;
     player.combatVerifying = false;
     if (this.phaseId !== phaseId || player.combatSubmitted) return;
+    let acceptedResult = result;
     if (!outcome.ok) {
-      this.warn(outcome.reason === 'result-mismatch' ? 'desync.combat-result-mismatch' : 'combat.verification-failed', {
-        playerId: player.id,
-        traceId,
-        reason: outcome.reason,
-        claimedShards: result.shardsEarned,
-        claimedLeakCount: result.leaks.length,
-        expectedShards: outcome.reason === 'result-mismatch' ? outcome.expected.shardsEarned : null,
-        expectedLeakCount: outcome.reason === 'result-mismatch' ? outcome.expected.leaks.length : null,
-        error: outcome.reason === 'result-mismatch' ? null : outcome.error,
-      });
-      this.endRoom('desync');
-      return;
+      if (outcome.reason === 'result-mismatch') {
+        acceptedResult = outcome.expected;
+        this.warn('combat.result-reconciled', {
+          playerId: player.id,
+          traceId,
+          claimedShards: result.shardsEarned,
+          claimedLeakCount: result.leaks.length,
+          authoritativeShards: outcome.expected.shardsEarned,
+          authoritativeLeakCount: outcome.expected.leaks.length,
+        });
+      } else {
+        this.warn('combat.verification-failed', {
+          playerId: player.id,
+          traceId,
+          reason: outcome.reason,
+          claimedShards: result.shardsEarned,
+          claimedLeakCount: result.leaks.length,
+          error: outcome.error,
+        });
+        this.endRoom('desync');
+        return;
+      }
     }
     this.log('combat.result-accepted', {
       playerId: player.id,
       traceId,
-      planHash: result.planHash,
-      shardsEarned: result.shardsEarned,
-      leakCount: result.leaks.length,
+      planHash: acceptedResult.planHash,
+      shardsEarned: acceptedResult.shardsEarned,
+      leakCount: acceptedResult.leaks.length,
+      reconciled: acceptedResult !== result,
     });
-    player.plan.shards += result.shardsEarned;
-    this.combatResults[player.id] = structuredClone(result);
+    player.plan.shards += acceptedResult.shardsEarned;
+    this.combatResults[player.id] = structuredClone(acceptedResult);
     player.combatSubmitted = true;
     this.bumpAndBroadcast();
     if (this.phase === 'reinforcement') {
       const owner = this.reinforcement ? this.players[this.reinforcement.ownerId] : null;
-      if (owner) this.applyLeaks(owner, result.leaks);
+      if (owner) this.applyLeaks(owner, acceptedResult.leaks);
       this.finishWave();
       return;
     }
@@ -589,7 +597,11 @@ export class CoopRoom {
   }
 
   private applyLeaks(owner: RoomPlayer, leaks: readonly CoopLeakedSignal[]): void {
-    const damage = leaks.reduce((sum, leak) => sum + signalRegistry.require(leak.type).stats.coreDamage, 0);
+    const damage = leaks.reduce((sum, leak) => {
+      const definition = signalRegistry.require(leak.type);
+      const scales = getSignalVariantScales(definition, leak.variantId);
+      return sum + Math.max(1, Math.round(definition.stats.coreDamage * (scales?.coreDamage ?? 1)));
+    }, 0);
     const coreBefore = owner.plan.core;
     owner.plan.core = Math.max(0, owner.plan.core - damage);
     this.log('combat.leaks-applied', {
@@ -604,9 +616,15 @@ export class CoopRoom {
   private validateLeaks(leaks: readonly CoopLeakedSignal[]): LeakValidation {
     const level = getLevel(this.levelId);
     const signalIds = signalRegistry.ids();
+    const variantIds = signalRegistry.variants();
     for (const [index, leak] of leaks.entries()) {
       if (leak.ordinal !== index) return { ok: false, reason: 'invalid-ordinal', leakIndex: index, leak };
       if (!signalIds.includes(leak.type)) return { ok: false, reason: 'unknown-signal', leakIndex: index, leak };
+      if (
+        !variantIds.includes(leak.variantId)
+        || signalRegistry.signalIdForVariant(leak.variantId) !== leak.type
+        || !getSignalVariantScales(signalRegistry.require(leak.type), leak.variantId)
+      ) return { ok: false, reason: 'unknown-variant', leakIndex: index, leak };
       if (!level.graph.entrances.includes(leak.entrance)) {
         return { ok: false, reason: 'unknown-entrance', leakIndex: index, leak };
       }
@@ -615,19 +633,33 @@ export class CoopRoom {
     const source = this.phase === 'reinforcement'
       ? this.reinforcement?.signals ?? []
       : level.waves[this.wave - 1]?.flatMap((entry) => (
-        resolveSpawnEntrances(entry, level.graph).map((entrance, ordinal) => ({ ordinal, type: entry.type, entrance }))
+        resolveSpawnEntrances(entry, level.graph).map((entrance, ordinal) => ({
+          ordinal,
+          type: entry.type,
+          variantId: entry.type,
+          entrance,
+        }))
       )) ?? [];
     for (const signal of source) {
-      const key = `${signal.type}\u0000${signal.entrance}`;
+      const key = `${signal.type}\u0000${signal.variantId}\u0000${signal.entrance}`;
       possible.set(key, (possible.get(key) ?? 0) + 1);
     }
     for (const [index, leak] of leaks.entries()) {
-      const key = `${leak.type}\u0000${leak.entrance}`;
+      const key = `${leak.type}\u0000${leak.variantId}\u0000${leak.entrance}`;
       const remaining = possible.get(key) ?? 0;
-      if (remaining <= 0) {
-        return { ok: false, reason: 'signal-not-in-phase', leakIndex: index, leak, available: remaining };
+      if (remaining > 0) {
+        possible.set(key, remaining - 1);
+        continue;
       }
-      possible.set(key, remaining - 1);
+      const split = getSignalCapability(signalRegistry.require(leak.type), 'split-on-death');
+      const baseKey = `${leak.type}\u0000${leak.type}\u0000${leak.entrance}`;
+      const parentRemaining = possible.get(baseKey) ?? 0;
+      if (split?.childVariantId === leak.variantId && parentRemaining > 0) {
+        possible.set(baseKey, parentRemaining - 1);
+        possible.set(key, split.count - 1);
+        continue;
+      }
+      return { ok: false, reason: 'signal-not-in-phase', leakIndex: index, leak, available: remaining };
     }
     return { ok: true };
   }

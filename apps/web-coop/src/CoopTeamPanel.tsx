@@ -11,7 +11,6 @@ interface CoopTeamPanelProps {
   viewedPlayer: CoopPlayerSnapshot | null;
   viewingPeer: boolean;
   canEdit: boolean;
-  error: string | null;
   canViewPlayer: (playerId: CoopPlayerId) => boolean;
   onClose: () => void;
   onViewPlayer: (playerId: CoopPlayerId) => void;
@@ -26,7 +25,6 @@ export function CoopTeamPanel({
   viewedPlayer,
   viewingPeer,
   canEdit,
-  error,
   canViewPlayer,
   onClose,
   onViewPlayer,
@@ -64,6 +62,5 @@ export function CoopTeamPanel({
         <span>{t(`modules.${moduleId}.name`)}</span><b>{count}</b>
       </div>)}</div>
     </details>
-    {error ? <p className={styles.error}>{error}</p> : null}
   </section>;
 }

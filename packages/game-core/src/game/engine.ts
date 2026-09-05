@@ -10,6 +10,7 @@ import type {
 import { createNoopVisualFeedback, type VisualFeedbackSink } from '../visual-feedback';
 import {
   getSignalCapability,
+  getSignalVariantScales,
   resetSignalFullHealTimer,
   signalRegistry,
   updateSignalFullHeal,
@@ -88,7 +89,7 @@ export type AutoPauseCondition = 'workshop' | 'signal-archive' | 'thought-index'
 
 interface SpawnLane {
   entrance: NodeId;
-  queue: SignalId[];
+  queue: Array<{ type: SignalId; variantId: SignalVariantId }>;
   timer: number;
 }
 
@@ -460,12 +461,12 @@ export class GameEngine {
     if (options.kind === 'reinforcement') {
       for (const signal of options.signals ?? []) {
         const entrance = this.level.graph.entrances.includes(signal.entrance) ? signal.entrance : this.level.graph.entrances[0];
-        if (entrance) lanesByEntrance.get(entrance)?.queue.push(signal.type);
+        if (entrance) lanesByEntrance.get(entrance)?.queue.push({ type: signal.type, variantId: signal.variantId });
       }
     } else {
       for (const entry of this.getWaveBlueprint(this.wave - 1)) {
         for (const entrance of resolveSpawnEntrances(entry, this.level.graph)) {
-          lanesByEntrance.get(entrance)?.queue.push(entry.type);
+          lanesByEntrance.get(entrance)?.queue.push({ type: entry.type, variantId: entry.type });
         }
       }
     }
@@ -546,7 +547,7 @@ export class GameEngine {
       if (!signal.dead) this.outcomeForReport(waves, this.wave, this.signalVariant(signal)).remaining += 1;
     }
     for (const lane of this.spawnLanes) {
-      for (const type of lane.queue) this.outcomeForReport(waves, this.wave, type).queued += 1;
+      for (const signal of lane.queue) this.outcomeForReport(waves, this.wave, signal.variantId).queued += 1;
     }
     const waveReports: DefenseWaveReport[] = [...waves.entries()]
       .sort(([left], [right]) => left - right)
@@ -613,7 +614,7 @@ export class GameEngine {
       counts[type] = (counts[type] ?? 0) + 1;
     };
     for (const lane of this.spawnLanes) {
-      for (const type of lane.queue) increment(type);
+      for (const signal of lane.queue) increment(signal.type);
     }
     for (const signal of this.signals) {
       if (!signal.dead) increment(signal.type);
@@ -1201,7 +1202,7 @@ export class GameEngine {
     const lanesByEntrance = new Map(this.spawnLanes.map((lane) => [lane.entrance, lane]));
     for (const entry of this.getWaveBlueprint(this.wave - 1)) {
       for (const entrance of resolveSpawnEntrances(entry, this.level.graph)) {
-        lanesByEntrance.get(entrance)?.queue.push(entry.type);
+        lanesByEntrance.get(entrance)?.queue.push({ type: entry.type, variantId: entry.type });
       }
     }
     this.emit({ type: 'notice', notice: { key: 'toast.waveStarted', values: { wave: this.wave, maxWaves: this.maxWaves }, tone: 'info' } });
@@ -1347,17 +1348,24 @@ export class GameEngine {
       if (lane.queue.length === 0) continue;
       lane.timer -= delta;
       if (lane.timer > 0) continue;
-      const type = lane.queue.shift();
-      if (!type) continue;
-      this.spawnSignal(type, lane.entrance);
-      lane.timer = signalRegistry.require(type).stats.spawnDelay;
+      const queued = lane.queue.shift();
+      if (!queued) continue;
+      this.spawnSignal(queued.type, lane.entrance, 0, queued.variantId);
+      lane.timer = signalRegistry.require(queued.type).stats.spawnDelay;
     }
   }
 
-  private spawnSignal(type: SignalId, routeId: NodeId, routeProgress = 0): void {
+  private spawnSignal(
+    type: SignalId,
+    routeId: NodeId,
+    routeProgress = 0,
+    variantId: SignalVariantId = type,
+  ): void {
     const definition = signalRegistry.require(type);
     const stats = definition.stats;
-    const shield = getSignalCapability(definition, 'shield');
+    const variantScales = getSignalVariantScales(definition, variantId);
+    if (!variantScales) throw new Error(`Unknown variant ${variantId} for ${type}`);
+    const shield = variantId === type ? getSignalCapability(definition, 'shield') : undefined;
     const creativeHealthScale = this.rules.signalScaling === 'configured' ? this.creativeSetup.healthScale : 1;
     const creativeSpeedScale = this.rules.signalScaling === 'configured' ? this.creativeSetup.speedScale : 1;
     const scale = Math.pow(COMBAT_BALANCE.waveHealthGrowth, Math.max(0, this.wave - 1))
@@ -1368,22 +1376,25 @@ export class GameEngine {
     const progress = clamp(Number.isFinite(routeProgress) ? routeProgress : 0, 0, 1);
     const signalDistance = route.length * progress;
     const at = route.pointAtDistance(signalDistance);
+    const baseMaxHp = Math.round(stats.health * scale);
+    const baseReward = Math.max(1, Math.round(stats.reward * this.difficulty.economy));
+    const maxHp = Math.max(1, Math.round(baseMaxHp * variantScales.health));
     const signal: Signal = {
       id: this.nextId++,
       type,
-      variantId: type,
+      variantId,
       routeId,
       progress,
       distance: signalDistance,
       position: at.position,
       angle: at.angle,
-      hp: Math.round(stats.health * scale),
-      maxHp: Math.round(stats.health * scale),
-      speed: stats.speed * this.level.signalSpeedScale * this.difficulty.signalSpeed * creativeSpeedScale,
+      hp: maxHp,
+      maxHp,
+      speed: stats.speed * this.level.signalSpeedScale * this.difficulty.signalSpeed * creativeSpeedScale * variantScales.speed,
       movementPhase: 0,
-      reward: Math.max(1, Math.round(stats.reward * this.difficulty.economy)),
-      coreDamage: stats.coreDamage,
-      radius: stats.radius,
+      reward: Math.max(1, Math.round(baseReward * variantScales.reward)),
+      coreDamage: Math.max(1, Math.round(stats.coreDamage * variantScales.coreDamage)),
+      radius: stats.radius * variantScales.radius,
       slowFactor: 0,
       slowTime: 0,
       hitFlash: 0,
@@ -1466,6 +1477,7 @@ export class GameEngine {
           this.phaseLeaks.push({
             ordinal: this.phaseLeaks.length,
             type: signal.type,
+            variantId: signal.variantId,
             entrance: signal.routeId,
           });
           this.signalIndex.update(signal);

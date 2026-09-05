@@ -18,7 +18,6 @@ interface CoopBattleScreenProps {
   engine: GameEngine;
   backgroundEngine: GameEngine | undefined;
   availableEngines: Partial<Record<CoopPlayerId, GameEngine>>;
-  error: string | null;
   notificationToast: ToastState | null;
   reinforcementNotice: CoopPhaseStart | null;
   onLeave: () => void;
@@ -37,7 +36,6 @@ export function CoopBattleScreen({
   engine,
   backgroundEngine,
   availableEngines,
-  error,
   notificationToast,
   reinforcementNotice,
   onLeave,
@@ -80,7 +78,6 @@ export function CoopBattleScreen({
           viewedPlayer={viewedPlayer}
           viewingPeer={viewingPeer}
           canEdit={canEdit}
-          error={error}
           canViewPlayer={(candidateId) => Boolean(availableEngines[candidateId])}
           onClose={close}
           onViewPlayer={onViewPlayer}

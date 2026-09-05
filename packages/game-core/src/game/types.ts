@@ -476,6 +476,7 @@ export type GamePlanningCommand =
 export interface LeakedSignal {
   ordinal: number;
   type: SignalId;
+  variantId: SignalVariantId;
   entrance: string;
 }
 
