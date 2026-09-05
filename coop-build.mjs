@@ -1,9 +1,19 @@
 import * as esbuild from 'esbuild';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { getBuildInfo } from './scripts/build-info.mjs';
+
+const supportedArguments = new Set(['--client-only', '--server-only']);
+const unknownArgument = process.argv.slice(2).find((argument) => !supportedArguments.has(argument));
+if (unknownArgument) throw new Error(`Unknown co-op build argument: ${unknownArgument}`);
+const clientOnly = process.argv.includes('--client-only');
+const serverOnly = process.argv.includes('--server-only');
+if (clientOnly && serverOnly) throw new Error('Choose either --client-only or --server-only');
+const buildClient = !serverOnly;
+const buildServer = !clientOnly;
 
 const buildInfo = getBuildInfo();
 const publicServers = (() => {
+  if (!buildClient) return {};
   const raw = process.env.COOP_PUBLIC_SERVERS;
   if (!raw) return {};
   const parsed = JSON.parse(raw);
@@ -19,7 +29,7 @@ const publicServers = (() => {
   }
   return parsed;
 })();
-const shared = {
+const browserShared = {
   bundle: true,
   sourcemap: true,
   target: ['es2022'],
@@ -31,11 +41,30 @@ const shared = {
     __PRISM_BASTION_COOP_ALLOW_SERVER_OVERRIDE__: 'false',
   },
 };
+const serverShared = {
+  bundle: true,
+  sourcemap: true,
+  minify: true,
+  target: ['node22'],
+  jsx: 'automatic',
+  legalComments: 'eof',
+  platform: 'node',
+  format: 'esm',
+  banner: {
+    js: 'import { createRequire as __prismCreateRequire } from "node:module"; const require = __prismCreateRequire(import.meta.url);',
+  },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
+  logLevel: 'warning',
+};
 
+await rm('dist-coop', { recursive: true, force: true });
 await mkdir('dist-coop', { recursive: true });
-await Promise.all([
-  esbuild.build({
-    ...shared,
+const buildTasks = [];
+if (buildClient) {
+  buildTasks.push(esbuild.build({
+    ...browserShared,
     entryPoints: { coop: 'src/coop-main.tsx', app: 'src/main.tsx' },
     minify: true,
     outdir: 'dist-coop',
@@ -44,29 +73,23 @@ await Promise.all([
     loader: { '.module.css': 'local-css', '.css': 'css', '.glsl': 'text' },
     platform: 'browser',
     logLevel: 'warning',
-  }),
-  esbuild.build({
-    ...shared,
+  }));
+  buildTasks.push(copyFile('coop.html', 'dist-coop/index.html'));
+  buildTasks.push(copyFile('index.html', 'dist-coop/single-player.html'));
+}
+if (buildServer) {
+  buildTasks.push(esbuild.build({
+    ...serverShared,
     entryPoints: ['src/server/index.ts'],
-    minify: false,
     outfile: 'dist-coop/server.mjs',
-    platform: 'node',
-    format: 'esm',
-    packages: 'external',
-    logLevel: 'warning',
-  }),
-  esbuild.build({
-    ...shared,
+  }));
+  buildTasks.push(esbuild.build({
+    ...serverShared,
     entryPoints: ['src/server/combat-worker.ts'],
-    minify: false,
     outfile: 'dist-coop/combat-worker.mjs',
-    platform: 'node',
-    format: 'esm',
-    packages: 'external',
-    logLevel: 'warning',
-  }),
-  copyFile('coop.html', 'dist-coop/index.html'),
-  copyFile('index.html', 'dist-coop/single-player.html'),
-]);
+  }));
+}
+await Promise.all(buildTasks);
 
-console.log('Prism Bastion co-op built in dist-coop/');
+const target = clientOnly ? 'client' : serverOnly ? 'server' : 'client and server';
+console.log(`Prism Bastion co-op ${target} built in dist-coop/`);

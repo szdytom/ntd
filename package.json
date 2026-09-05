@@ -6,6 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "build:coop": "node coop-build.mjs",
+    "build:coop-client": "node coop-build.mjs --client-only",
+    "build:coop-server": "node coop-build.mjs --server-only",
     "start:coop": "node dist-coop/server.mjs",
     "balance:report": "node --import tsx scripts/balance-report.ts",
     "check:cjk": "node scripts/check-cjk.mjs",

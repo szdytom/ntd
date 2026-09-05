@@ -42,6 +42,7 @@ If a page starts answering a different kind of question, follow its link to the 
 | --- | --- |
 | [Guides index](guides/README.md) | Choose a task-oriented workflow |
 | [Development workflow](guides/development-workflow.md) | Set up, validate, and structure a change |
+| [Co-op deployment](guides/co-op-deployment.md) | Build and operate regional WebSocket nodes behind a TLS reverse proxy |
 | [Testing boundaries](guides/testing-boundaries.md) | Test software contracts without freezing balance decisions |
 | [Add a module](guides/adding-a-module.md) | Implement and register a module safely |
 | [Add an effect](guides/adding-an-effect.md) | Create a reusable visual effect |

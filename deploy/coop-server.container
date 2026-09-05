@@ -1,0 +1,27 @@
+[Unit]
+Description=Prism Bastion co-op server
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=localhost/prism-bastion-coop:latest
+ContainerName=prism-bastion-coop
+EnvironmentFile=%h/.config/prism-bastion/coop.env
+PublishPort=127.0.0.1:4174:4174
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+PodmanArgs=--cpus=1 --memory=2g --pids-limit=128
+HealthCmd=node -e "fetch('http://127.0.0.1:4174/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+HealthInterval=30s
+HealthTimeout=3s
+HealthStartPeriod=5s
+HealthRetries=3
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target

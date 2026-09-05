@@ -48,4 +48,7 @@ Use `COOP_COMBAT_WORKERS` to size the worker pool (default `1`) and
 
 `npm run build` remains the standalone single-player GitHub Pages build.
 `npm run build:coop` validates and emits the separate co-op client and Node
-server artifacts in `dist-coop/`.
+server artifacts in `dist-coop/`. Use `npm run build:coop-client` for a clean
+CDN-only directory and `npm run build:coop-server` for the self-contained Node
+artifacts used by the OCI image. See [Co-op deployment](co-op-deployment.md)
+for the Buildah, Podman, Quadlet, and reverse-proxy workflow.

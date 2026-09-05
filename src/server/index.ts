@@ -7,13 +7,18 @@ import type { CoopPlayerId, CoopServerMessage } from '../coop/types';
 import { parseCoopClientMessage } from '../coop/protocol';
 import { CoopRoom } from './coop-room';
 import { CombatVerifierPool } from './combat-verifier';
+import { readCoopServerConfig } from './config';
 import { coopDevError, coopDevLog, coopDevWarn } from './dev-log';
 import { createWebSocketOriginPolicy } from './origin-policy';
 
-const host = process.env.COOP_HOST ?? '0.0.0.0';
-const port = Number.parseInt(process.env.COOP_SERVER_PORT ?? '4174', 10);
-const combatWorkerCount = Number.parseInt(process.env.COOP_COMBAT_WORKERS ?? '1', 10);
-const combatQueueLimit = Number.parseInt(process.env.COOP_COMBAT_QUEUE_LIMIT ?? '128', 10);
+const {
+  host,
+  port,
+  combatWorkerCount,
+  combatQueueLimit,
+  maxRooms,
+  maxConnections,
+} = readCoopServerConfig();
 const combatVerifier = new CombatVerifierPool(combatWorkerCount, combatQueueLimit);
 const rooms = new Map<string, CoopRoom>();
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -22,6 +27,7 @@ const originPolicy = createWebSocketOriginPolicy({
   allowAny: process.env.COOP_ALLOW_ANY_ORIGIN === '1',
 });
 let nextConnectionId = 1;
+let shuttingDown = false;
 
 interface ConnectionSession {
   room: CoopRoom;
@@ -42,8 +48,14 @@ const send = (socket: WebSocket, message: CoopServerMessage): void => {
 
 const httpServer = createServer((request, response) => {
   if (request.url === '/healthz') {
-    response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ ok: true, rooms: rooms.size }));
+    response.writeHead(shuttingDown ? 503 : 200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({
+      ok: !shuttingDown,
+      rooms: rooms.size,
+      maxRooms,
+      connections: webSocketServer.clients.size,
+      maxConnections,
+    }));
     return;
   }
   response.writeHead(404);
@@ -54,6 +66,11 @@ const webSocketServer = new WebSocketServer({
   server: httpServer,
   maxPayload: 64 * 1024,
   verifyClient: ({ origin }: { origin: string }) => {
+    if (shuttingDown) return false;
+    if (webSocketServer.clients.size >= maxConnections) {
+      coopDevWarn('connection.rejected', { reason: 'server-capacity', origin: origin || null });
+      return false;
+    }
     const allowed = originPolicy.allows(origin);
     if (!allowed) coopDevWarn('connection.rejected', { reason: 'origin-not-allowed', origin: origin || null });
     return allowed;
@@ -118,6 +135,11 @@ webSocketServer.on('connection', (socket) => {
       return;
     }
     if (message.type === 'create-room') {
+      if (rooms.size >= maxRooms) {
+        coopDevWarn('message.rejected', { connectionId, messageType: message.type, reason: 'server-capacity' });
+        send(socket, { type: 'rejected', reason: 'server-capacity' });
+        return;
+      }
       const level = LEVELS.find((candidate) => candidate.id === message.levelId);
       if (!level || level.id === TUTORIAL_LEVEL_ID) {
         coopDevWarn('message.rejected', {
@@ -235,6 +257,20 @@ webSocketServer.on('error', (error) => {
   coopDevError('server.websocket-error', { host, port, error: error.message });
 });
 
+const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  coopDevLog('server.stopping', { signal, rooms: rooms.size, connections: webSocketServer.clients.size });
+  if (httpServer.listening) httpServer.close();
+  webSocketServer.close();
+  for (const socket of webSocketServer.clients) socket.close(1012, 'Server restarting');
+  await combatVerifier.close();
+  process.exit(0);
+};
+
+process.once('SIGTERM', () => void shutdown('SIGTERM'));
+process.once('SIGINT', () => void shutdown('SIGINT'));
+
 httpServer.listen(port, host, () => {
   const address = httpServer.address();
   const listeningPort = address && typeof address === 'object' ? address.port : port;
@@ -244,5 +280,7 @@ httpServer.listen(port, host, () => {
     port: listeningPort,
     combatWorkerCount,
     combatQueueLimit,
+    maxRooms,
+    maxConnections,
   });
 });

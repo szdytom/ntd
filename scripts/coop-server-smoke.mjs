@@ -1,9 +1,20 @@
 import { spawn } from 'node:child_process';
+import { copyFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import WebSocket from 'ws';
 
 const allowedOrigin = 'https://game.example.test';
-const combatWorker = new Worker(new URL('../dist-coop/combat-worker.mjs', import.meta.url));
+const smokeDirectory = await mkdtemp(join(tmpdir(), 'prism-bastion-coop-'));
+const serverPath = join(smokeDirectory, 'server.mjs');
+const workerPath = join(smokeDirectory, 'combat-worker.mjs');
+await Promise.all([
+  copyFile(new URL('../dist-coop/server.mjs', import.meta.url), serverPath),
+  copyFile(new URL('../dist-coop/combat-worker.mjs', import.meta.url), workerPath),
+]);
+const combatWorker = new Worker(pathToFileURL(workerPath));
 const workerResponse = new Promise((resolve, reject) => {
   const timeout = setTimeout(() => reject(new Error('Co-op combat worker did not respond')), 5_000);
   combatWorker.once('message', (message) => {
@@ -48,7 +59,7 @@ if (!workerResult.ok || workerResult.result.leaks.length !== 5) {
   throw new Error('Co-op authoritative combat worker smoke check failed');
 }
 
-const server = spawn(process.execPath, ['dist-coop/server.mjs'], {
+const server = spawn(process.execPath, [serverPath], {
   env: {
     ...process.env,
     COOP_ALLOWED_ORIGINS: allowedOrigin,
@@ -107,4 +118,5 @@ try {
   process.stdout.write('Co-op production server, combat worker, health, and Origin policy verified.\n');
 } finally {
   server.kill('SIGTERM');
+  await rm(smokeDirectory, { recursive: true, force: true });
 }

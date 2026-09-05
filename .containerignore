@@ -1,0 +1,16 @@
+.git
+.agents
+.codex
+.github
+.vscode
+dist
+dist-coop
+docs
+e2e
+e2e-coop
+node_modules
+playwright-report
+test-results
+tests
+*.log
+.DS_Store
