@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { defaultLanguage, supportedLanguages, type SupportedLanguage } from '../i18n';
 import { setAutoPauseEnabled, useAutoPauseEnabled } from './preferences';
 import './SettingsPanel.css';
+import { SettingsGlyph } from './SettingsGlyph';
 
 export interface SettingsArchiveRepository { clearAll(): Promise<unknown> }
 let settingsArchiveRepository: SettingsArchiveRepository = { clearAll: async () => undefined };
@@ -79,7 +80,7 @@ export function SettingsPanel({
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className="settings-glyph" aria-hidden="true">⚙</span>
+        <SettingsGlyph />
       </button>
       {open ? createPortal(<div className="settings-backdrop" onMouseDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -87,7 +88,7 @@ export function SettingsPanel({
       }}>
         <div ref={dialogRef} className="settings-dialog" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
           <header>
-            <div><span className="settings-glyph" aria-hidden="true">⚙</span><h2>{t('settings.title')}</h2></div>
+            <div><SettingsGlyph /><h2>{t('settings.title')}</h2></div>
             <button type="button" className="settings-close" onClick={() => {
               closeSettings();
             }} aria-label={t('settings.close')}>×</button>
