@@ -123,7 +123,11 @@ describe('workshop orchestration transfer', () => {
 
 		await user.click(screen.getByRole('button', { name: en['workshop.export'] }));
 
-		await waitFor(() => expect(screen.getByRole('status').textContent).toBe(en['workshop.exportSuccess']));
+		await waitFor(() =>
+			expect(screen.getAllByRole('status').map((status) => status.textContent)).toContain(
+				en['workshop.exportSuccess'],
+			),
+		);
 		expect(document.querySelector('.orchestration-notice')).toBeNull();
 	});
 });

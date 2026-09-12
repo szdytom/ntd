@@ -590,6 +590,7 @@
 	"defenseArchive.localOnly": "仅保存在当前浏览器中",
 	"defenseArchive.clear": "清空档案",
 	"defenseArchive.writeError": "防御档案无法保存这次事件",
+	"defenseArchive.achievementToastTitle": "成就达成！",
 	"defenseArchive.achievementUnlocked": "成就解锁：{{name}}",
 	"defenseArchive.achievementsUnlocked": "成就解锁：{{name}}，本次共 {{count}} 项",
 	"defenseArchive.overview.metricsAria": "总体防御统计",
