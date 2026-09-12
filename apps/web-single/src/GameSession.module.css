@@ -48,3 +48,7 @@
 		height: auto;
 	}
 }
+
+.gameFeedback[data-achievement-visible='true'] > div {
+	bottom: max(160px, calc(env(safe-area-inset-bottom) + 148px));
+}

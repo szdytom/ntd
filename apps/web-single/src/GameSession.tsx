@@ -9,6 +9,7 @@ import { Battlefield, type BattlefieldUtilityPanel } from '@prism-bastion/web-sh
 import { useGameState, type ToastState } from '@prism-bastion/web-shared/ui/useGameState';
 import { Workshop } from '@prism-bastion/web-shared/ui/Workshop';
 import { Toast } from '@prism-bastion/web-shared/ui/Toast';
+import { AchievementToast, ACHIEVEMENT_TOAST_DURATION } from './defense-archive/AchievementToast';
 import { RewardDraft } from './RewardDraft';
 import { TutorialGuide } from './TutorialGuide';
 import type { DefenseArchiveRepository } from './defense-archive';
@@ -69,6 +70,8 @@ export function GameSession({
 }) {
 	const { t } = useTranslation();
 	const { view, toast } = useGameState(engine);
+	const [achievementQueue, setAchievementQueue] = useState<string[]>([]);
+	const activeAchievement = achievementQueue[0];
 	const [defenseArchiveToast, setDefenseArchiveToast] = useState<ToastState | null>(null);
 	const [workshopToast, setWorkshopToast] = useState<ToastState | null>(null);
 	const [advancedDraftVisible, setAdvancedDraftVisible] = useState(false);
@@ -90,15 +93,7 @@ export function GameSession({
 						if (unlocked.length === 0) {
 							return;
 						}
-						const first = t(`defenseArchive.achievements.${unlocked[0]}.name`);
-						setDefenseArchiveToast({
-							message:
-								unlocked.length === 1
-									? t('defenseArchive.achievementUnlocked', { name: first })
-									: t('defenseArchive.achievementsUnlocked', { name: first, count: unlocked.length }),
-							tone: 'good',
-							nonce: Date.now(),
-						});
+						setAchievementQueue((queue) => [...queue, ...unlocked.filter((id) => !queue.includes(id))]);
 					})
 					.catch(() =>
 						setDefenseArchiveToast({
@@ -110,6 +105,16 @@ export function GameSession({
 			}),
 		[defenseArchive, engine, t],
 	);
+	useEffect(() => {
+		if (!activeAchievement) {
+			return;
+		}
+		const timeout = window.setTimeout(
+			() => setAchievementQueue((queue) => queue.slice(1)),
+			ACHIEVEMENT_TOAST_DURATION,
+		);
+		return () => window.clearTimeout(timeout);
+	}, [activeAchievement]);
 	useEffect(() => {
 		if (!defenseArchiveToast) {
 			return;
@@ -187,7 +192,10 @@ export function GameSession({
 					</Battlefield>
 				</div>
 			</div>
-			<Toast toast={notificationToast ?? defenseArchiveToast ?? workshopToast ?? toast} />
+			<div className={styles.gameFeedback} data-achievement-visible={Boolean(activeAchievement)}>
+				<Toast toast={notificationToast ?? defenseArchiveToast ?? workshopToast ?? toast} />
+			</div>
+			<AchievementToast achievementId={activeAchievement} />
 			<TutorialGuide engine={engine} view={view} onResolved={onTutorialResolved} />
 		</div>
 	);

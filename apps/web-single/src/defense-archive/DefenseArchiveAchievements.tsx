@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { UiIcon } from '@prism-bastion/web-shared/ui/UiIcon';
+import { AchievementIcon } from './AchievementIcon';
 import type { DefenseArchiveSnapshot } from './types';
 import styles from '../DefenseArchive.module.css';
 
@@ -35,7 +35,7 @@ export function DefenseArchiveAchievements({ snapshot }: { snapshot: DefenseArch
 								return (
 									<article key={achievement.id} className={unlocked ? styles.unlocked : undefined}>
 										<div className={styles['achievement-mark']} aria-hidden="true">
-											<UiIcon name={unlocked ? 'diamondFilled' : 'diamond'} />
+											<AchievementIcon achievementId={achievement.id} />
 										</div>
 										<div>
 											<h3>{t(`defenseArchive.achievements.${achievement.id}.name`)}</h3>
