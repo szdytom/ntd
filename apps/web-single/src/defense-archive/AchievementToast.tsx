@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './AchievementToast.module.css';
+import { AchievementIcon } from './AchievementIcon';
 
 export const ACHIEVEMENT_TOAST_DURATION = 5_000;
 
@@ -32,16 +33,7 @@ export function AchievementToast({ achievementId }: { achievementId: string | un
 					style={{ '--toast-duration': `${ACHIEVEMENT_TOAST_DURATION}ms` } as CSSProperties}
 				>
 					<div className={styles.badge} aria-hidden="true">
-						<svg viewBox="0 0 48 48" fill="none">
-							<path
-								d="M24 5 41 22 24 39 7 22Z"
-								fill="var(--yellow)"
-								stroke="currentColor"
-								strokeWidth="2"
-							/>
-							<path d="m24 13 9 9-9 9-9-9Z" fill="currentColor" />
-							<path d="M17 36v8l7-4 7 4v-8" stroke="currentColor" strokeWidth="2" />
-						</svg>
+						<AchievementIcon achievementId={achievementId} />
 						<div className={styles.particles}>
 							{particles.map(([x, y, delay, duration], index) => (
 								<i

@@ -355,7 +355,7 @@
 .achievement-grid article {
 	display: grid;
 	min-height: 190px;
-	grid-template-columns: 42px minmax(0, 1fr);
+	grid-template-columns: 56px minmax(0, 1fr);
 	gap: 12px;
 	padding: 18px 16px;
 	border-right: 2px solid var(--archive-ink);
@@ -375,16 +375,16 @@
 }
 .achievement-mark {
 	display: flex;
-	width: 38px;
-	height: 38px;
+	width: 56px;
+	height: 56px;
 	align-items: center;
 	justify-content: center;
-	border: 2px solid var(--archive-ink);
-	background: #d9d5df;
-	font-size: 16px;
+	color: var(--archive-ink);
+	filter: grayscale(1);
+	font-size: 48px;
 }
 .achievement-grid .unlocked .achievement-mark {
-	background: var(--archive-yellow);
+	filter: none;
 }
 .achievement-grid h3 {
 	margin: 2px 0 8px;
