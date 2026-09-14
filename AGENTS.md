@@ -44,8 +44,7 @@ Technical documentation:
 
 Project skills:
 
-- [Skill index](docs/skills/README.md)
-- [Thought Index authoring](docs/skills/thought-index-authoring/SKILL.md) — use when designing, reviewing, or implementing a module demonstration
+- [Thought Index authoring](.agents/skills/thought-index-authoring/SKILL.md) — use when designing, reviewing, or implementing a module demonstration
 
 ### UI design
 

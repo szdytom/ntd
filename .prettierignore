@@ -6,7 +6,6 @@ node_modules/
 test-results/
 playwright-report/
 coverage/
-.agents/
 .codex/
 .vscode/
 pnpm-lock.yaml

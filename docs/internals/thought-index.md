@@ -24,7 +24,7 @@ Beats are clickable keyframes; their cues control setup, loadouts, spawning, wai
 - An indefinite wait is a zero-duration event gate. Timeline fill stops at a rotating square marker until all declared conditions hold. Conditions may combine a semantic event, an empty scene, and restored tower energy. Every semantic wait requires a positive simulation-time timeout.
 - Cameras may reserve screen-space clearance below a focal point as the transcript changes viewport height. Captions grow their leader before fading in text, then hide text before retracting the leader. The module badge retains the section title.
 
-For storyboard design, reusable factories, and examples, use the [authoring skill](../skills/thought-index-authoring/SKILL.md).
+For storyboard design, reusable factories, and examples, use the [authoring skill](../../.agents/skills/thought-index-authoring/SKILL.md).
 
 ## Navigation contract
 
