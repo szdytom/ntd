@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react';
 import styles from './UiIcon.module.css';
+import { achievementIcons } from './icon-definitions/achievements';
 
 interface IconDefinition {
 	content: ReactNode;
+	viewBox?: string;
+	strokeWidth?: number;
 }
 
 const icons = {
+	...achievementIcons,
 	heart: {
 		content: (
 			<path fill="currentColor" stroke="none" d="M12 21 3.5 12.5C-2 7 5.5 0 12 6.5 18.5 0 26 7 20.5 12.5Z" />
@@ -62,13 +66,13 @@ export function UiIcon({ name, className }: { name: UiIconName; className?: stri
 	const definition: IconDefinition = icons[name];
 	return (
 		<svg
-			viewBox="0 0 24 24"
+			viewBox={definition.viewBox ?? '0 0 24 24'}
 			width="1em"
 			height="1em"
 			className={className ? `${styles.icon} ${className}` : styles.icon}
 			fill="none"
 			stroke="currentColor"
-			strokeWidth="2"
+			strokeWidth={definition.strokeWidth ?? 2}
 			strokeLinejoin="miter"
 			aria-hidden="true"
 			focusable="false"

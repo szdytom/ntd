@@ -590,6 +590,7 @@
 	"defenseArchive.localOnly": "Stored only in this browser",
 	"defenseArchive.clear": "Clear archive",
 	"defenseArchive.writeError": "The defense archive could not save this event",
+	"defenseArchive.achievementToastTitle": "Achievement unlocked!",
 	"defenseArchive.achievementUnlocked": "Achievement unlocked: {{name}}",
 	"defenseArchive.achievementsUnlocked": "Achievement unlocked: {{name}} and {{count}} total",
 	"defenseArchive.overview.metricsAria": "Overall defense statistics",

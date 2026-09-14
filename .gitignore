@@ -8,3 +8,6 @@ playwright-report/
 .DS_Store
 .vscode
 .codex
+
+# Local design previews
+/previews/
